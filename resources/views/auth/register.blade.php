@@ -32,12 +32,10 @@
 
                     <div class="col-md-6">
                         <div class="form-group">
-                        {!! Form::label('start_date','Start Date:') !!}
+                        <label class="form-label">Start Date</label>
                         <div class="input-group">
-                            <span class="input-group-addon">
-                                <i class="fa fa-calendar"></i>
-                            </span>
-                            {!! Form::text('start_date', null, ['class' => 'form-control start-date-picker','placeholder' => 'Start Date', 'readonly']); !!}
+                            <i class="fa fa-calendar input-icon"></i>
+                            {!! Form::text('start_date', null, ['class' => 'form-input start-date-picker','placeholder' => 'Start Date', 'readonly']); !!}
                         </div>
                         </div>
                     </div>
@@ -271,4 +269,18 @@
 </div>
 
 
+@endsection
+
+@section('javascript')
+<script type="text/javascript">
+$(document).ready(function() {
+    // Initialize date picker
+    $('.start-date-picker').datepicker({
+        format: 'yyyy-mm-dd',
+        autoclose: true,
+        todayHighlight: true,
+        startDate: new Date()
+    });
+});
+</script>
 @endsection

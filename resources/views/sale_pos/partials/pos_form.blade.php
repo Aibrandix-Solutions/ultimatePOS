@@ -20,7 +20,7 @@
 				{!! Form::select('contact_id', 
 					[], null, ['class' => 'form-control mousetrap', 'id' => 'customer_id', 'placeholder' => 'Enter Customer name / phone', 'required']); !!}
 				<span class="input-group-btn">
-					<button type="button" class="btn btn-default bg-white btn-flat add_new_customer" data-name=""  @if(!auth()->user()->can('customer.create')) disabled @endif><i class="fa fa-plus-circle text-primary fa-lg"></i></button>
+					<button type="button" class="btn btn-default bg-white btn-flat add_new_customer" data-name=""  @if(!auth()->user()->can('customer.create')) disabled @endif><i class="fa fa-plus-circle" style="color: #7f141c;" fa-lg></i></button>
 				</span>
 			</div>
 			<small class="text-danger hide contact_due_text"><strong>@lang('account.customer_due'):</strong> <span></span></small>
@@ -42,11 +42,11 @@
 					<!-- Show button for weighing scale modal -->
 					@if(isset($pos_settings['enable_weighing_scale']) && $pos_settings['enable_weighing_scale'] == 1)
 						<button type="button" class="btn btn-default bg-white btn-flat" id="weighing_scale_btn" data-toggle="modal" data-target="#weighing_scale_modal" 
-						title="@lang('lang_v1.weighing_scale')"><i class="fa fa-digital-tachograph text-primary fa-lg"></i></button>
+						title="@lang('lang_v1.weighing_scale')"><i class="fa fa-digital-tachograph" style="color: #7f141c;" fa-lg></i></button>
 					@endif
 					
 
-					<button type="button" class="btn btn-default bg-white btn-flat pos_add_quick_product" data-href="{{action([\App\Http\Controllers\ProductController::class, 'quickAdd'])}}" data-container=".quick_add_product_modal"><i class="fa fa-plus-circle text-primary fa-lg"></i></button>
+					<button type="button" class="btn btn-default bg-white btn-flat pos_add_quick_product" data-href="{{action([\App\Http\Controllers\ProductController::class, 'quickAdd'])}}" data-container=".quick_add_product_modal"><i class="fa fa-plus-circle" style="color: #7f141c;" fa-lg></i></button>
 				</span>
 			</div>
 		</div>
@@ -133,7 +133,7 @@
 			<div class="form-group">
 				<div class="input-group">
 					<span class="input-group-addon">
-						<i class="fa fa-external-link-square-alt text-primary service_modal_btn"></i>
+						<i class="fa fa-external-link-square-alt service_modal_btn" style="color: #7f141c;"></i>
 					</span>
 					{!! Form::select('types_of_service_id', $types_of_service, null, ['class' => 'form-control', 'id' => 'types_of_service_id', 'style' => 'width: 100%;', 'placeholder' => __('lang_v1.select_types_of_service')]); !!}
 
@@ -215,30 +215,62 @@
 				$hide_tax = 'hide';
 			}
 		@endphp
-		<table class="table table-condensed table-bordered table-striped table-responsive" id="pos_table">
-			<thead>
-				<tr>
-					<th class="tex-center tw-text-sm md:!tw-text-base tw-font-bold @if(!empty($pos_settings['inline_service_staff'])) col-md-3 @else col-md-4 @endif">	
-						@lang('sale.product') @show_tooltip(__('lang_v1.tooltip_sell_product_column'))
-					</th>
-					<th class="text-center tw-text-sm md:!tw-text-base tw-font-bold col-md-3">
-						@lang('sale.qty')
-					</th>
-					@if(!empty($pos_settings['inline_service_staff']))
-						<th class="text-center tw-text-sm md:!tw-text-base tw-font-bold col-md-2">
-							@lang('restaurant.service_staff')
-						</th>
-					@endif
-					<th class="text-center tw-text-sm md:!tw-text-base tw-font-bold col-md-2 {{$hide_tax}}">
-						@lang('sale.price_inc_tax')
-					</th>
-					<th class="text-center tw-text-sm md:!tw-text-base tw-font-bold col-md-2">
-						@lang('sale.subtotal')
-					</th>
-					<th class="text-center"><i class="fas fa-times tw-text-base" aria-hidden="true"></i></th>
-				</tr>
-			</thead>
-			<tbody></tbody>
-		</table>
+		<div class="tw-bg-white tw-rounded-xl tw-shadow-lg tw-border tw-border-gray-200 tw-overflow-hidden tw-my-4">
+			<div class="tw-bg-gradient-to-r tw-from-blue-50 tw-to-indigo-50 tw-px-6 tw-py-4 tw-border-b tw-border-gray-200">
+			</div>
+			<div class="tw-overflow-x-auto ">
+				<table class="tw-w-full" id="pos_table">
+					<thead>
+						<tr class="tw-bg-gray-50 tw-border-b tw-border-gray-200">
+							<th class="tw-px-6 tw-py-4 tw-text-left tw-text-sm tw-font-semibold tw-text-gray-700 tw-uppercase tw-tracking-wide @if(!empty($pos_settings['inline_service_staff'])) tw-w-1/4 @else tw-w-1/3 @endif">	
+								<div class="tw-flex tw-items-center tw-gap-2">
+									<i class="fas fa-box tw-text-blue-600 tw-text-sm"></i>
+									@lang('sale.product') @show_tooltip(__('lang_v1.tooltip_sell_product_column'))
+								</div>
+							</th>
+							<th class="tw-px-6 tw-py-4 tw-text-center tw-text-sm tw-font-semibold tw-text-gray-700 tw-uppercase tw-tracking-wide tw-w-1/6">
+								<div class="tw-flex tw-items-center tw-justify-center tw-gap-2">
+									<i class="fas fa-hashtag tw-text-blue-600 tw-text-sm"></i>
+									@lang('sale.qty')
+								</div>
+							</th>
+							@if(!empty($pos_settings['inline_service_staff']))
+								<th class="tw-px-6 tw-py-4 tw-text-center tw-text-sm tw-font-semibold tw-text-gray-700 tw-uppercase tw-tracking-wide tw-w-1/6">
+									<div class="tw-flex tw-items-center tw-justify-center tw-gap-2">
+										<i class="fas fa-user-tie tw-text-blue-600 tw-text-sm"></i>
+										@lang('restaurant.service_staff')
+									</div>
+								</th>
+							@endif
+							<th class="tw-px-6 tw-py-4 tw-text-center tw-text-sm tw-font-semibold tw-text-gray-700 tw-uppercase tw-tracking-wide tw-w-1/6 {{$hide_tax}}">
+								<div class="tw-flex tw-items-center tw-justify-center tw-gap-2">
+									<i class="fas fa-tag tw-text-blue-600 tw-text-sm"></i>
+									@lang('sale.price_inc_tax')
+								</div>
+							</th>
+							<th class="tw-px-6 tw-py-4 tw-text-center tw-text-sm tw-font-semibold tw-text-gray-700 tw-uppercase tw-tracking-wide tw-w-1/6">
+								<div class="tw-flex tw-items-center tw-justify-center tw-gap-2">
+									<i class="fas fa-calculator tw-text-blue-600 tw-text-sm"></i>
+									@lang('sale.subtotal')
+								</div>
+							</th>
+							<th class="tw-px-6 tw-py-4 tw-text-center tw-text-sm tw-font-semibold tw-text-gray-700 tw-uppercase tw-tracking-wide tw-w-16">
+								<div class="tw-flex tw-items-center tw-justify-center">
+									<i class="fas fa-times tw-text-red-500 tw-text-sm" aria-hidden="true"></i>
+								</div>
+							</th>
+						</tr>
+					</thead>
+					<tbody class="tw-bg-white tw-divide-y tw-divide-gray-200"></tbody>
+				</table>
+			</div>
+			<div class="tw-bg-gray-50 tw-px-6 tw-py-4 tw-border-t tw-border-gray-200">
+				<div class="tw-flex tw-items-center tw-justify-between tw-text-sm tw-text-gray-600">
+					<div class="tw-flex tw-items-center tw-gap-4">
+						<span class="tw-text-gray-500">@lang('lang_v1.total_items'): <span class="tw-font-semibold tw-text-gray-800" id="total_items_count">0</span></span>
+					</div>
+				</div>
+			</div>
+		</div>
 	</div>
 </div>
