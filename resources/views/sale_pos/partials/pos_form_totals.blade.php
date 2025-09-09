@@ -1,18 +1,19 @@
 <div class="row pos_form_totals">
 	<div class="col-md-12">
-		<table class="table table-condensed">
+		<table class="table table-condensed" style="border-radius:12px; overflow:hidden; border:1px solid rgba(22,17,96,0.12); box-shadow:0 4px 12px rgba(22,17,96,0.08); background:#e8ebed;">
 			<tr>
-				<td><b class="tw-text-base md:tw-text-lg tw-font-bold">@lang('sale.item'):</b>&nbsp;
-					<span class="total_quantity tw-text-base md:tw-text-lg tw-font-semibold">0</span></td>
-				<td>
-					<b class="tw-text-base md:tw-text-lg tw-font-bold">@lang('sale.total'):</b> &nbsp;
-					<span class="price_total tw-text-base md:tw-text-lg tw-font-semibold">0</span>
+				<td style="padding:12px 16px; vertical-align:middle;">
+					<b class="tw-text-base md:tw-text-lg tw-font-bold" style="color:#161160; letter-spacing:0.2px;">@lang('sale.item'):</b>&nbsp;
+					<span class="total_quantity tw-text-base md:tw-text-lg tw-font-semibold" style="color:#1f2937;">0</span></td>
+				<td style="padding:12px 16px; vertical-align:middle;">
+					<b class="tw-text-base md:tw-text-lg tw-font-bold" style="color:#161160; letter-spacing:0.2px;">@lang('sale.total'):</b> &nbsp;
+					<span class="price_total tw-text-base md:tw-text-lg tw-font-semibold" style="color:#1f2937;">0</span>
 				</td>
 			</tr>
 			<tr>
 				
-					<td @if(!Gate::check('disable_discount') || auth()->user()->can('superadmin') || auth()->user()->can('admin')) class="" @else class="hide" @endif>
-						<b class="tw-text-base md:tw-text-lg tw-font-bold">
+					<td @if(!Gate::check('disable_discount') || auth()->user()->can('superadmin') || auth()->user()->can('admin')) class="" @else class="hide" @endif style="padding:12px 16px; vertical-align:middle; border-top:1px solid rgba(22,17,96,0.08);">
+						<b class="tw-text-base md:tw-text-lg tw-font-bold" style="color:#161160; letter-spacing:0.2px;">
 							@if($is_discount_enabled)
 								@lang('sale.discount')
 								@show_tooltip(__('tooltip.sale_discount'))
@@ -23,10 +24,10 @@
 							@if($is_discount_enabled)
 								(-):
 								@if($edit_discount)
-								<i class="fas fa-edit cursor-pointer" id="pos-edit-discount" title="@lang('sale.edit_discount')" aria-hidden="true" data-toggle="modal" data-target="#posEditDiscountModal"></i>
+								<i class="fas fa-edit cursor-pointer" id="pos-edit-discount" title="@lang('sale.edit_discount')" aria-hidden="true" data-toggle="modal" data-target="#posEditDiscountModal" style="color:#161160; margin-left:6px; opacity:0.9;"></i>
 								@endif
 							
-								<span class="tw-text-base md:tw-text-lg tw-font-semibold" id="total_discount">0</span>
+								<span class="tw-text-base md:tw-text-lg tw-font-semibold" id="total_discount" style="color:#1f2937;">0</span>
 							@endif
 								<input type="hidden" name="discount_type" id="discount_type" value="@if(empty($edit)){{'percentage'}}@else{{$transaction->discount_type}}@endif" data-default="percentage">
 
@@ -40,11 +41,11 @@
 						</b> 
 					</td>
 				
-				<td class="@if($pos_settings['disable_order_tax'] != 0) hide @endif">
+				<td class="@if($pos_settings['disable_order_tax'] != 0) hide @endif" style="padding:12px 16px; vertical-align:middle; border-top:1px solid rgba(22,17,96,0.08);">
 					<span class="tw-text-base md:tw-text-lg tw-font-semibold">
-						<b class="tw-text-base md:tw-text-lg tw-font-bold">@lang('sale.order_tax')(+): @show_tooltip(__('tooltip.sale_tax'))</b>
-						<i class="fas fa-edit cursor-pointer" title="@lang('sale.edit_order_tax')" aria-hidden="true" data-toggle="modal" data-target="#posEditOrderTaxModal" id="pos-edit-tax" ></i> 
-						<span class="tw-text-base md:tw-text-lg tw-font-semibold" id="order_tax">
+						<b class="tw-text-base md:tw-text-lg tw-font-bold" style="color:#161160; letter-spacing:0.2px;">@lang('sale.order_tax')(+): @show_tooltip(__('tooltip.sale_tax'))</b>
+						<i class="fas fa-edit cursor-pointer" title="@lang('sale.edit_order_tax')" aria-hidden="true" data-toggle="modal" data-target="#posEditOrderTaxModal" id="pos-edit-tax" style="color:#161160; margin-left:6px; opacity:0.9;"></i> 
+						<span class="tw-text-base md:tw-text-lg tw-font-semibold" id="order_tax" style="color:#1f2937;">
 							@if(empty($edit))
 								0
 							@else
@@ -62,12 +63,12 @@
 
 					</span>
 				</td>
-				<td>
+				<td style="padding:12px 16px; vertical-align:middle; border-top:1px solid rgba(22,17,96,0.08);">
 					<span class="tw-text-base md:tw-text-lg tw-font-semibold">
 
-						<b class="tw-text-base md:tw-text-lg tw-font-bold">@lang('sale.shipping')(+): @show_tooltip(__('tooltip.shipping'))</b> 
-						<i class="fas fa-edit cursor-pointer"  title="@lang('sale.shipping')" aria-hidden="true" data-toggle="modal" data-target="#posShippingModal"></i>
-						<span id="shipping_charges_amount">0</span>
+						<b class="tw-text-base md:tw-text-lg tw-font-bold" style="color:#161160; letter-spacing:0.2px;">@lang('sale.shipping')(+): @show_tooltip(__('tooltip.shipping'))</b> 
+						<i class="fas fa-edit cursor-pointer"  title="@lang('sale.shipping')" aria-hidden="true" data-toggle="modal" data-target="#posShippingModal" style="color:#161160; margin-left:6px; opacity:0.9;"></i>
+						<span id="shipping_charges_amount" style="color:#1f2937;">0</span>
 						<input type="hidden" name="shipping_details" id="shipping_details" value="@if(empty($edit)){{''}}@else{{$transaction->shipping_details}}@endif" data-default="">
 
 						<input type="hidden" name="shipping_address" id="shipping_address" value="@if(empty($edit)){{''}}@else{{$transaction->shipping_address}}@endif">

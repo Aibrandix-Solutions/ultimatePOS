@@ -1,8 +1,61 @@
 var global_brand_id = null;
 var global_p_category_id = null;
 var global_is_clear_local_storage = false;
+
+// Enhanced empty state management - Global function
+function updateEmptyState() {
+    // Count actual product rows (excluding empty state row)
+    var productRows = $('#pos_table tbody tr.product_row').length;
+    var allRows = $('#pos_table tbody tr').length;
+    var emptyRow = $('#empty_cart_row').length;
+
+    console.log('Empty state check - Product rows:', productRows);
+    console.log('Empty state check - All rows:', allRows);
+    console.log('Empty state check - Empty row exists:', emptyRow);
+
+    if (productRows === 0) {
+        console.log('Showing empty state');
+        $('#empty_cart_row').show().css({
+            'display': 'table-row',
+            'animation': 'fadeIn 0.5s ease forwards'
+        });
+    } else {
+        console.log('Hiding empty state');
+        $('#empty_cart_row').hide().css({
+            'display': 'none'
+        });
+    }
+}
+
+// Add loading animation for new rows - Global function
+function addRowWithAnimation(htmlContent) {
+    console.log('Adding row with animation:', htmlContent);
+    var $newRow = $(htmlContent);
+    $newRow.css({
+        'opacity': '0',
+        'transform': 'translateY(20px)',
+        'transition': 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
+    });
+
+    var $tbody = $('#pos_table tbody');
+    console.log('Table body found:', $tbody.length);
+    $tbody.append($newRow);
+
+    setTimeout(function () {
+        $newRow.css({
+            'opacity': '1',
+            'transform': 'translateY(0)'
+        });
+    }, 50);
+
+    return $newRow;
+}
 $(document).ready(function () {
     customer_set = false;
+
+    // Add modern styling enhancements
+    addModernStyling();
+
     //Prevent enter key function except texarea
     $('form').on('keyup keypress', function (e) {
         var keyCode = e.keyCode || e.which;
@@ -163,6 +216,7 @@ $(document).ready(function () {
             .autocomplete({
                 delay: 1000,
                 source: function (request, response) {
+                    console.log('Autocomplete search triggered for:', request.term);
                     var price_group = '';
                     var search_fields = [];
                     $('.search_fields:checked').each(function (i) {
@@ -172,11 +226,15 @@ $(document).ready(function () {
                     if ($('#price_group').length > 0) {
                         price_group = $('#price_group').val();
                     }
+
+                    var location_id = $('input#location_id').val();
+                    console.log('Search parameters - location_id:', location_id, 'term:', request.term);
+
                     $.getJSON(
                         '/products/list',
                         {
                             price_group: price_group,
-                            location_id: $('input#location_id').val(),
+                            location_id: location_id,
                             term: request.term,
                             not_for_selling: 0,
                             search_fields: search_fields
@@ -186,6 +244,10 @@ $(document).ready(function () {
                 },
                 minLength: 2,
                 response: function (event, ui) {
+                    console.log('Autocomplete response received:', ui.content.length, 'products');
+                    if (ui.content.length > 0) {
+                        console.log('First product:', ui.content[0]);
+                    }
                     if (ui.content.length == 1) {
                         ui.item = ui.content[0];
 
@@ -218,6 +280,7 @@ $(document).ready(function () {
                     }
                 },
                 select: function (event, ui) {
+                    console.log('Product selected from autocomplete:', ui.item);
                     var searched_term = $(this).val();
                     var is_overselling_allowed = false;
                     if ($('input#is_overselling_allowed').length) {
@@ -234,13 +297,21 @@ $(document).ready(function () {
                         var is_draft = true;
                     }
 
+                    console.log('Stock check - enable_stock:', ui.item.enable_stock);
+                    console.log('Stock check - qty_available:', ui.item.qty_available);
+                    console.log('Stock check - is_overselling_allowed:', is_overselling_allowed);
+                    console.log('Stock check - for_so:', for_so);
+                    console.log('Stock check - is_draft:', is_draft);
+
                     if (ui.item.enable_stock != 1 || ui.item.qty_available > 0 || is_overselling_allowed || for_so || is_draft) {
                         $(this).val(null);
+                        console.log('Calling pos_product_row with variation_id:', ui.item.variation_id);
 
                         //Pre select lot number only if the searched term is same as the lot number
                         var purchase_line_id = ui.item.purchase_line_id && searched_term == ui.item.lot_number ? ui.item.purchase_line_id : null;
                         pos_product_row(ui.item.variation_id, purchase_line_id);
                     } else {
+                        console.log('Product out of stock, showing alert');
                         alert(LANG.out_of_stock);
                     }
                 },
@@ -320,6 +391,7 @@ $(document).ready(function () {
 
         var unit_price_inc_tax = __read_number(tr.find('input.pos_unit_price_inc_tax'));
         var line_total = entered_qty * unit_price_inc_tax;
+
 
         __write_number(tr.find('input.pos_line_total'), line_total, false);
         tr.find('span.pos_line_total_text').text(__currency_trans_from_en(line_total, true));
@@ -510,11 +582,24 @@ $(document).ready(function () {
     $('button#pos-cancel').click(function () {
         swal({
             title: LANG.sure,
+            text: LANG.are_you_sure || 'Do you really want to cancel this sale? This cannot be undone.',
             icon: 'warning',
-            buttons: true,
+            buttons: {
+                cancel: {
+                    text: LANG.no_go_back || 'No, Go Back',
+                    visible: true,
+                    closeModal: true,
+                    className: 'btn btn-default swal-btn-cancel',
+                },
+                confirm: {
+                    text: LANG.yes_cancel || 'Yes, Cancel',
+                    closeModal: true,
+                    className: 'btn btn-danger swal-btn-confirm',
+                },
+            },
             dangerMode: true,
-        }).then(confirm => {
-            if (confirm) {
+        }).then(function (willCancel) {
+            if (willCancel) {
                 reset_pos_form();
             }
         });
@@ -688,6 +773,17 @@ $(document).ready(function () {
 
     $('div#card_details_modal').on('shown.bs.modal', function (e) {
         $('input#card_number').focus();
+        // Ensure select2 dropdowns render within the card modal context with proper width
+        $(this)
+            .find('.select2')
+            .each(function () {
+                try {
+                    if ($(this).hasClass('select2-hidden-accessible')) {
+                        $(this).select2('destroy');
+                    }
+                } catch (err) { }
+                $(this).select2({ dropdownParent: $('#card_details_modal'), width: '100%' });
+            });
     });
 
     $('div#confirmSuspendModal').on('shown.bs.modal', function (e) {
@@ -823,6 +919,8 @@ $(document).ready(function () {
             }
 
             if (cnf) {
+                // Ensure all per-row values are in inputs before serialize
+                syncProductRowsToInputs();
                 disable_pos_form_actions();
 
                 var data = $(form).serialize();
@@ -1705,6 +1803,17 @@ function pos_product_row(variation_id = null, purchase_line_id = null, weighing_
         var product_row = $('input#product_row_count').val();
         var location_id = $('input#location_id').val();
         var customer_id = $('select#customer_id').val();
+
+        console.log('Required fields check:');
+        console.log('Product row count:', product_row);
+        console.log('Location ID:', location_id);
+        console.log('Customer ID:', customer_id);
+
+        if (!location_id) {
+            console.error('Location ID is missing!');
+            toastr.error('Location not selected. Please select a location first.');
+            return;
+        }
         var is_direct_sell = false;
         if (
             $('input[name="is_direct_sale"]').length > 0 &&
@@ -1753,6 +1862,11 @@ function pos_product_row(variation_id = null, purchase_line_id = null, weighing_
             is_serial_no = true;
         }
 
+        console.log('Making AJAX call to add product...');
+        console.log('Variation ID:', variation_id);
+        console.log('Location ID:', location_id);
+        console.log('Product Row:', product_row);
+
         $.ajax({
             method: 'GET',
             url: '/sells/pos/get_product_row/' + variation_id + '/' + location_id,
@@ -1772,16 +1886,52 @@ function pos_product_row(variation_id = null, purchase_line_id = null, weighing_
             },
             dataType: 'json',
             success: function (result) {
+                console.log('Product row response:', result);
                 if (result.success) {
-                    $('table#pos_table tbody')
-                        .append(result.html_content)
-                        .find('input.pos_quantity');
+                    console.log('Success: Adding product row');
+                    console.log('HTML content:', result.html_content);
+
+                    // Try the new animation method first
+                    try {
+                        var $newRow = $(result.html_content);
+                        $newRow.css({
+                            'opacity': '0',
+                            'transform': 'translateY(20px)',
+                            'transition': 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
+                        });
+
+                        var $tableBody = $('table#pos_table tbody');
+                        console.log('Table body selector result:', $tableBody.length);
+                        $tableBody.append($newRow);
+
+                        // Animate the row in
+                        setTimeout(function () {
+                            $newRow.css({
+                                'opacity': '1',
+                                'transform': 'translateY(0)'
+                            });
+                        }, 50);
+                    } catch (e) {
+                        console.error('Animation method failed, using fallback:', e);
+                        // Fallback to original method
+                        $('table#pos_table tbody').append(result.html_content);
+                    }
+
                     //increment row count
                     $('input#product_row_count').val(parseInt(product_row) + 1);
                     var this_row = $('table#pos_table tbody')
                         .find('tr')
                         .last();
+                    console.log('New row added:', this_row.length);
                     pos_each_row(this_row);
+
+                    // Check if modal elements are present
+                    var modalCount = $('.row_edit_product_price_model').length;
+                    console.log('Modal elements found:', modalCount);
+
+                    // Immediately update empty state
+                    console.log('Immediate empty state update');
+                    updateEmptyState();
 
                     //For initial discount if present
                     var line_total = __read_number(this_row.find('input.pos_line_total'));
@@ -1819,6 +1969,12 @@ function pos_product_row(variation_id = null, purchase_line_id = null, weighing_
                             .append(result.html_modifier);
                     }
 
+                    // Update empty state after a short delay to ensure DOM is updated
+                    setTimeout(function () {
+                        console.log('Updating empty state after row addition');
+                        updateEmptyState();
+                    }, 200);
+
                     //scroll bottom of items list
                     $(".pos_product_div").animate({ scrollTop: $('.pos_product_div').prop("scrollHeight") }, 1000);
                 } else {
@@ -1830,34 +1986,66 @@ function pos_product_row(variation_id = null, purchase_line_id = null, weighing_
                     }
                 }
             },
+            error: function (xhr, status, error) {
+                console.error('AJAX Error:', error);
+                console.error('Response:', xhr.responseText);
+                toastr.error('Error adding product: ' + error);
+            }
         });
     }
 }
 
 //Update values for each row
 function pos_each_row(row_obj) {
-    var unit_price = __read_number(row_obj.find('input.pos_unit_price'));
-
-    var discounted_unit_price = calculate_discounted_unit_price(row_obj);
+    // Get tax rate first
     var tax_rate = row_obj
         .find('select.tax_id')
         .find(':selected')
         .data('rate');
-
-    var unit_price_inc_tax =
-        discounted_unit_price + __calculate_amount('percentage', tax_rate, discounted_unit_price);
-    __write_number(row_obj.find('input.pos_unit_price_inc_tax'), unit_price_inc_tax);
-
-    var discount = __read_number(row_obj.find('input.row_discount_amount'));
-
-    if (discount > 0) {
-        var qty = __read_number(row_obj.find('input.pos_quantity'));
-        var line_total = qty * unit_price_inc_tax;
-        __write_number(row_obj.find('input.pos_line_total'), line_total);
+    if (typeof tax_rate === 'undefined' || isNaN(parseFloat(tax_rate))) {
+        tax_rate = 0;
     }
 
-    //var unit_price_inc_tax = __read_number(row_obj.find('input.pos_unit_price_inc_tax'));
+    // Determine base unit price (pre-tax)
+    var base_unit_price = row_obj.data('modal-base-unit-price');
+    if (typeof base_unit_price === 'undefined' || isNaN(base_unit_price) || base_unit_price === 0) {
+        base_unit_price = __read_number(row_obj.find('input.pos_unit_price'));
+        if (base_unit_price === 0) {
+            var inc_tax_price = __read_number(row_obj.find('input.pos_unit_price_inc_tax'));
+            base_unit_price = __get_principle(inc_tax_price, tax_rate);
+        }
+    }
 
+    // Apply row discount on the base unit price
+    // Discount values may be hidden; fallback to data attrs
+    var row_discount_type = (row_obj.find('select.row_discount_type').length ? row_obj.find('select.row_discount_type').val() : null);
+    if (!row_discount_type) {
+        row_discount_type = row_obj.data('modal-discount-type') || 'fixed';
+    }
+    var row_discount_amount = (row_obj.find('input.row_discount_amount').length ? __read_number(row_obj.find('input.row_discount_amount')) : null);
+    if (row_discount_amount === null || isNaN(row_discount_amount)) {
+        row_discount_amount = row_obj.data('modal-discount-amount') || 0;
+    }
+    var discounted_unit_price = base_unit_price;
+    if (row_discount_amount) {
+        if (row_discount_type === 'fixed') {
+            discounted_unit_price = base_unit_price - row_discount_amount;
+        } else {
+            discounted_unit_price = __substract_percent(base_unit_price, row_discount_amount);
+        }
+    }
+
+    // Recompute tax-inclusive price
+    var unit_price_inc_tax = discounted_unit_price + __calculate_amount('percentage', tax_rate, discounted_unit_price);
+    __write_number(row_obj.find('input.pos_unit_price_inc_tax'), unit_price_inc_tax);
+
+    // Line total
+    var qty = __read_number(row_obj.find('input.pos_quantity'));
+    var line_total = qty * unit_price_inc_tax;
+    __write_number(row_obj.find('input.pos_line_total'), line_total);
+    row_obj.find('span.pos_line_total_text').text(__currency_trans_from_en(line_total, true));
+
+    // Item tax per unit
     __write_number(row_obj.find('input.item_tax'), unit_price_inc_tax - discounted_unit_price);
 }
 
@@ -2323,15 +2511,35 @@ function pos_print(receipt) {
 }
 
 function calculate_discounted_unit_price(row) {
-    var this_unit_price = __read_number(row.find('input.pos_unit_price'));
-    var row_discounted_unit_price = this_unit_price;
-    var row_discount_type = row.find('select.row_discount_type').val();
-    var row_discount_amount = __read_number(row.find('input.row_discount_amount'));
+    // Determine base unit price (pre-tax)
+    var tax_rate = row.find('select.tax_id').find(':selected').data('rate');
+    if (typeof tax_rate === 'undefined' || isNaN(parseFloat(tax_rate))) {
+        tax_rate = 0;
+    }
+
+    var base_unit_price = row.data('modal-base-unit-price');
+    if (typeof base_unit_price === 'undefined' || isNaN(base_unit_price) || base_unit_price === 0) {
+        base_unit_price = __read_number(row.find('input.pos_unit_price'));
+        if (base_unit_price === 0) {
+            var inc_tax_price = __read_number(row.find('input.pos_unit_price_inc_tax'));
+            base_unit_price = __get_principle(inc_tax_price, tax_rate);
+        }
+    }
+
+    var row_discount_type = (row.find('select.row_discount_type').length ? row.find('select.row_discount_type').val() : null);
+    if (!row_discount_type) {
+        row_discount_type = row.data('modal-discount-type') || 'fixed';
+    }
+    var row_discount_amount = (row.find('input.row_discount_amount').length ? __read_number(row.find('input.row_discount_amount')) : null);
+    if (row_discount_amount === null || isNaN(row_discount_amount)) {
+        row_discount_amount = row.data('modal-discount-amount') || 0;
+    }
+    var row_discounted_unit_price = base_unit_price;
     if (row_discount_amount) {
         if (row_discount_type == 'fixed') {
-            row_discounted_unit_price = this_unit_price - row_discount_amount;
+            row_discounted_unit_price = base_unit_price - row_discount_amount;
         } else {
-            row_discounted_unit_price = __substract_percent(this_unit_price, row_discount_amount);
+            row_discounted_unit_price = __substract_percent(base_unit_price, row_discount_amount);
         }
     }
 
@@ -2745,6 +2953,88 @@ function validate_discount_field() {
 $(document).on('change', '#discount_type_modal, #discount_type', function () {
     validate_discount_field();
 });
+
+// Write row data attributes back into real inputs before submit, so invoice has values
+function syncProductRowsToInputs() {
+    $('table#pos_table tbody tr.product_row').each(function () {
+        var $row = $(this);
+
+        // Base unit price -> pos_unit_price if available, else rebuild inc tax from base and tax
+        var tax_rate = $row.find('select.tax_id').find(':selected').data('rate');
+        if (typeof tax_rate === 'undefined' || isNaN(parseFloat(tax_rate))) { tax_rate = 0; }
+
+        var base_price = $row.data('modal-base-unit-price');
+        if (typeof base_price === 'undefined' || isNaN(base_price)) {
+            // Fallback derive base from existing inputs
+            base_price = __read_number($row.find('input.pos_unit_price'));
+            if (!base_price || base_price === 0) {
+                var inc_tax_existing = __read_number($row.find('input.pos_unit_price_inc_tax'));
+                base_price = __get_principle(inc_tax_existing, tax_rate);
+            }
+        }
+
+        // Ensure pos_unit_price input exists and has base (pre-discount, pre-tax)
+        if ($row.find('input.pos_unit_price').length) {
+            __write_number($row.find('input.pos_unit_price'), base_price);
+        } else {
+            var rowIndex = $row.data('row_index');
+            if (typeof rowIndex !== 'undefined') {
+                var nameBase = 'products[' + rowIndex + '][unit_price]';
+                $('<input type="hidden" class="pos_unit_price input_number"/>')
+                    .attr('name', nameBase)
+                    .appendTo($row.find('td').eq(1));
+                __write_number($row.find('input.pos_unit_price'), base_price);
+            }
+        }
+
+        // Compute discounted base and inc-tax for submission
+        // Use the same discount consumption logic as row calc
+        var dtype = ($row.find('select.row_discount_type').length ? $row.find('select.row_discount_type').val() : ($row.data('modal-discount-type') || 'fixed'));
+        var damount = ($row.find('input.row_discount_amount').length ? __read_number($row.find('input.row_discount_amount')) : ($row.data('modal-discount-amount') || 0));
+        var discounted_base = base_price;
+        if (damount) {
+            discounted_base = (dtype === 'fixed') ? (base_price - damount) : __substract_percent(base_price, damount);
+        }
+        var inc_tax = discounted_base + __calculate_amount('percentage', tax_rate, discounted_base);
+
+        // Ensure pos_unit_price_inc_tax exists and holds discounted inc-tax
+        if ($row.find('input.pos_unit_price_inc_tax').length) {
+            __write_number($row.find('input.pos_unit_price_inc_tax'), inc_tax);
+        } else {
+            var rowIndex2 = $row.data('row_index');
+            if (typeof rowIndex2 !== 'undefined') {
+                var nameInc = 'products[' + rowIndex2 + '][unit_price_inc_tax]';
+                $('<input type="hidden" class="pos_unit_price_inc_tax input_number"/>')
+                    .attr('name', nameInc)
+                    .appendTo($row.find('td').eq(2));
+                __write_number($row.find('input.pos_unit_price_inc_tax'), inc_tax);
+            }
+        }
+
+        // Discount type/amount -> hidden/visible inputs if they exist
+        var dtypeData = $row.data('modal-discount-type');
+        var damountData = $row.data('modal-discount-amount');
+        var rowIndex3 = $row.data('row_index');
+        if ($row.find('select.row_discount_type').length) {
+            if (typeof dtypeData !== 'undefined') { $row.find('select.row_discount_type').val(dtypeData); }
+        } else if (typeof rowIndex3 !== 'undefined' && typeof dtypeData !== 'undefined') {
+            var nameDt = 'products[' + rowIndex3 + '][line_discount_type]';
+            $('<input type="hidden" class="row_discount_type"/>')
+                .attr('name', nameDt)
+                .val(dtypeData)
+                .appendTo($row);
+        }
+        if ($row.find('input.row_discount_amount').length) {
+            if (typeof damountData !== 'undefined') { __write_number($row.find('input.row_discount_amount'), damountData); }
+        } else if (typeof rowIndex3 !== 'undefined' && typeof damountData !== 'undefined') {
+            var nameDa = 'products[' + rowIndex3 + '][line_discount_amount]';
+            $('<input type="hidden" class="row_discount_amount input_number"/>')
+                .attr('name', nameDa)
+                .appendTo($row);
+            __write_number($row.find('input.row_discount_amount'), damountData);
+        }
+    });
+}
 
 function update_shipping_address(data) {
     if ($('#shipping_address_div').length) {
@@ -3377,4 +3667,284 @@ function saveFormDataToLocalStorage() {
     localStorage.setItem("pos_form_data_array", JSON.stringify(formArray));
 
     // console.log("Form data successfully saved to LocalStorage.");
+}
+
+// Modern Styling Enhancements
+function addModernStyling() {
+    // Add hover effects to input groups
+    $('.input-group').hover(
+        function () {
+            $(this).css('transform', 'translateY(-2px)');
+            $(this).css('box-shadow', '0 4px 8px rgba(22,17,96,0.25)');
+        },
+        function () {
+            $(this).css('transform', 'translateY(0)');
+            $(this).css('box-shadow', '0 2px 4px rgba(22,17,96,0.2)');
+        }
+    );
+
+    // Add focus effects to form controls
+    $('.form-control').on('focus', function () {
+        $(this).closest('.input-group').css('box-shadow', '0 4px 12px rgba(22, 17, 96, 0.4)');
+        $(this).closest('.input-group').css('transform', 'translateY(-2px)');
+    }).on('blur', function () {
+        $(this).closest('.input-group').css('box-shadow', '0 2px 4px rgba(22,17,96,0.2)');
+        $(this).closest('.input-group').css('transform', 'translateY(0)');
+    });
+
+    // Add smooth transitions
+    $('.input-group, .form-control, .btn').css('transition', 'all 0.3s ease');
+
+    // Enhanced modern styling for table rows
+    $('#pos_table tbody tr').hover(
+        function () {
+            $(this).css('background', 'linear-gradient(135deg, rgba(22,17,96,0.08) 0%, rgba(42,36,128,0.12) 100%)');
+            $(this).css('transform', 'translateY(-2px) scale(1.005)');
+            $(this).css('box-shadow', '0 4px 12px rgba(22,17,96,0.15)');
+            $(this).css('border-left', '4px solid #161160');
+            $(this).css('transition', 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)');
+        },
+        function () {
+            $(this).css('background', '');
+            $(this).css('transform', 'translateY(0) scale(1)');
+            $(this).css('box-shadow', '');
+            $(this).css('border-left', '');
+        }
+    );
+
+    // Add modern styling to individual table cells
+    $('#pos_table tbody td').css({
+        'padding': '16px 12px',
+        'vertical-align': 'middle',
+        'border-bottom': '1px solid rgba(22,17,96,0.08)',
+        'transition': 'all 0.2s ease',
+        'position': 'relative'
+    });
+
+    // Add subtle animation when rows are added
+    $('#pos_table tbody tr').each(function (index) {
+        $(this).css({
+            'animation': 'fadeInUp 0.5s ease forwards',
+            'animation-delay': (index * 0.1) + 's',
+            'opacity': '0',
+            'transform': 'translateY(20px)'
+        });
+    });
+
+    // Add modern focus effects to form controls within table
+    $('#pos_table tbody input, #pos_table tbody select, #pos_table tbody textarea').on('focus', function () {
+        $(this).closest('td').css({
+            'background-color': 'rgba(22,17,96,0.05)',
+            'box-shadow': 'inset 0 0 0 2px rgba(22,17,96,0.2)'
+        });
+    }).on('blur', function () {
+        $(this).closest('td').css({
+            'background-color': '',
+            'box-shadow': ''
+        });
+    });
+
+
+
+    // Call empty state check on page load
+    updateEmptyState();
+
+    // Test function for debugging (can be called from console)
+    window.testProductAddition = function () {
+        console.log('Testing product addition...');
+        console.log('Table body exists:', $('#pos_table tbody').length);
+        console.log('Search input exists:', $('#search_product').length);
+        console.log('Location ID:', $('input#location_id').val());
+
+        // Test with a dummy variation ID (this will fail but show us the error)
+        pos_product_row(1, null, null, 1);
+    };
+
+    // Debug function to check current state
+    window.debugEmptyState = function () {
+        console.log('=== Empty State Debug ===');
+        console.log('Product rows:', $('#pos_table tbody tr.product_row').length);
+        console.log('All rows:', $('#pos_table tbody tr').length);
+        console.log('Empty row visible:', $('#empty_cart_row').is(':visible'));
+        console.log('Empty row display:', $('#empty_cart_row').css('display'));
+        console.log('Table body HTML:', $('#pos_table tbody').html());
+    };
+
+    // Update empty state when rows are removed
+    $(document).on('click', '.pos_remove_row', function () {
+        setTimeout(function () {
+            updateEmptyState();
+        }, 300);
+    });
+
+    // Handle modal events for product price editing
+    $(document).on('click', '[data-target="#row_edit_product_price_modal"]', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        var $this = $(this);
+        var rowIndex = $this.data('row-index');
+        console.log('Opening modal for row:', rowIndex);
+
+        // Get the product row data
+        var $productRow = $('tr[data-row_index="' + rowIndex + '"]');
+        if ($productRow.length === 0) {
+            console.error('Product row not found for index:', rowIndex);
+            return;
+        }
+
+        // Extract current values from the row (numeric-safe)
+        var currentUnitPrice = null;
+        var priceField = null;
+        if ($productRow.find('input.pos_unit_price').length > 0) {
+            currentUnitPrice = __read_number($productRow.find('input.pos_unit_price'));
+            priceField = 'pos_unit_price';
+        }
+        if ((currentUnitPrice === null || currentUnitPrice === 0) && $productRow.find('input.pos_unit_price_inc_tax').length > 0) {
+            currentUnitPrice = __read_number($productRow.find('input.pos_unit_price_inc_tax'));
+            priceField = 'pos_unit_price_inc_tax';
+        }
+        // Discount: prefer inline controls; fallback to row data attrs
+        var currentDiscountType = ($productRow.find('select.row_discount_type').length ? $productRow.find('select.row_discount_type').val() : null);
+        if (!currentDiscountType) {
+            currentDiscountType = $productRow.data('modal-discount-type') || 'fixed';
+        }
+        var currentDiscountAmount = ($productRow.find('input.row_discount_amount').length ? __read_number($productRow.find('input.row_discount_amount')) : null);
+        if (currentDiscountAmount === null || isNaN(currentDiscountAmount)) {
+            currentDiscountAmount = $productRow.data('modal-discount-amount') || 0;
+        }
+        var currentNote = $productRow.find('textarea[name*="sell_line_note"]').val() || '';
+
+        // Get product name for modal title
+        var productName = $productRow.find('span.text-link').text().replace(/\s*&nbsp;.*$/, '').trim();
+
+        console.log('Product data:', {
+            unitPrice: currentUnitPrice,
+            discountType: currentDiscountType,
+            discountAmount: currentDiscountAmount,
+            note: currentNote,
+            productName: productName
+        });
+
+        // Compute base (pre-discount) unit price for the modal
+        var tax_rate_open = $productRow.find('select.tax_id').find(':selected').data('rate');
+        if (typeof tax_rate_open === 'undefined' || isNaN(parseFloat(tax_rate_open))) { tax_rate_open = 0; }
+        var inc_tax_now = __read_number($productRow.find('input.pos_unit_price_inc_tax'));
+        var discounted_base_now = __get_principle(inc_tax_now, tax_rate_open);
+        var base_before_discount_now = get_unit_price_from_discounted_unit_price($productRow, discounted_base_now);
+
+        // Prefer any previously saved base price
+        var saved_base = $productRow.data('modal-base-unit-price');
+        var base_for_modal = (typeof saved_base !== 'undefined' && !isNaN(saved_base)) ? saved_base : base_before_discount_now;
+
+        // Populate modal with current values
+        $('#row_edit_product_price_modal_label').text(productName);
+        __write_number($('#modal_unit_price'), base_for_modal);
+        $('#modal_discount_type').val(currentDiscountType);
+        __write_number($('#modal_discount_amount'), currentDiscountAmount);
+        $('#modal_sell_line_note').val(currentNote);
+
+        // Store row index for saving
+        $('#row_edit_product_price_modal').data('row-index', rowIndex);
+        $('#row_edit_product_price_modal').data('price-field', priceField);
+        $('#row_edit_product_price_modal').data('base-unit-price', base_for_modal);
+
+        // Show the modal
+        $('#row_edit_product_price_modal').modal('show');
+    });
+
+    // Handle save changes in modal
+    $(document).on('click', '#modal_save_changes', function () {
+        var rowIndex = $('#row_edit_product_price_modal').data('row-index');
+        var $productRow = $('tr[data-row_index="' + rowIndex + '"]');
+
+        if ($productRow.length === 0) {
+            console.error('Product row not found for saving');
+            return;
+        }
+
+        // Get values from modal
+        var newUnitPrice = __read_number($('#modal_unit_price'));
+        var newDiscountType = $('#modal_discount_type').val();
+        var newDiscountAmount = __read_number($('#modal_discount_amount'));
+        var newNote = $('#modal_sell_line_note').val();
+
+
+        // Update the product row with new values
+        // Try to update pos_unit_price first, if not available, update pos_unit_price_inc_tax
+        var savedPriceField = $('#row_edit_product_price_modal').data('price-field');
+        if (savedPriceField === 'pos_unit_price' && $productRow.find('input.pos_unit_price').length > 0) {
+            __write_number($productRow.find('input.pos_unit_price'), newUnitPrice);
+        } else if (savedPriceField === 'pos_unit_price_inc_tax' && $productRow.find('input.pos_unit_price_inc_tax').length > 0) {
+            // If only inc_tax field is available, we still store base in data and let calc rebuild inc tax
+            $productRow.data('modal-base-unit-price', newUnitPrice);
+        } else if ($productRow.find('input.pos_unit_price').length > 0) {
+            __write_number($productRow.find('input.pos_unit_price'), newUnitPrice);
+        } else {
+            $productRow.data('modal-base-unit-price', newUnitPrice);
+        }
+
+        // Always persist base price for reliable future edits
+        $productRow.data('modal-base-unit-price', newUnitPrice);
+        if ($productRow.find('select.row_discount_type').length) {
+            $productRow.find('select.row_discount_type').val(newDiscountType);
+        } else {
+            $productRow.data('modal-discount-type', newDiscountType);
+        }
+
+        if ($productRow.find('input.row_discount_amount').length) {
+            __write_number($productRow.find('input.row_discount_amount'), newDiscountAmount);
+        } else {
+            $productRow.data('modal-discount-amount', newDiscountAmount);
+        }
+        $productRow.find('textarea[name*="sell_line_note"]').val(newNote);
+
+
+        // Trigger change events to update calculations
+        if (savedPriceField === 'pos_unit_price' && $productRow.find('input.pos_unit_price').length > 0) {
+            $productRow.find('input.pos_unit_price').trigger('change');
+        } else if (savedPriceField === 'pos_unit_price_inc_tax' && $productRow.find('input.pos_unit_price_inc_tax').length > 0) {
+            // Trigger a recompute using stored base
+            pos_each_row($productRow);
+        } else if ($productRow.find('input.pos_unit_price').length > 0) {
+            $productRow.find('input.pos_unit_price').trigger('change');
+        } else {
+            pos_each_row($productRow);
+        }
+        $productRow.find('select.row_discount_type').trigger('change');
+        $productRow.find('input.row_discount_amount').trigger('change');
+
+        // Ensure deterministic recompute regardless of listeners
+        pos_each_row($productRow);
+        round_row_to_iraqi_dinnar($productRow);
+        pos_total_row();
+
+        // Close the modal
+        $('#row_edit_product_price_modal').modal('hide');
+
+    });
+
+    // Handle modal show event
+    $(document).on('show.bs.modal', '.row_edit_product_price_model', function () {
+        $(this).css('z-index', '9999');
+    });
+
+    // Handle modal hidden event
+    $(document).on('hidden.bs.modal', '.row_edit_product_price_model', function () {
+
+        // Clean up backdrop and body classes
+        $('.modal-backdrop').remove();
+        $('body').removeClass('modal-open');
+    });
+
+    // Add loading state to buttons
+    $('.btn').on('click', function () {
+        var $btn = $(this);
+        if (!$btn.hasClass('disabled')) {
+            $btn.css('opacity', '0.7');
+            setTimeout(function () {
+                $btn.css('opacity', '1');
+            }, 200);
+        }
+    });
 }

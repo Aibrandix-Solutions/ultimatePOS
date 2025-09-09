@@ -1,8 +1,11 @@
+<!-- Hidden location_id field for JavaScript access -->
+<input type="hidden" id="location_id" value="{{ $default_location->id ?? '' }}">
+
 <div class="row">
 	<div class="col-md-4">
 		<div class="form-group">
-			<div class="input-group">
-				<span class="input-group-addon">
+			<div class="input-group" style="box-shadow: 0 2px 4px rgba(22,17,96,0.2); border-radius: 8px; overflow: hidden;">
+				<span class="input-group-addon" style="background: linear-gradient(135deg, #161160 0%, #2a2480 100%); border: none; color: white;">
 					<i class="fa fa-user"></i>
 				</span>
 				<input type="hidden" id="default_customer_id" 
@@ -18,9 +21,9 @@
 				value="{{ $walk_in_customer['selling_price_group_id'] ?? ''}}" >
 				@endif
 				{!! Form::select('contact_id', 
-					[], null, ['class' => 'form-control mousetrap', 'id' => 'customer_id', 'placeholder' => 'Enter Customer name / phone', 'required']); !!}
+					[], null, ['class' => 'form-control mousetrap', 'id' => 'customer_id', 'placeholder' => 'Enter Customer name / phone', 'required', 'style' => 'border: none; padding: 12px 15px; font-size: 14px;']); !!}
 				<span class="input-group-btn">
-					<button type="button" class="btn btn-default bg-white btn-flat add_new_customer" data-name=""  @if(!auth()->user()->can('customer.create')) disabled @endif><i class="fa fa-plus-circle" style="color: #7f141c;" fa-lg></i></button>
+					<button type="button" class="btn btn-default bg-white btn-flat add_new_customer" data-name="" style="background: linear-gradient(135deg, #161160 0%, #3d3580 100%); border: none; color: white; padding: 8px 12px;" @if(!auth()->user()->can('customer.create')) disabled @endif><i class="fa fa-plus-circle fa-lg"></i></button>
 				</span>
 			</div>
 			<small class="text-danger hide contact_due_text"><strong>@lang('account.customer_due'):</strong> <span></span></small>
@@ -28,25 +31,26 @@
 	</div>
 	<div class="col-md-8">
 		<div class="form-group">
-			<div class="input-group">
+			<div class="input-group" style="box-shadow: 0 2px 4px rgba(22,17,96,0.2); border-radius: 8px; overflow: hidden;">
 				<div class="input-group-btn">
-					<button type="button" class="btn btn-default bg-white btn-flat" data-toggle="modal" data-target="#configure_search_modal" title="{{__('lang_v1.configure_product_search')}}"><i class="fas fa-search-plus"></i></button>
+					<button type="button" class="btn btn-default bg-white btn-flat" data-toggle="modal" data-target="#configure_search_modal" title="{{__('lang_v1.configure_product_search')}}" style="background: linear-gradient(135deg, #161160 0%, #2a2480 100%); border: none; color: white; padding: 8px 12px;"><i class="fas fa-search-plus"></i></button>
 				</div>
                 {{-- Removed mousetrap class as it was causing issue with barcode scanning --}}
 				{!! Form::text('search_product', null, ['class' => 'form-control', 'id' => 'search_product', 'placeholder' => __('lang_v1.search_product_placeholder'),
 				'disabled' => is_null($default_location)? true : false,
 				'autofocus' => is_null($default_location)? false : true,
+				'style' => 'border: none; padding: 12px 15px; font-size: 14px;'
 				]); !!}
 				<span class="input-group-btn">
 
 					<!-- Show button for weighing scale modal -->
 					@if(isset($pos_settings['enable_weighing_scale']) && $pos_settings['enable_weighing_scale'] == 1)
 						<button type="button" class="btn btn-default bg-white btn-flat" id="weighing_scale_btn" data-toggle="modal" data-target="#weighing_scale_modal" 
-						title="@lang('lang_v1.weighing_scale')"><i class="fa fa-digital-tachograph" style="color: #7f141c;" fa-lg></i></button>
+						title="@lang('lang_v1.weighing_scale')" style="background: linear-gradient(135deg, #4a4a8a 0%, #6b6ba0 100%); border: none; color: white; padding: 8px 12px;"><i class="fa fa-digital-tachograph fa-lg"></i></button>
 					@endif
 					
 
-					<button type="button" class="btn btn-default bg-white btn-flat pos_add_quick_product" data-href="{{action([\App\Http\Controllers\ProductController::class, 'quickAdd'])}}" data-container=".quick_add_product_modal"><i class="fa fa-plus-circle" style="color: #7f141c;" fa-lg></i></button>
+					<button type="button" class="btn btn-default bg-white btn-flat pos_add_quick_product" data-href="{{action([\App\Http\Controllers\ProductController::class, 'quickAdd'])}}" data-container=".quick_add_product_modal" style="background: linear-gradient(135deg, #161160 0%, #3d3580 100%); border: none; color: white; padding: 8px 12px;"><i class="fa fa-plus-circle fa-lg"></i></button>
 				</span>
 			</div>
 		</div>
@@ -57,7 +61,7 @@
 	<div class="col-md-4">
 		<div class="form-group">
 		{!! Form::select('invoice_layout_id', 
-					$invoice_layouts, $default_location->invoice_layout_id, ['class' => 'form-control select2', 'placeholder' => __('lang_v1.select_invoice_layout'), 'id' => 'invoice_layout_id']); !!}
+					$invoice_layouts, $default_location->invoice_layout_id, ['class' => 'form-control select2', 'placeholder' => __('lang_v1.select_invoice_layout'), 'id' => 'invoice_layout_id', 'style' => 'border-radius: 8px; box-shadow: 0 2px 4px rgba(22,17,96,0.2); border: 1px solid #4a4a8a; padding: 8px 12px;']); !!}
 		</div>
 	</div>
 	@endif
@@ -71,18 +75,18 @@
 		<div class="col-md-4">
 			<div class="form-group">
 			{!! Form::select('commission_agent', 
-						$commission_agent, null, ['class' => 'form-control select2', 'placeholder' => __('lang_v1.commission_agent'), 'id' => 'commission_agent', 'required' => $is_commission_agent_required]); !!}
+						$commission_agent, null, ['class' => 'form-control select2', 'placeholder' => __('lang_v1.commission_agent'), 'id' => 'commission_agent', 'required' => $is_commission_agent_required, 'style' => 'border-radius: 8px; box-shadow: 0 2px 4px rgba(22,17,96,0.2); border: 1px solid #4a4a8a; padding: 8px 12px;']); !!}
 			</div>
 		</div>
 	@endif
 	@if(!empty($pos_settings['enable_transaction_date']))
 		<div class="col-md-4 col-sm-6">
 			<div class="form-group">
-				<div class="input-group">
-					<span class="input-group-addon">
+				<div class="input-group" style="box-shadow: 0 2px 4px rgba(22,17,96,0.2); border-radius: 8px; overflow: hidden;">
+					<span class="input-group-addon" style="background: linear-gradient(135deg, #161160 0%, #2a2480 100%); border: none; color: white;">
 						<i class="fa fa-calendar"></i>
 					</span>
-					{!! Form::text('transaction_date', $default_datetime, ['class' => 'form-control', 'readonly', 'required', 'id' => 'transaction_date']); !!}
+					{!! Form::text('transaction_date', $default_datetime, ['class' => 'form-control', 'readonly', 'required', 'id' => 'transaction_date', 'style' => 'border: none; padding: 12px 15px; font-size: 14px;']); !!}
 				</div>
 			</div>
 		</div>
@@ -90,11 +94,11 @@
 	@if(config('constants.enable_sell_in_diff_currency') == true)
 		<div class="col-md-4 col-sm-6">
 			<div class="form-group">
-				<div class="input-group">
-					<span class="input-group-addon">
+				<div class="input-group" style="box-shadow: 0 2px 4px rgba(22,17,96,0.2); border-radius: 8px; overflow: hidden;">
+					<span class="input-group-addon" style="background: linear-gradient(135deg, #4a4a8a 0%, #6b6ba0 100%); border: none; color: white;">
 						<i class="fas fa-exchange-alt"></i>
 					</span>
-					{!! Form::text('exchange_rate', config('constants.currency_exchange_rate'), ['class' => 'form-control input-sm input_number', 'placeholder' => __('lang_v1.currency_exchange_rate'), 'id' => 'exchange_rate']); !!}
+					{!! Form::text('exchange_rate', config('constants.currency_exchange_rate'), ['class' => 'form-control input-sm input_number', 'placeholder' => __('lang_v1.currency_exchange_rate'), 'id' => 'exchange_rate', 'style' => 'border: none; padding: 12px 15px; font-size: 14px;']); !!}
 				</div>
 			</div>
 		</div>
@@ -102,8 +106,8 @@
 	@if(!empty($price_groups) && count($price_groups) > 1)
 		<div class="col-md-4 col-sm-6">
 			<div class="form-group">
-				<div class="input-group">
-					<span class="input-group-addon">
+				<div class="input-group" style="box-shadow: 0 2px 4px rgba(22,17,96,0.2); border-radius: 8px; overflow: hidden;">
+					<span class="input-group-addon" style="background: linear-gradient(135deg, #3d3580 0%, #4a4a8a 100%); border: none; color: white;">
 						<i class="fas fa-money-bill-alt"></i>
 					</span>
 					@php
@@ -111,8 +115,8 @@
 						$selected_price_group = !empty($default_price_group_id) && array_key_exists($default_price_group_id, $price_groups) ? $default_price_group_id : null;
 					@endphp
 					{!! Form::hidden('hidden_price_group', key($price_groups), ['id' => 'hidden_price_group']) !!}
-					{!! Form::select('price_group', $price_groups, $selected_price_group, ['class' => 'form-control select2', 'id' => 'price_group']); !!}
-					<span class="input-group-addon">
+					{!! Form::select('price_group', $price_groups, $selected_price_group, ['class' => 'form-control select2', 'id' => 'price_group', 'style' => 'border: none; padding: 12px 15px; font-size: 14px;']); !!}
+					<span class="input-group-addon" style="background: linear-gradient(135deg, #3d3580 0%, #4a4a8a 100%); border: none; color: white;">
 						@show_tooltip(__('lang_v1.price_group_help_text'))
 					</span> 
 				</div>
@@ -133,7 +137,7 @@
 			<div class="form-group">
 				<div class="input-group">
 					<span class="input-group-addon">
-						<i class="fa fa-external-link-square-alt service_modal_btn" style="color: #7f141c;"></i>
+						<i class="fa fa-external-link-square-alt text-primary service_modal_btn"></i>
 					</span>
 					{!! Form::select('types_of_service_id', $types_of_service, null, ['class' => 'form-control', 'id' => 'types_of_service_id', 'style' => 'width: 100%;', 'placeholder' => __('lang_v1.select_types_of_service')]); !!}
 
@@ -215,62 +219,41 @@
 				$hide_tax = 'hide';
 			}
 		@endphp
-		<div class="tw-bg-white tw-rounded-xl tw-shadow-lg tw-border tw-border-gray-200 tw-overflow-hidden tw-my-4">
-			<div class="tw-bg-gradient-to-r tw-from-blue-50 tw-to-indigo-50 tw-px-6 tw-py-4 tw-border-b tw-border-gray-200">
-			</div>
-			<div class="tw-overflow-x-auto ">
-				<table class="tw-w-full" id="pos_table">
-					<thead>
-						<tr class="tw-bg-gray-50 tw-border-b tw-border-gray-200">
-							<th class="tw-px-6 tw-py-4 tw-text-left tw-text-sm tw-font-semibold tw-text-gray-700 tw-uppercase tw-tracking-wide @if(!empty($pos_settings['inline_service_staff'])) tw-w-1/4 @else tw-w-1/3 @endif">	
-								<div class="tw-flex tw-items-center tw-gap-2">
-									<i class="fas fa-box tw-text-blue-600 tw-text-sm"></i>
-									@lang('sale.product') @show_tooltip(__('lang_v1.tooltip_sell_product_column'))
-								</div>
-							</th>
-							<th class="tw-px-6 tw-py-4 tw-text-center tw-text-sm tw-font-semibold tw-text-gray-700 tw-uppercase tw-tracking-wide tw-w-1/6">
-								<div class="tw-flex tw-items-center tw-justify-center tw-gap-2">
-									<i class="fas fa-hashtag tw-text-blue-600 tw-text-sm"></i>
-									@lang('sale.qty')
-								</div>
-							</th>
-							@if(!empty($pos_settings['inline_service_staff']))
-								<th class="tw-px-6 tw-py-4 tw-text-center tw-text-sm tw-font-semibold tw-text-gray-700 tw-uppercase tw-tracking-wide tw-w-1/6">
-									<div class="tw-flex tw-items-center tw-justify-center tw-gap-2">
-										<i class="fas fa-user-tie tw-text-blue-600 tw-text-sm"></i>
-										@lang('restaurant.service_staff')
-									</div>
-								</th>
-							@endif
-							<th class="tw-px-6 tw-py-4 tw-text-center tw-text-sm tw-font-semibold tw-text-gray-700 tw-uppercase tw-tracking-wide tw-w-1/6 {{$hide_tax}}">
-								<div class="tw-flex tw-items-center tw-justify-center tw-gap-2">
-									<i class="fas fa-tag tw-text-blue-600 tw-text-sm"></i>
-									@lang('sale.price_inc_tax')
-								</div>
-							</th>
-							<th class="tw-px-6 tw-py-4 tw-text-center tw-text-sm tw-font-semibold tw-text-gray-700 tw-uppercase tw-tracking-wide tw-w-1/6">
-								<div class="tw-flex tw-items-center tw-justify-center tw-gap-2">
-									<i class="fas fa-calculator tw-text-blue-600 tw-text-sm"></i>
-									@lang('sale.subtotal')
-								</div>
-							</th>
-							<th class="tw-px-6 tw-py-4 tw-text-center tw-text-sm tw-font-semibold tw-text-gray-700 tw-uppercase tw-tracking-wide tw-w-16">
-								<div class="tw-flex tw-items-center tw-justify-center">
-									<i class="fas fa-times tw-text-red-500 tw-text-sm" aria-hidden="true"></i>
-								</div>
-							</th>
-						</tr>
-					</thead>
-					<tbody class="tw-bg-white tw-divide-y tw-divide-gray-200"></tbody>
-				</table>
-			</div>
-			<div class="tw-bg-gray-50 tw-px-6 tw-py-4 tw-border-t tw-border-gray-200">
-				<div class="tw-flex tw-items-center tw-justify-between tw-text-sm tw-text-gray-600">
-					<div class="tw-flex tw-items-center tw-gap-4">
-						<span class="tw-text-gray-500">@lang('lang_v1.total_items'): <span class="tw-font-semibold tw-text-gray-800" id="total_items_count">0</span></span>
-					</div>
-				</div>
-			</div>
-		</div>
+		<table class="table table-condensed table-bordered table-striped table-responsive" id="pos_table" style="border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(22,17,96,0.3); border: none;">
+			<thead style="background: linear-gradient(135deg, #161160 0%, #2a2480 100%); color: white;">
+				<tr>
+					<th class="tex-center tw-text-sm md:!tw-text-base tw-font-bold @if(!empty($pos_settings['inline_service_staff'])) col-md-3 @else col-md-4 @endif" style="border: none; padding: 15px 12px; font-weight: 600;">	
+						@lang('sale.product') @show_tooltip(__('lang_v1.tooltip_sell_product_column'))
+					</th>
+					<th class="text-center tw-text-sm md:!tw-text-base tw-font-bold col-md-3" style="border: none; padding: 15px 12px; font-weight: 600;">
+						@lang('sale.qty')
+					</th>
+					@if(!empty($pos_settings['inline_service_staff']))
+						<th class="text-center tw-text-sm md:!tw-text-base tw-font-bold col-md-2" style="border: none; padding: 15px 12px; font-weight: 600;">
+							@lang('restaurant.service_staff')
+						</th>
+					@endif
+					<th class="text-center tw-text-sm md:!tw-text-base tw-font-bold col-md-2 {{$hide_tax}}" style="border: none; padding: 15px 12px; font-weight: 600;">
+						@lang('sale.price_inc_tax')
+					</th>
+					<th class="text-center tw-text-sm md:!tw-text-base tw-font-bold col-md-2" style="border: none; padding: 15px 12px; font-weight: 600;">
+						@lang('sale.subtotal')
+					</th>
+					<th class="text-center" style="border: none; padding: 15px 12px; font-weight: 600;"><i class="fas fa-times tw-text-base" aria-hidden="true"></i></th>
+				</tr>
+			</thead>
+			<tbody id="pos_table_body" style="background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%); position: relative; min-height: 200px;">
+				<!-- Empty state styling -->
+				<tr id="empty_cart_row" style="display: table-row;">
+					<td colspan="@if(!empty($pos_settings['inline_service_staff'])) 6 @else 5 @endif" class="text-center" style="padding: 60px 20px; color: #6c757d; font-style: italic; background: transparent;">
+						<div style="display: flex; flex-direction: column; align-items: center; gap: 15px;">
+							<i class="fas fa-shopping-cart" style="font-size: 48px; color: rgba(22,17,96,0.3);"></i>
+							<div style="font-size: 18px; font-weight: 500; color: #495057;">No products added yet</div>
+							<div style="font-size: 14px; color: #6c757d;">Search and add products to get started</div>
+						</div>
+					</td>
+				</tr>
+			</tbody>
+		</table>
 	</div>
 </div>

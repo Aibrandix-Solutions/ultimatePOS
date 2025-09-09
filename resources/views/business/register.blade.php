@@ -6,250 +6,244 @@
     <title>{{ __('lang_v1.register') }} - {{ config('app.name', 'Ultimate POS') }}</title>
     <meta name="color-scheme" content="dark light">
     <link rel="icon" href="{{ asset('favicon.ico') }}">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    
     <style>
-        /* ---------- THEME ---------- */
-        :root{
-            --navy-900:#0a0a3a;
-            --navy-800:#0f0f4a;
-            --navy-700:#161160;
-            --navy-600:#1a1a70;
-            --navy-500:#1e1e80;
-            --navy-400:#222290;
-            --text:#1e293b;
-            --text-muted:rgba(30,41,59,.7);
-            --card-bg:rgba(255,255,255,.8);
-            --card-border:rgba(22,17,96,.1);
-            --focus-ring:0 0 0 4px rgba(22,17,96,.1);
-            --shadow-lg:0 20px 60px rgba(22,17,96,.15);
+        :root {
+            --navy-700: #161160;
+            --navy-600: #1a1a70;
+            --navy-500: #1e1e80;
+            --navy-400: #222290;
+            --text: #1e293b;
+            --text-muted: rgba(30, 41, 59, 0.7);
+            --success: #10b981;
+            --warning: #f59e0b;
         }
 
-        /* ---------- RESET ---------- */
-        *{box-sizing:border-box}
-        html,body{height:100%}
-        body{
-            margin:0;
-            color:var(--text);
-            font-family:ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI",
-                         Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji",
-                         "Segoe UI Emoji", "Segoe UI Symbol";
-            line-height:1.5;
-            background:
-                radial-gradient(900px 600px at 8% -10%, rgba(22,17,96,.03), transparent 60%),
-                radial-gradient(700px 400px at 100% 10%, rgba(22,17,96,.02), transparent 60%),
-                linear-gradient(135deg, #ffffff, #f8fafc);
-            overflow-x:hidden;
-        }
-        /* soft grain / texture */
-        body::before{
-            content:"";
-            position:fixed; inset:0; pointer-events:none;
-            background-image:
-                radial-gradient(1px 1px at 10% 20%, rgba(22,17,96,.02) 0, transparent 50%),
-                radial-gradient(1px 1px at 80% 70%, rgba(22,17,96,.015) 0, transparent 50%),
-                radial-gradient(1px 1px at 50% 40%, rgba(22,17,96,.01) 0, transparent 50%);
-            background-size:8px 8px, 8px 8px, 8px 8px;
-            mix-blend-mode:overlay;
+        body {
+            font-family: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+            min-height: 100vh;
+            font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
-        a{color:inherit; text-decoration:none}
-        .container{
-            max-width:1120px; margin-inline:auto; padding-inline:24px;
+        .navbar {
+            background: rgba(255, 255, 255, 0.95) !important;
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(22, 17, 96, 0.1);
         }
 
-        /* ---------- HEADER ---------- */
-        .site-header{
-            position:sticky; top:0; z-index:10;
-            backdrop-filter:saturate(1.2) blur(6px);
-            background:linear-gradient(to bottom,
-                rgba(255,255,255,.8), rgba(255,255,255,0));
+        .navbar-brand {
+            font-weight: 800;
+            letter-spacing: -0.01em;
+            color: var(--navy-700) !important;
+            text-decoration: none;
+            font-size: 1.25rem;
         }
-        .navbar{
-            display:flex; align-items:center; justify-content:space-between;
-            padding:18px 0;
+        
+        .brand-logo {
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            box-shadow: 0 8px 24px rgba(22, 17, 96, 0.2);
+            background: conic-gradient(from 200deg at 50% 50%, var(--navy-400), var(--navy-700));
         }
-        .brand{
-            display:flex; align-items:center; gap:.75rem; font-weight:800; letter-spacing:.2px;
-        }
-        .brand-logo{
-            width:36px; height:36px; display:grid; place-items:center;
-            border-radius:10px; box-shadow:0 8px 24px rgba(22,17,96,.2);
-            background:conic-gradient(from 200deg at 50% 50%, var(--navy-400), var(--navy-700));
-        }
-        .brand svg{filter:drop-shadow(0 3px 8px rgba(22,17,96,.3))}
-        .brand-name{font-size:1.05rem}
-
-        /* ---------- REGISTER FORM ---------- */
-        .register-container{
-            min-height:100vh; display:flex; align-items:center; justify-content:center;
-            padding:40px 20px;
-        }
-        .register-card{
-            position:relative;
-            background:var(--card-bg);
-            border:1px solid var(--card-border);
-            border-radius:22px;
-            padding:48px clamp(24px, 4vw, 56px);
-            box-shadow:var(--shadow-lg);
-            backdrop-filter:blur(12px) saturate(1.15);
-            max-width:800px; width:100%;
-        }
-        @supports not (backdrop-filter: blur(1px)){
-            .register-card{background:rgba(255,255,255,.9)}
+        
+        .brand-logo svg {
+            filter: drop-shadow(0 3px 8px rgba(22, 17, 96, 0.3));
         }
 
-        .register-header{
-            text-align:center; margin-bottom:2rem;
-        }
-        .register-title{
-            font-size:2rem; font-weight:800; margin:0 0 .5rem;
-            color:var(--text);
-        }
-        .register-subtitle{
-            color:var(--text-muted); font-size:1rem; margin:0;
+        .register-card {
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(22, 17, 96, 0.1);
+            border-radius: 22px;
+            box-shadow: 0 20px 60px rgba(22, 17, 96, 0.15);
+            backdrop-filter: blur(12px) saturate(1.15);
+            overflow: hidden;
         }
 
-        .form-section{
-            margin-bottom:2rem;
-        }
-        .section-title{
-            font-size:1.25rem; font-weight:700; margin:0 0 1rem;
-            color:var(--text); border-bottom:2px solid var(--navy-700);
-            padding-bottom:.5rem;
-        }
-
-        .form-row{
-            display:grid; grid-template-columns:repeat(auto-fit, minmax(250px, 1fr));
-            gap:1rem; margin-bottom:1rem;
-        }
-        .form-group{
-            margin-bottom:1rem;
-        }
-        .form-label{
-            display:block; font-weight:600; margin-bottom:.5rem;
-            color:var(--text); font-size:.9rem;
-        }
-        .form-input, .form-select{
-            width:100%; padding:.75rem 1rem; border-radius:12px;
-            border:1px solid rgba(22,17,96,.2); background:#fff;
-            color:var(--text); font-size:1rem; transition:all .2s ease;
-        }
-        .form-input:focus, .form-select:focus{
-            outline:none; border-color:var(--navy-700);
-            box-shadow:var(--focus-ring);
-        }
-        .form-input::placeholder{
-            color:var(--text-muted);
+        .register-header {
+            background: linear-gradient(135deg, var(--navy-700), var(--navy-500));
+            color: white;
+            padding: 2rem;
+            text-align: center;
+            border-radius: 22px 22px 0 0;
         }
 
-        .input-group{
-            position:relative; display:flex; align-items:center;
-        }
-        .input-icon{
-            position:absolute; left:12px; color:var(--text-muted);
-            z-index:1; pointer-events:none;
-        }
-        .input-group .form-input{
-            padding-left:40px;
+        .register-title {
+            font-weight: 900;
+            letter-spacing: -0.02em;
+            margin-bottom: 0.5rem;
         }
 
-        .register-btn{
-            width:100%; padding:.75rem 1rem; border-radius:12px;
-            background:var(--navy-700); color:#fff; border:none;
-            font-weight:600; font-size:1rem; cursor:pointer;
-            transition:all .2s ease; box-shadow:0 8px 18px rgba(22,17,96,.15);
-            margin-top:1rem;
-        }
-        .register-btn:hover{
-            filter:brightness(1.05); transform:translateY(-1px);
-        }
-        .register-btn:active{
-            transform:translateY(0);
+        .register-subtitle {
+            opacity: 0.9;
+            line-height: 1.6;
+            margin: 0;
         }
 
-        .login-link{
-            text-align:center; margin-top:1.5rem;
-        }
-        .login-link a{
-            color:var(--navy-700); text-decoration:none; font-weight:600;
-        }
-        .login-link a:hover{
-            text-decoration:underline;
+        .register-title {
+            font-weight: 900;
+            letter-spacing: -0.02em;
+            color: var(--text);
         }
 
-        .checkbox-container{
-            display:flex; align-items:center; gap:.5rem; margin-bottom:1rem;
-        }
-        .checkbox-input{
-            width:16px; height:16px; accent-color:var(--navy-700);
-        }
-        .checkbox-label{
-            font-size:.9rem; color:var(--text-muted);
+        .register-subtitle {
+            color: var(--text-muted);
+            line-height: 1.6;
         }
 
-        /* ---------- RESPONSIVE ---------- */
-        @media (max-width: 768px){
-            .register-container{padding:20px 16px}
-            .register-card{padding:32px 24px}
-            .form-row{grid-template-columns:1fr}
+        .section-title {
+            font-weight: 700;
+            color: var(--text);
+            border-bottom: 2px solid var(--navy-700);
+            padding-bottom: 0.5rem;
+        }
+
+        .form-control, .form-select {
+            border-radius: 12px;
+            border: 1px solid rgba(22, 17, 96, 0.2);
+            padding: 0.75rem 1rem;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--navy-700);
+            box-shadow: 0 0 0 4px rgba(22, 17, 96, 0.1);
+        }
+
+        .form-control::placeholder {
+            color: var(--text-muted);
+        }
+
+        .btn-primary {
+            background: var(--navy-700);
+            border-color: var(--navy-700);
+            border-radius: 12px;
+            font-weight: 600;
+            padding: 0.75rem 1rem;
+            box-shadow: 0 8px 18px rgba(22, 17, 96, 0.15);
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary:hover {
+            background: #0f0f4a;
+            border-color: #0f0f4a;
+            transform: translateY(-1px);
+            filter: brightness(1.05);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .form-check-input:checked {
+            background-color: var(--navy-700);
+            border-color: var(--navy-700);
+        }
+
+        .text-link {
+            color: var(--navy-700);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .text-link:hover {
+            text-decoration: underline;
+            color: var(--navy-700);
+        }
+
+        .input-group-text {
+            background: rgba(22, 17, 96, 0.05);
+            border: 1px solid rgba(22, 17, 96, 0.2);
+            color: var(--text-muted);
         }
     </style>
 </head>
 <body>
-<header class="site-header">
-    <div class="container navbar">
-        <a class="brand" href="{{ url('/') }}" aria-label="Home">
-            <span class="brand-logo" aria-hidden="true">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                    <path d="M5 7h14M7 11h10M9 15h6" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/>
-                    <rect x="3" y="4" width="18" height="16" rx="3" stroke="#fff" stroke-width="1.5" fill="none" opacity=".9"/>
-                </svg>
-            </span>
-            <span class="brand-name">{{ config('app.name', 'Ultimate POS') }}</span>
-        </a>
-    </div>
-</header>
-
-<div class="register-container">
-    <div class="register-card">
-        <div class="register-header">
-            <h1 class="register-title">{{ config('app.name', 'Ultimate POS') }}</h1>
-            <p class="register-subtitle">@lang('business.register_and_get_started_in_minutes')</p>
-        </div>
-
-        {!! Form::open([
-            'url' => route('business.postRegister'),
-            'method' => 'post',
-            'id' => 'business_register_form',
-            'files' => true,
-        ]) !!}
-        
-        @include('business.partials.register_form', ['is_register' => true])
-        {!! Form::hidden('package_id', $package_id) !!}
-        
-        <button type="submit" class="register-btn">
-            @lang('business.register')
-        </button>
-        
-        {!! Form::close() !!}
-
-        <div class="login-link">
-            <a href="{{ route('login') }}">
-                Already have account? <strong>@lang('lang_v1.login')</strong>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg sticky-top">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="{{ url('/') }}">
+                <div class="brand-logo me-2">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                        <path d="M5 7h14M7 11h10M9 15h6" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/>
+                        <rect x="3" y="4" width="18" height="16" rx="3" stroke="#fff" stroke-width="1.5" fill="none" opacity=".9"/>
+                    </svg>
+                </div>
+                {{ config('app.name', 'Ultimate POS') }}
             </a>
         </div>
-    </div>
-</div>
+    </nav>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Language change functionality
-    document.querySelectorAll('.change_lang').forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            e.preventDefault();
-            window.location = "{{ route('business.getRegister') }}?lang=" + this.getAttribute('value');
+    <!-- Register Form -->
+    <div class="container-fluid d-flex align-items-center justify-content-center min-vh-100 py-5">
+        <div class="row w-100 justify-content-center">
+            <div class="col-12 col-lg-10 col-xl-8">
+                <div class="card register-card border-0">
+                    <!-- Header -->
+                    <div class="register-header">
+                        <h1 class="register-title h2 text-white">{{ config('app.name', 'Ultimate POS') }}</h1>
+                        <p class="register-subtitle text-white">@lang('business.register_and_get_started_in_minutes')</p>
+                    </div>
+
+                    <div class="p-4 p-md-5">
+
+            {!! Form::open([
+                'url' => route('business.postRegister'),
+                'method' => 'post',
+                'id' => 'business_register_form',
+                'files' => true,
+            ]) !!}
+                        
+            @include('business.partials.register_form', ['is_register' => true])
+            {!! Form::hidden('package_id', $package_id) !!}
+                        
+                        <button type="submit" class="btn btn-primary w-100 mt-3">
+                            @lang('business.register')
+                        </button>
+                        
+            {!! Form::close() !!}
+
+                        <div class="text-center mt-4">
+                            <a href="{{ route('login') }}" class="text-link">
+                                Already have account? <strong>@lang('lang_v1.login')</strong>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Language change functionality
+        document.querySelectorAll('.change_lang').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                window.location = "{{ route('business.getRegister') }}?lang=" + this.getAttribute('value');
+            });
         });
     });
-});
-</script>
+    </script>
 </body>
 </html>

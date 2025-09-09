@@ -1,8 +1,8 @@
 <div class="modal-dialog" role="document">
-	<div class="modal-content">
-		<div class="modal-header">
-			<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-			<h4 class="modal-title" id="myModalLabel">{{$product->product_name}} - {{$product->sub_sku}}</h4>
+	<div class="modal-content" style="border-radius: 12px; box-shadow: 0 8px 32px rgba(22,17,96,0.3);">
+		<div class="modal-header" style="background: linear-gradient(135deg, #161160 0%, #2a2480 100%); color: white; border-radius: 12px 12px 0 0;">
+			<button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color: white; opacity: 0.8;"><span aria-hidden="true">&times;</span></button>
+			<h4 class="modal-title" id="row_edit_product_price_modal_{{$row_count}}_label" style="color: white; font-weight: 600;">{{$product->product_name}} - {{$product->sub_sku}}</h4>
 		</div>
 		<div class="modal-body">
 			<div class="row">
@@ -51,8 +51,8 @@
 		      	</div>
 			</div>
 		</div>
-		<div class="modal-footer">
-			<button type="button" class="tw-dw-btn tw-dw-btn-neutral tw-text-white" data-dismiss="modal">@lang('messages.close')</button>
+		<div class="modal-footer" style="background: #f8f9fa; border-radius: 0 0 12px 12px; border-top: 1px solid rgba(22,17,96,0.1);">
+			<button type="button" class="btn btn-default" data-dismiss="modal" style="background: linear-gradient(135deg, #161160 0%, #2a2480 100%); color: white; border: none; padding: 8px 20px; border-radius: 6px; font-weight: 500;">@lang('messages.close')</button>
 		</div>
 	</div>
 </div>

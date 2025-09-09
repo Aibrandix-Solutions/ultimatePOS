@@ -6,377 +6,361 @@
     <title>{{ __('lang_v1.login') }} - {{ config('app.name', 'Ultimate POS') }}</title>
     <meta name="color-scheme" content="dark light">
     <link rel="icon" href="{{ asset('favicon.ico') }}">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    
     <style>
-        /* ---------- THEME ---------- */
-        :root{
-            --navy-900:#0a0a3a;
-            --navy-800:#0f0f4a;
-            --navy-700:#161160;
-            --navy-600:#1a1a70;
-            --navy-500:#1e1e80;
-            --navy-400:#222290;
-            --text:#1e293b;
-            --text-muted:rgba(30,41,59,.7);
-            --card-bg:rgba(255,255,255,.8);
-            --card-border:rgba(22,17,96,.1);
-            --focus-ring:0 0 0 4px rgba(22,17,96,.1);
-            --shadow-lg:0 20px 60px rgba(22,17,96,.15);
+        :root {
+            --navy-700: #161160;
+            --navy-600: #1a1a70;
+            --navy-500: #1e1e80;
+            --navy-400: #222290;
+            --text: #1e293b;
+            --text-muted: rgba(30, 41, 59, 0.7);
         }
 
-        /* ---------- RESET ---------- */
-        *{box-sizing:border-box}
-        html,body{height:100%}
-        body{
-            margin:0;
-            color:var(--text);
-            font-family:ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI",
-                         Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji",
-                         "Segoe UI Emoji", "Segoe UI Symbol";
-            line-height:1.5;
-            background:
-                radial-gradient(900px 600px at 8% -10%, rgba(22,17,96,.03), transparent 60%),
-                radial-gradient(700px 400px at 100% 10%, rgba(22,17,96,.02), transparent 60%),
-                linear-gradient(135deg, #ffffff, #f8fafc);
-            overflow-x:hidden;
-        }
-        /* soft grain / texture */
-        body::before{
-            content:"";
-            position:fixed; inset:0; pointer-events:none;
-            background-image:
-                radial-gradient(1px 1px at 10% 20%, rgba(22,17,96,.02) 0, transparent 50%),
-                radial-gradient(1px 1px at 80% 70%, rgba(22,17,96,.015) 0, transparent 50%),
-                radial-gradient(1px 1px at 50% 40%, rgba(22,17,96,.01) 0, transparent 50%);
-            background-size:8px 8px, 8px 8px, 8px 8px;
-            mix-blend-mode:overlay;
+        body {
+            font-family: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+            min-height: 100vh;
+            font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
-        a{color:inherit; text-decoration:none}
-        .container{
-            max-width:1120px; margin-inline:auto; padding-inline:24px;
+        .navbar {
+            background: rgba(255, 255, 255, 0.95) !important;
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(22, 17, 96, 0.1);
         }
 
-        /* ---------- HEADER ---------- */
-        .site-header{
-            position:sticky; top:0; z-index:10;
-            backdrop-filter:saturate(1.2) blur(6px);
-            background:linear-gradient(to bottom,
-                rgba(255,255,255,.8), rgba(255,255,255,0));
+        .navbar-brand {
+            font-weight: 800;
+            letter-spacing: -0.01em;
+            color: var(--navy-700) !important;
+            text-decoration: none;
+            font-size: 1.25rem;
         }
-        .navbar{
-            display:flex; align-items:center; justify-content:space-between;
-            padding:18px 0;
+        
+        .brand-logo {
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            box-shadow: 0 8px 24px rgba(22, 17, 96, 0.2);
+            background: conic-gradient(from 200deg at 50% 50%, var(--navy-400), var(--navy-700));
         }
-        .brand{
-            display:flex; align-items:center; gap:.75rem; font-weight:800; letter-spacing:.2px;
-        }
-        .brand-logo{
-            width:36px; height:36px; display:grid; place-items:center;
-            border-radius:10px; box-shadow:0 8px 24px rgba(22,17,96,.2);
-            background:conic-gradient(from 200deg at 50% 50%, var(--navy-400), var(--navy-700));
-        }
-        .brand svg{filter:drop-shadow(0 3px 8px rgba(22,17,96,.3))}
-        .brand-name{font-size:1.05rem}
-
-        /* ---------- LOGIN FORM ---------- */
-        .login-container{
-            min-height:100vh; display:flex; align-items:center; justify-content:center;
-            padding:40px 20px;
-        }
-        .login-card{
-            position:relative;
-            background:var(--card-bg);
-            border:1px solid var(--card-border);
-            border-radius:22px;
-            padding:48px clamp(24px, 4vw, 56px);
-            box-shadow:var(--shadow-lg);
-            backdrop-filter:blur(12px) saturate(1.15);
-            max-width:480px; width:100%;
-        }
-        @supports not (backdrop-filter: blur(1px)){
-            .login-card{background:rgba(255,255,255,.9)}
+        
+        .brand-logo svg {
+            filter: drop-shadow(0 3px 8px rgba(22, 17, 96, 0.3));
         }
 
-        .login-header{
-            text-align:center; margin-bottom:2rem;
-        }
-        .login-title{
-            font-size:2rem; font-weight:800; margin:0 0 .5rem;
-            color:var(--text);
-        }
-        .login-subtitle{
-            color:var(--text-muted); font-size:1rem; margin:0;
+        .login-card {
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(22, 17, 96, 0.1);
+            border-radius: 22px;
+            box-shadow: 0 20px 60px rgba(22, 17, 96, 0.15);
+            backdrop-filter: blur(12px) saturate(1.15);
         }
 
-        .form-group{
-            margin-bottom:1.5rem;
-        }
-        .form-label{
-            display:block; font-weight:600; margin-bottom:.5rem;
-            color:var(--text); font-size:.9rem;
-        }
-        .form-input{
-            width:100%; padding:.75rem 1rem; border-radius:12px;
-            border:1px solid rgba(22,17,96,.2); background:#fff;
-            color:var(--text); font-size:1rem; transition:all .2s ease;
-        }
-        .form-input:focus{
-            outline:none; border-color:var(--navy-700);
-            box-shadow:var(--focus-ring);
-        }
-        .form-input::placeholder{
-            color:var(--text-muted);
+        .login-title {
+            font-weight: 900;
+            letter-spacing: -0.02em;
+            color: var(--text);
         }
 
-        .password-container{
-            position:relative;
-        }
-        .password-toggle{
-            position:absolute; right:12px; top:50%; transform:translateY(-50%);
-            background:none; border:none; cursor:pointer; padding:4px;
-            color:var(--text-muted); transition:color .2s ease;
-        }
-        .password-toggle:hover{
-            color:var(--navy-700);
+        .login-subtitle {
+            color: var(--text-muted);
+            line-height: 1.6;
         }
 
-        .remember-container{
-            display:flex; align-items:center; gap:.5rem; margin-bottom:1.5rem;
-        }
-        .remember-checkbox{
-            width:16px; height:16px; accent-color:var(--navy-700);
-        }
-        .remember-label{
-            font-size:.9rem; color:var(--text-muted);
+        .form-control {
+            border-radius: 12px;
+            border: 1px solid rgba(22, 17, 96, 0.2);
+            padding: 0.75rem 1rem;
+            font-size: 1rem;
+            transition: all 0.2s ease;
         }
 
-        .login-btn{
-            width:100%; padding:.75rem 1rem; border-radius:12px;
-            background:var(--navy-700); color:#fff; border:none;
-            font-weight:600; font-size:1rem; cursor:pointer;
-            transition:all .2s ease; box-shadow:0 8px 18px rgba(22,17,96,.15);
-        }
-        .login-btn:hover{
-            filter:brightness(1.05); transform:translateY(-1px);
-        }
-        .login-btn:active{
-            transform:translateY(0);
+        .form-control:focus {
+            border-color: var(--navy-700);
+            box-shadow: 0 0 0 4px rgba(22, 17, 96, 0.1);
         }
 
-        .register-link{
-            text-align:center; margin-top:1.5rem;
-        }
-        .register-link a{
-            color:var(--navy-700); text-decoration:none; font-weight:600;
-        }
-        .register-link a:hover{
-            text-decoration:underline;
+        .form-control::placeholder {
+            color: var(--text-muted);
         }
 
-        .forgot-link{
-            color:var(--navy-700); text-decoration:none; font-size:.9rem;
-        }
-        .forgot-link:hover{
-            text-decoration:underline;
-        }
-
-        /* ---------- DEMO SECTION ---------- */
-        .demo-section{
-            background:var(--card-bg); border:1px solid var(--card-border);
-            border-radius:16px; padding:24px; margin-bottom:24px;
-            backdrop-filter:blur(12px) saturate(1.15);
-        }
-        .demo-title{
-            font-size:1.1rem; font-weight:700; margin:0 0 1rem;
-            color:var(--text); text-align:center;
-        }
-        .demo-grid{
-            display:grid; grid-template-columns:repeat(auto-fit, minmax(120px, 1fr));
-            gap:12px; margin-bottom:16px;
-        }
-        .demo-btn{
-            padding:.5rem .75rem; border-radius:8px; border:none;
-            color:#fff; font-weight:600; font-size:.8rem; cursor:pointer;
-            transition:all .2s ease; text-align:center;
-        }
-        .demo-btn:hover{
-            transform:translateY(-1px); filter:brightness(1.1);
+        .btn-primary {
+            background: var(--navy-700);
+            border-color: var(--navy-700);
+            border-radius: 12px;
+            font-weight: 600;
+            padding: 0.75rem 1rem;
+            box-shadow: 0 8px 18px rgba(22, 17, 96, 0.15);
+            transition: all 0.2s ease;
         }
 
-        /* ---------- RESPONSIVE ---------- */
-        @media (max-width: 768px){
-            .login-container{padding:20px 16px}
-            .login-card{padding:32px 24px}
-            .demo-grid{grid-template-columns:repeat(2, 1fr)}
+        .btn-primary:hover {
+            background: #0f0f4a;
+            border-color: #0f0f4a;
+            transform: translateY(-1px);
+            filter: brightness(1.05);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            transition: color 0.2s ease;
+            padding: 4px;
+        }
+
+        .password-toggle:hover {
+            color: var(--navy-700);
+        }
+
+        .form-check-input:checked {
+            background-color: var(--navy-700);
+            border-color: var(--navy-700);
+        }
+
+        .demo-card {
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(22, 17, 96, 0.1);
+            border-radius: 16px;
+            backdrop-filter: blur(12px) saturate(1.15);
+        }
+
+        .demo-btn {
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            transition: all 0.2s ease;
+            border: none;
+            color: white;
+        }
+
+        .demo-btn:hover {
+            transform: translateY(-1px);
+            filter: brightness(1.1);
+        }
+
+        .text-link {
+            color: var(--navy-700);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .text-link:hover {
+            text-decoration: underline;
+            color: var(--navy-700);
         }
     </style>
 </head>
 <body>
-<header class="site-header">
-    <div class="container navbar">
-        <a class="brand" href="{{ url('/') }}" aria-label="Home">
-            <span class="brand-logo" aria-hidden="true">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                    <path d="M5 7h14M7 11h10M9 15h6" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/>
-                    <rect x="3" y="4" width="18" height="16" rx="3" stroke="#fff" stroke-width="1.5" fill="none" opacity=".9"/>
-                </svg>
-            </span>
-            <span class="brand-name">{{ config('app.name', 'Ultimate POS') }}</span>
-        </a>
-    </div>
-</header>
-
-<div class="login-container">
-    <div class="login-card">
-        <div class="login-header">
-            <h1 class="login-title">@lang('lang_v1.welcome_back')</h1>
-            <p class="login-subtitle">@lang('lang_v1.login_to_your') {{ config('app.name', 'Ultimate POS') }}</p>
-        </div>
-
-    @php
-        $username = old('username');
-        $password = null;
-        if (config('app.env') == 'demo') {
-            $username = 'admin';
-            $password = '123456';
-
-            $demo_types = [
-                'all_in_one' => 'admin',
-                'super_market' => 'admin',
-                'pharmacy' => 'admin-pharmacy',
-                'electronics' => 'admin-electronics',
-                'services' => 'admin-services',
-                'restaurant' => 'admin-restaurant',
-                'superadmin' => 'superadmin',
-                'woocommerce' => 'woocommerce_user',
-                'essentials' => 'admin-essentials',
-                'manufacturing' => 'manufacturer-demo',
-            ];
-
-            if (!empty($_GET['demo_type']) && array_key_exists($_GET['demo_type'], $demo_types)) {
-                $username = $demo_types[$_GET['demo_type']];
-            }
-        }
-    @endphp
-        @if (config('app.env') == 'demo')
-        <div class="demo-section">
-            <h3 class="demo-title">Demo Shops</h3>
-            <p style="text-align:center; color:var(--text-muted); font-size:.9rem; margin-bottom:16px;">
-                Demos are for example purpose only, this application can be used in many other similar businesses.
-            </p>
-            <div class="demo-grid">
-                <button class="demo-btn" style="background:#28a745;" data-admin="admin">All In One</button>
-                <button class="demo-btn" style="background:#dc3545;" data-admin="admin-pharmacy">Pharmacy</button>
-                <button class="demo-btn" style="background:#fd7e14;" data-admin="admin-services">Multi-Service</button>
-                <button class="demo-btn" style="background:#6f42c1;" data-admin="admin-electronics">Electronics</button>
-                <button class="demo-btn" style="background:#161160;" data-admin="admin">Super Market</button>
-                <button class="demo-btn" style="background:#dc3545;" data-admin="admin-restaurant">Restaurant</button>
-            </div>
-        </div>
-        @endif
-
-        <form method="POST" action="{{ route('login') }}" id="login-form">
-            {{ csrf_field() }}
-            
-            <div class="form-group">
-                <label class="form-label">@lang('lang_v1.username')</label>
-                <input class="form-input" name="username" required autofocus 
-                       placeholder="@lang('lang_v1.username')" id="username" type="text" 
-                       value="{{ $username }}" />
-                @if ($errors->has('username'))
-                    <span style="color:#dc3545; font-size:.8rem; margin-top:.25rem; display:block;">
-                        {{ $errors->first('username') }}
-                    </span>
-                @endif
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">@lang('lang_v1.password')</label>
-                <div class="password-container">
-                    <input class="form-input" id="password" type="password" name="password" 
-                           value="{{ $password }}" required placeholder="@lang('lang_v1.password')" />
-                    <button type="button" class="password-toggle" id="show_hide_icon">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                            <circle cx="12" cy="12" r="3"/>
-                        </svg>
-                    </button>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg sticky-top">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="{{ url('/') }}">
+                <div class="brand-logo me-2">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                        <path d="M5 7h14M7 11h10M9 15h6" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/>
+                        <rect x="3" y="4" width="18" height="16" rx="3" stroke="#fff" stroke-width="1.5" fill="none" opacity=".9"/>
+                    </svg>
                 </div>
-                @if ($errors->has('password'))
-                    <span style="color:#dc3545; font-size:.8rem; margin-top:.25rem; display:block;">
-                        {{ $errors->first('password') }}
-                    </span>
-                @endif
-            </div>
+                {{ config('app.name', 'Ultimate POS') }}
+            </a>
+        </div>
+    </nav>
 
-            <div class="remember-container">
-                <input type="checkbox" name="remember" {{ old('remember') ? 'checked' : '' }} 
-                       class="remember-checkbox" id="remember">
-                <label for="remember" class="remember-label">@lang('lang_v1.remember_me')</label>
-                @if (config('app.env') != 'demo')
-                    <a href="{{ route('password.request') }}" class="forgot-link" style="margin-left:auto;">
-                        @lang('lang_v1.forgot_your_password')
-                    </a>
-                @endif
-            </div>
+    <!-- Login Form -->
+    <div class="container-fluid d-flex align-items-center justify-content-center min-vh-100 py-5">
+        <div class="row w-100 justify-content-center">
+            <div class="col-12 col-sm-10 col-md-8 col-lg-6 col-xl-5">
+                <div class="card login-card border-0 p-4 p-md-5">
+                    <div class="card-body">
+                        <div class="text-center mb-4">
+                            <h1 class="login-title h2 mb-2">@lang('lang_v1.welcome_back')</h1>
+                            <p class="login-subtitle">@lang('lang_v1.login_to_your') {{ config('app.name', 'Ultimate POS') }}</p>
+                        </div>
 
-            @if(config('constants.enable_recaptcha'))
-            <div class="form-group">
-                <div class="g-recaptcha" data-sitekey="{{ config('constants.google_recaptcha_key') }}"></div>
-                @if ($errors->has('g-recaptcha-response'))
-                    <span style="color:#dc3545; font-size:.8rem; margin-top:.25rem; display:block;">
-                        {{ $errors->first('g-recaptcha-response') }}
-                    </span>
-                @endif
-            </div>
-            @endif
+                        @php
+                            $username = old('username');
+                            $password = null;
+                            if (config('app.env') == 'demo') {
+                                $username = 'admin';
+                                $password = '123456';
 
-            <button type="submit" class="login-btn">
-                @lang('lang_v1.login')
-            </button>
-        </form>
+                                $demo_types = [
+                                    'all_in_one' => 'admin',
+                                    'super_market' => 'admin',
+                                    'pharmacy' => 'admin-pharmacy',
+                                    'electronics' => 'admin-electronics',
+                                    'services' => 'admin-services',
+                                    'restaurant' => 'admin-restaurant',
+                                    'superadmin' => 'superadmin',
+                                    'woocommerce' => 'woocommerce_user',
+                                    'essentials' => 'admin-essentials',
+                                    'manufacturing' => 'manufacturer-demo',
+                                ];
 
-        @if (!(request()->segment(1) == 'business' && request()->segment(2) == 'register'))
-            @if (config('constants.allow_registration'))
-                <div class="register-link">
-                    <a href="{{ route('business.getRegister') }}@if (!empty(request()->lang)) {{ '?lang=' . request()->lang }} @endif">
-                        {{ __('business.not_yet_registered') }} <strong>{{ __('business.register_now') }}</strong>
-                    </a>
+                                if (!empty($_GET['demo_type']) && array_key_exists($_GET['demo_type'], $demo_types)) {
+                                    $username = $demo_types[$_GET['demo_type']];
+                                }
+                            }
+                        @endphp
+
+                        @if (config('app.env') == 'demo')
+                        <div class="card demo-card mb-4">
+                            <div class="card-body">
+                                <h5 class="card-title text-center mb-3">Demo Shops</h5>
+                                <p class="text-center text-muted small mb-3">
+                                    Demos are for example purpose only, this application can be used in many other similar businesses.
+                                </p>
+                                <div class="row g-2">
+                                    <div class="col-6 col-md-4">
+                                        <button class="btn demo-btn w-100" style="background:#28a745;" data-admin="admin">All In One</button>
+                                    </div>
+                                    <div class="col-6 col-md-4">
+                                        <button class="btn demo-btn w-100" style="background:#dc3545;" data-admin="admin-pharmacy">Pharmacy</button>
+                                    </div>
+                                    <div class="col-6 col-md-4">
+                                        <button class="btn demo-btn w-100" style="background:#fd7e14;" data-admin="admin-services">Multi-Service</button>
+                                    </div>
+                                    <div class="col-6 col-md-4">
+                                        <button class="btn demo-btn w-100" style="background:#6f42c1;" data-admin="admin-electronics">Electronics</button>
+                                    </div>
+                                    <div class="col-6 col-md-4">
+                                        <button class="btn demo-btn w-100" style="background:#161160;" data-admin="admin">Super Market</button>
+                                    </div>
+                                    <div class="col-6 col-md-4">
+                                        <button class="btn demo-btn w-100" style="background:#dc3545;" data-admin="admin-restaurant">Restaurant</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        @endif
+
+                        <form method="POST" action="{{ route('login') }}" id="login-form">
+                            {{ csrf_field() }}
+
+                            <div class="mb-3">
+                                <label for="username" class="form-label fw-semibold">@lang('lang_v1.username')</label>
+                                <input type="text" class="form-control" name="username" id="username" 
+                                       placeholder="@lang('lang_v1.username')" value="{{ $username }}" required autofocus>
+                                @if ($errors->has('username'))
+                                    <div class="text-danger small mt-1">{{ $errors->first('username') }}</div>
+                                @endif
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="password" class="form-label fw-semibold">@lang('lang_v1.password')</label>
+                                <div class="position-relative">
+                                    <input type="password" class="form-control" name="password" id="password" 
+                                           placeholder="@lang('lang_v1.password')" value="{{ $password }}" required>
+                                    <button type="button" class="password-toggle" id="show_hide_icon">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </div>
+                                @if ($errors->has('password'))
+                                    <div class="text-danger small mt-1">{{ $errors->first('password') }}</div>
+                                @endif
+                            </div>
+
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="remember" id="remember" {{ old('remember') ? 'checked' : '' }}>
+                                    <label class="form-check-label small text-muted" for="remember">
+                                        @lang('lang_v1.remember_me')
+                                    </label>
+                                </div>
+                                @if (config('app.env') != 'demo')
+                                    <a href="{{ route('password.request') }}" class="text-link small">
+                                        @lang('lang_v1.forgot_your_password')
+                                    </a>
+                                @endif
+                            </div>
+
+                            @if(config('constants.enable_recaptcha'))
+                                <div class="mb-3">
+                                    <div class="g-recaptcha" data-sitekey="{{ config('constants.google_recaptcha_key') }}"></div>
+                                    @if ($errors->has('g-recaptcha-response'))
+                                        <div class="text-danger small mt-1">{{ $errors->first('g-recaptcha-response') }}</div>
+                                    @endif
+                                </div>
+                            @endif
+
+                            <button type="submit" class="btn btn-primary w-100 mb-3">
+                                @lang('lang_v1.login')
+                            </button>
+                        </form>
+
+                        @if (!(request()->segment(1) == 'business' && request()->segment(2) == 'register'))
+                            @if (config('constants.allow_registration'))
+                                <div class="text-center">
+                                    <a href="{{ route('business.getRegister') }}@if (!empty(request()->lang)) {{ '?lang=' . request()->lang }} @endif" class="text-link">
+                                        {{ __('business.not_yet_registered') }} <strong>{{ __('business.register_now') }}</strong>
+                                    </a>
+                                </div>
+                            @endif
+                        @endif
+                    </div>
                 </div>
-            @endif
-        @endif
+            </div>
+        </div>
     </div>
-</div>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Demo login functionality
-    document.querySelectorAll('.demo-btn').forEach(btn => {
-        btn.addEventListener('click', function(e) {
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Demo login functionality
+        document.querySelectorAll('.demo-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                document.getElementById('username').value = this.dataset.admin;
+                document.getElementById('password').value = '{{ $password }}';
+                document.getElementById('login-form').submit();
+            });
+        });
+
+        // Password toggle functionality
+        const passwordToggle = document.getElementById('show_hide_icon');
+        const passwordInput = document.getElementById('password');
+        
+        passwordToggle.addEventListener('click', function(e) {
             e.preventDefault();
-            document.getElementById('username').value = this.dataset.admin;
-            document.getElementById('password').value = '{{ $password }}';
-            document.getElementById('login-form').submit();
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            
+            // Toggle icon
+            if (type === 'text') {
+                this.innerHTML = '<i class="bi bi-eye-slash"></i>';
+            } else {
+                this.innerHTML = '<i class="bi bi-eye"></i>';
+            }
         });
     });
-
-    // Password toggle functionality
-    const passwordToggle = document.getElementById('show_hide_icon');
-    const passwordInput = document.getElementById('password');
-    
-    passwordToggle.addEventListener('click', function(e) {
-        e.preventDefault();
-        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-        passwordInput.setAttribute('type', type);
-        
-        // Toggle icon
-        if (type === 'text') {
-            this.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
-        } else {
-            this.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
-        }
-    });
-});
-</script>
+    </script>
 </body>
 </html>

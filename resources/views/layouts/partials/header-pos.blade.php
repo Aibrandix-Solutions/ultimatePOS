@@ -28,8 +28,8 @@
     <div class="tw-flex tw-flex-col md:tw-flex-row tw-items-center tw-justify-between tw-shadow-lg tw-bg-white tw-rounded-xl tw-mx-0 tw-mt-1 tw-mb-0 md:tw-mb-0 tw-p-4">
         <div class="tw-w-full md:tw-w-1/3">
             <div class="tw-flex tw-items-center tw-gap-4">
-                <div class="tw-flex tw-items-center tw-gap-2 tw-bg-gradient-to-r tw-from-red-50 tw-to-red-100 tw-px-4 tw-py-2 tw-rounded-lg tw-border tw-border-red-200 tw-shadow-sm">
-                    <div class="tw-flex tw-items-center tw-justify-center tw-w-8 tw-h-8 tw-bg-red-600 tw-rounded-full tw-shadow-md">
+                <div class="tw-flex tw-items-center tw-gap-2 tw-bg-gradient-to-r tw-from-blue-50 tw-to-indigo-50 tw-px-4 tw-py-2 tw-rounded-lg tw-border tw-border-blue-200 tw-shadow-sm" style="background: linear-gradient(135deg, rgba(22,17,96,0.1) 0%, rgba(42,36,128,0.1) 100%); border-color: rgba(22,17,96,0.3);">
+                    <div class="tw-flex tw-items-center tw-justify-center tw-w-8 tw-h-8 tw-rounded-full tw-shadow-md" style="background: linear-gradient(135deg, #161160 0%, #2a2480 100%);">
                         <i class="fa fa-map-marker-alt tw-text-white tw-text-sm"></i>
                     </div>
                     <div class="tw-flex tw-flex-col">
@@ -42,27 +42,27 @@
                                             'select_location_id',
                                             $business_locations,
                                             $default_location->id ?? null,
-                                            ['class' => 'tw-appearance-none tw-bg-white tw-border tw-border-red-300 tw-rounded-md tw-px-3 tw-py-1.5 tw-text-sm tw-font-medium tw-text-gray-700 tw-shadow-sm focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-red-500 focus:tw-border-red-500 tw-cursor-pointer', 'id' => 'select_location_id', 'required', 'autofocus'],
+                                            ['class' => 'tw-appearance-none tw-bg-white tw-border tw-rounded-md tw-px-3 tw-py-1.5 tw-text-sm tw-font-medium tw-text-gray-700 tw-shadow-sm focus:tw-outline-none focus:tw-ring-2 tw-cursor-pointer', 'id' => 'select_location_id', 'required', 'autofocus', 'style' => 'border-color: rgba(22,17,96,0.3); focus:ring-color: rgba(22,17,96,0.4); focus:border-color: rgba(22,17,96,0.5);'],
                                             $bl_attributes,
                                         ) !!}
                                         <div class="tw-absolute tw-inset-y-0 tw-right-0 tw-flex tw-items-center tw-pr-2 tw-pointer-events-none">
-                                            <i class="fa fa-chevron-down tw-text-red-500 tw-text-xs"></i>
+                                            <i class="fa fa-chevron-down tw-text-xs" style="color: #161160;"></i>
                                         </div>
                                     </div>
                                 @else
-                                    <span class="tw-text-sm tw-font-semibold tw-text-gray-800 tw-bg-white tw-px-3 tw-py-1.5 tw-rounded-md tw-border tw-border-red-300 tw-shadow-sm">
+                                    <span class="tw-text-sm tw-font-semibold tw-text-gray-800 tw-bg-white tw-px-3 tw-py-1.5 tw-rounded-md tw-border tw-shadow-sm" style="border-color: rgba(22,17,96,0.3);">
                                         {{ $default_location->name }}
                                     </span>
                                 @endif
                             @else
-                                <span class="tw-text-sm tw-font-semibold tw-text-gray-800 tw-bg-white tw-px-3 tw-py-1.5 tw-rounded-md tw-border tw-border-red-300 tw-shadow-sm">
+                                <span class="tw-text-sm tw-font-semibold tw-text-gray-800 tw-bg-white tw-px-3 tw-py-1.5 tw-rounded-md tw-border tw-shadow-sm" style="border-color: rgba(22,17,96,0.3);">
                                     {{ $transaction->location->name }}
                                 </span>
                             @endif
                         </div>
                     </div>
                 </div>
-                <div class="tw-hidden md:tw-block tw-bg-red-600 hover:tw-bg-red-700 tw-py-1.5 tw-px-3 tw-rounded-md">
+                <div class="tw-hidden md:tw-block tw-py-1.5 tw-px-3 tw-rounded-md tw-transition-colors" style="background: linear-gradient(135deg, #161160 0%, #2a2480 100%);" onmouseover="this.style.background='linear-gradient(135deg, #2a2480 0%, #3d3580 100%)'" onmouseout="this.style.background='linear-gradient(135deg, #161160 0%, #2a2480 100%)'">
                      &nbsp; <span class="curr_datetime text-white tw-font-semibold">{{ @format_datetime('now') }}</span>
                     <i class="fa fa-keyboard hover-q text-white" aria-hidden="true" data-container="body"
                         data-toggle="popover" data-placement="bottom" data-content="@include('sale_pos.partials.keyboard_shortcuts_details')"
@@ -71,14 +71,15 @@
 
                 @if (empty($pos_settings['hide_product_suggestion']))
                     <button type="button" title="{{ __('lang_v1.view_products') }}" data-placement="bottom"
-                        class="tw-shadow-md tw-bg-white hover:tw-bg-gray-100 tw-cursor-pointer tw-border tw-flex tw-items-center tw-justify-center tw-rounded-md tw-w-8 tw-h-8 tw-text-gray-600 btn-modal pull-right tw-block md:tw-hidden"
+                        class="tw-shadow-md tw-bg-white tw-cursor-pointer tw-border tw-flex tw-items-center tw-justify-center tw-rounded-md tw-w-8 tw-h-8 tw-text-gray-600 btn-modal pull-right tw-block md:tw-hidden tw-transition-colors"
+                        style="border-color: rgba(22,17,96,0.3);" onmouseover="this.style.backgroundColor='rgba(22,17,96,0.1)'; this.style.borderColor='rgba(22,17,96,0.5)';" onmouseout="this.style.backgroundColor='white'; this.style.borderColor='rgba(22,17,96,0.3)';"
                         data-toggle="modal" data-target="#mobile_product_suggestion_modal">
-                        <strong><i class="fa fa-cubes fa-lg tw-text-green-600 !tw-text-sm"></i></strong>
+                        <strong><i class="fa fa-cubes fa-lg !tw-text-sm" style="color: #161160;"></i></strong>
                     </button>
                 @endif
 
                 <span class="tw-block md:tw-hidden">
-                    <i class="fas hamburger fa-bars tw-mx-5"
+                    <i class="fas hamburger fa-bars tw-mx-5 tw-cursor-pointer tw-transition-colors" style="color: #161160;" onmouseover="this.style.color='#2a2480';" onmouseout="this.style.color='#161160';"
                         onclick="document.getElementById('pos_header_more_options').classList.toggle('tw-hidden')"></i>
                 </span>
 

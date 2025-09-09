@@ -13,7 +13,7 @@
 	@endif
 @endforeach
 
-<tr class="product_row" data-row_index="{{$row_count}}" @if(!empty($so_line)) data-so_id="{{$so_line->transaction_id}}" @endif>
+<tr class="product_row modern-table-row" data-row_index="{{$row_count}}" @if(!empty($so_line)) data-so_id="{{$so_line->transaction_id}}" @endif style="background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); border-radius: 12px; margin: 6px 0; box-shadow: 0 4px 12px rgba(22,17,96,0.08), 0 2px 4px rgba(22,17,96,0.04); transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); border: 1px solid rgba(22,17,96,0.06); position: relative; overflow: hidden;">
 	@if(!empty($is_serial_no))
 		<td class="serial_no" ></td>
 	@endif
@@ -30,9 +30,9 @@
 
 		@if( ($edit_price || $edit_discount) && empty($is_direct_sell) )
 		<div title="@lang('lang_v1.pos_edit_product_price_help')" style="display: inline">
-		<span class="text-link text-info cursor-pointer" data-toggle="modal" data-target="#row_edit_product_price_modal_{{$row_count}}">
+		<span class="text-link text-info cursor-pointer" data-toggle="modal" data-target="#row_edit_product_price_modal" data-row-index="{{$row_count}}" style="color: #161160; text-decoration: none; cursor: pointer; font-weight: 600; font-size: 15px; letter-spacing: 0.3px; transition: all 0.3s ease; display: inline-block; padding: 2px 0;">
 			{!! $product_name !!}
-			&nbsp;<i class="fa fa-info-circle"></i>
+			&nbsp;<i class="fa fa-info-circle" style="color: #161160; font-size: 13px; opacity: 0.8; transition: all 0.3s ease;"></i>
 		</span>
 		</div>
 		@else
@@ -44,7 +44,7 @@
 						{{asset('/uploads/img/' . rawurlencode($product->product_image))}}
 					@else
 						{{asset('/img/default.png')}}
-					@endif" alt="product-img" loading="lazy"style="height:50px;display: inline;margin-left: 3px; border: black;border-radius: 5px; margin-top: 5px; width: 50px;object-fit: cover;">
+					@endif" alt="product-img" loading="lazy" style="height: 52px; display: inline; margin-left: 8px; border: 2px solid rgba(22,17,96,0.1); border-radius: 10px; margin-top: 6px; width: 52px; object-fit: cover; box-shadow: 0 2px 8px rgba(22,17,96,0.1); transition: all 0.3s ease; cursor: pointer;">
 
 
 		<input type="hidden" class="enable_sr_no" value="{{$product->enable_sr_no}}">
@@ -108,17 +108,12 @@
 			}
 		@endphp
 
-		@if(empty($is_direct_sell))
-		<div class="modal fade row_edit_product_price_model" id="row_edit_product_price_modal_{{$row_count}}" tabindex="-1" role="dialog">
-			@include('sale_pos.partials.row_edit_product_price_modal')
-		</div> 
-		@endif
 <br>
-		<small class="text-muted p-1">
+		<small class="text-muted p-1" style="background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%); padding: 4px 8px !important; border-radius: 6px; font-size: 11px; font-weight: 500; color: #64748b; border: 1px solid rgba(22,17,96,0.08); display: inline-block; margin-top: 4px;">
 			@if($product->enable_stock)
-			{{ @num_format($product->qty_available) }} {{$product->unit}} @lang('lang_v1.in_stock')
+			<i class="fa fa-cube" style="margin-right: 4px; color: #161160;"></i>{{ @num_format($product->qty_available) }} {{$product->unit}} @lang('lang_v1.in_stock')
 			@else
-				--
+				<i class="fa fa-infinity" style="margin-right: 4px; color: #161160;"></i>Unlimited
 			@endif
 		</small>
 
@@ -245,9 +240,9 @@
         		@endphp
         	@endif
         @endforeach
-		<div class="input-group input-number">
-			<span class="input-group-btn"><button type="button" class="btn btn-default btn-flat quantity-down"><i class="fa fa-minus text-danger"></i></button></span>
-		<input type="text" data-min="1" style="width: auto"
+		<div class="input-group input-number" style="border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(22,17,96,0.12), 0 2px 4px rgba(22,17,96,0.08); border: 1px solid rgba(22,17,96,0.15); background: #ffffff; position: relative;">
+			<span class="input-group-btn"><button type="button" class="btn btn-default btn-flat quantity-down" style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%); border: none; color: white; padding: 10px 14px; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); font-weight: 600; box-shadow: inset 0 1px 0 rgba(255,255,255,0.2);"><i class="fa fa-minus" style="font-size: 12px;"></i></button></span>
+		<input type="text" data-min="1" style="width: auto; border: none; padding: 14px 16px; font-size: 15px; font-weight: 600; text-align: center; background: #ffffff; color: #1e293b; letter-spacing: 0.5px;"
 			class="form-control pos_quantity input_number mousetrap input_quantity" 
 			value="{{@format_quantity($product->quantity_ordered)}}" name="products[{{$row_count}}][quantity]" data-allow-overselling="@if(empty($pos_settings['allow_overselling'])){{'false'}}@else{{'true'}}@endif" 
 			@if($allow_decimal) 
@@ -264,13 +259,13 @@
 				data-msg_max_default="@lang('validation.custom-messages.quantity_not_available', ['qty'=> $product->formatted_qty_available, 'unit' => $product->unit  ])" 
 			@endif 
 		>
-		<span class="input-group-btn"><button type="button" class="btn btn-default btn-flat quantity-up"><i class="fa fa-plus text-success"></i></button></span>
+		<span class="input-group-btn"><button type="button" class="btn btn-default btn-flat quantity-up" style="background: linear-gradient(135deg, #51cf66 0%, #40c057 100%); border: none; color: white; padding: 10px 14px; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); font-weight: 600; box-shadow: inset 0 1px 0 rgba(255,255,255,0.2);"><i class="fa fa-plus" style="font-size: 12px;"></i></button></span>
 		</div>
 		
 		<input type="hidden" name="products[{{$row_count}}][product_unit_id]" value="{{$product->unit_id}}">
 		@if(count($sub_units) > 0)
 			<br>
-			<select name="products[{{$row_count}}][sub_unit_id]" class="form-control input-sm sub_unit">
+			<select name="products[{{$row_count}}][sub_unit_id]" class="form-control input-sm sub_unit" style="border-radius: 8px; border: 1px solid rgba(22,17,96,0.15); background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); font-size: 12px; font-weight: 500; color: #475569; padding: 6px 10px; box-shadow: 0 2px 4px rgba(22,17,96,0.06); transition: all 0.3s ease;">
                 @foreach($sub_units as $key => $value)
                     <option value="{{$key}}" data-multiplier="{{$value['multiplier']}}" data-unit_name="{{$value['name']}}" data-allow_decimal="{{$value['allow_decimal']}}" @if(!empty($product->sub_unit_id) && $product->sub_unit_id == $key) selected @endif>
                         {{$value['name']}}
@@ -405,15 +400,15 @@
 			{!! Form::select("products[$row_count][warranty_id]", $warranties, $warranty_id, ['placeholder' => __('messages.please_select'), 'class' => 'form-control']); !!}
 		</td>
 	@endif
-	<td class="text-center">
+	<td class="text-center" style="vertical-align: middle;">
 		@php
 			$subtotal_type = !empty($pos_settings['is_pos_subtotal_editable']) ? 'text' : 'hidden';
 
 		@endphp
-		<input style="width: auto" type="{{$subtotal_type}}" class="form-control pos_line_total @if(!empty($pos_settings['is_pos_subtotal_editable'])) input_number @endif" value="{{@num_format($product->quantity_ordered*$unit_price_inc_tax )}}">
-		<span class="display_currency pos_line_total_text @if(!empty($pos_settings['is_pos_subtotal_editable'])) hide @endif" data-currency_symbol="true">{{$product->quantity_ordered*$unit_price_inc_tax}}</span>
+		<input style="width: auto; border: none; background: transparent; font-size: 16px; font-weight: 700; color: #1e293b; text-align: center; letter-spacing: 0.5px;" type="{{$subtotal_type}}" class="form-control pos_line_total @if(!empty($pos_settings['is_pos_subtotal_editable'])) input_number @endif" value="{{@num_format($product->quantity_ordered*$unit_price_inc_tax )}}">
+		<span class="display_currency pos_line_total_text @if(!empty($pos_settings['is_pos_subtotal_editable'])) hide @endif" data-currency_symbol="true" style="font-size: 16px; font-weight: 700; color: #1e293b; letter-spacing: 0.5px; text-shadow: 0 1px 2px rgba(0,0,0,0.1);">{{$product->quantity_ordered*$unit_price_inc_tax}}</span>
 	</td>
-	<td class="text-center v-center">
-		<i class="fa fa-times text-danger pos_remove_row cursor-pointer" aria-hidden="true"></i>
+	<td class="text-center v-center" style="vertical-align: middle;">
+		<i class="fa fa-times text-danger pos_remove_row cursor-pointer" aria-hidden="true" style="font-size: 18px; padding: 8px; border-radius: 50%; background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); color: #dc2626; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 2px 4px rgba(220,38,38,0.2);"></i>
 	</td>
 </tr>

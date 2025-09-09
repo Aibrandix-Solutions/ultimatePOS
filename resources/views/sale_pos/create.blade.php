@@ -96,6 +96,11 @@
 
     @include('sale_pos.partials.weighing_scale_modal')
 
+    <!-- Product Price Edit Modal - Single modal for all products -->
+    <div class="modal fade row_edit_product_price_model" id="row_edit_product_price_modal" tabindex="-1" role="dialog" aria-labelledby="row_edit_product_price_modal_label" aria-hidden="true">
+        @include('sale_pos.partials.row_edit_product_price_modal_single')
+    </div>
+
 @stop
 @section('css')
     <!-- include module css -->

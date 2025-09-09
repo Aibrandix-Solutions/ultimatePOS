@@ -1,3 +1,22 @@
+/* Themed SweetAlert buttons for Cancel confirmation */
+.swal-btn-confirm {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%) !important;
+  border: 1px solid rgba(220, 38, 38, 0.2) !important;
+  color: #ffffff !important;
+  border-radius: 6px !important;
+  padding: 8px 20px !important;
+  font-weight: 600 !important;
+}
+
+.swal-btn-cancel {
+  background: #e8ebed !important;
+  border: 1px solid #e5e7eb !important;
+  color: #374151 !important;
+  border-radius: 6px !important;
+  padding: 8px 20px !important;
+  font-weight: 500 !important;
+}
+
 @media (max-width: 767px) {
   .main-header .navbar-custom-menu {
     float: none !important;
@@ -1042,6 +1061,135 @@ table.table-text-center th {
 
 .min-height-90hv {
   min-height: 90vh !important;
+}
+
+/* Modern POS Table Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+/* Enhanced POS Table Styling */
+#pos_table_body {
+  position: relative;
+}
+
+#pos_table_body tr {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#pos_table_body tr:hover {
+  z-index: 10;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(22, 17, 96, 0.15), 0 4px 12px rgba(22, 17, 96, 0.08) !important;
+}
+
+#pos_table_body td {
+  position: relative;
+  overflow: hidden;
+}
+
+#pos_table_body td::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#pos_table_body tr:hover td::before {
+  left: 100%;
+}
+
+/* Enhanced button hover effects */
+.quantity-down:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(238, 90, 82, 0.4) !important;
+}
+
+.quantity-up:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(64, 192, 87, 0.4) !important;
+}
+
+/* Product image hover effect */
+.product_row img:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 16px rgba(22, 17, 96, 0.2) !important;
+}
+
+/* Remove button hover effect */
+.pos_remove_row:hover {
+  transform: scale(1.1);
+  background: linear-gradient(135deg, #fecaca 0%, #fca5a5 100%) !important;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3) !important;
+}
+
+/* Empty state styling */
+#empty_cart_row td {
+  background: transparent !important;
+  border: none !important;
+}
+
+/* Modal fixes */
+.row_edit_product_price_model {
+  z-index: 9999 !important;
+}
+
+.row_edit_product_price_model .modal-dialog {
+  margin-top: 50px;
+}
+
+.row_edit_product_price_model .modal-content {
+  border: none;
+  box-shadow: 0 8px 32px rgba(22, 17, 96, 0.3);
+}
+
+/* Ensure modal backdrop is visible and properly styled */
+.modal-backdrop {
+  z-index: 9998 !important;
+  background-color: rgba(0, 0, 0, 0.5) !important;
+  opacity: 1 !important;
+}
+
+/* Fix modal display issues */
+.modal {
+  z-index: 9999 !important;
+}
+
+.modal.in {
+  display: block !important;
+}
+
+.modal.show {
+  display: block !important;
+}
+
+/* Ensure modal content is visible */
+.modal-content {
+  background-color: #ffffff !important;
+  border: none !important;
+  box-shadow: 0 8px 32px rgba(22, 17, 96, 0.3) !important;
 }
 
 /* Grow Shadow */

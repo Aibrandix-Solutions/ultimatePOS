@@ -11,7 +11,7 @@
                 <div class="tw-dw-drawer-content">
                     <!-- Page content here -->
                     <label for="my-drawer-4"
-                        class="tw-bg-gradient-to-r tw-from-indigo-600 tw-to-blue-500 hover:tw-from-indigo-600 hover:tw-to-blue-600 focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-blue-500 focus:tw-ring-offset-2 active:tw-from-indigo-700 active:tw-to-blue-700 lg:tw-w-[98%] tw-w-full tw-flex tw-items-center tw-justify-center tw-gap-1 tw-text-base md:tw-text-lg tw-text-white tw-font-semibold tw-rounded-xl tw-h-12 tw-cursor-pointer">
+                        class="tw-bg-gradient-to-r tw-from-[#161160] tw-to-[#2a2480] hover:tw-from-[#161160] hover:tw-to-[#2a2480] focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-[#161160] focus:tw-ring-offset-2 active:tw-from-[#2a2480] active:tw-to-[#2a2480] lg:tw-w-[98%] tw-w-full tw-flex tw-items-center tw-justify-center tw-gap-1 tw-text-base md:tw-text-lg tw-text-white tw-font-semibold tw-rounded-xl tw-h-12 tw-cursor-pointer" style="background: linear-gradient(135deg,#161160,#2a2480) !important;">
                         <svg xmlns="http://www.w3.org/2000/svg"
                             class="tw-w-5 icon icon-tabler icon-tabler-category-plus" width="44" height="44"
                             viewBox="0 0 24 24" stroke-width="1.5" stroke="#ffffff" fill="none"
@@ -26,10 +26,10 @@
                     <label for="my-drawer-4" aria-label="close sidebar"
                         class="tw-dw-drawer-overlay overlay-category"></label>
                     <div class="tw-dw-menu tw-w-2/4 tw-min-h-full tw-bg-white tw-p-6">
-                        <div class="tw-flex tw-items-center tw-mb-16">
+                        <div class="tw-flex tw-items-center tw-mb-16" style="background:linear-gradient(135deg,#161160,#2a2480); border-radius:12px; padding:10px 12px; color:#ffffff;">
                             <button type="button"
-                                class="tw-dw-btn tw-dw-btn-accent category-back tw-bg-transparent tw-border-2"
-                                style="display: none">
+                                class="tw-dw-btn category-back tw-bg-transparent tw-border-2"
+                                style="display: none; border-color:#ffffff;color:#ffffff;">
                                 <svg xmlns="http://www.w3.org/2000/svg"
                                     class="tw-w-5 icon icon-tabler icon-tabler-chevron-left" width="44"
                                     height="44" viewBox="0 0 24 24" stroke-width="1.5" stroke="#2c3e50"
@@ -39,10 +39,9 @@
                                 </svg>
                             </button>
 
-                            <h3 class="tw-text-center tw-flex-grow mx-auto category_heading tw-bg-gradient-to-r tw-from-indigo-600 tw-to-blue-500 tw-inline-block tw-text-transparent tw-bg-clip-text tw-font-bold tw-text-base md:tw-text-2xl"
-                                style="margin-bottom: 0px; margin-top:5px;">@lang('category.category')</h3>
+                            <h3 class="tw-text-center tw-flex-grow mx-auto category_heading tw-font-bold tw-text-base md:tw-text-2xl" style="margin-bottom:0;margin-top:5px;color:#ffffff;">@lang('category.category')</h3>
 
-                            <button type="button" class="tw-dw-btn tw-dw-btn-error close-side-bar-category">
+                            <button type="button" class="tw-dw-btn close-side-bar-category" style="color:#ffffff; border-color:#ffffff; background:transparent;">
                                 <i class="fa fa-times-circle" aria-hidden="true"></i>
                             </button>
 
@@ -50,7 +49,7 @@
                         <div class="row tw-mr-5">
                             <div class="col-md-3 col-xs-12 tw-mb-7 tw-w-auto  tw-h-auto tw-cursor-pointer  main-category-div main-category no-print"
                                 data-value="all" data-parent="0">
-                                <div class="tw-dw-card tw-w-25 tw-bg-base-100 tw-shadow-sm tw-h-auto tw-shadow-[rgba(17,_17,_26,_0.1)_0px_0px_16px] tw-bg-white hover:tw-bg-white/60 tw-cursor-pointer !tw-text-xs md:!tw-text-sm tw-font-semibold tw-text-center tw-border-2">
+                                <div class="tw-dw-card tw-w-25 tw-bg-base-100 tw-shadow-sm tw-h-auto tw-shadow-[rgba(22,_17,_96,_0.12)_0px_8px_24px] tw-bg-white hover:tw-bg-white/60 tw-cursor-pointer !tw-text-xs md:!tw-text-sm tw-font-semibold tw-text-center tw-border-2 tw-border-white/30">
                                     <div class="tw-dw-card-body">
                                         <h4 class="tw-flex tw-items-center tw-justify-center" style="margin-bottom: 0px; margin-top:0px; font-size: inherit; font-weight: inherit;">@lang('lang_v1.all_category')</h4>
                                     </div>
@@ -60,16 +59,16 @@
                                     <div class="col-md-3 col-xs-12 tw-mb-7 tw-w-auto  tw-h-28  tw-cursor-pointer main-category-div  no-print"
                                         data-value="{{ $category['id'] }}" data-name="{{ $category['name'] }}" data-parent="1">
                                         <div
-                                            class="tw-dw-card tw-w-25 tw-bg-base-100 tw-shadow-sm tw-h-auto tw-shadow-[rgba(17,_17,_26,_0.1)_0px_0px_16px] tw-bg-white hover:tw-bg-white/60 tw-cursor-pointer tw-text-xs md:tw-text-sm tw-font-semibold !tw-text-center tw-border-2">
+                                            class="tw-dw-card tw-w-25 tw-bg-base-100 tw-shadow-sm tw-h-auto tw-shadow-[rgba(22,_17,_96,_0.12)_0px_8px_24px] tw-bg-white hover:tw-bg-white/60 tw-cursor-pointer tw-text-xs md:tw-text-sm tw-font-semibold !tw-text-center tw-border-2 tw-border-white/30">
                                             <div class="tw-dw-card-body" style="margin-bottom: -20px">
                                                 <h4 class="tw-flex tw-items-center tw-justify-center"
                                                     style="margin-bottom: 0px; margin-top:0px; font-size: inherit; font-weight: inherit;">
                                                     {{ $category['name'] }}</h4>
                                             </div>
                                             <div class="tw-dw-card-actions tw-justify-center">
-                                                <button type="button" class="tw-dw-btn tw-dw-btn-accent tw-dw-btn-outline tw-dw-btn-sm main-category tw-mb-2" data-value="{{ $category['id'] }}" data-parent="0">{{ __('lang_v1.all') }}</button>
+                                                <button type="button" class="tw-dw-btn tw-dw-btn-outline tw-dw-btn-sm main-category tw-mb-2" style="border-color:#ffffff;color:#ffffff;background:transparent;" data-value="{{ $category['id'] }}" data-parent="0">{{ __('lang_v1.all') }}</button>
                                                 @if (!empty($category['sub_categories']))
-                                                <button type="button" class="tw-dw-btn tw-dw-btn-primary tw-dw-btn-outline tw-dw-btn-sm main-category tw-mb-2" data-parent="1" data-value="{{ $category['id'] }}" data-name="{{ $category['name'] }}">@lang('pagination.next')</button>
+                                                <button type="button" class="tw-dw-btn tw-dw-btn-outline tw-dw-btn-sm main-category tw-mb-2" style="background:linear-gradient(135deg,#161160,#2a2480);color:#fff;border-color:#2a2480;" data-parent="1" data-value="{{ $category['id'] }}" data-name="{{ $category['name'] }}">@lang('pagination.next')</button>
                                                 @endif
                                             </div>
                                         </div>
@@ -83,7 +82,7 @@
                                                 <div class="col-md-3 col-xs-12 tw-mb-5 tw-w-auto tw-h-auto tw-cursor-pointer product_category no-print"
                                                     data-value="{{ $sc['id'] }}">
                                                     <div
-                                                        class="tw-dw-card tw-w-25 tw-bg-base-100 tw-shadow-sm tw-h-auto tw-shadow-[rgba(17,_17,_26,_0.1)_0px_0px_16px] tw-bg-white hover:tw-bg-white/60 tw-cursor-pointer tw-text-xs md:tw-text-sm tw-font-semibold tw-text-center tw-border-2">
+                                                        class="tw-dw-card tw-w-25 tw-bg-base-100 tw-shadow-sm tw-h-auto tw-shadow-[rgba(22,_17,_96,_0.12)_0px_8px_24px] tw-bg-white hover:tw-bg-white/60 tw-cursor-pointer tw-text-xs md:tw-text-sm tw-font-semibold tw-text-center tw-border-2 tw-border-white/30">
                                                         <div class="tw-dw-card-body">
                                                             <h4 class="tw-flex tw-items-center tw-justify-center"
                                                                 style="margin-bottom: 0px; margin-top:0px; font-size: inherit; font-weight: inherit;">
@@ -110,7 +109,7 @@
                 <div class="tw-dw-drawer-content">
                     <!-- Page content here -->
                     <label for="my-drawer-brand"
-                        class="tw-bg-gradient-to-r tw-from-indigo-600 tw-to-blue-500 hover:tw-from-indigo-600 hover:tw-to-blue-600 focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-blue-500 focus:tw-ring-offset-2 active:tw-from-indigo-700 active:tw-to-blue-700 lg:tw-w-[98%] tw-w-full tw-flex tw-items-center tw-justify-center tw-gap-1 tw-text-base md:tw-text-lg tw-text-white tw-font-semibold tw-rounded-xl tw-h-12 tw-cursor-pointer">
+                        class="tw-bg-gradient-to-r tw-from-[#161160] tw-to-[#2a2480] hover:tw-from-[#161160] hover:tw-to-[#2a2480] focus:tw-outline-none focus:tw-ring-2 focus:tw-ring-[#161160] focus:tw-ring-offset-2 active:tw-from-[#2a2480] active:tw-to-[#2a2480] lg:tw-w-[98%] tw-w-full tw-flex tw-items-center tw-justify-center tw-gap-1 tw-text-base md:tw-text-lg tw-text-white tw-font-semibold tw-rounded-xl tw-h-12 tw-cursor-pointer" style="background: linear-gradient(135deg,#161160,#2a2480) !important;">
                         <svg xmlns="http://www.w3.org/2000/svg" class="tw-w-5 icon icon-tabler icon-tabler-brand-beats"
                             width="44" height="44" viewBox="0 0 24 24" stroke-width="1.5" stroke="#ffffff"
                             fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -128,10 +127,10 @@
                         class="tw-dw-drawer-overlay overlay-brand"></label>
                     <div class="tw-dw-menu tw-w-2/4 tw-min-h-full tw-bg-white tw-p-6">
 
-                        <div class="tw-flex tw-items-center tw-mb-16">
-                            <h3 class="tw-text-center tw-mx-auto tw-bg-gradient-to-r tw-from-indigo-600 tw-to-blue-500 tw-text-transparent tw-bg-clip-text tw-font-bold tw-text-base md:tw-text-2xl tw-mb-16"
-                                style="margin-bottom: 0px; margin-top:5px;">@lang('brand.brands')</h3>
-                            <button type="button" class="tw-dw-btn tw-dw-btn-error close-side-bar-brand">
+                        <div class="tw-flex tw-items-center tw-mb-16" style="background:linear-gradient(135deg,#161160,#2a2480); border-radius:12px; padding:10px 12px; color:#ffffff;">
+                            <h3 class="tw-text-center tw-mx-auto tw-font-bold tw-text-base md:tw-text-2xl tw-mb-16"
+                                style="margin-bottom:0;margin-top:5px;color:#ffffff;">@lang('brand.brands')</h3>
+                            <button type="button" class="tw-dw-btn close-side-bar-brand" style="color:#ffffff; border-color:#ffffff; background:transparent;">
                                 <i class="fa fa-times-circle" aria-hidden="true"></i>
                             </button>
                         </div>
@@ -141,7 +140,7 @@
                                 <div class="col-md-4 col-xs-12 tw-mb-5 tw-w-auto tw-h-auto tw-cursor-pointer product_brand no-print"
                                     data-value="{{ $key }}">
                                     <div
-                                        class="tw-dw-card tw-w-25 tw-bg-base-100 tw-shadow-sm tw-h-auto tw-shadow-[rgba(17,_17,_26,_0.1)_0px_0px_16px] tw-bg-white hover:tw-bg-white/60 tw-cursor-pointer tw-text-xs md:tw-text-sm tw-font-semibold tw-text-center tw-border-2">
+                                        class="tw-dw-card tw-w-25 tw-bg-base-100 tw-shadow-sm tw-h-auto tw-shadow-[rgba(22,_17,_96,_0.12)_0px_8px_24px] tw-bg-white hover:tw-bg-white/60 tw-cursor-pointer tw-text-xs md:tw-text-sm tw-font-semibold tw-text-center tw-border-2 tw-border-white/30">
                                         <div class="tw-dw-card-body">
                                             <h4 class="tw-flex tw-items-center tw-justify-center"
                                                 style="margin-bottom: 0px; margin-top:0px; font-size: inherit; font-weight: inherit;">

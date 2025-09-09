@@ -4,8 +4,8 @@
 	</div>
 	<div class="col-md-4">
 		<div class="form-group" style="width: 100% !important">
-			<div class="input-group">
-				<span class="input-group-addon">
+			<div class="input-group" style="box-shadow: 0 2px 4px rgba(22,17,96,0.2); border-radius: 8px; overflow: hidden;">
+				<span class="input-group-addon" style="background: linear-gradient(135deg, #161160 0%, #2a2480 100%); border: none; color: white;">
 					<i class="fa fa-user"></i>
 				</span>
 				<input type="hidden" id="default_customer_id" 
@@ -15,9 +15,9 @@
 				<input type="hidden" id="default_customer_balance" 
 				value="{{$transaction->contact->balance}}" >
 				{!! Form::select('contact_id', 
-					[], null, ['class' => 'form-control mousetrap', 'id' => 'customer_id', 'placeholder' => 'Enter Customer name / phone', 'required', 'style' => 'width: 100%;']); !!}
+					[], null, ['class' => 'form-control mousetrap', 'id' => 'customer_id', 'placeholder' => 'Enter Customer name / phone', 'required', 'style' => 'width: 100%; border: none; padding: 12px 15px; font-size: 14px;']); !!}
 				<span class="input-group-btn">
-					<button type="button" class="btn btn-default bg-white btn-flat add_new_customer" data-name=""  @if(!auth()->user()->can('customer.create')) disabled @endif><i class="fa fa-plus-circle text-primary fa-lg"></i></button>
+					<button type="button" class="btn btn-default bg-white btn-flat add_new_customer" data-name="" style="background: linear-gradient(135deg, #161160 0%, #3d3580 100%); border: none; color: white; padding: 8px 12px;" @if(!auth()->user()->can('customer.create')) disabled @endif><i class="fa fa-plus-circle fa-lg"></i></button>
 				</span>
 			</div>
 			<small class="text-danger @if(empty($customer_due)) hide @endif contact_due_text"><strong>@lang('account.customer_due'):</strong> <span>{{$customer_due ?? ''}}</span></small>
@@ -25,23 +25,23 @@
 	</div>
 	<div class="col-md-8">
 		<div class="form-group">
-			<div class="input-group">
+			<div class="input-group" style="box-shadow: 0 2px 4px rgba(22,17,96,0.2); border-radius: 8px; overflow: hidden;">
 				<div class="input-group-btn">
-					<button type="button" class="btn btn-default bg-white btn-flat" data-toggle="modal" data-target="#configure_search_modal" title="{{__('lang_v1.configure_product_search')}}"><i class="fas fa-search-plus"></i></button>
+					<button type="button" class="btn btn-default bg-white btn-flat" data-toggle="modal" data-target="#configure_search_modal" title="{{__('lang_v1.configure_product_search')}}" style="background: linear-gradient(135deg, #161160 0%, #2a2480 100%); border: none; color: white; padding: 8px 12px;"><i class="fas fa-search-plus"></i></button>
 				</div>
                 {{-- Removed mousetrap class as it was causing issue with barcode scanning --}}
 				{!! Form::text('search_product', null, ['class' => 'form-control', 'id' => 'search_product', 'placeholder' => __('lang_v1.search_product_placeholder'),
-				'autofocus' => true,
+				'autofocus' => true, 'style' => 'border: none; padding: 12px 15px; font-size: 14px;'
 				]); !!}
 				<span class="input-group-btn">
 
 					<!-- Show button for weighing scale modal -->
 					@if(isset($pos_settings['enable_weighing_scale']) && $pos_settings['enable_weighing_scale'] == 1)
 						<button type="button" class="btn btn-default bg-white btn-flat" id="weighing_scale_btn" data-toggle="modal" data-target="#weighing_scale_modal" 
-						title="@lang('lang_v1.weighing_scale')"><i class="fa fa-digital-tachograph text-primary fa-lg"></i></button>
+						title="@lang('lang_v1.weighing_scale')" style="background: linear-gradient(135deg, #161160 0%, #2a2480 100%); border: none; color: white; padding: 8px 12px;"><i class="fa fa-digital-tachograph fa-lg"></i></button>
 					@endif
 
-					<button type="button" class="btn btn-default bg-white btn-flat pos_add_quick_product" data-href="{{action([\App\Http\Controllers\ProductController::class, 'quickAdd'])}}" data-container=".quick_add_product_modal"><i class="fa fa-plus-circle text-primary fa-lg"></i></button>
+					<button type="button" class="btn btn-default bg-white btn-flat pos_add_quick_product" data-href="{{action([\App\Http\Controllers\ProductController::class, 'quickAdd'])}}" data-container=".quick_add_product_modal" style="background: linear-gradient(135deg, #161160 0%, #2a2480 100%); border: none; color: white; padding: 8px 12px;"><i class="fa fa-plus-circle fa-lg"></i></button>
 				</span>
 			</div>
 		</div>
@@ -188,30 +188,30 @@
 				$hide_tax = 'hide';
 			}
 		@endphp
-		<table class="table table-condensed table-bordered table-striped table-responsive" id="pos_table">
-			<thead>
+		<table class="table table-condensed table-bordered table-striped table-responsive" id="pos_table" style="border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(22,17,96,0.3); border: none;">
+			<thead style="background: linear-gradient(135deg, #161160 0%, #2a2480 100%); color: white;">
 				<tr>
-					<th class="tex-center @if(!empty($pos_settings['inline_service_staff'])) col-md-3 @else col-md-4 @endif">	
+					<th class="tex-center @if(!empty($pos_settings['inline_service_staff'])) col-md-3 @else col-md-4 @endif" style="color: white; font-weight: 600; padding: 15px 12px;">	
 						@lang('sale.product') @show_tooltip(__('lang_v1.tooltip_sell_product_column'))
 					</th>
-					<th class="text-center col-md-3">
+					<th class="text-center col-md-3" style="color: white; font-weight: 600; padding: 15px 12px;">
 						@lang('sale.qty')
 					</th>
 					@if(!empty($pos_settings['inline_service_staff']))
-						<th class="text-center col-md-2">
+						<th class="text-center col-md-2" style="color: white; font-weight: 600; padding: 15px 12px;">
 							@lang('restaurant.service_staff')
 						</th>
 					@endif
-					<th class="text-center col-md-2 {{$hide_tax}}">
+					<th class="text-center col-md-2 {{$hide_tax}}" style="color: white; font-weight: 600; padding: 15px 12px;">
 						@lang('sale.price_inc_tax')
 					</th>
-					<th class="text-center col-md-2">
+					<th class="text-center col-md-2" style="color: white; font-weight: 600; padding: 15px 12px;">
 						@lang('sale.subtotal')
 					</th>
-					<th class="text-center"><i class="fas fa-times" aria-hidden="true"></i></th>
+					<th class="text-center" style="color: white; font-weight: 600; padding: 15px 12px;"><i class="fas fa-times" aria-hidden="true"></i></th>
 				</tr>
 			</thead>
-			<tbody>
+			<tbody style="background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%); position: relative; min-height: 200px;">
 				@foreach($sell_details as $sell_line)
 
 				@include('sale_pos.product_row', 

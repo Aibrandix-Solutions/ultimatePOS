@@ -6,25 +6,27 @@
     <section class="content no-print">
         <div class="row">
             <div class="col-md-12 tw-pt-0">
-                <div class="col-md-12 tw-shadow-lg tw-rounded-2xl tw-bg-white tw-mb-4">
+                <div
+                    class="col-md-12 tw-shadow-[rgba(17,_17,_26,_0.1)_0px_0px_16px] tw-rounded-2xl tw-bg-white tw-mb-1 md:tw-mb-4">
                     {!! $pos_settings['display_screen_heading'] !!}
                 </div>
 
-                <div class="row pos_sell tw-flex tw-flex-col md:tw-flex-row tw-items-start md:tw-gap-4">
+                <div class="row pos_sell tw-flex lg:tw-flex-row md:tw-flex-col sm:tw-flex-col tw-flex-col tw-items-start md:tw-gap-4">
 
-                    <div class="tw-px-3 lg:tw-px-0 lg:tw-pr-0 lg:tw-w-[60%]">
+                    <div class="tw-px-3 lg:tw-px-0 lg:tw-pr-0 lg:tw-w-[60%] ">
 
-                        <div class="tw-shadow-lg tw-rounded-2xl tw-bg-white tw-mb-8 tw-p-4 !tw-h-[80vh]">
+                        <div
+                            class="tw-shadow-[rgba(17,_17,_26,_0.1)_0px_0px_16px] tw-rounded-2xl tw-bg-white tw-mb-2 md:tw-mb-8 tw-p-2 !tw-h-[80vh]">
                             <div class="box-body pb-0">
                                 <div class="row">
                                     <div class="col-md-7 customer_details">
                                     </div>
                                     <div class="col-md-4">
                                         <button type="button" title="{{ __('lang_v1.full_screen') }}"
-                                            class="tw-shadow-md tw-bg-white hover:tw-bg-gray-100 tw-cursor-pointer tw-border tw-flex tw-items-center tw-justify-center tw-rounded-md md:tw-w-8 tw-w-auto tw-h-8 tw-text-gray-600 pull-right !tw-ml-8"
+                                            class="tw-shadow-[rgba(17,_17,_26,_0.1)_0px_0px_16px] tw-bg-white hover:tw-bg-white/60 tw-cursor-pointer tw-border-2 tw-flex tw-items-center tw-justify-center tw-rounded-md md:tw-w-8 tw-w-auto tw-h-8 tw-text-gray-600 pull-right !tw-ml-8"
                                             id="full_screen">
                                             <strong class="!tw-m-3">
-                                                <i class="fa fa-window-maximize fa-lg tw-text-[#7f141c] !tw-text-sm"></i>
+                                                <i class="fa fa-window-maximize fa-lg tw-text-[#646EE4] !tw-text-sm"></i>
                                                 <span class="tw-inline md:tw-hidden">Full Screen</span>
                                             </strong>
                                         </button>
@@ -35,8 +37,9 @@
                                             <thead>
                                                 <tr>
                                                     <th
-                                                        class="text-center tw-text-sm md:!tw-text-base tw-font-bold @if (!empty($pos_settings['inline_service_staff'])) col-md-3 @else col-md-4 @endif">
+                                                        class="tex-center tw-text-sm md:!tw-text-base tw-font-bold @if (!empty($pos_settings['inline_service_staff'])) col-md-3 @else col-md-4 @endif">
                                                         @lang('sale.product')
+                                                        {{-- @show_tooltip(__('lang_v1.tooltip_sell_product_column')) --}}
                                                     </th>
                                                     <th
                                                         class="text-center tw-text-sm md:!tw-text-base tw-font-bold col-md-3">
@@ -67,34 +70,46 @@
                                         <table class="table table-condensed">
                                             <tr>
                                                 <td>
-                                                    <b class="tw-text-lg tw-font-bold">@lang('sale.item'):</b>&nbsp;
-                                                    <span class="total_quantity tw-text-lg tw-font-semibold">0</span>
+                                                    <b
+                                                        class="tw-text-base md:tw-text-lg tw-font-bold">@lang('sale.item'):</b>&nbsp;
+                                                    <span
+                                                        class="total_quantity tw-text-base md:tw-text-lg tw-font-semibold">0</span>
                                                 </td>
                                                 <td>
-                                                    <b class="tw-text-lg tw-font-bold">@lang('sale.total'):</b>&nbsp;
-                                                    <span class="price_total tw-text-lg tw-font-semibold display_currency"
+                                                    <b
+                                                        class="tw-text-base md:tw-text-lg tw-font-bold">@lang('sale.total'):</b>&nbsp;
+                                                    <span
+                                                        class="price_total tw-text-base md:tw-text-lg tw-font-semibold display_currency"
                                                         data-currency_symbol="true">0</span>
                                                 </td>
                                             </tr>
                                             <tr>
                                                 <td>
-                                                    <b class="tw-text-lg tw-font-bold">@lang('sale.discount') (-):</b>
-                                                    <span class="tw-text-lg tw-font-semibold display_currency"
+                                                    <b class="tw-text-base md:tw-text-lg tw-font-bold">@lang('sale.discount')
+                                                        (-):</b>
+                                                    <span
+                                                        class="tw-text-base md:tw-text-lg tw-font-semibold display_currency"
                                                         data-currency_symbol="true" id="total_discount">0</span>
                                                 </td>
                                                 <td>
-                                                    <b class="tw-text-lg tw-font-bold">@lang('sale.order_tax') (+):</b>
-                                                    <span class="tw-text-lg tw-font-semibold display_currency"
+                                                    <b class="tw-text-base md:tw-text-lg tw-font-bold">@lang('sale.order_tax')
+                                                        (+):</b>
+                                                    <span
+                                                        class="tw-text-base md:tw-text-lg tw-font-semibold display_currency"
                                                         data-currency_symbol="true" id="order_tax">0</span>
                                                 </td>
                                                 <td>
-                                                    <b class="tw-text-lg tw-font-bold">@lang('sale.shipping') (+):</b>
-                                                    <span class="tw-text-lg tw-font-semibold display_currency"
+                                                    <b class="tw-text-base md:tw-text-lg tw-font-bold ">@lang('sale.shipping')
+                                                        (+):</b>
+                                                    <span
+                                                        class="tw-text-base md:tw-text-lg tw-font-semibold display_currency"
                                                         data-currency_symbol="true" id="shipping_charges_amount">0</span>
                                                 </td>
                                                 <td>
-                                                    <b class="tw-text-lg tw-text-green-900 tw-font-bold">@lang('sale.total_payable'):</b>
-                                                    <span class="tw-text-lg tw-text-green-900 tw-font-semibold display_currency"
+                                                    <b
+                                                        class="tw-text-base tw-text-green-900 tw-font-bold md:tw-text-2xl">@lang('sale.total_payable'):</b>
+                                                    <span
+                                                        class="tw-text-base tw-text-green-900 md:tw-text-2xl tw-font-semibold display_currency"
                                                         data-currency_symbol="true" id="total_payable">0</span>
                                                 </td>
                                             </tr>

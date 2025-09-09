@@ -265,10 +265,10 @@
                                 <tr>
                                     <td style="font-weight: bold; text-align: right;">Discount:</td>
                                     <td class="print-red" style="text-align: center;">
-                                        @if(!empty($receipt_details->discount))
+                                        @if(!empty($receipt_details->discount) && empty($receipt_details->total_line_discount))
                                             {{$receipt_details->discount}}
-										@else
-											@format_currency(0)
+                                        @else
+                                            @format_currency(0)
                                         @endif
                                     </td>
                                     <td style="font-weight: bold; direction: rtl; text-align: right;">الخصم:</td>
@@ -277,7 +277,7 @@
                                 <tr>
                                     <td style="font-weight: bold; text-align: right;">After Discount:</td>
                                     <td class="print-red" style="text-align: center;">
-										@format_currency($receipt_details->subtotal_unformatted - $receipt_details->discount_amount_unformatted)
+                                        @format_currency($receipt_details->subtotal_unformatted - $receipt_details->discount_amount_unformatted)
                                     </td>
                                     <td style="font-weight: bold; direction: rtl; text-align: right;">المبلغ بعد الخصم:</td>
                                 </tr>
