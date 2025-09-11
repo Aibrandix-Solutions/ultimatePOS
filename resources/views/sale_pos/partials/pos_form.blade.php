@@ -219,7 +219,7 @@
 				$hide_tax = 'hide';
 			}
 		@endphp
-		<table class="table table-condensed table-bordered table-striped table-responsive" id="pos_table" style="border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(22,17,96,0.3); border: none;">
+		<table class="table table-condensed table-bordered table-striped table-responsive" id="pos_table" style="border-radius: 12px; box-shadow: 0 4px 6px rgba(22,17,96,0.3); border: none;">
 			<thead style="background: linear-gradient(135deg, #161160 0%, #2a2480 100%); color: white;">
 				<tr>
 					<th class="tex-center tw-text-sm md:!tw-text-base tw-font-bold @if(!empty($pos_settings['inline_service_staff'])) col-md-3 @else col-md-4 @endif" style="border: none; padding: 15px 12px; font-weight: 600;">	
@@ -245,8 +245,8 @@
 			<tbody id="pos_table_body" style="background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%); position: relative; min-height: 200px;">
 				<!-- Empty state styling -->
 				<tr id="empty_cart_row" style="display: table-row;">
-					<td colspan="@if(!empty($pos_settings['inline_service_staff'])) 6 @else 5 @endif" class="text-center" style="padding: 60px 20px; color: #6c757d; font-style: italic; background: transparent;">
-						<div style="display: flex; flex-direction: column; align-items: center; gap: 15px;">
+					<td colspan="@if(!empty($pos_settings['inline_service_staff'])) 6 @else 5 @endif" class="text-center" style="height: 230px; vertical-align: middle; padding: 0 20px; color: #6c757d; font-style: italic; background: transparent;">
+						<div style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
 							<i class="fas fa-shopping-cart" style="font-size: 48px; color: rgba(22,17,96,0.3);"></i>
 							<div style="font-size: 18px; font-weight: 500; color: #495057;">No products added yet</div>
 							<div style="font-size: 14px; color: #6c757d;">Search and add products to get started</div>
