@@ -1018,7 +1018,21 @@ $(document).ready(function () {
             .filter(':visible:first')
             .focus()
             .select();
+
+        // Initialize Select2 for delivery person dropdown
+        $('#delivery_person_modal').select2({
+            width: '100%',
+            dropdownParent: $('#posShippingModal')
+        });
+
         // $('.select2-selection__rendered').css('padding-right', '150px');
+    });
+
+    $('#posShippingModal').on('hidden.bs.modal', function () {
+        // Destroy Select2 to prevent conflicts
+        if ($('#delivery_person_modal').hasClass('select2-hidden-accessible')) {
+            $('#delivery_person_modal').select2('destroy');
+        }
     });
 
     $(document).on('shown.bs.modal', '.row_edit_product_price_model', function () {

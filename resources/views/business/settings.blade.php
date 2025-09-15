@@ -238,5 +238,24 @@
             removeLabel: LANG.remove,
         });
     });
+
+    // Update default credit limit display when user types
+    $('#default_credit_limit').on('input', function() {
+        var value = $(this).val();
+        var displayText = '';
+        
+        if (value && value.trim() !== '') {
+            // Format the number for display
+            var formattedValue = parseFloat(value).toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+            displayText = 'Current Default Limit: <strong>' + formattedValue + '</strong>';
+        } else {
+            displayText = 'No default limit set (new customers will have unlimited credit)';
+        }
+        
+        $('.credit-limit-text').html(displayText);
+    });
 </script>
 @endsection

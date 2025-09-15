@@ -283,7 +283,17 @@
                           <span class="input-group-addon">
                               <i class="fas fa-money-bill-alt"></i>
                           </span>
-                          {!! Form::text('credit_limit', $default_credit_limit ?? null, ['class' => 'form-control input_number']); !!}
+                          {!! Form::text('credit_limit', $default_credit_limit ?? null, ['class' => 'form-control input_number', 'id' => 'credit_limit_input']); !!}
+                      </div>
+                      <div class="credit-limit-display" style="margin-top: 8px; padding: 8px 12px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 4px; font-size: 13px; color: #495057;">
+                          <i class="fas fa-info-circle" style="color: #6c757d; margin-right: 5px;"></i>
+                          <span class="credit-limit-text">
+                              @if(!empty($default_credit_limit))
+                                  @lang('lang_v1.current_limit'): <strong>{{ @num_format($default_credit_limit) }}</strong>
+                              @else
+                                  @lang('lang_v1.no_limit_set')
+                              @endif
+                          </span>
                       </div>
                       <p class="help-block">@lang('lang_v1.credit_limit_help')</p>
                   </div>
@@ -595,3 +605,26 @@
   
   </div><!-- /.modal-content -->
 </div><!-- /.modal-dialog -->
+
+<script type="text/javascript">
+$(document).ready(function() {
+    // Update credit limit display when user types
+    $('#credit_limit_input').on('input', function() {
+        var value = $(this).val();
+        var displayText = '';
+        
+        if (value && value.trim() !== '') {
+            // Format the number for display
+            var formattedValue = parseFloat(value).toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+            displayText = 'Current Limit: <strong>' + formattedValue + '</strong>';
+        } else {
+            displayText = 'No limit set (unlimited credit)';
+        }
+        
+        $('.credit-limit-text').html(displayText);
+    });
+});
+</script>

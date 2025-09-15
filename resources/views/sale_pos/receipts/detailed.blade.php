@@ -426,16 +426,14 @@
                                         style="background-color: #357ca5 !important; color: white !important;width: 10% !important;">
                                         {{ $receipt_details->table_unit_price_label }}
                                     </td>
-                                    @if (!empty($receipt_details->show_line_discounts))
-                                        <td
-                                            style="background-color: #357ca5 !important; color: white !important;width: 10% !important;">
-                                            {{ $receipt_details->discounted_unit_price_label }}
-                                        </td>
-                                        <td
-                                            style="background-color: #357ca5 !important; color: white !important;width: 8% !important;">
-                                            {{ $receipt_details->line_discount_label }}
-                                        </td>
-                                    @endif
+                                    <td
+                                        style="background-color: #357ca5 !important; color: white !important;width: 10% !important;">
+                                        {{ $receipt_details->discounted_unit_price_label }}
+                                    </td>
+                                    <td
+                                        style="background-color: #357ca5 !important; color: white !important;width: 8% !important;">
+                                        {{ $receipt_details->line_discount_label }}
+                                    </td>
                                     <td
                                         style="background-color: #357ca5 !important; color: white !important;width: 10% !important;">
                                         {{ $receipt_details->line_tax_label }}
@@ -530,17 +528,15 @@
                                         <td class="text-right">
                                             {{ $line['unit_price_before_discount'] }}
                                         </td>
-                                        @if (!empty($receipt_details->show_line_discounts))
-                                            <td class="text-right">
-                                                {{ $line['unit_price'] ?? $line['unit_price_before_discount'] }}
-                                            </td>
-                                            <td class="text-right">
-                                                {{ $line['total_line_discount'] ?? 0 }}
-                                                @if (!empty($line['line_discount_percent']))
-                                                    ({{ $line['line_discount_percent'] }}%)
-                                                @endif
-                                            </td>
-                                        @endif
+                                        <td class="text-right">
+                                            {{ $line['unit_price_inc_tax'] }}
+                                        </td>
+                                        <td class="text-right">
+                                            {{ $line['total_line_discount'] ?? 0 }}
+                                            @if (!empty($line['line_discount_percent']))
+                                                ({{ $line['line_discount_percent'] }}%)
+                                            @endif
+                                        </td>
                                         <td class="text-right">
                                             {{ $line['tax'] }} {{ $line['tax_name'] }}
                                         </td>
@@ -701,19 +697,29 @@
                                 @endif
 
                                 <!-- Discount -->
-                                <tr>
-                                    <td>
-                                        {!! $receipt_details->discount_label !!}
-                                    </td>
-                                    <td class="text-right">
-                                        (-)
-                                        @if (!empty($receipt_details->discount) && empty($receipt_details->total_line_discount))
-                                            {{ $receipt_details->discount }}
-                                        @else
-                                            {{ @num_format(0) }}
-                                        @endif
-                                    </td>
-                                </tr>
+                                @if (!empty($receipt_details->discount))
+                                    <tr>
+                                        <td>
+                                            {!! $receipt_details->discount_label !!}
+                                        </td>
+
+                                        <td class="text-right">
+                                            (-) {{ $receipt_details->discount }}
+                                        </td>
+                                    </tr>
+                                @endif
+
+                                @if (!empty($receipt_details->total_line_discount))
+                                    <tr>
+                                        <td>
+                                            {!! $receipt_details->line_discount_label !!}
+                                        </td>
+
+                                        <td class="text-right">
+                                            (-) {{ $receipt_details->total_line_discount }}
+                                        </td>
+                                    </tr>
+                                @endif
 
                                 @if (!empty($receipt_details->additional_expenses))
                                     @foreach ($receipt_details->additional_expenses as $key => $val)
@@ -861,37 +867,7 @@
     body {
         color: #000000;
     }
-
-    :root { --primary:#161160; --primary-700:#2a2480; --muted:#6b7280; --border:#e5e7eb; }
-
-    /* Headings */
-    .invoice-title{ font-weight:700; letter-spacing:.2px; }
-
-    /* Tables */
-    .table{ border-collapse: separate; border-spacing:0; border:1px solid var(--border); border-radius:8px; overflow:hidden; }
-    .table td,.table th{ border-top:1px solid var(--border) !important; }
-    .table thead td,.table thead th{ background: linear-gradient(135deg,var(--primary),var(--primary-700)) !important; color:#fff !important; }
-    .table-slim td,.table-slim th{ padding:8px 10px !important; }
-    .table-no-side-cell-border td,.table-no-side-cell-border th{ border-left:0 !important; border-right:0 !important; }
-    .table-no-top-cell-border td,.table-no-top-cell-border th{ border-top:0 !important; }
-    .table tr:nth-child(even) td{ background:#fafafa; }
-
-    /* Totals card */
-    .totals-card{ border:1px solid var(--border); border-radius:10px; overflow:hidden; }
-    .totals-card tbody tr td:first-child{ color:#374151; }
-    .totals-card tbody tr td.text-right{ font-weight:600; }
-    .totals-card thead th{ background: linear-gradient(135deg,var(--primary),var(--primary-700)); color:#fff; padding:10px; }
-
-    /* Accent rows */
-    .accent-row{ background: linear-gradient(135deg,var(--primary),var(--primary-700)) !important; color:#fff !important; }
-
-    /* Payment table */
-    .payments-table{ border:1px solid var(--border); border-radius:8px; overflow:hidden; }
-    .payments-table td{ border-top:1px solid var(--border); }
-
-    /* Small text helpers */
-    .text-muted-imp{ color: var(--muted) !important; }
-
+	
 @media print {
   
     tr, td {
