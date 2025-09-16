@@ -444,7 +444,7 @@
         <div class="orb two" aria-hidden="true"></div>
         <div class="orb three" aria-hidden="true"></div>
         
-        <div class="container mt-5">
+        <div class="container">
             <div class="row align-items-center">
                 <!-- Hero content -->
                 <div class="col-lg-6 mb-4 mb-lg-0">
@@ -489,7 +489,7 @@
                         </div>
 
                         <p class="text-muted mb-0">
-                            <strong>Support:</strong> <a href="mailto:support@aibrandix.com" class="text-decoration-none">support@aibrandix.com</a>
+                            <strong>Support:</strong> <a href="mailto:support@aigenerix.com" class="text-decoration-none">support@aigenerix.com</a>
                         </p>
                     </div>
                 </div>
