@@ -10,7 +10,7 @@
     <a href="{{route('home')}}"
         class="tw-flex tw-items-center tw-justify-center tw-w-full tw-border-r tw-h-15" style="background-color: #161160">
         <p class="tw-text-lg tw-font-medium tw-text-white side-bar-heading tw-text-center">
-            {{ Session::get('business.name') }} <span class="tw-inline-block tw-w-3 tw-h-3 tw-bg-green-400 tw-rounded-full" title="Online"></span>
+            {{ Session::get('business.name') }} <span class="tw-inline-block tw-w-3 tw-h-3 tw-bg-green-400 tw-rounded-full online-indicator" title="Online"></span>
         </p>
     </a>
 

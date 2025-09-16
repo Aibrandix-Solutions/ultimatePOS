@@ -752,11 +752,11 @@ class TransactionUtil extends Util
                         'business_id' => $transaction->business_id,
                         'is_return' => isset($payment['is_return']) ? $payment['is_return'] : 0,
                         'card_transaction_number' => isset($payment['card_transaction_number']) ? $payment['card_transaction_number'] : null,
-                        'card_number' => isset($payment['card_number']) ? $payment['card_number'] : null,
+                        'card_number' => null,
                         'card_type' => isset($payment['card_type']) ? $payment['card_type'] : null,
                         'card_holder_name' => isset($payment['card_holder_name']) ? $payment['card_holder_name'] : null,
-                        'card_month' => isset($payment['card_month']) ? $payment['card_month'] : null,
-                        'card_security' => isset($payment['card_security']) ? $payment['card_security'] : null,
+                        'card_month' => null,
+                        'card_security' => null,
                         'cheque_number' => isset($payment['cheque_number']) ? $payment['cheque_number'] : null,
                         'bank_account_number' => isset($payment['bank_account_number']) ? $payment['bank_account_number'] : null,
                         'note' => isset($payment['note']) ? $payment['note'] : null,
@@ -1484,7 +1484,6 @@ class TransactionUtil extends Util
         }
 
         $output['total_unformatted'] = $transaction->final_total;
-
         //Paid & Amount due, only if final
         if ($transaction_type == 'sell' && $transaction->status == 'final') {
             $paid_amount = $this->getTotalPaid($transaction->id);
@@ -4437,7 +4436,6 @@ class TransactionUtil extends Util
      * Retrieves and sum total amount paid for a transaction
      *
      * @param  int  $transaction_id
-     */
     public function getTotalAmountPaid($transaction_id)
     {
         $paid = TransactionPayment::where(
@@ -5912,7 +5910,6 @@ class TransactionUtil extends Util
 
         return $transaction;
     }
-
     public function updateExpense($request, $id, $business_id, $format_data = true)
     {
         $transaction_data = [];

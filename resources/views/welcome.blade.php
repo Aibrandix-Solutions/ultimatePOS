@@ -152,7 +152,7 @@
         /* Hero section */
         .hero-section {
             position: relative;
-            padding: 80px 0;
+            padding: 64px 0;
             overflow: hidden;
         }
 
@@ -172,7 +172,7 @@
             background: rgba(255, 255, 255, 0.8);
             border: 1px solid rgba(22, 17, 96, 0.1);
             border-radius: 24px;
-            padding: 48px;
+            padding: 34px;
             box-shadow: 0 20px 60px rgba(22, 17, 96, 0.15);
             backdrop-filter: blur(12px);
         }
@@ -349,6 +349,40 @@
                 box-shadow: none;
             }
         }
+
+        /* Ensure carousel controls are visible on light images */
+        #posShowcase .carousel-control-prev,
+        #posShowcase .carousel-control-next {
+            width: 3rem;
+            opacity: 1;
+            z-index: 5;
+        }
+        #posShowcase .carousel-control-prev-icon,
+        #posShowcase .carousel-control-next-icon {
+            width: 2.75rem;
+            height: 2.75rem;
+            background-size: 100% 100%;
+            filter: none;
+        }
+        /* Themed control icons (midnight blue) */
+        #posShowcase .carousel-control-prev-icon {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='%23161160' viewBox='0 0 16 16'%3e%3cpath fill-rule='evenodd' d='M11.354 1.646a.5.5 0 0 1 0 .708L6.707 7l4.647 4.646a.5.5 0 0 1-.708.708l-5-5a.5.5 0 0 1 0-.708l5-5a.5.5 0 0 1 .708 0z'/%3e%3c/svg%3e");
+        }
+        #posShowcase .carousel-control-next-icon {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='%23161160' viewBox='0 0 16 16'%3e%3cpath fill-rule='evenodd' d='M4.646 1.646a.5.5 0 0 1 .708 0l5 5a.5.5 0 0 1 0 .708l-5 5a.5.5 0 0 1-.708-.708L9.293 7 4.646 2.354a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e");
+        }
+
+        /* Showcase images - prioritize full visibility, no letterboxing */
+        #posShowcase .carousel-item img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        /* Reduce hero padding to fit images tighter */
+        .hero-section { padding: 56px 0; }
+        @media (max-width: 576px) {
+            .hero-section { padding: 40px 0; }
+        }
     </style>
 </head>
 <body>
@@ -410,7 +444,7 @@
         <div class="orb two" aria-hidden="true"></div>
         <div class="orb three" aria-hidden="true"></div>
         
-        <div class="container">
+        <div class="container mt-5">
             <div class="row align-items-center">
                 <!-- Hero content -->
                 <div class="col-lg-6 mb-4 mb-lg-0">
@@ -462,37 +496,31 @@
                 
                 <!-- Preview section -->
                 <div class="col-lg-6">
-                    <div class="preview-card">
-                        <div class="preview-header">
-                            <span>Register • Counter #1</span>
-                            <span class="preview-pill">LIVE</span>
+                    <div id="posShowcase" class="carousel slide" data-bs-ride="carousel" data-bs-interval="4000">
+                        <div class="carousel-indicators">
+                            <button type="button" data-bs-target="#posShowcase" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
+                            <button type="button" data-bs-target="#posShowcase" data-bs-slide-to="1" aria-label="Slide 2"></button>
+                            <button type="button" data-bs-target="#posShowcase" data-bs-slide-to="2" aria-label="Slide 3"></button>
                         </div>
-                        <div class="preview-body">
-                            <div class="row g-2 mb-3">
-                                <div class="col-6 col-md-4">
-                                    <div class="preview-item">Latte <br><small>Qty: 2</small></div>
-                                </div>
-                                <div class="col-6 col-md-4">
-                                    <div class="preview-item">Blueberry Muffin <br><small>Qty: 1</small></div>
-                                </div>
-                                <div class="col-6 col-md-4">
-                                    <div class="preview-item">Croissant <br><small>Qty: 3</small></div>
-                                </div>
-                                <div class="col-6 col-md-4">
-                                    <div class="preview-item">Espresso <br><small>Qty: 1</small></div>
-                                </div>
-                                <div class="col-6 col-md-4">
-                                    <div class="preview-item">Bagel <br><small>Qty: 2</small></div>
-                                </div>
-                                <div class="col-6 col-md-4">
-                                    <div class="preview-item">Iced Tea <br><small>Qty: 1</small></div>
-                                </div>
+                        <div class="carousel-inner" role="listbox" style="border-radius:12px; box-shadow: 0 8px 24px rgba(0,0,0,0.15);">
+                            <div class="carousel-item active">
+                                <img src="{{ asset('images/pos/pos1.png') }}" alt="POS Screenshot 1" class="d-block w-100">
                             </div>
-                            <div class="preview-total">
-                                <span>Total</span>
-                                <span>$28.70</span>
+                            <div class="carousel-item">
+                                <img src="{{ asset('images/pos/pos2.png') }}" alt="POS Screenshot 2" class="d-block w-100">
+                            </div>
+                            <div class="carousel-item">
+                                <img src="{{ asset('images/pos/pos3.png') }}" alt="POS Screenshot 3" class="d-block w-100">
                             </div>
                         </div>
+                        <button class="carousel-control-prev" type="button" data-bs-target="#posShowcase" data-bs-slide="prev">
+                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                            <span class="visually-hidden">Previous</span>
+                        </button>
+                        <button class="carousel-control-next" type="button" data-bs-target="#posShowcase" data-bs-slide="next">
+                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                            <span class="visually-hidden">Next</span>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -500,7 +528,7 @@
     </main>
 
     <!-- Footer -->
-    <footer class="py-5 text-center text-muted">
+    <footer class="py-2 text-center text-muted">
         <div class="container">
             <p class="mb-2">© {{ date('Y') }} {{ config('app.name', 'Ultimate POS') }} · Crafted with Laravel</p>
             <div class="d-flex justify-content-center gap-3">

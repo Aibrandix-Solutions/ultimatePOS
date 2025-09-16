@@ -650,6 +650,7 @@ return [
     'net_price' => 'Net Price',
     'select_same_for_all_rows' => 'Select same value for all products',
     'edited' => 'Edited',
+    'card_processing_disabled' => 'Card processing is currently disabled. Please use another payment method.',
     'by' => 'By',
     'upload_documents' => 'Upload Documents',
     'documents' => 'Documents',
