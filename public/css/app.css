@@ -1166,14 +1166,14 @@ table.table-text-center th {
 }
 
 /* Ensure modal backdrop is visible and properly styled */
-.modal-backdrop {
+/* .modal-backdrop {
   z-index: 9998 !important;
   background-color: rgba(0, 0, 0, 0.5) !important;
   opacity: 1 !important;
-}
+} */
 
 /* Fix modal display issues */
-.modal {
+/* .modal {
   z-index: 9999 !important;
 }
 
@@ -1183,14 +1183,14 @@ table.table-text-center th {
 
 .modal.show {
   display: block !important;
-}
+} */
 
 /* Ensure modal content is visible */
-.modal-content {
+/* .modal-content {
   background-color: #ffffff !important;
   border: none !important;
   box-shadow: 0 8px 32px rgba(22, 17, 96, 0.3) !important;
-}
+} */
 
 /* Grow Shadow */
 .hvr-grow-shadow {
