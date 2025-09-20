@@ -14,6 +14,24 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # --- Validate secrets & connectivity (preflight) ---
+      - name: Validate SSH private key format
+        run: |
+          set -e
+          echo "${{ secrets.POS_SSH_KEY }}" > /tmp/pos_key
+          chmod 600 /tmp/pos_key
+          echo "Fingerprint (expect SHA256 ... ED25519):"
+          ssh-keygen -lf /tmp/pos_key
+
+      - name: SSH preflight (connect & exit)
+        run: |
+          ssh -i /tmp/pos_key \
+              -p "${{ secrets.POS_SSH_PORT }}" \
+              -o StrictHostKeyChecking=no \
+              -o IdentitiesOnly=yes \
+              "${{ secrets.POS_SSH_USER }}@${{ secrets.POS_SSH_HOST }}" \
+              "echo SSH OK: \$(whoami) on \$(hostname)"
+
       # Build deploy artifacts WITHOUT vendor and WITHOUT node build (Blade-only)
       - name: Prepare deploy artifacts
         shell: bash
