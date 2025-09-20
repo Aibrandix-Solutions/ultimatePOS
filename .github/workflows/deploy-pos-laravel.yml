@@ -1,0 +1,97 @@
+name: Deploy Laravel (pos.himan.fun)
+
+on:
+  push:
+    branches: [ himan ]         # change if needed
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1) Checkout
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 2) PHP for Composer
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, intl, bcmath, curl, dom, fileinfo, gd, json, openssl, pdo, pdo_mysql, tokenizer, xml
+          coverage: none
+
+      # 3) Install Composer deps (prod)
+      - name: Install Composer dependencies
+        run: composer install --no-dev --prefer-dist --optimize-autoloader
+
+      # 4) Prepare deploy artifacts
+      - name: Prepare deploy artifacts
+        shell: bash
+        run: |
+          set -e
+          rm -rf deploy_app deploy_public deploy_tmp
+          mkdir -p deploy_app deploy_public
+
+          # Stage code excluding CI/dev dirs
+          rsync -a . ./deploy_tmp \
+            --exclude '.git' \
+            --exclude 'node_modules' \
+            --exclude '.github' \
+            --exclude 'tests'
+
+          # 1) App without /public
+          rsync -a --delete ./deploy_tmp/ ./deploy_app/ --exclude 'public'
+
+          # 2) Public (only /public contents)
+          rsync -a ./public/ ./deploy_public/
+
+          # Patch public/index.php to load app from /laravel
+          php -r '
+            $f = "deploy_public/index.php";
+            $c = file_get_contents($f);
+            $c = preg_replace(
+              "/require __DIR__ \\. \"\\/\\.\\.\\/vendor\\/autoload\\.php\";/",
+              "define(\\\"LARAVEL_BASE\\\", __DIR__ . \\\"/laravel\\\");\nrequire LARAVEL_BASE . \\\"/vendor/autoload.php\\\";",
+              $c
+            );
+            $c = preg_replace(
+              "/require_once __DIR__ \\. \"\\/\\.\\.\\/bootstrap\\/app\\.php\";/",
+              "$app = require LARAVEL_BASE . \\\"/bootstrap/app.php\\\";",
+              $c
+            );
+            file_put_contents($f, $c);
+          '
+
+      # 5) Upload the Laravel app to /domains/himan.fun/public_html/pos/laravel/
+      - name: Upload app (laravel/)
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.0
+        with:
+          server: ${{ secrets.POS_FTP_HOST }}      # set to ftp.himan.fun or your server IP
+          username: ${{ secrets.POS_FTP_USER }}    # u972195898.pos
+          password: ${{ secrets.POS_FTP_PASS }}
+          protocol: ftps
+          port: 21
+          local-dir: ./deploy_app/
+          server-dir: ./laravel/                  # login root is already public_html/pos
+          dangerous-clean-slate: true
+          exclude: |
+            **/.git*
+            **/node_modules/**
+            **/tests/**
+
+      # 6) Upload public files (web root) to /domains/himan.fun/public_html/pos/
+      - name: Upload public (web root)
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.0
+        with:
+          server: ${{ secrets.POS_FTP_HOST }}
+          username: ${{ secrets.POS_FTP_USER }}
+          password: ${{ secrets.POS_FTP_PASS }}
+          protocol: ftps
+          port: 21
+          local-dir: ./deploy_public/
+          server-dir: ./                         # web root = login root
+          dangerous-clean-slate: false
+          exclude: |
+            **/.git*
