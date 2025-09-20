@@ -2,31 +2,21 @@ name: Deploy Laravel (pos.himan.fun)
 
 on:
   push:
-    branches: [ himan ]         # change if needed
+    branches: [ himan ]         # <- your deploy branch
   workflow_dispatch:
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
-      # 1) Checkout
       - name: Checkout
         uses: actions/checkout@v4
 
-      # 2) PHP for Composer
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.2'
-          extensions: mbstring, intl, bcmath, curl, dom, fileinfo, gd, json, openssl, pdo, pdo_mysql, tokenizer, xml
-          coverage: none
+      # We don't need Composer locally anymore (no vendor upload).
+      # Prepare deploy artifacts without /public and without /vendor
 
-      # 3) Install Composer deps (prod)
-      - name: Install Composer dependencies
-        run: composer install --no-dev --prefer-dist --optimize-autoloader
-
-      # 4) Prepare deploy artifacts
       - name: Prepare deploy artifacts
         shell: bash
         run: |
@@ -34,17 +24,21 @@ jobs:
           rm -rf deploy_app deploy_public deploy_tmp
           mkdir -p deploy_app deploy_public
 
-          # Stage code excluding CI/dev dirs
+          # Stage excluding CI/dev directories
           rsync -a . ./deploy_tmp \
             --exclude '.git' \
             --exclude 'node_modules' \
             --exclude '.github' \
-            --exclude 'tests'
+            --exclude 'tests' \
+            --exclude '.env' \
+            --exclude '.env.*'
 
-          # 1) App without /public
-          rsync -a --delete ./deploy_tmp/ ./deploy_app/ --exclude 'public'
+          # 1) App without /public and without /vendor (vendor will be installed on server)
+          rsync -a --delete ./deploy_tmp/ ./deploy_app/ \
+            --exclude 'public' \
+            --exclude 'vendor'
 
-          # 2) Public (only /public contents)
+          # 2) Public (contents of /public)
           rsync -a ./public/ ./deploy_public/
 
           # Patch public/index.php to load app from /laravel
@@ -64,24 +58,30 @@ jobs:
             file_put_contents($f, $c);
           '
 
-      # 5) Upload the Laravel app to /domains/himan.fun/public_html/pos/laravel/
+      # Upload the Laravel app (no vendor) to /public_html/pos/laravel/
       - name: Upload app (laravel/)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.0
         with:
-          server: ${{ secrets.POS_FTP_HOST }}      # set to ftp.himan.fun or your server IP
-          username: ${{ secrets.POS_FTP_USER }}    # u972195898.pos
+          server: ${{ secrets.POS_FTP_HOST }}
+          username: ${{ secrets.POS_FTP_USER }}
           password: ${{ secrets.POS_FTP_PASS }}
           protocol: ftps
           port: 21
           local-dir: ./deploy_app/
-          server-dir: ./laravel/                  # login root is already public_html/pos
-          dangerous-clean-slate: true
+          server-dir: ./laravel/
+          # incremental uploads so we don't re-upload everything each time
+          state-name: ftp-state-laravel.json
+          log-level: verbose
           exclude: |
             **/.git*
             **/node_modules/**
             **/tests/**
+            **/storage/logs/**
+            **/storage/framework/{cache,sessions,views}/**
+            **/.DS_Store
+            **/Thumbs.db
 
-      # 6) Upload public files (web root) to /domains/himan.fun/public_html/pos/
+      # Upload public (web root) to /public_html/pos/
       - name: Upload public (web root)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.0
         with:
@@ -91,7 +91,40 @@ jobs:
           protocol: ftps
           port: 21
           local-dir: ./deploy_public/
-          server-dir: ./                         # web root = login root
-          dangerous-clean-slate: false
+          server-dir: ./
+          state-name: ftp-state-public.json
+          log-level: verbose
           exclude: |
             **/.git*
+            **/.DS_Store
+            **/Thumbs.db
+
+      # Run Composer on the server via SSH (fast & no huge uploads)
+      - name: SSH - install vendor and cache config
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.POS_SSH_HOST }}
+          username: ${{ secrets.POS_SSH_USER }}
+          key: ${{ secrets.POS_SSH_KEY }}
+          port: 22
+          script: |
+            set -e
+            cd ~/domains/himan.fun/public_html/pos/laravel
+
+            # Optional: show PHP and Composer versions (Composer should be available on Hostinger)
+            php -v || true
+            composer -V || true
+
+            # Install vendor on server (prod, optimized)
+            composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction --no-progress
+
+            # Ensure writable directories
+            chmod -R 755 storage bootstrap/cache || true
+
+            # Cache (optional but recommended)
+            php artisan config:cache || true
+            php artisan route:cache || true
+            php artisan view:cache || true
+
+            # Storage link (first time)
+            php artisan storage:link || true
