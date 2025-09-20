@@ -48,9 +48,14 @@ jobs:
           [ -d resources/views ] && cp -r resources/views deploy_app/resources/
           [ -d resources/lang ] && cp -r resources/lang deploy_app/resources/
 
-          # storage skeleton (no logs/cache)
-          mkdir -p deploy_app/storage/{app,framework,sessions,logs}
+          # storage skeleton (no logs/cache content)
+          mkdir -p deploy_app/storage/app
+          mkdir -p deploy_app/storage/framework/{cache,sessions,views}
+          mkdir -p deploy_app/storage/logs
           touch deploy_app/storage/.gitignore
+
+          # ensure bootstrap/cache exists in artifact
+          mkdir -p deploy_app/bootstrap/cache
 
           # --- Public contents ---
           rsync -a ./public/ ./deploy_public/
@@ -107,6 +112,21 @@ jobs:
             set -e
             cd ~/domains/himan.fun/public_html/pos/laravel
 
+            # Ensure Laravel runtime dirs exist BEFORE composer (post-autoload uses artisan)
+            mkdir -p storage/framework/{cache,sessions,views}
+            mkdir -p bootstrap/cache
+            chmod -R 755 storage bootstrap/cache || true
+
+            # Fail-fast if core PHP extensions are missing
+            REQUIRED="mbstring intl bcmath curl dom fileinfo gd json openssl pdo pdo_mysql tokenizer xml sodium"
+            MISSING=""
+            for ext in $REQUIRED; do php -m | grep -qi "^$ext$" || MISSING="$MISSING $ext"; done
+            if [ -n "$MISSING" ]; then
+              echo "❌ Missing PHP extensions:$MISSING"
+              echo "Enable them in hPanel → Advanced → PHP Configuration → PHP Extensions (match CLI PHP version)."
+              exit 1
+            fi
+
             # If composer isn't available, install a local copy for this user
             if ! command -v composer >/dev/null 2>&1; then
               php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
@@ -118,9 +138,10 @@ jobs:
             php -v || true
             composer -V || true
 
+            # Install vendor (now cache paths exist)
             composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction --no-progress
-            chmod -R 755 storage bootstrap/cache || true
 
+            # Laravel caches / links
             php artisan config:cache || true
             php artisan route:cache || true
             php artisan view:cache || true
