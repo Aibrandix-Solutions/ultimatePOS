@@ -1,44 +1,40 @@
-name: Deploy Laravel (pos.himan.fun)
+name: Deploy Laravel (pos.himan.fun via SFTP)
 
 on:
   push:
-    branches: [ himan ]         # <- your deploy branch
+    branches: [ himan ]         # your deploy branch
   workflow_dispatch:
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 35
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # We don't need Composer locally anymore (no vendor upload).
-      # Prepare deploy artifacts without /public and without /vendor
-
+      # Build deploy artifacts WITHOUT vendor and WITHOUT node build (Blade-only)
       - name: Prepare deploy artifacts
         shell: bash
         run: |
           set -e
-          rm -rf deploy_app deploy_public deploy_tmp
+          rm -rf deploy_app deploy_public
           mkdir -p deploy_app deploy_public
 
-          # Stage excluding CI/dev directories
-          rsync -a . ./deploy_tmp \
-            --exclude '.git' \
-            --exclude 'node_modules' \
-            --exclude '.github' \
-            --exclude 'tests' \
-            --exclude '.env' \
-            --exclude '.env.*'
+          # --- Minimal runtime app set (NO vendor, NO public) ---
+          cp -r app bootstrap config database routes artisan composer.json composer.lock phpunit.xml .htaccess deploy_app/ 2>/dev/null || true
 
-          # 1) App without /public and without /vendor (vendor will be installed on server)
-          rsync -a --delete ./deploy_tmp/ ./deploy_app/ \
-            --exclude 'public' \
-            --exclude 'vendor'
+          # resources: only views & lang
+          mkdir -p deploy_app/resources
+          [ -d resources/views ] && cp -r resources/views deploy_app/resources/
+          [ -d resources/lang ] && cp -r resources/lang deploy_app/resources/
 
-          # 2) Public (contents of /public)
+          # storage skeleton (no logs/cache)
+          mkdir -p deploy_app/storage/{app,framework,sessions,logs}
+          touch deploy_app/storage/.gitignore
+
+          # --- Public contents ---
           rsync -a ./public/ ./deploy_public/
 
           # Patch public/index.php to load app from /laravel
@@ -58,73 +54,56 @@ jobs:
             file_put_contents($f, $c);
           '
 
-      # Upload the Laravel app (no vendor) to /public_html/pos/laravel/
-      - name: Upload app (laravel/)
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.0
+      # ---------- SFTP UPLOADS (port 65002) ----------
+      - name: Upload app via SFTP (to /pos/laravel)
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
         with:
-          server: ${{ secrets.POS_FTP_HOST }}
-          username: ${{ secrets.POS_FTP_USER }}
-          password: ${{ secrets.POS_FTP_PASS }}
-          protocol: ftps
-          port: 21
-          local-dir: ./deploy_app/
-          server-dir: ./laravel/
-          # incremental uploads so we don't re-upload everything each time
-          state-name: ftp-state-laravel.json
-          log-level: verbose
-          exclude: |
-            **/.git*
-            **/node_modules/**
-            **/tests/**
-            **/storage/logs/**
-            **/storage/framework/{cache,sessions,views}/**
-            **/.DS_Store
-            **/Thumbs.db
+          server: ${{ secrets.POS_SSH_HOST }}
+          port: ${{ secrets.POS_SSH_PORT }}
+          username: ${{ secrets.POS_SSH_USER }}
+          ssh_private_key: ${{ secrets.POS_SSH_KEY }}
+          local_path: 'deploy_app/*'
+          remote_path: 'domains/himan.fun/public_html/pos/laravel/'
+          delete_remote_files: false
 
-      # Upload public (web root) to /public_html/pos/
-      - name: Upload public (web root)
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.0
+      - name: Upload public via SFTP (to /pos/)
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
         with:
-          server: ${{ secrets.POS_FTP_HOST }}
-          username: ${{ secrets.POS_FTP_USER }}
-          password: ${{ secrets.POS_FTP_PASS }}
-          protocol: ftps
-          port: 21
-          local-dir: ./deploy_public/
-          server-dir: ./
-          state-name: ftp-state-public.json
-          log-level: verbose
-          exclude: |
-            **/.git*
-            **/.DS_Store
-            **/Thumbs.db
+          server: ${{ secrets.POS_SSH_HOST }}
+          port: ${{ secrets.POS_SSH_PORT }}
+          username: ${{ secrets.POS_SSH_USER }}
+          ssh_private_key: ${{ secrets.POS_SSH_KEY }}
+          local_path: 'deploy_public/*'
+          remote_path: 'domains/himan.fun/public_html/pos/'
+          delete_remote_files: false
 
-      # Run Composer on the server via SSH (fast & no huge uploads)
-      - name: SSH - install vendor and cache config
+      # ---------- SSH: Composer on server (port 65002) ----------
+      - name: SSH - composer install & caches
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.POS_SSH_HOST }}
+          port: ${{ secrets.POS_SSH_PORT }}
           username: ${{ secrets.POS_SSH_USER }}
           key: ${{ secrets.POS_SSH_KEY }}
-          port: 22
           script: |
             set -e
             cd ~/domains/himan.fun/public_html/pos/laravel
 
-            # Optional: show PHP and Composer versions (Composer should be available on Hostinger)
+            # If composer isn't available, install a local copy for this user
+            if ! command -v composer >/dev/null 2>&1; then
+              php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+              php composer-setup.php --install-dir=$HOME/bin --filename=composer
+              rm composer-setup.php
+              export PATH="$HOME/bin:$PATH"
+            fi
+
             php -v || true
             composer -V || true
 
-            # Install vendor on server (prod, optimized)
             composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction --no-progress
-
-            # Ensure writable directories
             chmod -R 755 storage bootstrap/cache || true
 
-            # Cache (optional but recommended)
             php artisan config:cache || true
             php artisan route:cache || true
             php artisan view:cache || true
-
-            # Storage link (first time)
             php artisan storage:link || true
