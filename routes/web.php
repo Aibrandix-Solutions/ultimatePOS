@@ -129,7 +129,7 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
 
     Route::resource('brands', BrandController::class);
 
-    Route::resource('payment-account', 'PaymentAccountController');
+    // Route::resource('payment-account', PaymentAccountController::class); // Controller not implemented yet
 
     Route::resource('tax-rates', TaxRateController::class);
 
@@ -507,7 +507,7 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
 
 //common route
 Route::middleware(['auth'])->group(function () {
-    Route::get('/logout', [App\Http\Controllers\Auth\LoginController::class, 'logout'])->name('logout');
+    // Logout route is handled by Auth::routes() above (POST method)
 });
 
 Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone'])->group(function () {

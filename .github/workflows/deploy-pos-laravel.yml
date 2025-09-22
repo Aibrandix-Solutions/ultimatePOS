@@ -2,7 +2,7 @@ name: Deploy Laravel (pos.himan.fun via SFTP)
 
 on:
   push:
-    branches: [ himan ]         # your deploy branch
+    branches: [ himan ]
   workflow_dispatch:
 
 jobs:
@@ -20,7 +20,7 @@ jobs:
           set -e
           echo "${{ secrets.POS_SSH_KEY }}" > /tmp/pos_key
           chmod 600 /tmp/pos_key
-          echo "Fingerprint (expect SHA256 ... ED25519):"
+          echo "Fingerprint (ED25519 expected):"
           ssh-keygen -lf /tmp/pos_key
 
       - name: SSH preflight (connect & exit)
@@ -32,7 +32,7 @@ jobs:
               "${{ secrets.POS_SSH_USER }}@${{ secrets.POS_SSH_HOST }}" \
               "echo SSH OK: \$(whoami) on \$(hostname)"
 
-      # Build deploy artifacts WITHOUT vendor and WITHOUT node build (Blade-only)
+      # --- Build deploy artifacts (no vendor, no node build) ---
       - name: Prepare deploy artifacts
         shell: bash
         run: |
@@ -40,24 +40,29 @@ jobs:
           rm -rf deploy_app deploy_public
           mkdir -p deploy_app deploy_public
 
-          # --- Minimal runtime app set (NO vendor, NO public) ---
+          # Core app (NO vendor, NO public)
           cp -r app bootstrap config database routes artisan composer.json composer.lock phpunit.xml .htaccess deploy_app/ 2>/dev/null || true
 
-          # resources: only views & lang
+          # ✅ Translations: support BOTH locations
+          if [ -d lang ]; then
+            cp -r lang deploy_app/
+          fi
           mkdir -p deploy_app/resources
-          [ -d resources/views ] && cp -r resources/views deploy_app/resources/
-          [ -d resources/lang ] && cp -r resources/lang deploy_app/resources/
+          if [ -d resources/lang ]; then
+            cp -r resources/lang deploy_app/resources/
+          fi
 
-          # storage skeleton (no logs/cache content)
+          # Views
+          [ -d resources/views ] && cp -r resources/views deploy_app/resources/
+
+          # Laravel runtime skeleton
           mkdir -p deploy_app/storage/app
           mkdir -p deploy_app/storage/framework/{cache,sessions,views}
           mkdir -p deploy_app/storage/logs
+          mkdir -p deploy_app/bootstrap/cache
           touch deploy_app/storage/.gitignore
 
-          # ensure bootstrap/cache exists in artifact
-          mkdir -p deploy_app/bootstrap/cache
-
-          # --- Public contents ---
+          # Public contents
           rsync -a ./public/ ./deploy_public/
 
           # Patch public/index.php to load app from /laravel
@@ -77,7 +82,7 @@ jobs:
             file_put_contents($f, $c);
           '
 
-      # ---------- SFTP UPLOADS (port 65002) ----------
+      # --- SFTP uploads (port 65002) ---
       - name: Upload app via SFTP (to /pos/laravel)
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
         with:
@@ -100,7 +105,7 @@ jobs:
           remote_path: 'domains/himan.fun/public_html/pos/'
           delete_remote_files: false
 
-      # ---------- SSH: Composer on server (port 65002) ----------
+      # --- SSH: composer install & caches on the server ---
       - name: SSH - composer install & caches
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -112,22 +117,22 @@ jobs:
             set -e
             cd ~/domains/himan.fun/public_html/pos/laravel
 
-            # Ensure Laravel runtime dirs exist BEFORE composer (post-autoload uses artisan)
+            # Ensure runtime dirs BEFORE composer (post-autoload may run artisan)
             mkdir -p storage/framework/{cache,sessions,views}
             mkdir -p bootstrap/cache
             chmod -R 755 storage bootstrap/cache || true
 
-            # Fail-fast if core PHP extensions are missing
+            # Fail-fast if common PHP extensions are missing
             REQUIRED="mbstring intl bcmath curl dom fileinfo gd json openssl pdo pdo_mysql tokenizer xml sodium"
             MISSING=""
             for ext in $REQUIRED; do php -m | grep -qi "^$ext$" || MISSING="$MISSING $ext"; done
             if [ -n "$MISSING" ]; then
               echo "❌ Missing PHP extensions:$MISSING"
-              echo "Enable them in hPanel → Advanced → PHP Configuration → PHP Extensions (match CLI PHP version)."
+              echo "Enable in hPanel → Advanced → PHP Configuration → PHP Extensions (match CLI PHP version)."
               exit 1
             fi
 
-            # If composer isn't available, install a local copy for this user
+            # Install composer locally if absent
             if ! command -v composer >/dev/null 2>&1; then
               php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
               php composer-setup.php --install-dir=$HOME/bin --filename=composer
@@ -138,11 +143,16 @@ jobs:
             php -v || true
             composer -V || true
 
-            # Install vendor (now cache paths exist)
             composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction --no-progress
 
             # Laravel caches / links
+            php artisan config:clear || true
+            php artisan route:clear || true
+            php artisan view:clear  || true
+
             php artisan config:cache || true
-            php artisan route:cache || true
-            php artisan view:cache || true
+            php artisan route:cache  || true
+            php artisan view:cache   || true
+
+            # storage:link can fail on shared hosts (no symlink); ignore if so
             php artisan storage:link || true
