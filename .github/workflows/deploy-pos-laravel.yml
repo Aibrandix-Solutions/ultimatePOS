@@ -43,19 +43,13 @@ jobs:
           # Core app (NO vendor, NO public)
           cp -r app bootstrap config database routes artisan composer.json composer.lock phpunit.xml .htaccess deploy_app/ 2>/dev/null || true
 
-          # ✅ Translations: support BOTH locations
-          if [ -d lang ]; then
-            cp -r lang deploy_app/
-          fi
+          # Translations (support both layouts)
+          if [ -d lang ]; then cp -r lang deploy_app/; fi
           mkdir -p deploy_app/resources
-          if [ -d resources/lang ]; then
-            cp -r resources/lang deploy_app/resources/
-          fi
-
-          # Views
+          [ -d resources/lang ]  && cp -r resources/lang  deploy_app/resources/
           [ -d resources/views ] && cp -r resources/views deploy_app/resources/
 
-          # Laravel runtime skeleton
+          # Laravel runtime skeleton (created now; owned by you after upload)
           mkdir -p deploy_app/storage/app
           mkdir -p deploy_app/storage/framework/{cache,sessions,views}
           mkdir -p deploy_app/storage/logs
@@ -63,24 +57,37 @@ jobs:
           touch deploy_app/storage/.gitignore
 
           # Public contents
-          rsync -a ./public/ ./deploy_public/
+          rsync -a public/ deploy_public/
 
-          # Patch public/index.php to load app from /laravel
-          php -r '
-            $f = "deploy_public/index.php";
-            $c = file_get_contents($f);
-            $c = preg_replace(
-              "/require __DIR__ \\. \"\\/\\.\\.\\/vendor\\/autoload\\.php\";/",
-              "define(\\\"LARAVEL_BASE\\\", __DIR__ . \\\"/laravel\\\");\nrequire LARAVEL_BASE . \\\"/vendor/autoload.php\\\";",
-              $c
-            );
-            $c = preg_replace(
-              "/require_once __DIR__ \\. \"\\/\\.\\.\\/bootstrap\\/app\\.php\";/",
-              "$app = require LARAVEL_BASE . \\\"/bootstrap/app.php\\\";",
-              $c
-            );
-            file_put_contents($f, $c);
-          '
+          # --- Hard-write a split-docroot index.php (always correct) ---
+          cat > deploy_public/index.php <<'PHP'
+          <?php
+          use Illuminate\Contracts\Http\Kernel;
+          use Illuminate\Http\Request;
+
+          define('LARAVEL_START', microtime(true));
+
+          // Maintenance file relative to the public docroot
+          if (file_exists($maintenance = __DIR__ . '/storage/framework/maintenance.php')) {
+              require $maintenance;
+          }
+
+          // Point to the real Laravel app living under /laravel
+          define('LARAVEL_BASE', __DIR__ . '/laravel');
+
+          require LARAVEL_BASE . '/vendor/autoload.php';
+
+          $app = require LARAVEL_BASE . '/bootstrap/app.php';
+
+          /** @var Kernel $kernel */
+          $kernel = $app->make(Kernel::class);
+
+          $response = tap($kernel->handle(
+              $request = Request::capture()
+          ))->send();
+
+          $kernel->terminate($request, $response);
+          PHP
 
       # --- SFTP uploads (port 65002) ---
       - name: Upload app via SFTP (to /pos/laravel)
@@ -92,7 +99,7 @@ jobs:
           ssh_private_key: ${{ secrets.POS_SSH_KEY }}
           local_path: 'deploy_app/*'
           remote_path: 'domains/himan.fun/public_html/pos/laravel/'
-          delete_remote_files: false
+          delete_remote_files: false          # don't wipe laravel/ (keeps .env, vendor)
 
       - name: Upload public via SFTP (to /pos/)
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
@@ -103,7 +110,7 @@ jobs:
           ssh_private_key: ${{ secrets.POS_SSH_KEY }}
           local_path: 'deploy_public/*'
           remote_path: 'domains/himan.fun/public_html/pos/'
-          delete_remote_files: false
+          delete_remote_files: true           # safe: clean webroot so stale files don't linger
 
       # --- SSH: composer install & caches on the server ---
       - name: SSH - composer install & caches

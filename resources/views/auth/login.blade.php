@@ -314,15 +314,7 @@
                             </button>
                         </form>
 
-                        @if (!(request()->segment(1) == 'business' && request()->segment(2) == 'register'))
-                            @if (config('constants.allow_registration'))
-                                <div class="text-center">
-                                    <a href="{{ route('business.getRegister') }}@if (!empty(request()->lang)) {{ '?lang=' . request()->lang }} @endif" class="text-link">
-                                        {{ __('business.not_yet_registered') }} <strong>{{ __('business.register_now') }}</strong>
-                                    </a>
-                                </div>
-                            @endif
-                        @endif
+                        {{-- Registration disabled for clients --}}
                     </div>
                 </div>
             </div>

@@ -410,14 +410,10 @@
                             <a class="btn btn-primary" href="{{ url('/home') }}">Go to Dashboard</a>
                         </li>
                     @else
-                        @if (Route::has('business.getRegister'))
-                            <li class="nav-item">
-                                <a class="btn btn-primary" href="{{ route('business.getRegister') }}">Register</a>
-                            </li>
-                        @endif
+                        {{-- Registration disabled for clients --}}
                         @if (Route::has('login'))
                             <li class="nav-item">
-                                <a class="btn btn-outline-secondary" href="{{ route('login') }}">Sign In</a>
+                                <a class="btn btn-primary" href="{{ route('login') }}">Sign In</a>
                             </li>
                         @endif
                     @endauth
@@ -464,9 +460,7 @@
                             @auth
                                 <a class="btn btn-primary btn-lg" href="{{ url('/home') }}">Open Dashboard</a>
                             @else
-                                @if (Route::has('business.getRegister'))
-                                    <a class="btn btn-primary btn-lg" href="{{ route('business.getRegister') }}">Create an account</a>
-                                @endif
+                                {{-- Registration disabled for clients --}}
                                 @if (Route::has('login'))
                                     <a class="btn btn-outline-secondary btn-lg" href="{{ route('login') }}">I already have an account</a>
                                 @endif

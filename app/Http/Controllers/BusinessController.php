@@ -89,7 +89,7 @@ class BusinessController extends Controller
     public function getRegister()
     {
         if (! config('constants.allow_registration')) {
-            return redirect('/');
+            abort(404);
         }
 
         $currencies = $this->businessUtil->allCurrencies();
@@ -124,7 +124,7 @@ class BusinessController extends Controller
     public function postRegister(Request $request)
     {
         if (! config('constants.allow_registration')) {
-            return redirect('/');
+            abort(404);
         }
 
         try {
@@ -132,11 +132,11 @@ class BusinessController extends Controller
                 [
                     'name' => 'required|max:255',
                     'currency_id' => 'required|numeric',
-                    'country' => 'required|max:255',
-                    'state' => 'required|max:255',
-                    'city' => 'required|max:255',
-                    'zip_code' => 'required|max:255',
-                    'landmark' => 'required|max:255',
+                    'country' => 'sometimes|nullable|max:255',
+                    'state' => 'sometimes|nullable|max:255',
+                    'city' => 'sometimes|nullable|max:255',
+                    'zip_code' => 'sometimes|nullable|max:255',
+                    'landmark' => 'sometimes|nullable|max:255',
                     'time_zone' => 'required|max:255',
                     'surname' => 'max:10',
                     'email' => 'sometimes|nullable|email|unique:users|max:255',
@@ -149,19 +149,14 @@ class BusinessController extends Controller
                 [
                     'name.required' => __('validation.required', ['attribute' => __('business.business_name')]),
                     'name.currency_id' => __('validation.required', ['attribute' => __('business.currency')]),
-                    'country.required' => __('validation.required', ['attribute' => __('business.country')]),
-                    'state.required' => __('validation.required', ['attribute' => __('business.state')]),
-                    'city.required' => __('validation.required', ['attribute' => __('business.city')]),
-                    'zip_code.required' => __('validation.required', ['attribute' => __('business.zip_code')]),
-                    'landmark.required' => __('validation.required', ['attribute' => __('business.landmark')]),
                     'time_zone.required' => __('validation.required', ['attribute' => __('business.time_zone')]),
                     'email.email' => __('validation.email', ['attribute' => __('business.email')]),
-                    'email.email' => __('validation.unique', ['attribute' => __('business.email')]),
+                    'email.unique' => __('validation.unique', ['attribute' => __('business.email')]),
                     'first_name.required' => __('validation.required', ['attribute' => __('business.first_name')]),
                     'username.required' => __('validation.required', ['attribute' => __('business.username')]),
                     'username.min' => __('validation.min', ['attribute' => __('business.username')]),
-                    'password.required' => __('validation.required', ['attribute' => __('business.username')]),
-                    'password.min' => __('validation.min', ['attribute' => __('business.username')]),
+                    'password.required' => __('validation.required', ['attribute' => __('business.password')]),
+                    'password.min' => __('validation.min', ['attribute' => __('business.password')]),
                     'fy_start_month.required' => __('validation.required', ['attribute' => __('business.fy_start_month')]),
                     'accounting_method.required' => __('validation.required', ['attribute' => __('business.accounting_method')]),
                 ]
@@ -192,11 +187,36 @@ class BusinessController extends Controller
 
             $business_location = $request->only(['name', 'country', 'state', 'city', 'zip_code', 'landmark',
                 'website', 'mobile', 'alternate_number', ]);
+            // Provide safe defaults for optional fields
+            if (empty($business_location['name'])) {
+                $business_location['name'] = $business_details['name'] ?? 'Default';
+            }
+            foreach (['country','state','city','zip_code','landmark','website','mobile','alternate_number'] as $key) {
+                if (!isset($business_location[$key]) || $business_location[$key] === null) {
+                    $business_location[$key] = '';
+                }
+            }
 
             //Create the business
             $business_details['owner_id'] = $user->id;
             if (! empty($business_details['start_date'])) {
-                $business_details['start_date'] = Carbon::createFromFormat(config('constants.default_date_format'), $business_details['start_date'])->toDateString();
+                $rawStartDate = $business_details['start_date'];
+                $parsed = null;
+                $candidateFormats = [
+                    config('constants.default_date_format'), // e.g. m/d/Y
+                    'Y-m-d', // HTML5 date input format
+                    'd/m/Y',
+                    'm-d-Y',
+                ];
+                foreach ($candidateFormats as $fmt) {
+                    try {
+                        $parsed = Carbon::createFromFormat($fmt, $rawStartDate);
+                        break;
+                    } catch (\Exception $e) {
+                        // try next format
+                    }
+                }
+                $business_details['start_date'] = $parsed ? $parsed->toDateString() : null;
             }
 
             //upload logo

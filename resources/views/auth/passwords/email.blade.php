@@ -184,36 +184,18 @@
                     </div>
 
                     <div class="p-4 p-md-5">
-                        @if (session('status') && is_string(session('status')))
-                            <div class="alert alert-info" role="alert">{{ session('status') }}</div>
-                        @endif
-
-                        <form method="POST" action="{{ route('password.email') }}">
-                            {{ csrf_field() }}
-                            
-                            <div class="mb-4">
-                                <label class="form-label fw-semibold">@lang('Email') *</label>
-                                <div class="input-group">
-                                    <span class="input-group-text">
-                                        <i class="bi bi-envelope"></i>
-                                    </span>
-                                    <input id="email" type="email" class="form-control" name="email" 
-                                           value="{{ old('email') }}" required autofocus 
-                                           placeholder="@lang('lang_v1.email_address')">
-                                </div>
-                                @if ($errors->has('email'))
-                                    <div class="text-danger small mt-1">
-                                        <strong>{{ $errors->first('email') }}</strong>
+                        <div class="alert alert-info" role="alert">
+                            <div class="d-flex align-items-start gap-2">
+                                <i class="bi bi-info-circle mt-1"></i>
+                                <div>
+                                    <strong>Forgot your password?</strong>
+                                    <div class="mt-1">Password reset is managed by your administrator. Please contact the admin to reset your account access.</div>
+                                    <div class="mt-2">
+                                        <div>Support email: <a href="mailto:support@aigenerix.com" class="text-decoration-none">support@aigenerix.com</a></div>
                                     </div>
-                                @endif
+                                </div>
                             </div>
-
-                            <div class="d-grid">
-                                <button type="submit" class="btn btn-primary btn-lg">
-                                    <i class="bi bi-send me-2"></i>@lang('lang_v1.send_password_reset_link')
-                                </button>
-                            </div>
-                        </form>
+                        </div>
 
                         <!-- Back to Login Link -->
                         <div class="text-center mt-4">
@@ -231,12 +213,3 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-@section('javascript')
-    <script type="text/javascript">
-        $(document).ready(function() {
-            $('.change_lang').click(function() {
-                window.location = "{{ route('password.request') }}?lang=" + $(this).attr('value');
-            });
-        })
-    </script>
-@endsection

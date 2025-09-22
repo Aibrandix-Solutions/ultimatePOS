@@ -25,7 +25,7 @@
                 <span class="input-group-text">
                     <i class="bi bi-calendar"></i>
                 </span>
-                {!! Form::text('start_date', null, ['class' => 'form-control start-date-picker','placeholder' => __('business.start_date'), 'readonly']); !!}
+                {!! Form::text('start_date', null, ['class' => 'form-control start-date-picker','placeholder' => __('business.start_date'), 'autocomplete' => 'off']); !!}
             </div>
         </div>
         <div class="col-md-6">
@@ -79,54 +79,54 @@
     
     <div class="row g-3">
         <div class="col-md-6">
-            <label class="form-label fw-semibold">@lang('business.country') *</label>
+            <label class="form-label fw-semibold">@lang('business.country')</label>
             <div class="input-group">
                 <span class="input-group-text">
                     <i class="bi bi-globe"></i>
                 </span>
-                {!! Form::text('country', null, ['class' => 'form-control','placeholder' => __('business.country'), 'required']); !!}
+                {!! Form::text('country', null, ['class' => 'form-control','placeholder' => __('business.country')]); !!}
             </div>
         </div>
         <div class="col-md-6">
-            <label class="form-label fw-semibold">@lang('business.state') *</label>
+            <label class="form-label fw-semibold">@lang('business.state')</label>
             <div class="input-group">
                 <span class="input-group-text">
                     <i class="bi bi-geo-alt"></i>
                 </span>
-                {!! Form::text('state', null, ['class' => 'form-control','placeholder' => __('business.state'), 'required']); !!}
+                {!! Form::text('state', null, ['class' => 'form-control','placeholder' => __('business.state')]); !!}
             </div>
         </div>
     </div>
     
     <div class="row g-3">
         <div class="col-md-6">
-            <label class="form-label fw-semibold">@lang('business.city') *</label>
+            <label class="form-label fw-semibold">@lang('business.city')</label>
             <div class="input-group">
                 <span class="input-group-text">
                     <i class="bi bi-geo-alt"></i>
                 </span>
-                {!! Form::text('city', null, ['class' => 'form-control','placeholder' => __('business.city'), 'required']); !!}
+                {!! Form::text('city', null, ['class' => 'form-control','placeholder' => __('business.city')]); !!}
             </div>
         </div>
         <div class="col-md-6">
-            <label class="form-label fw-semibold">@lang('business.zip_code') *</label>
+            <label class="form-label fw-semibold">@lang('business.zip_code')</label>
             <div class="input-group">
                 <span class="input-group-text">
                     <i class="bi bi-mailbox"></i>
                 </span>
-                {!! Form::text('zip_code', null, ['class' => 'form-control','placeholder' => __('business.zip_code_placeholder'), 'required']); !!}
+                {!! Form::text('zip_code', null, ['class' => 'form-control','placeholder' => __('business.zip_code_placeholder')]); !!}
             </div>
         </div>
     </div>
     
     <div class="row g-3">
         <div class="col-md-6">
-            <label class="form-label fw-semibold">@lang('business.landmark') *</label>
+            <label class="form-label fw-semibold">@lang('business.landmark')</label>
             <div class="input-group">
                 <span class="input-group-text">
                     <i class="bi bi-geo-alt"></i>
                 </span>
-                {!! Form::text('landmark', null, ['class' => 'form-control','placeholder' => __('business.landmark'), 'required']); !!}
+                {!! Form::text('landmark', null, ['class' => 'form-control','placeholder' => __('business.landmark')]); !!}
             </div>
         </div>
         <div class="col-md-6">
@@ -262,12 +262,12 @@
             </div>
         </div>
         <div class="col-md-6">
-            <label class="form-label fw-semibold">@lang('business.email') *</label>
+            <label class="form-label fw-semibold">@lang('business.email')</label>
             <div class="input-group">
                 <span class="input-group-text">
                     <i class="bi bi-envelope"></i>
                 </span>
-                {!! Form::text('email', null, ['class' => 'form-control','placeholder' => __('business.email'), 'required']); !!}
+                {!! Form::text('email', null, ['class' => 'form-control','placeholder' => __('business.email')]); !!}
             </div>
         </div>
     </div>

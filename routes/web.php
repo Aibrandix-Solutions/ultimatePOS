@@ -74,17 +74,28 @@ use Illuminate\Support\Facades\Route;
 
 include_once 'install_r.php';
 
+// Forcefully block public access to registration when disabled
+if (!config('constants.allow_registration')) {
+    Route::any('/business/register{any?}', function () {
+        abort(404);
+    })->where('any', '.*');
+}
+
 Route::middleware(['setData'])->group(function () {
     Route::get('/', function () {
         return view('welcome');
     });
 
-    Auth::routes();
+    // Disable default Laravel registration routes
+    Auth::routes(['register' => false]);
 
-    Route::get('/business/register', [BusinessController::class, 'getRegister'])->name('business.getRegister');
-    Route::post('/business/register', [BusinessController::class, 'postRegister'])->name('business.postRegister');
-    Route::post('/business/register/check-username', [BusinessController::class, 'postCheckUsername'])->name('business.postCheckUsername');
-    Route::post('/business/register/check-email', [BusinessController::class, 'postCheckEmail'])->name('business.postCheckEmail');
+    $allowRegistration = filter_var(env('ALLOW_REGISTRATION', false), FILTER_VALIDATE_BOOLEAN);
+    if ($allowRegistration) {
+        Route::get('/business/register', [BusinessController::class, 'getRegister'])->name('business.getRegister');
+        Route::post('/business/register', [BusinessController::class, 'postRegister'])->name('business.postRegister');
+        Route::post('/business/register/check-username', [BusinessController::class, 'postCheckUsername'])->name('business.postCheckUsername');
+        Route::post('/business/register/check-email', [BusinessController::class, 'postCheckEmail'])->name('business.postCheckEmail');
+    }
 
     Route::get('/invoice/{token}', [SellPosController::class, 'showInvoice'])
         ->name('show_invoice');
