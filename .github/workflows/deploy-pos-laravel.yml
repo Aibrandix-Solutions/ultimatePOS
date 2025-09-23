@@ -49,7 +49,7 @@ jobs:
           [ -d resources/lang ]  && cp -r resources/lang  deploy_app/resources/
           [ -d resources/views ] && cp -r resources/views deploy_app/resources/
 
-          # Laravel runtime skeleton (created now; owned by you after upload)
+          # Laravel runtime skeleton
           mkdir -p deploy_app/storage/app
           mkdir -p deploy_app/storage/framework/{cache,sessions,views}
           mkdir -p deploy_app/storage/logs
@@ -59,33 +59,27 @@ jobs:
           # Public contents
           rsync -a public/ deploy_public/
 
-          # --- Hard-write a split-docroot index.php (always correct) ---
+          # Write split-docroot index.php that points to /laravel
           cat > deploy_public/index.php <<'PHP'
           <?php
           use Illuminate\Contracts\Http\Kernel;
           use Illuminate\Http\Request;
-
           define('LARAVEL_START', microtime(true));
 
-          // Maintenance file relative to the public docroot
+          // maintenance file relative to public docroot
           if (file_exists($maintenance = __DIR__ . '/storage/framework/maintenance.php')) {
               require $maintenance;
           }
 
-          // Point to the real Laravel app living under /laravel
           define('LARAVEL_BASE', __DIR__ . '/laravel');
-
           require LARAVEL_BASE . '/vendor/autoload.php';
-
           $app = require LARAVEL_BASE . '/bootstrap/app.php';
 
           /** @var Kernel $kernel */
           $kernel = $app->make(Kernel::class);
-
           $response = tap($kernel->handle(
               $request = Request::capture()
           ))->send();
-
           $kernel->terminate($request, $response);
           PHP
 
@@ -99,7 +93,8 @@ jobs:
           ssh_private_key: ${{ secrets.POS_SSH_KEY }}
           local_path: 'deploy_app/*'
           remote_path: 'domains/himan.fun/public_html/pos/laravel/'
-          delete_remote_files: false          # don't wipe laravel/ (keeps .env, vendor)
+          delete_remote_files: false   # keep .env and vendor on server
+          sftp_only_changed: true
 
       - name: Upload public via SFTP (to /pos/)
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
@@ -110,7 +105,13 @@ jobs:
           ssh_private_key: ${{ secrets.POS_SSH_KEY }}
           local_path: 'deploy_public/*'
           remote_path: 'domains/himan.fun/public_html/pos/'
-          delete_remote_files: true           # safe: clean webroot so stale files don't linger
+          delete_remote_files: false   # ⚠️ don’t wipe uploads/files
+          sftp_only_changed: true
+          exclude: |
+            uploads/**
+            files/**
+            storage/**
+            .well-known/**
 
       # --- SSH: composer install & caches on the server ---
       - name: SSH - composer install & caches
@@ -122,20 +123,21 @@ jobs:
           key: ${{ secrets.POS_SSH_KEY }}
           script: |
             set -e
-            cd ~/domains/himan.fun/public_html/pos/laravel
+            # Use absolute path (no ~ to avoid expansion issues)
+            cd /home/u972195898/domains/himan.fun/public_html/pos/laravel
 
-            # Ensure runtime dirs BEFORE composer (post-autoload may run artisan)
+            # Ensure runtime dirs BEFORE composer
             mkdir -p storage/framework/{cache,sessions,views}
             mkdir -p bootstrap/cache
             chmod -R 755 storage bootstrap/cache || true
 
-            # Fail-fast if common PHP extensions are missing
+            # Check common PHP extensions
             REQUIRED="mbstring intl bcmath curl dom fileinfo gd json openssl pdo pdo_mysql tokenizer xml sodium"
             MISSING=""
             for ext in $REQUIRED; do php -m | grep -qi "^$ext$" || MISSING="$MISSING $ext"; done
             if [ -n "$MISSING" ]; then
               echo "❌ Missing PHP extensions:$MISSING"
-              echo "Enable in hPanel → Advanced → PHP Configuration → PHP Extensions (match CLI PHP version)."
+              echo "Enable in hPanel → Advanced → PHP Configuration → PHP Extensions."
               exit 1
             fi
 
@@ -152,7 +154,7 @@ jobs:
 
             composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction --no-progress
 
-            # Laravel caches / links
+            # Clear & rebuild caches
             php artisan config:clear || true
             php artisan route:clear || true
             php artisan view:clear  || true
@@ -161,5 +163,5 @@ jobs:
             php artisan route:cache  || true
             php artisan view:cache   || true
 
-            # storage:link can fail on shared hosts (no symlink); ignore if so
+            # storage:link can fail on shared hosts; ignore error
             php artisan storage:link || true

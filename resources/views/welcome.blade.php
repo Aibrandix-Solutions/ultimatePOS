@@ -524,7 +524,7 @@
     <!-- Footer -->
     <footer class="py-2 text-center text-muted">
         <div class="container">
-            <p class="mb-2">© {{ date('Y') }} {{ config('app.name', 'Ultimate POS') }} · Crafted with Laravel</p>
+            <p class="mb-2">© {{ date('Y') }} {{ config('app.name', 'Ultimate POS') }}</p>
             <div class="d-flex justify-content-center gap-3">
                 <a href="#" class="text-decoration-none text-muted">Privacy</a>
                 <a href="#" class="text-decoration-none text-muted">Terms</a>
