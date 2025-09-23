@@ -89,8 +89,8 @@ Route::middleware(['setData'])->group(function () {
     // Disable default Laravel registration routes
     Auth::routes(['register' => false]);
 
-    $allowRegistration = filter_var(env('ALLOW_REGISTRATION', false), FILTER_VALIDATE_BOOLEAN);
-    if ($allowRegistration) {
+    // Use config value instead of env() to be cache-safe in production
+    if (config('constants.allow_registration')) {
         Route::get('/business/register', [BusinessController::class, 'getRegister'])->name('business.getRegister');
         Route::post('/business/register', [BusinessController::class, 'postRegister'])->name('business.postRegister');
         Route::post('/business/register/check-username', [BusinessController::class, 'postCheckUsername'])->name('business.postCheckUsername');

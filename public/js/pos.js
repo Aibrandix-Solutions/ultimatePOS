@@ -2373,6 +2373,10 @@ function reset_pos_form() {
 function set_default_customer() {
     var default_customer_id = $('#default_customer_id').val();
     var default_customer_name = $('#default_customer_name').val();
+    // Fallback label to ensure the Select2 shows a readable default option
+    if (!default_customer_name || default_customer_name.trim() === '') {
+        default_customer_name = 'Walk-In Customer';
+    }
     var default_customer_balance = $('#default_customer_balance').val();
     var default_customer_address = $('#default_customer_address').val();
     var exists = default_customer_id ? $('select#customer_id option[value=' + default_customer_id + ']').length : 0;

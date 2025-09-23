@@ -58,6 +58,8 @@ jobs:
 
           # Public contents
           rsync -a public/ deploy_public/
+          # ✅ Ensure .htaccess is included explicitly
+          if [ -f public/.htaccess ]; then cp public/.htaccess deploy_public/.htaccess; fi
 
           # Write split-docroot index.php that points to /laravel
           cat > deploy_public/index.php <<'PHP'
@@ -95,6 +97,12 @@ jobs:
           remote_path: 'domains/himan.fun/public_html/pos/laravel/'
           delete_remote_files: false   # keep .env and vendor on server
           sftp_only_changed: true
+          # 🚫 Belt & braces: never upload any .env file even if it appears locally
+          exclude: |
+            .env
+            .env.*
+            **/.env
+            **/.env.*
 
       - name: Upload public via SFTP (to /pos/)
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
