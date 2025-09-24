@@ -31,6 +31,25 @@
     <link rel="icon" href="{{ asset('favicon.ico') }}">
     <!-- CSRF Token -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
+	<script>
+		(function() {
+			var meta = document.querySelector('meta[name="csrf-token"]');
+			if (!meta) {
+				meta = document.createElement('meta');
+				meta.setAttribute('name', 'csrf-token');
+				document.head.appendChild(meta);
+			}
+			var token = meta.getAttribute('content') || '{{ csrf_token() }}';
+			meta.setAttribute('content', token);
+			window.csrfToken = token;
+			if (window.axios) {
+				window.axios.defaults.headers.common['X-CSRF-TOKEN'] = token;
+			}
+			if (window.jQuery) {
+				jQuery.ajaxSetup({ headers: { 'X-CSRF-TOKEN': token } });
+			}
+		})();
+	</script>
     
     <title>@yield('title') - {{ Session::get('business.name') }}</title>
 
@@ -40,6 +59,11 @@
     @include('layouts.partials.extracss')
 
     @yield('css')
+
+    @if ($pos_layout)
+        <script>window.__load_vendor_early = true;</script>
+        <script src="{{ asset('js/vendor.js?v=' . $asset_v) }}"></script>
+    @endif
 
 </head>
 <body
@@ -132,7 +156,19 @@
             {!! $__additional_html !!}
         @endif
 
-        @include('layouts.partials.javascripts')
+        @include('layouts.partials.javascripts', ['vendor_loaded' => $pos_layout])
+        <script>
+            (function ensureAxiosCsrf(retries) {
+                var token = window.csrfToken || (document.querySelector('meta[name="csrf-token"]') || {}).content;
+                if (window.axios) {
+                    window.axios.defaults.headers.common['X-CSRF-TOKEN'] = token;
+                    return;
+                }
+                if (retries > 0) {
+                    setTimeout(function () { ensureAxiosCsrf(retries - 1); }, 200);
+                }
+            })(30);
+        </script>
         
         {{-- Module JS --}}
         @include('layouts.module-assets')
