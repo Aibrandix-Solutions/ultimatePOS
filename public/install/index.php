@@ -271,7 +271,7 @@ if (empty($_POST)) {
                             echo "<span class='text-danger'>Some setting are incorrect. Correct it and then refresh this page</span>";
                         }
 
-                        echo "<br/><small style='font-size:13px'><a href='https://ultimatefosters.com/docs/ultimatepos/getting-started/installing-ultimatepos/' target='_blank'>Installation Document</a></small>";
+                        echo "<br/><small style='font-size:13px'><a href='#' target='_blank'>Installation Document</a></small>";
                         ?>
                     </p>
                 </center>
@@ -280,7 +280,7 @@ if (empty($_POST)) {
                     
                 <br/>
                     <p class="text-center">
-                        <a href="https://ultimatefosters.com/product/installation-update-service/?ref=install-step1" target="_blank" class="btn btn-default"><i class="fas fa-cogs"></i> Take Installation Service</a>
+                        <a href="#" target="_blank" class="btn btn-default"><i class="fas fa-cogs"></i> Take Installation Service</a>
                     </p>
                     <hr />
                 </div>

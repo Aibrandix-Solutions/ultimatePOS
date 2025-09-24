@@ -171,14 +171,23 @@ class AppServiceProvider extends ServiceProvider
                 echo 'bg-red';
             }?>";
         });
-
         //Blade directive to display help text.
         Blade::directive('show_tooltip', function ($message) {
             return "<?php
                 if(session('business.enable_tooltip')){
-                    echo '<i class=\"fa fa-info-circle text-info hover-q no-print \" aria-hidden=\"true\" 
-                    data-container=\"body\" data-toggle=\"popover\" data-placement=\"auto bottom\" 
-                    data-content=\"' . $message . '\" data-html=\"true\" data-trigger=\"hover\"></i>';
+                    echo '<div class=\"tw-inline-flex tw-items-center tw-justify-center tw-w-5 tw-h-5 tw-rounded-full tw-bg-gradient-to-r tw-from-blue-50 tw-to-indigo-50 tw-border tw-border-blue-200 tw-cursor-help tw-ml-1 no-print tw-transition-all tw-duration-300 tw-hover:tw-scale-110 tw-hover:tw-shadow-md\" 
+                    style=\"background: linear-gradient(135deg, rgba(22,17,96,0.1) 0%, rgba(42,36,128,0.1) 100%); border-color: rgba(22,17,96,0.3);\"
+                    data-container=\"body\"
+                    data-toggle=\"popover\"
+                    data-placement=\"auto bottom\"
+                    data-content=\"' . $message . '\"
+                    data-html=\"true\"
+                    data-trigger=\"hover\"
+                    onmouseover=\"this.style.background=\'linear-gradient(135deg, rgba(22,17,96,0.2) 0%, rgba(42,36,128,0.2) 100%)\'; this.style.borderColor=\'rgba(22,17,96,0.5)\'; this.style.transform=\'scale(1.1)\'; this.style.boxShadow=\'0 4px 8px rgba(22,17,96,0.2)\';\"
+                    onmouseout=\"this.style.background=\'linear-gradient(135deg, rgba(22,17,96,0.1) 0%, rgba(42,36,128,0.1) 100%)\'; this.style.borderColor=\'rgba(22,17,96,0.3)\'; this.style.transform=\'scale(1)\'; this.style.boxShadow=\'none\';\">
+                        <i class=\"fa fa-info-circle tw-text-sm tw-font-medium\" 
+                        style=\"color: #161160; font-size: 12px; filter: drop-shadow(0 1px 2px rgba(22,17,96,0.2));\"></i>
+                    </div>';
                 }
                 ?>";
         });

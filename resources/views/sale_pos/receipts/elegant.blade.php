@@ -651,8 +651,8 @@
 					@endforeach
 				@endif
 
-				<!-- Discount -->
-				@if( !empty($receipt_details->discount) )
+				<!-- Discount: show only order-level when no line discounts -->
+				@if( !empty($receipt_details->discount) && empty($receipt_details->total_line_discount) )
 					<tr >
 						<td>
 							{!! $receipt_details->discount_label !!}

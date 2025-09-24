@@ -74,17 +74,28 @@ use Illuminate\Support\Facades\Route;
 
 include_once 'install_r.php';
 
+// Forcefully block public access to registration when disabled
+if (!config('constants.allow_registration')) {
+    Route::any('/business/register{any?}', function () {
+        abort(404);
+    })->where('any', '.*');
+}
+
 Route::middleware(['setData'])->group(function () {
     Route::get('/', function () {
         return view('welcome');
     });
 
-    Auth::routes();
+    // Disable default Laravel registration routes
+    Auth::routes(['register' => false]);
 
-    Route::get('/business/register', [BusinessController::class, 'getRegister'])->name('business.getRegister');
-    Route::post('/business/register', [BusinessController::class, 'postRegister'])->name('business.postRegister');
-    Route::post('/business/register/check-username', [BusinessController::class, 'postCheckUsername'])->name('business.postCheckUsername');
-    Route::post('/business/register/check-email', [BusinessController::class, 'postCheckEmail'])->name('business.postCheckEmail');
+    // Use config value instead of env() to be cache-safe in production
+    if (config('constants.allow_registration')) {
+        Route::get('/business/register', [BusinessController::class, 'getRegister'])->name('business.getRegister');
+        Route::post('/business/register', [BusinessController::class, 'postRegister'])->name('business.postRegister');
+        Route::post('/business/register/check-username', [BusinessController::class, 'postCheckUsername'])->name('business.postCheckUsername');
+        Route::post('/business/register/check-email', [BusinessController::class, 'postCheckEmail'])->name('business.postCheckEmail');
+    }
 
     Route::get('/invoice/{token}', [SellPosController::class, 'showInvoice'])
         ->name('show_invoice');
@@ -129,7 +140,7 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
 
     Route::resource('brands', BrandController::class);
 
-    Route::resource('payment-account', 'PaymentAccountController');
+    // Route::resource('payment-account', PaymentAccountController::class); // Controller not implemented yet
 
     Route::resource('tax-rates', TaxRateController::class);
 
@@ -507,7 +518,7 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
 
 //common route
 Route::middleware(['auth'])->group(function () {
-    Route::get('/logout', [App\Http\Controllers\Auth\LoginController::class, 'logout'])->name('logout');
+    // Logout route is handled by Auth::routes() above (POST method)
 });
 
 Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone'])->group(function () {

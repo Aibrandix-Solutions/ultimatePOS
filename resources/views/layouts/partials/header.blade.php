@@ -231,20 +231,23 @@
                             </a>
                         </li>
                         <li>
-                            <a href="{{ action([\App\Http\Controllers\Auth\LoginController::class, 'logout']) }}"
-                                class="tw-flex tw-items-center tw-gap-2 tw-px-3 tw-py-2 tw-text-sm tw-font-medium tw-text-gray-600 tw-transition-all tw-duration-200 tw-rounded-lg hover:tw-text-gray-900 hover:tw-bg-gray-100"
-                                role="menuitem" tabindex="-1">
-                                <svg aria-hidden="true" class="tw-w-5 tw-h-5" xmlns="http://www.w3.org/2000/svg"
-                                    viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor" fill="none"
-                                    stroke-linecap="round" stroke-linejoin="round">
-                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                    <path
-                                        d="M14 8v-2a2 2 0 0 0 -2 -2h-7a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h7a2 2 0 0 0 2 -2v-2" />
-                                    <path d="M9 12h12l-3 -3" />
-                                    <path d="M18 15l3 -3" />
-                                </svg>
-                                @lang('lang_v1.sign_out')
-                            </a>
+                            <form method="POST" action="{{ route('logout') }}" class="tw-inline">
+                                @csrf
+                                <button type="submit"
+                                    class="tw-flex tw-items-center tw-gap-2 tw-px-3 tw-py-2 tw-text-sm tw-font-medium tw-text-gray-600 tw-transition-all tw-duration-200 tw-rounded-lg hover:tw-text-gray-900 hover:tw-bg-gray-100 tw-w-full tw-text-left tw-border-none tw-bg-transparent"
+                                    role="menuitem" tabindex="-1">
+                                    <svg aria-hidden="true" class="tw-w-5 tw-h-5" xmlns="http://www.w3.org/2000/svg"
+                                        viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor" fill="none"
+                                        stroke-linecap="round" stroke-linejoin="round">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                        <path
+                                            d="M14 8v-2a2 2 0 0 0 -2 -2h-7a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h7a2 2 0 0 0 2 -2v-2" />
+                                        <path d="M9 12h12l-3 -3" />
+                                        <path d="M18 15l3 -3" />
+                                    </svg>
+                                    @lang('lang_v1.sign_out')
+                                </button>
+                            </form>
                         </li>
                     </ul>
                 </details>

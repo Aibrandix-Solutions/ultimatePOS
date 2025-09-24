@@ -1,11 +1,11 @@
 <div class="modal-dialog" role="document">
-    <div class="modal-content">
+    <div class="modal-content" style="border-radius:12px; overflow:hidden; box-shadow: 0 10px 30px rgba(22,17,96,0.25);">
         {!! Form::open(['url' => action([\App\Http\Controllers\ExpenseController::class, 'store']), 'method' => 'post', 'id' => 'add_expense_modal_form', 'files' => true ]) !!}
-        <div class="modal-header">
-            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-            <h4 class="modal-title">@lang( 'expense.add_expense' )</h4>
+        <div class="modal-header" style="background:linear-gradient(135deg,#161160 0%, #2a2480 100%); color:#ffffff; border-radius:12px 12px 0 0;">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color:#ffffff; opacity:0.9;"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title" style="color:#ffffff; font-weight:600;">@lang( 'expense.add_expense' )</h4>
         </div>
-        <div class="modal-body">
+        <div class="modal-body" style="background:#ffffff;">
             <div class="row">
                 @if(count($business_locations) == 1)
                     @php 
@@ -103,9 +103,9 @@
                 </div>
             </div>
         </div>
-        <div class="modal-footer">
-            <button type="submit" class="tw-dw-btn tw-dw-btn-primary tw-text-white">@lang( 'messages.save' )</button>
-            <button type="button" class="tw-dw-btn tw-dw-btn-neutral tw-text-white" data-dismiss="modal">@lang( 'messages.close' )</button>
+        <div class="modal-footer" style="background:#f8f9fa; border-top:1px solid rgba(22,17,96,0.1);">
+            <button type="button" class="btn btn-default" data-dismiss="modal" style="background:#e8ebed; color:#374151; border:1px solid #e5e7eb; padding:8px 20px; border-radius:6px; font-weight:500;">@lang( 'messages.close' )</button>
+            <button type="submit" class="btn btn-primary" style="background:linear-gradient(135deg,#161160 0%, #2a2480 100%); color:#ffffff; border:none; padding:8px 20px; border-radius:6px; font-weight:600;">@lang( 'messages.save' )</button>
         </div>
         {!! Form::close() !!}
     </div>

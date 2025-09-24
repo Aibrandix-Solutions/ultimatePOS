@@ -1,14 +1,14 @@
 <div class="modal-dialog modal-lg" role="document">
-  <div class="modal-content">
+  <div class="modal-content" style="border-radius:12px; overflow:hidden; box-shadow: 0 10px 30px rgba(22,17,96,0.25);">
     {!! Form::open(['url' => action([\App\Http\Controllers\CashRegisterController::class, 'postCloseRegister']), 'method' => 'post' ]) !!}
 
     {!! Form::hidden('user_id', $register_details->user_id); !!}
-    <div class="modal-header">
-      <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-      <h3 class="modal-title">@lang( 'cash_register.current_register' ) ( {{ \Carbon::createFromFormat('Y-m-d H:i:s', $register_details->open_time)->format('jS M, Y h:i A') }} - {{ \Carbon::now()->format('jS M, Y h:i A') }})</h3>
+    <div class="modal-header" style="background:linear-gradient(135deg,#161160 0%, #2a2480 100%); color:#ffffff; border-radius:12px 12px 0 0;">
+      <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color:#ffffff; opacity:0.9;"><span aria-hidden="true">&times;</span></button>
+      <h3 class="modal-title" style="color:#ffffff; font-weight:600;">@lang( 'cash_register.current_register' ) ( {{ \Carbon::createFromFormat('Y-m-d H:i:s', $register_details->open_time)->format('jS M, Y h:i A') }} - {{ \Carbon::now()->format('jS M, Y h:i A') }})</h3>
     </div>
 
-    <div class="modal-body">
+    <div class="modal-body" style="background:#ffffff;">
       @if(auth()->user()->can('view_cash_register'))
         @include('cash_register.payment_details')
         <hr>
@@ -96,9 +96,9 @@
         @endif
       </div>
     </div>
-    <div class="modal-footer">
-      <button type="button" class="tw-dw-btn tw-dw-btn-neutral tw-text-white" data-dismiss="modal">@lang( 'messages.cancel' )</button>
-      <button type="submit" class="tw-dw-btn tw-dw-btn-primary tw-text-white">@lang( 'cash_register.close_register' )</button>
+    <div class="modal-footer" style="background:#f8f9fa; border-top:1px solid rgba(22,17,96,0.1);">
+      <button type="button" class="btn btn-default" data-dismiss="modal" style="background:#e8ebed; color:#374151; border:1px solid #e5e7eb; padding:8px 20px; border-radius:6px; font-weight:500;">@lang( 'messages.cancel' )</button>
+      <button type="submit" class="btn btn-primary" style="background:linear-gradient(135deg,#161160 0%, #2a2480 100%); color:#ffffff; border:none; padding:8px 20px; border-radius:6px; font-weight:600;">@lang( 'cash_register.close_register' )</button>
     </div>
     {!! Form::close() !!}
   </div><!-- /.modal-content -->

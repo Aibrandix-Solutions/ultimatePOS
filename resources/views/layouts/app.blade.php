@@ -24,6 +24,11 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
         name="viewport">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('apple-touch-icon.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('favicon-16x16.png') }}">
+    <link rel="manifest" href="{{ asset('site.webmanifest') }}">
+    <link rel="icon" href="{{ asset('favicon.ico') }}">
     <!-- CSRF Token -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
     
@@ -152,6 +157,29 @@
 }
 </style>
 <style>
+    /* Ensure readable text inside Select2 single select for customer field */
+    .select2-container .select2-selection__rendered {
+        color: #1f2937;
+        font-size: 14px;
+        line-height: 28px;
+    }
+    /* Fix dark background inside Select2 dropdown/search input */
+    .select2-dropdown,
+    .select2-results__options {
+        background: #ffffff;
+        color: #111827;
+    }
+    .select2-search--dropdown .select2-search__field {
+        background: #ffffff !important;
+        color: #111827 !important;
+        border: 1px solid #e5e7eb;
+        padding: 6px 8px;
+        border-radius: 6px;
+    }
+    .select2-results__option[aria-selected=true] {
+        background: #f3f4f6 !important;
+        color: #111827 !important;
+    }
     .small-view-side-active {
         display: grid !important;
         z-index: 1000;
