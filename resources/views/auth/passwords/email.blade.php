@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ __('lang_v1.reset_password') }} - {{ config('app.name', 'Ultimate POS') }}</title>
+    <title>{{ __('lang_v1.reset_password') }} - {{ config('app.name', 'Generix POS') }}</title>
     <meta name="color-scheme" content="dark light">
     <link rel="icon" href="{{ asset('favicon.ico') }}">
     
@@ -167,7 +167,7 @@
                         <rect x="3" y="4" width="18" height="16" rx="3" stroke="#fff" stroke-width="1.5" fill="none" opacity=".9"/>
                     </svg>
                 </div>
-                {{ config('app.name', 'Ultimate POS') }}
+                {{ config('app.name', 'Generix POS') }}
             </a>
         </div>
     </nav>
@@ -179,7 +179,7 @@
                 <div class="card reset-card border-0">
                     <!-- Header -->
                     <div class="reset-header">
-                        <h1 class="reset-title h2">{{ config('app.name', 'Ultimate POS') }}</h1>
+                        <h1 class="reset-title h2">{{ config('app.name', 'Generix POS') }}</h1>
                         <p class="reset-subtitle">@lang('lang_v1.send_password_reset_link')</p>
                     </div>
 

@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ __('lang_v1.register') }} - {{ config('app.name', 'Ultimate POS') }}</title>
+    <title>{{ __('lang_v1.register') }} - {{ config('app.name', 'Generix POS') }}</title>
     <meta name="color-scheme" content="dark light">
     <link rel="icon" href="{{ asset('favicon.ico') }}">
     
@@ -188,7 +188,7 @@
                         <rect x="3" y="4" width="18" height="16" rx="3" stroke="#fff" stroke-width="1.5" fill="none" opacity=".9"/>
                     </svg>
                 </div>
-                {{ config('app.name', 'Ultimate POS') }}
+                {{ config('app.name', 'Generix POS') }}
             </a>
         </div>
     </nav>
@@ -200,7 +200,7 @@
                 <div class="card register-card border-0">
                     <!-- Header -->
                     <div class="register-header">
-                        <h1 class="register-title h2 text-white">{{ config('app.name', 'Ultimate POS') }}</h1>
+                        <h1 class="register-title h2 text-white">{{ config('app.name', 'Generix POS') }}</h1>
                         <p class="register-subtitle text-white">@lang('business.register_and_get_started_in_minutes')</p>
                     </div>
 
