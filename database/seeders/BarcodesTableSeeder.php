@@ -142,7 +142,7 @@ class BarcodesTableSeeder extends Seeder
 
         // Generix Standard Labels - Optimized for business use
         Barcode::create([
-            'id' => 8,
+            'id' => 7,
             'name' => 'Generix Standard Labels',
             'description' => 'Generix optimized: A4 sheet, 4x8 labels (1.9" x 1.4"), 32 labels per sheet',
             'width' => 1.9,
