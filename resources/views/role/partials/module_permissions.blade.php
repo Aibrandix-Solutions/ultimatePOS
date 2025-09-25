@@ -39,4 +39,44 @@
     </div>
   </div>
   @endforeach
+  <hr>
+  <div class="row check_group">
+    <div class="col-md-3">
+      <h4>{{ __('business.settings') }}</h4>
+    </div>
+    <div class="col-md-9">
+      <div class="col-md-12">
+        <div class="checkbox">
+          <label>
+            {!! Form::checkbox('permissions[]', 'business_location.view', in_array('business_location.view', $module_role_permissions), ['class' => 'input-icheck']) !!}
+            {{ __('business.business_locations') }} — {{ __('messages.view') }}
+          </label>
+        </div>
+      </div>
+      <div class="col-md-12">
+        <div class="checkbox">
+          <label>
+            {!! Form::checkbox('permissions[]', 'business_location.create', in_array('business_location.create', $module_role_permissions), ['class' => 'input-icheck']) !!}
+            {{ __('business.business_locations') }} — {{ __('messages.add') }}
+          </label>
+        </div>
+      </div>
+      <div class="col-md-12">
+        <div class="checkbox">
+          <label>
+            {!! Form::checkbox('permissions[]', 'business_location.update', in_array('business_location.update', $module_role_permissions), ['class' => 'input-icheck']) !!}
+            {{ __('business.business_locations') }} — {{ __('messages.edit') }}
+          </label>
+        </div>
+      </div>
+      <div class="col-md-12">
+        <div class="checkbox">
+          <label>
+            {!! Form::checkbox('permissions[]', 'business_location.toggle', in_array('business_location.toggle', $module_role_permissions), ['class' => 'input-icheck']) !!}
+            {{ __('business.business_locations') }} — {{ __('lang_v1.activate_location') }}/{{ __('lang_v1.deactivate_location') }}
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
 @endif

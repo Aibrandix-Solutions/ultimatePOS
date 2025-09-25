@@ -709,7 +709,16 @@ $(document).ready(function () {
     });
 
     //Finalize without showing payment options
+    // prevent duplicate express checkout triggers
+    if (typeof window.__express_processing === 'undefined') {
+        window.__express_processing = false;
+    }
     $('button.pos-express-finalize').click(function () {
+        if (window.__express_processing) {
+            return false;
+        }
+        window.__express_processing = true;
+        try { $(this).prop('disabled', true); } catch (e) { }
 
         //Check if product is present or not.
         if ($('table#pos_table tbody').find('.product_row').length <= 0) {
@@ -729,6 +738,22 @@ $(document).ready(function () {
 
         //If pay method is credit sale submit form
         if (pay_method == 'credit_sale') {
+            var default_customer_id = $('#default_customer_id').val();
+            var current_customer_id = $('#customer_id').val();
+            if (default_customer_id && current_customer_id == default_customer_id) {
+                if (typeof swal === 'function') {
+                    swal({
+                        title: LANG.notice || 'Notice',
+                        text: LANG.contact_register_required || 'Please register this customer to allow Credit Sale.',
+                        icon: 'warning'
+                    });
+                } else if (typeof toastr !== 'undefined') {
+                    toastr.warning(LANG.contact_register_required || 'Please register this customer to allow Credit Sale.');
+                } else {
+                    alert(LANG.contact_register_required || 'Please register this customer to allow Credit Sale.');
+                }
+                return false;
+            }
             $('#is_credit_sale').val(1);
             pos_form_obj.submit();
             return true;
@@ -792,6 +817,9 @@ $(document).ready(function () {
 
     //on save card details
     $('button#pos-save-card').click(function () {
+        if (window.__express_processing) {
+            return false;
+        }
         $('input#card_number_0').val($('#card_number').val());
         $('input#card_holder_name_0').val($('#card_holder_name').val());
         $('input#card_transaction_number_0').val($('#card_transaction_number').val());
@@ -1164,6 +1192,7 @@ $(document).ready(function () {
             },
         });
     }
+    // allow clearing processing flag after flow completes/errors
 
     $('.contact_modal').on('hidden.bs.modal', function () {
         $('form#quick_add_contact')
@@ -1652,6 +1681,39 @@ $(document).ready(function () {
     }, 60000);
 
     set_search_fields();
+});
+
+// Block partial payments for Walk-In Customer
+$(document).on('click', '#pos-save', function (e) {
+    try {
+        var default_customer_id = $('#default_customer_id').val();
+        var current_customer_id = $('#customer_id').val();
+        if (default_customer_id && current_customer_id == default_customer_id) {
+            // Calculate total payments entered
+            var totalEntered = 0;
+            $('input.payment-amount, input.payment_amount').each(function () {
+                var v = __number_uf($(this).val());
+                totalEntered += isNaN(v) ? 0 : v;
+            });
+            // Compare with final total
+            var finalTotalText = $('#final_total_input').val() || $('.final_total_span').data('orig-value');
+            var finalTotal = __number_uf(finalTotalText);
+            if (finalTotal > 0 && totalEntered + 0.0001 < finalTotal) {
+                e.preventDefault();
+                var msg = LANG.contact_register_required_partial || 'Partial payments are not allowed for Walk-In Customer. Please register the customer or pay in full.';
+                if (typeof swal === 'function') {
+                    swal({ title: LANG.notice || 'Notice', text: msg, icon: 'warning' });
+                } else if (typeof toastr !== 'undefined') {
+                    toastr.warning(msg);
+                } else {
+                    alert(msg);
+                }
+                return false;
+            }
+        }
+    } catch (err) {
+        // fail open to avoid blocking sale unexpectedly
+    }
 });
 
 function set_payment_type_dropdown() {

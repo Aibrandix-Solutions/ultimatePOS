@@ -2,10 +2,11 @@
 	$(document).ready( function() {
 		//shortcut for express checkout
 		@if(!empty($shortcuts["pos"]["express_checkout"]) && ($pos_settings['disable_express_checkout'] == 0))
-			Mousetrap.bind('{{$shortcuts["pos"]["express_checkout"]}}', function(e) {
-				e.preventDefault();
-				$('button.pos-express-finalize[data-pay_method="cash"]').trigger('click');
-			});
+            Mousetrap.bind('{{$shortcuts["pos"]["express_checkout"]}}', function(e) {
+                if (e && e.repeat) { return; }
+                e.preventDefault();
+                $('button.pos-express-finalize[data-pay_method="cash"]').trigger('click');
+            });
 		@endif
 
 		//shortcut for cancel checkout

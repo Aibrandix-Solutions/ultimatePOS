@@ -1470,6 +1470,39 @@
               </label>
             </div>
           </div>
+          <div class="col-md-12"><hr></div>
+          <div class="col-md-12">
+            <div class="checkbox">
+              <label>
+                {!! Form::checkbox('permissions[]', 'business_location.view', false, ['class' => 'input-icheck']); !!}
+                {{ __('business.business_locations') }} — {{ __('messages.view') }}
+              </label>
+            </div>
+          </div>
+          <div class="col-md-12">
+            <div class="checkbox">
+              <label>
+                {!! Form::checkbox('permissions[]', 'business_location.create', false, ['class' => 'input-icheck']); !!}
+                {{ __('business.business_locations') }} — {{ __('messages.add') }}
+              </label>
+            </div>
+          </div>
+          <div class="col-md-12">
+            <div class="checkbox">
+              <label>
+                {!! Form::checkbox('permissions[]', 'business_location.update', false, ['class' => 'input-icheck']); !!}
+                {{ __('business.business_locations') }} — {{ __('messages.edit') }}
+              </label>
+            </div>
+          </div>
+          <div class="col-md-12">
+            <div class="checkbox">
+              <label>
+                {!! Form::checkbox('permissions[]', 'business_location.toggle', false, ['class' => 'input-icheck']); !!}
+                {{ __('business.business_locations') }} — {{ __('lang_v1.activate_location') }}/{{ __('lang_v1.deactivate_location') }}
+              </label>
+            </div>
+          </div>
         </div>
         </div>
         @if(in_array('expenses', $enabled_modules))

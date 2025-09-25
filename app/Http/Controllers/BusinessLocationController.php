@@ -38,7 +38,7 @@ class BusinessLocationController extends Controller
      */
     public function index()
     {
-        if (! auth()->user()->can('business_settings.access')) {
+        if (! auth()->user()->can('business_location.view')) {
             abort(403, 'Unauthorized action.');
         }
 
@@ -81,11 +81,17 @@ class BusinessLocationController extends Controller
             return Datatables::of($locations)
                 ->addColumn(
                     'action',
-                    '<button type="button" data-href="{{action(\'App\Http\Controllers\BusinessLocationController@edit\', [$id])}}" class="tw-dw-btn tw-dw-btn-xs tw-dw-btn-outline tw-dw-btn-primary btn-modal" data-container=".location_edit_modal"><i class="glyphicon glyphicon-edit"></i> @lang("messages.edit")</button>
-                    <a href="{{route(\'location.settings\', [$id])}}" class="tw-dw-btn tw-dw-btn-xs tw-dw-btn-outline  tw-dw-btn-accent"><i class="fa fa-wrench"></i> @lang("messages.settings")</a>
-
-                    <button type="button" data-href="{{action(\'App\Http\Controllers\BusinessLocationController@activateDeactivateLocation\', [$id])}}" class="tw-dw-btn tw-dw-btn-xs tw-dw-btn-outline   activate-deactivate-location @if($is_active) tw-dw-btn-error @else tw-dw-btn-accent @endif tw-w-max"><i class="fa fa-power-off"></i> @if($is_active) @lang("lang_v1.deactivate_location") @else @lang("lang_v1.activate_location") @endif </button>
-                    '
+                    function ($row) {
+                        $buttons = '';
+                        if (auth()->user()->can('business_location.update')) {
+                            $buttons .= '<button type="button" data-href="'.action(\App\Http\Controllers\BusinessLocationController::class.'@edit', [$row->id]).'" class="tw-dw-btn tw-dw-btn-xs tw-dw-btn-outline tw-dw-btn-primary btn-modal" data-container=".location_edit_modal"><i class="glyphicon glyphicon-edit"></i> '.__('messages.edit').'</button> ';
+                            $buttons .= '<a href="'.route('location.settings', [$row->id]).'" class="tw-dw-btn tw-dw-btn-xs tw-dw-btn-outline  tw-dw-btn-accent"><i class="fa fa-wrench"></i> '.__('messages.settings').'</a> ';
+                        }
+                        if (auth()->user()->can('business_location.toggle')) {
+                            $buttons .= '<button type="button" data-href="'.action(\App\Http\Controllers\BusinessLocationController::class.'@activateDeactivateLocation', [$row->id]).'" class="tw-dw-btn tw-dw-btn-xs tw-dw-btn-outline   activate-deactivate-location '.($row->is_active ? 'tw-dw-btn-error' : 'tw-dw-btn-accent').' tw-w-max"><i class="fa fa-power-off"></i> '.($row->is_active ? __('lang_v1.deactivate_location') : __('lang_v1.activate_location')).' </button>';
+                        }
+                        return $buttons;
+                    }
                 )
                 ->removeColumn('id')
                 ->removeColumn('is_active')
@@ -103,7 +109,7 @@ class BusinessLocationController extends Controller
      */
     public function create()
     {
-        if (! auth()->user()->can('business_settings.access')) {
+        if (! auth()->user()->can('business_location.create')) {
             abort(403, 'Unauthorized action.');
         }
         $business_id = request()->session()->get('user.business_id');
@@ -151,7 +157,7 @@ class BusinessLocationController extends Controller
      */
     public function store(Request $request)
     {
-        if (! auth()->user()->can('business_settings.access')) {
+        if (! auth()->user()->can('business_location.create')) {
             abort(403, 'Unauthorized action.');
         }
 
@@ -217,7 +223,7 @@ class BusinessLocationController extends Controller
      */
     public function edit($id)
     {
-        if (! auth()->user()->can('business_settings.access')) {
+        if (! auth()->user()->can('business_location.update')) {
             abort(403, 'Unauthorized action.');
         }
 
@@ -263,7 +269,7 @@ class BusinessLocationController extends Controller
      */
     public function update(Request $request, $id)
     {
-        if (! auth()->user()->can('business_settings.access')) {
+        if (! auth()->user()->can('business_location.update')) {
             abort(403, 'Unauthorized action.');
         }
 
@@ -344,7 +350,7 @@ class BusinessLocationController extends Controller
      */
     public function activateDeactivateLocation($location_id)
     {
-        if (! auth()->user()->can('business_settings.access')) {
+        if (! auth()->user()->can('business_location.toggle')) {
             abort(403, 'Unauthorized action.');
         }
 
