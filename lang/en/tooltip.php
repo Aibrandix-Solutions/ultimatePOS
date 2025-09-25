@@ -113,4 +113,11 @@ return [
     'stock_expiry_alert' => "List of stocks expiring in :days days <br> <small class='text-muted'>You can set the no. of days in Business Settings </small>",
     'sub_sku' => 'Sku is optional. <br><br><small>Keep it blank to automatically generate sku.<small>',
     'shipping' => 'Set shipping details and shipping charges. Click on the edit icon below to add/update shipping details and charges.',
+    
+    'product_cost_help' => 'The cost you pay to acquire this product. Enter either exclusive or inclusive of tax - the other will calculate automatically.',
+    'product_price_help' => 'The price you sell this product for. Only one field is editable based on your tax type setting.',
+    'cost_exc_tax_help' => 'Cost excluding tax. This field is editable when tax type is exclusive.',
+    'cost_inc_tax_help' => 'Cost including tax. This field is editable when tax type is inclusive.',
+    'price_exc_tax_help' => 'Selling price excluding tax. This field is editable when tax type is exclusive.',
+    'price_inc_tax_help' => 'Selling price including tax. This field is editable when tax type is inclusive.',
 ];

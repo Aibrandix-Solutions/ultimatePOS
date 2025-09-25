@@ -241,7 +241,12 @@
         position:relative;
     }
     
-
+    /* Product pricing table - themed borders */
+    table.add-product-price-table { border-collapse: separate; border-spacing: 0; }
+    table.add-product-price-table th,
+    table.add-product-price-table td { border: 1px solid #e5e7eb !important; }
+    table.add-product-price-table th { background-color: #16a34a; color: #ffffff; }
+    table.add-product-price-table tr:nth-child(even) td { background-color: #f9fafb; }
 
 
 </style>

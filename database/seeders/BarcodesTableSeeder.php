@@ -140,6 +140,28 @@ class BarcodesTableSeeder extends Seeder
             'updated_at' => '2017-12-18 05:51:10',
         ]);
 
+        // Generix Standard Labels - Optimized for business use
+        Barcode::create([
+            'id' => 8,
+            'name' => 'Generix Standard Labels',
+            'description' => 'Generix optimized: A4 sheet, 4x8 labels (1.9" x 1.4"), 32 labels per sheet',
+            'width' => 1.9,
+            'height' => 1.4,
+            'paper_width' => 8.27,  // A4 width in inches
+            'paper_height' => 11.69, // A4 height in inches
+            'top_margin' => 0,
+            'left_margin' => 0,
+            'row_distance' => 0.1,
+            'col_distance' => 0.1,
+            'stickers_in_one_row' => 4,
+            'is_default' => 1,  // Set as default
+            'is_continuous' => 0,
+            'stickers_in_one_sheet' => 32,
+            'business_id' => null, // Global setting
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
         // Barcode::create( [
         // 	'name'=>'154 Per Sheet',
         // 	'description'=>'Sheet Size: 8.5" x 11", Label Size: 25.4mm x 9.52mm, Labels per sheet: 154',

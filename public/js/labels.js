@@ -1,5 +1,5 @@
-$(document).ready(function() {
-    $('table#product_table tbody').find('.label-date-picker').each( function(){
+$(document).ready(function () {
+    $('table#product_table tbody').find('.label-date-picker').each(function () {
         $(this).datepicker({
             autoclose: true
         });
@@ -10,7 +10,7 @@ $(document).ready(function() {
             .autocomplete({
                 source: '/purchases/get_products?check_enable_stock=false',
                 minLength: 2,
-                response: function(event, ui) {
+                response: function (event, ui) {
                     if (ui.content.length == 1) {
                         ui.item = ui.content[0];
                         $(this)
@@ -21,19 +21,19 @@ $(document).ready(function() {
                         swal(LANG.no_products_found);
                     }
                 },
-                select: function(event, ui) {
+                select: function (event, ui) {
                     $(this).val(null);
                     get_label_product_row(ui.item.product_id, ui.item.variation_id);
                 },
             })
-            .autocomplete('instance')._renderItem = function(ul, item) {
-            return $('<li>')
-                .append('<div>' + item.text + '</div>')
-                .appendTo(ul);
-        };
+            .autocomplete('instance')._renderItem = function (ul, item) {
+                return $('<li>')
+                    .append('<div>' + item.text + '</div>')
+                    .appendTo(ul);
+            };
     }
 
-    $('input#is_show_price').change(function() {
+    $('input#is_show_price').change(function () {
         if ($(this).is(':checked')) {
             $('div#price_type_div').show();
         } else {
@@ -41,7 +41,7 @@ $(document).ready(function() {
         }
     });
 
-    $('button#labels_preview').click(function() {
+    $('button#labels_preview').click(function () {
         if ($('form#preview_setting_form table#product_table tbody tr').length > 0) {
             var url = base_path + '/labels/preview?' + $('form#preview_setting_form').serialize();
 
@@ -69,8 +69,16 @@ $(document).ready(function() {
         }
     });
 
-    $(document).on('click', 'button#print_label', function() {
+    $(document).on('click', 'button#print_label', function () {
         window.print();
+    });
+
+    // remove a product row from labels table
+    $(document).on('click', '.remove-label-row', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        $(this).closest('tr').remove();
+        return false;
     });
 });
 
@@ -82,10 +90,10 @@ function get_label_product_row(product_id, variation_id) {
             url: '/labels/add-product-row',
             dataType: 'html',
             data: { product_id: product_id, row_count: row_count, variation_id: variation_id },
-            success: function(result) {
+            success: function (result) {
                 $('table#product_table tbody').append(result);
 
-                $('table#product_table tbody').find('.label-date-picker').each( function(){
+                $('table#product_table tbody').find('.label-date-picker').each(function () {
                     $(this).datepicker({
                         autoclose: true
                     });
