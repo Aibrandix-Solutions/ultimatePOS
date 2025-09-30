@@ -15,6 +15,7 @@ use App\Unit;
 use App\User;
 use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Role;
+use Spatie\Permission\Models\Permission;
 use App\VariationLocationDetails;
 
 
@@ -44,6 +45,37 @@ class BusinessUtil extends Util
             'guard_name' => 'web',
         ]);
         $cashier_role->syncPermissions(['sell.view', 'sell.create', 'sell.update', 'sell.delete', 'access_all_locations', 'view_cash_register', 'close_cash_register']);
+
+        // Create Owner role with restricted permissions (default alongside Admin)
+        $owner_role = Role::create([
+            'name' => 'Owner#'.$business_id,
+            'business_id' => $business_id,
+            'guard_name' => 'web',
+            'is_default' => 0,
+        ]);
+        // Ensure needed permissions exist (idempotent if seeded already)
+        $ensurePermissions = [
+            'user.view','user.create','user.update','user.delete',
+            'roles.view','roles.create','roles.update','roles.delete',
+            'business_location.view','business_location.create','business_location.update','business_location.toggle',
+        ];
+        foreach ($ensurePermissions as $perm) {
+            if (! Permission::where('name', $perm)->exists()) {
+                Permission::create(['name' => $perm, 'guard_name' => 'web']);
+            }
+        }
+        $allPerms = Permission::pluck('name')->toArray();
+        $restricted = [
+            'user.create','user.update','user.delete',
+            'roles.create','roles.update','roles.delete',
+            'business_location.create','business_location.update','business_location.toggle',
+        ];
+        $whitelistViews = ['user.view','roles.view','business_location.view'];
+        $allowed = array_values(array_unique(array_merge(
+            array_diff($allPerms, $restricted),
+            $whitelistViews
+        )));
+        $owner_role->syncPermissions($allowed);
 
         $business = Business::findOrFail($business_id);
 
