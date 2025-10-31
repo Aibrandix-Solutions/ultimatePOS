@@ -1725,18 +1725,22 @@ function set_payment_type_dropdown() {
             enabled_payment_types.push(key);
         }
     }
-    if (enabled_payment_types.length) {
-        $(".payment_types_dropdown > option").each(function () {
-            //skip if advance
-            if ($(this).val() && $(this).val() != 'advance') {
-                if (enabled_payment_types.indexOf($(this).val()) != -1) {
+    $(".payment_types_dropdown > option").each(function () {
+        var payment_type = $(this).val();
+        //skip if advance or custom payment
+        if (payment_type && payment_type != 'advance') {
+            // Hide custom payments (custom_pay_1 through custom_pay_7)
+            if (payment_type.startsWith('custom_pay_')) {
+                $(this).addClass('hide');
+            } else if (enabled_payment_types.length) {
+                if (enabled_payment_types.indexOf(payment_type) != -1) {
                     $(this).removeClass('hide');
                 } else {
                     $(this).addClass('hide');
                 }
             }
-        });
-    }
+        }
+    });
 }
 
 function get_featured_products() {

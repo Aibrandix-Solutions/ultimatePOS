@@ -1,23 +1,23 @@
 <div class="row">
 	<input type="hidden" class="payment_row_index" value="{{ $row_index}}">
 	@php
-		$col_class = 'col-md-6';
+		$col_class = 'col-md-7';
 		if(!empty($accounts)){
-			$col_class = 'col-md-4';
+			$col_class = 'col-md-7';
 		}
 		$readonly = $payment_line['method'] == 'advance' ? true : false;
 	@endphp
-	<div class="{{$col_class}}">
-		<div class="form-group">
-			{!! Form::label("amount_$row_index" ,__('sale.amount') . ':*') !!}
-			<div class="input-group">
-				<span class="input-group-addon">
-					<i class="fas fa-money-bill-alt"></i>
-				</span>
-				{!! Form::text("payment[$row_index][amount]", @num_format($payment_line['amount']), ['class' => 'form-control payment-amount input_number', 'required', 'id' => "amount_$row_index", 'placeholder' => __('sale.amount'), 'readonly' => $readonly]); !!}
-			</div>
-		</div>
-	</div>
+    <div class="{{$col_class}}">
+        <div class="form-group">
+            {!! Form::label("amount_$row_index" ,__('lang_v1.received_amount') . ':*') !!}
+            <div class="input-group">
+                <span class="input-group-addon">
+                    <i class="fas fa-money-bill-alt"></i>
+                </span>
+                {!! Form::text("payment[$row_index][amount]", @num_format($payment_line['amount']), ['class' => 'form-control payment-amount input_number', 'required', 'id' => "amount_$row_index", 'placeholder' => __('lang_v1.received_amount'), 'readonly' => $readonly]); !!}
+            </div>
+        </div>
+    </div>
 	@if(!empty($show_date))
 	<div class="{{$col_class}}">
 		<div class="form-group">
@@ -134,10 +134,10 @@
 	@endif
 	<div class="clearfix"></div>
 		@include('sale_pos.partials.payment_type_details')
-	<div class="col-md-12">
-		<div class="form-group">
+	<div class="col-md-6">
+		{{-- <div class="form-group">
 			{!! Form::label("note_$row_index", __('sale.payment_note') . ':') !!}
 			{!! Form::textarea("payment[$row_index][note]", $payment_line['note'], ['class' => 'form-control', 'rows' => 3, 'id' => "note_$row_index"]); !!}
-		</div>
+		</div> --}}
 	</div>
 </div>
