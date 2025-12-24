@@ -40,7 +40,7 @@
                   <div class="col-md-6">
                     <div class="form-group">
                         <label for="app_name">Application Name:*</label>
-                        <input type="text" class="form-control" name="APP_NAME" id="app_name" placeholder="Ultimate POS" >
+                        <input type="text" class="form-control" name="APP_NAME" id="app_name" placeholder="Generix POS" >
                     </div>
                   </div>
                   
@@ -141,14 +141,14 @@
                   <div class="col-md-6">
                     <div class="form-group">
                         <label for="MAIL_FROM_ADDRESS">Default from address:*</label>
-                        <input type="email" class="form-control" id="MAIL_FROM_ADDRESS" name="MAIL_FROM_ADDRESS" placeholder="hello@ultimatepos.com" >
+                        <input type="email" class="form-control" id="MAIL_FROM_ADDRESS" name="MAIL_FROM_ADDRESS" placeholder="hello@Generixpos.com" >
                     </div>
                   </div>
 
                   <div class="col-md-6">
                     <div class="form-group">
                         <label for="MAIL_FROM_NAME">Default from name:</label>
-                        <input type="text" class="form-control" id="MAIL_FROM_NAME" name="MAIL_FROM_NAME" placeholder="Ultimate POS (Optional)">
+                        <input type="text" class="form-control" id="MAIL_FROM_NAME" name="MAIL_FROM_NAME" placeholder="Generix POS (Optional)">
                     </div>
                   </div>
 

@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ __('lang_v1.register') }} - {{ config('app.name', 'Ultimate POS') }}</title>
+    <title>{{ __('lang_v1.register') }} - {{ config('app.name', 'Generix POS') }}</title>
     <meta name="color-scheme" content="dark light">
     <link rel="icon" href="{{ asset('favicon.ico') }}">
     
@@ -16,6 +16,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Bootstrap Datepicker CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css" integrity="sha512-mSYUmp1HYZDFaVKK//63EcZq4iFWFjxSL+Z3T/aCt4IO9Cejm03q3NKKYN6pF9YbY7F6XfU2QOKXAsl3zn6u2g==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     
     <style>
         :root {
@@ -186,7 +188,7 @@
                         <rect x="3" y="4" width="18" height="16" rx="3" stroke="#fff" stroke-width="1.5" fill="none" opacity=".9"/>
                     </svg>
                 </div>
-                {{ config('app.name', 'Ultimate POS') }}
+                {{ config('app.name', 'Generix POS') }}
             </a>
         </div>
     </nav>
@@ -198,7 +200,7 @@
                 <div class="card register-card border-0">
                     <!-- Header -->
                     <div class="register-header">
-                        <h1 class="register-title h2 text-white">{{ config('app.name', 'Ultimate POS') }}</h1>
+                        <h1 class="register-title h2 text-white">{{ config('app.name', 'Generix POS') }}</h1>
                         <p class="register-subtitle text-white">@lang('business.register_and_get_started_in_minutes')</p>
                     </div>
 
@@ -231,8 +233,12 @@
         </div>
     </div>
 
+    <!-- jQuery (required for bootstrap-datepicker) -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Bootstrap Datepicker JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js" integrity="sha512-T/tUfKSV1bihCnd+MxKD0Hm1uBBroVY1TT8C2fZCqF4PgtC6W/1ZC6rXrXHxN1vQKu3Sj7r3azrRtAM8s7Wukg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     
     <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -243,6 +249,28 @@
                 window.location = "{{ route('business.getRegister') }}?lang=" + this.getAttribute('value');
             });
         });
+
+        // Initialize start date picker if plugin is available
+        const $startInputs = document.querySelectorAll('.start-date-picker');
+
+        if (typeof $ !== 'undefined' && $.fn.datepicker) {
+            $('.start-date-picker').datepicker({
+                format: 'mm/dd/yyyy',
+                autoclose: true,
+                todayHighlight: true
+            }).on('click', function(){
+                $(this).datepicker('show');
+            });
+        } else {
+            // Fallback to native date input
+            $startInputs.forEach(function(input){
+                try {
+                    input.setAttribute('type', 'date');
+                } catch(e) {
+                    // ignore
+                }
+            });
+        }
     });
     </script>
 </body>

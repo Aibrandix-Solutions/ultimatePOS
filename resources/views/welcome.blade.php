@@ -3,8 +3,12 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ config('app.name', 'Ultimate POS') }}</title>
+    <title>{{ config('app.name', 'Generix POS') }}</title>
     <meta name="color-scheme" content="dark light">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('apple-touch-icon.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('favicon-16x16.png') }}">
+    <link rel="manifest" href="{{ asset('site.webmanifest') }}">
     <link rel="icon" href="{{ asset('favicon.ico') }}">
     
     <!-- Google Fonts -->
@@ -396,7 +400,7 @@
                         <rect x="3" y="4" width="18" height="16" rx="3" stroke="#fff" stroke-width="1.5" fill="none" opacity=".9"/>
                     </svg>
                 </div>
-                {{ config('app.name', 'Ultimate POS') }}
+                {{ config('app.name', 'Generix POS') }}
             </a>
 
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -410,19 +414,15 @@
                             <a class="btn btn-primary" href="{{ url('/home') }}">Go to Dashboard</a>
                         </li>
                     @else
-                        @if (Route::has('business.getRegister'))
-                            <li class="nav-item">
-                                <a class="btn btn-primary" href="{{ route('business.getRegister') }}">Register</a>
-                            </li>
-                        @endif
+                        {{-- Registration disabled for clients --}}
                         @if (Route::has('login'))
                             <li class="nav-item">
-                                <a class="btn btn-outline-secondary" href="{{ route('login') }}">Sign In</a>
+                                <a class="btn btn-primary" href="{{ route('login') }}">Sign In</a>
                             </li>
                         @endif
                     @endauth
                     
-                    <li class="nav-item dropdown">
+                    <!-- <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             English
                         </a>
@@ -431,7 +431,7 @@
                             <li><a class="dropdown-item" href="#">Español</a></li>
                             <li><a class="dropdown-item" href="#">Français</a></li>
                         </ul>
-                    </li>
+                    </li> -->
                 </ul>
             </div>
         </div>
@@ -454,7 +454,7 @@
                             Point of Sale • Ready
                         </div>
                         
-                        <h1 class="hero-title">{{ config('app.name', 'Ultimate POS') }}</h1>
+                        <h1 class="hero-title">{{ config('app.name', 'Generix POS') }}</h1>
                         <p class="hero-subtitle">
                             Fast, reliable and beautifully simple POS for stores, cafés and boutiques.
                             Manage inventory, print receipts and see insights in real time.
@@ -464,11 +464,10 @@
                             @auth
                                 <a class="btn btn-primary btn-lg" href="{{ url('/home') }}">Open Dashboard</a>
                             @else
-                                @if (Route::has('business.getRegister'))
-                                    <a class="btn btn-primary btn-lg" href="{{ route('business.getRegister') }}">Create an account</a>
-                                @endif
+                                {{-- Registration disabled for clients --}}
                                 @if (Route::has('login'))
-                                    <a class="btn btn-outline-secondary btn-lg" href="{{ route('login') }}">I already have an account</a>
+                                    <a class="btn btn-primary btn-lg" href="{{ route('login') }}">I already have an account</a>
+                                    <a class="btn btn-warning btn-lg" href="https://generixerp.com" target="_blank" rel="noopener">Buy Now</a>
                                 @endif
                             @endauth
                         </div>
@@ -530,7 +529,7 @@
     <!-- Footer -->
     <footer class="py-2 text-center text-muted">
         <div class="container">
-            <p class="mb-2">© {{ date('Y') }} {{ config('app.name', 'Ultimate POS') }} · Crafted with Laravel</p>
+            <p class="mb-2">© {{ date('Y') }} {{ config('app.name', 'Generix POS') }}</p>
             <div class="d-flex justify-content-center gap-3">
                 <a href="#" class="text-decoration-none text-muted">Privacy</a>
                 <a href="#" class="text-decoration-none text-muted">Terms</a>

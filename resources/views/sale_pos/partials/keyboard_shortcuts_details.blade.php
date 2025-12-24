@@ -4,16 +4,7 @@
 	    <th>@lang('business.keyboard_shortcut')</th>
 	</tr>
 
-	@if($pos_settings['disable_express_checkout'] == 0)
-		<tr>
-		    <td>@lang('sale.express_finalize'):</td>
-		    <td>
-			    @if(!empty($shortcuts["pos"]["express_checkout"]))
-			    	{{ $shortcuts["pos"]["express_checkout"] }}
-			    @endif
-		    </td>
-		</tr>
-	@endif
+    
 
 	@if($pos_settings['disable_pay_checkout'] == 0)
 		<tr>

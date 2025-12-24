@@ -9,18 +9,16 @@ function updateEmptyState() {
     var allRows = $('#pos_table tbody tr').length;
     var emptyRow = $('#empty_cart_row').length;
 
-    console.log('Empty state check - Product rows:', productRows);
-    console.log('Empty state check - All rows:', allRows);
-    console.log('Empty state check - Empty row exists:', emptyRow);
+    /* debug removed */
 
     if (productRows === 0) {
-        console.log('Showing empty state');
+        /* debug removed */
         $('#empty_cart_row').show().css({
             'display': 'table-row',
             'animation': 'fadeIn 0.5s ease forwards'
         });
     } else {
-        console.log('Hiding empty state');
+        /* debug removed */
         $('#empty_cart_row').hide().css({
             'display': 'none'
         });
@@ -711,7 +709,16 @@ $(document).ready(function () {
     });
 
     //Finalize without showing payment options
+    // prevent duplicate express checkout triggers
+    if (typeof window.__express_processing === 'undefined') {
+        window.__express_processing = false;
+    }
     $('button.pos-express-finalize').click(function () {
+        if (window.__express_processing) {
+            return false;
+        }
+        window.__express_processing = true;
+        try { $(this).prop('disabled', true); } catch (e) { }
 
         //Check if product is present or not.
         if ($('table#pos_table tbody').find('.product_row').length <= 0) {
@@ -731,6 +738,22 @@ $(document).ready(function () {
 
         //If pay method is credit sale submit form
         if (pay_method == 'credit_sale') {
+            var default_customer_id = $('#default_customer_id').val();
+            var current_customer_id = $('#customer_id').val();
+            if (default_customer_id && current_customer_id == default_customer_id) {
+                if (typeof swal === 'function') {
+                    swal({
+                        title: LANG.notice || 'Notice',
+                        text: LANG.contact_register_required || 'Please register this customer to allow Credit Sale.',
+                        icon: 'warning'
+                    });
+                } else if (typeof toastr !== 'undefined') {
+                    toastr.warning(LANG.contact_register_required || 'Please register this customer to allow Credit Sale.');
+                } else {
+                    alert(LANG.contact_register_required || 'Please register this customer to allow Credit Sale.');
+                }
+                return false;
+            }
             $('#is_credit_sale').val(1);
             pos_form_obj.submit();
             return true;
@@ -794,6 +817,9 @@ $(document).ready(function () {
 
     //on save card details
     $('button#pos-save-card').click(function () {
+        if (window.__express_processing) {
+            return false;
+        }
         $('input#card_number_0').val($('#card_number').val());
         $('input#card_holder_name_0').val($('#card_holder_name').val());
         $('input#card_transaction_number_0').val($('#card_transaction_number').val());
@@ -1166,6 +1192,7 @@ $(document).ready(function () {
             },
         });
     }
+    // allow clearing processing flag after flow completes/errors
 
     $('.contact_modal').on('hidden.bs.modal', function () {
         $('form#quick_add_contact')
@@ -1656,6 +1683,39 @@ $(document).ready(function () {
     set_search_fields();
 });
 
+// Block partial payments for Walk-In Customer
+$(document).on('click', '#pos-save', function (e) {
+    try {
+        var default_customer_id = $('#default_customer_id').val();
+        var current_customer_id = $('#customer_id').val();
+        if (default_customer_id && current_customer_id == default_customer_id) {
+            // Calculate total payments entered
+            var totalEntered = 0;
+            $('input.payment-amount, input.payment_amount').each(function () {
+                var v = __number_uf($(this).val());
+                totalEntered += isNaN(v) ? 0 : v;
+            });
+            // Compare with final total
+            var finalTotalText = $('#final_total_input').val() || $('.final_total_span').data('orig-value');
+            var finalTotal = __number_uf(finalTotalText);
+            if (finalTotal > 0 && totalEntered + 0.0001 < finalTotal) {
+                e.preventDefault();
+                var msg = LANG.contact_register_required_partial || 'Partial payments are not allowed for Walk-In Customer. Please register the customer or pay in full.';
+                if (typeof swal === 'function') {
+                    swal({ title: LANG.notice || 'Notice', text: msg, icon: 'warning' });
+                } else if (typeof toastr !== 'undefined') {
+                    toastr.warning(msg);
+                } else {
+                    alert(msg);
+                }
+                return false;
+            }
+        }
+    } catch (err) {
+        // fail open to avoid blocking sale unexpectedly
+    }
+});
+
 function set_payment_type_dropdown() {
     var payment_settings = $('#location_id').data('default_payment_accounts');
     payment_settings = payment_settings ? payment_settings : [];
@@ -1665,18 +1725,22 @@ function set_payment_type_dropdown() {
             enabled_payment_types.push(key);
         }
     }
-    if (enabled_payment_types.length) {
-        $(".payment_types_dropdown > option").each(function () {
-            //skip if advance
-            if ($(this).val() && $(this).val() != 'advance') {
-                if (enabled_payment_types.indexOf($(this).val()) != -1) {
+    $(".payment_types_dropdown > option").each(function () {
+        var payment_type = $(this).val();
+        //skip if advance or custom payment
+        if (payment_type && payment_type != 'advance') {
+            // Hide custom payments (custom_pay_1 through custom_pay_7)
+            if (payment_type.startsWith('custom_pay_')) {
+                $(this).addClass('hide');
+            } else if (enabled_payment_types.length) {
+                if (enabled_payment_types.indexOf(payment_type) != -1) {
                     $(this).removeClass('hide');
                 } else {
                     $(this).addClass('hide');
                 }
             }
-        });
-    }
+        }
+    });
 }
 
 function get_featured_products() {
@@ -1818,10 +1882,8 @@ function pos_product_row(variation_id = null, purchase_line_id = null, weighing_
         var location_id = $('input#location_id').val();
         var customer_id = $('select#customer_id').val();
 
-        console.log('Required fields check:');
-        console.log('Product row count:', product_row);
-        console.log('Location ID:', location_id);
-        console.log('Customer ID:', customer_id);
+        /* debug removed */
+        /* debug removed */
 
         if (!location_id) {
             console.error('Location ID is missing!');
@@ -1876,10 +1938,8 @@ function pos_product_row(variation_id = null, purchase_line_id = null, weighing_
             is_serial_no = true;
         }
 
-        console.log('Making AJAX call to add product...');
-        console.log('Variation ID:', variation_id);
-        console.log('Location ID:', location_id);
-        console.log('Product Row:', product_row);
+        /* debug removed */
+        /* debug removed */
 
         $.ajax({
             method: 'GET',
@@ -1900,10 +1960,9 @@ function pos_product_row(variation_id = null, purchase_line_id = null, weighing_
             },
             dataType: 'json',
             success: function (result) {
-                console.log('Product row response:', result);
+                /* debug removed */
                 if (result.success) {
-                    console.log('Success: Adding product row');
-                    console.log('HTML content:', result.html_content);
+                    /* debug removed */
 
                     // Try the new animation method first
                     try {
@@ -1915,7 +1974,7 @@ function pos_product_row(variation_id = null, purchase_line_id = null, weighing_
                         });
 
                         var $tableBody = $('table#pos_table tbody');
-                        console.log('Table body selector result:', $tableBody.length);
+                        /* debug removed */
                         $tableBody.append($newRow);
 
                         // Animate the row in
@@ -1936,15 +1995,15 @@ function pos_product_row(variation_id = null, purchase_line_id = null, weighing_
                     var this_row = $('table#pos_table tbody')
                         .find('tr')
                         .last();
-                    console.log('New row added:', this_row.length);
+                    /* debug removed */
                     pos_each_row(this_row);
 
                     // Check if modal elements are present
                     var modalCount = $('.row_edit_product_price_model').length;
-                    console.log('Modal elements found:', modalCount);
+                    /* debug removed */
 
                     // Immediately update empty state
-                    console.log('Immediate empty state update');
+                    /* debug removed */
                     updateEmptyState();
 
                     //For initial discount if present
@@ -1985,7 +2044,7 @@ function pos_product_row(variation_id = null, purchase_line_id = null, weighing_
 
                     // Update empty state after a short delay to ensure DOM is updated
                     setTimeout(function () {
-                        console.log('Updating empty state after row addition');
+                        /* debug removed */
                         updateEmptyState();
                     }, 200);
 
@@ -2373,6 +2432,10 @@ function reset_pos_form() {
 function set_default_customer() {
     var default_customer_id = $('#default_customer_id').val();
     var default_customer_name = $('#default_customer_name').val();
+    // Fallback label to ensure the Select2 shows a readable default option
+    if (!default_customer_name || default_customer_name.trim() === '') {
+        default_customer_name = 'Walk-In Customer';
+    }
     var default_customer_balance = $('#default_customer_balance').val();
     var default_customer_address = $('#default_customer_address').val();
     var exists = default_customer_id ? $('select#customer_id option[value=' + default_customer_id + ']').length : 0;
@@ -3768,7 +3831,7 @@ function addModernStyling() {
         console.log('Testing product addition...');
         console.log('Table body exists:', $('#pos_table tbody').length);
         console.log('Search input exists:', $('#search_product').length);
-        console.log('Location ID:', $('input#location_id').val());
+        /* debug removed */
 
         // Test with a dummy variation ID (this will fail but show us the error)
         pos_product_row(1, null, null, 1);

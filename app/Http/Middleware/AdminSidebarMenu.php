@@ -809,7 +809,7 @@ class AdminSidebarMenu
                 $menu->dropdown(
                     __('business.settings'),
                     function ($sub) use ($enabled_modules) {
-                        if (auth()->user()->can('business_settings.access')) {
+                        if (auth()->user()->can('business_location.view')) {
                             $sub->url(
                                 action([\App\Http\Controllers\BusinessController::class, 'getBusinessSettings']),
                                 __('business.business_settings'),

@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ __('lang_v1.login') }} - {{ config('app.name', 'Ultimate POS') }}</title>
+    <title>{{ __('lang_v1.login') }} - {{ config('app.name', 'Generix POS') }}</title>
     <meta name="color-scheme" content="dark light">
     <link rel="icon" href="{{ asset('favicon.ico') }}">
     
@@ -187,7 +187,7 @@
                         <rect x="3" y="4" width="18" height="16" rx="3" stroke="#fff" stroke-width="1.5" fill="none" opacity=".9"/>
                     </svg>
                 </div>
-                {{ config('app.name', 'Ultimate POS') }}
+                {{ config('app.name', 'Generix POS') }}
             </a>
         </div>
     </nav>
@@ -200,7 +200,7 @@
                     <div class="card-body">
                         <div class="text-center mb-4">
                             <h1 class="login-title h2 mb-2">@lang('lang_v1.welcome_back')</h1>
-                            <p class="login-subtitle">@lang('lang_v1.login_to_your') {{ config('app.name', 'Ultimate POS') }}</p>
+                            <p class="login-subtitle">@lang('lang_v1.login_to_your') {{ config('app.name', 'Generix POS') }}</p>
                         </div>
 
                         @php
@@ -314,15 +314,7 @@
                             </button>
                         </form>
 
-                        @if (!(request()->segment(1) == 'business' && request()->segment(2) == 'register'))
-                            @if (config('constants.allow_registration'))
-                                <div class="text-center">
-                                    <a href="{{ route('business.getRegister') }}@if (!empty(request()->lang)) {{ '?lang=' . request()->lang }} @endif" class="text-link">
-                                        {{ __('business.not_yet_registered') }} <strong>{{ __('business.register_now') }}</strong>
-                                    </a>
-                                </div>
-                            @endif
-                        @endif
+                        {{-- Registration disabled for clients --}}
                     </div>
                 </div>
             </div>

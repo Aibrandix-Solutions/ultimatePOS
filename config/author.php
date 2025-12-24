@@ -13,9 +13,9 @@ return [
     |
     */
 
-    'vendor' => 'Ultimate Fosters',
-    'vendor_url' => 'http://ultimatefosters.com',
-    'email' => 'thewebfosters@gmail.com',
+    'vendor' => 'AI Generix',
+    'vendor_url' => 'http://generixerp.com',
+    'email' => 'info@generixerp.com',
     'app_version' => '6.8',
     'lic1' => 'aHR0cHM6Ly9sLnVsdGltYXRlZm9zdGVycy5jb20vYXBpL3R5cGVfMQ==',
     'pid' => 1,

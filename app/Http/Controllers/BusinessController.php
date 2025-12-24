@@ -55,21 +55,6 @@ class BusinessController extends Controller
         $this->businessUtil = $businessUtil;
         $this->moduleUtil = $moduleUtil;
 
-        $this->theme_colors = [
-            'primary' => 'Blue',
-            // 'black' => 'Black',
-            'purple' => 'Purple',
-            'green' => 'Green',
-            'red' => 'Red',
-            'yellow' => 'Yellow',
-            'orange' => 'Orange',
-            'sky' => 'Sky',
-            // 'blue-light' => 'Blue Light',
-            // 'black-light' => 'Black Light',
-            // 'purple-light' => 'Purple Light',
-            // 'green-light' => 'Green Light',
-            // 'red-light' => 'Red Light',
-        ];
 
         $this->mailDrivers = [
             'smtp' => 'SMTP',
@@ -89,7 +74,7 @@ class BusinessController extends Controller
     public function getRegister()
     {
         if (! config('constants.allow_registration')) {
-            return redirect('/');
+            abort(404);
         }
 
         $currencies = $this->businessUtil->allCurrencies();
@@ -124,7 +109,7 @@ class BusinessController extends Controller
     public function postRegister(Request $request)
     {
         if (! config('constants.allow_registration')) {
-            return redirect('/');
+            abort(404);
         }
 
         try {
@@ -132,11 +117,11 @@ class BusinessController extends Controller
                 [
                     'name' => 'required|max:255',
                     'currency_id' => 'required|numeric',
-                    'country' => 'required|max:255',
-                    'state' => 'required|max:255',
-                    'city' => 'required|max:255',
-                    'zip_code' => 'required|max:255',
-                    'landmark' => 'required|max:255',
+                    'country' => 'sometimes|nullable|max:255',
+                    'state' => 'sometimes|nullable|max:255',
+                    'city' => 'sometimes|nullable|max:255',
+                    'zip_code' => 'sometimes|nullable|max:255',
+                    'landmark' => 'sometimes|nullable|max:255',
                     'time_zone' => 'required|max:255',
                     'surname' => 'max:10',
                     'email' => 'sometimes|nullable|email|unique:users|max:255',
@@ -149,19 +134,14 @@ class BusinessController extends Controller
                 [
                     'name.required' => __('validation.required', ['attribute' => __('business.business_name')]),
                     'name.currency_id' => __('validation.required', ['attribute' => __('business.currency')]),
-                    'country.required' => __('validation.required', ['attribute' => __('business.country')]),
-                    'state.required' => __('validation.required', ['attribute' => __('business.state')]),
-                    'city.required' => __('validation.required', ['attribute' => __('business.city')]),
-                    'zip_code.required' => __('validation.required', ['attribute' => __('business.zip_code')]),
-                    'landmark.required' => __('validation.required', ['attribute' => __('business.landmark')]),
                     'time_zone.required' => __('validation.required', ['attribute' => __('business.time_zone')]),
                     'email.email' => __('validation.email', ['attribute' => __('business.email')]),
-                    'email.email' => __('validation.unique', ['attribute' => __('business.email')]),
+                    'email.unique' => __('validation.unique', ['attribute' => __('business.email')]),
                     'first_name.required' => __('validation.required', ['attribute' => __('business.first_name')]),
                     'username.required' => __('validation.required', ['attribute' => __('business.username')]),
                     'username.min' => __('validation.min', ['attribute' => __('business.username')]),
-                    'password.required' => __('validation.required', ['attribute' => __('business.username')]),
-                    'password.min' => __('validation.min', ['attribute' => __('business.username')]),
+                    'password.required' => __('validation.required', ['attribute' => __('business.password')]),
+                    'password.min' => __('validation.min', ['attribute' => __('business.password')]),
                     'fy_start_month.required' => __('validation.required', ['attribute' => __('business.fy_start_month')]),
                     'accounting_method.required' => __('validation.required', ['attribute' => __('business.accounting_method')]),
                 ]
@@ -192,11 +172,36 @@ class BusinessController extends Controller
 
             $business_location = $request->only(['name', 'country', 'state', 'city', 'zip_code', 'landmark',
                 'website', 'mobile', 'alternate_number', ]);
+            // Provide safe defaults for optional fields
+            if (empty($business_location['name'])) {
+                $business_location['name'] = $business_details['name'] ?? 'Default';
+            }
+            foreach (['country','state','city','zip_code','landmark','website','mobile','alternate_number'] as $key) {
+                if (!isset($business_location[$key]) || $business_location[$key] === null) {
+                    $business_location[$key] = '';
+                }
+            }
 
             //Create the business
             $business_details['owner_id'] = $user->id;
             if (! empty($business_details['start_date'])) {
-                $business_details['start_date'] = Carbon::createFromFormat(config('constants.default_date_format'), $business_details['start_date'])->toDateString();
+                $rawStartDate = $business_details['start_date'];
+                $parsed = null;
+                $candidateFormats = [
+                    config('constants.default_date_format'), // e.g. m/d/Y
+                    'Y-m-d', // HTML5 date input format
+                    'd/m/Y',
+                    'm-d-Y',
+                ];
+                foreach ($candidateFormats as $fmt) {
+                    try {
+                        $parsed = Carbon::createFromFormat($fmt, $rawStartDate);
+                        break;
+                    } catch (\Exception $e) {
+                        // try next format
+                    }
+                }
+                $business_details['start_date'] = $parsed ? $parsed->toDateString() : null;
             }
 
             //upload logo
@@ -333,7 +338,6 @@ class BusinessController extends Controller
 
         $modules = $this->moduleUtil->availableModules();
 
-        $theme_colors = $this->theme_colors;
 
         $mail_drivers = $this->mailDrivers;
 
@@ -347,7 +351,7 @@ class BusinessController extends Controller
 
         $payment_types = $this->moduleUtil->payment_types(null, false, $business_id);
 
-        return view('business.settings', compact('business', 'currencies', 'tax_rates', 'timezone_list', 'months', 'accounting_methods', 'commission_agent_dropdown', 'units_dropdown', 'date_formats', 'shortcuts', 'pos_settings', 'modules', 'theme_colors', 'email_settings', 'sms_settings', 'mail_drivers', 'allow_superadmin_email_settings', 'custom_labels', 'common_settings', 'weighing_scale_setting', 'payment_types'));
+        return view('business.settings', compact('business', 'currencies', 'tax_rates', 'timezone_list', 'months', 'accounting_methods', 'commission_agent_dropdown', 'units_dropdown', 'date_formats', 'shortcuts', 'pos_settings', 'modules', 'email_settings', 'sms_settings', 'mail_drivers', 'allow_superadmin_email_settings', 'custom_labels', 'common_settings', 'weighing_scale_setting', 'payment_types'));
     }
 
     /**
@@ -370,7 +374,7 @@ class BusinessController extends Controller
 
             $business_details = $request->only(['name', 'start_date', 'currency_id', 'tax_label_1', 'tax_number_1', 'tax_label_2', 'tax_number_2', 'default_profit_percent', 'default_sales_tax', 'default_sales_discount', 'sell_price_tax', 'sku_prefix', 'time_zone', 'fy_start_month', 'accounting_method', 'transaction_edit_days', 'sales_cmsn_agnt', 'item_addition_method', 'currency_symbol_placement', 'on_product_expiry',
                 'stop_selling_before', 'default_unit', 'expiry_type', 'date_format',
-                'time_format', 'ref_no_prefixes', 'theme_color', 'email_settings',
+                'time_format', 'ref_no_prefixes', 'email_settings',
                 'sms_settings', 'rp_name', 'amount_for_unit_rp',
                 'min_order_total_for_rp', 'max_rp_per_order',
                 'redeem_amount_per_unit_rp', 'min_order_total_for_redeem',

@@ -55,7 +55,7 @@ return [
 
     'administrator_usernames' => env('ADMINISTRATOR_USERNAMES'),
     'SHOW_REPAIR_STATUS_LOGIN_SCREEN' => env('SHOW_REPAIR_STATUS_LOGIN_SCREEN', true),
-    'allow_registration' => env('ALLOW_REGISTRATION', true),
+    'allow_registration' => filter_var(env('ALLOW_REGISTRATION', true), FILTER_VALIDATE_BOOLEAN),
     'app_title' => env('APP_TITLE'),
 
     'google_recaptcha_key' => env('GOOGLE_RECAPTCHA_KEY'),

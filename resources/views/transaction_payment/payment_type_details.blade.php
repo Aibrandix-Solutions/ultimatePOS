@@ -1,9 +1,9 @@
 <div class="payment_details_div @if( $payment_line->method !== 'card' ) {{ 'hide' }} @endif" data-type="card" >
-	<div class="col-md-12">
+	{{-- <div class="col-md-12">
 		<div class="alert alert-info" role="alert">
 			@lang('lang_v1.card_processing_disabled')
 		</div>
-	</div>
+	</div> --}}
 </div>
 <div class="payment_details_div @if( $payment_line->method !== 'cheque' ) {{ 'hide' }} @endif" data-type="cheque" >
 	<div class="col-md-12">

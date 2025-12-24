@@ -171,24 +171,14 @@
 									</button>
 								@endif
 							</div>
-							<div class="col-sm-4 col-xs-12 col-2px-padding">
-								<button type="button" class="btn bg-navy  btn-block btn-flat btn-lg no-print @if($pos_settings['disable_pay_checkout'] != 0) hide @endif pos-express-btn" id="pos-finalize" title="@lang('lang_v1.tooltip_checkout_multi_pay')">
-								<div class="text-center">
-									<i class="fa fa-check" aria-hidden="true"></i>
-    								<b>@lang('lang_v1.checkout_multi_pay')</b>
-    							</div>
-								</button>
-							</div>
-							<div class="col-sm-3 col-xs-12 col-2px-padding">
-								<button type="button" class="btn btn-success btn-block btn-flat btn-lg no-print @if($pos_settings['disable_express_checkout'] != 0 || !array_key_exists('cash', $payment_types)) hide @endif pos-express-btn pos-express-finalize"
-								data-pay_method="cash"
-								title="@lang('tooltip.express_checkout')">
-								<div class="text-center">
-									<i class="fa fa-check" aria-hidden="true"></i>
-    								<b>@lang('lang_v1.express_checkout_cash')</b>
-    							</div>
-								</button>
-							</div>
+                            <div class="col-sm-4 col-xs-12 col-2px-padding">
+                                <button type="button" class="btn bg-navy  btn-block btn-flat btn-lg no-print @if($pos_settings['disable_pay_checkout'] != 0) hide @endif pos-express-btn" id="pos-finalize" title="@lang('lang_v1.tooltip_checkout_multi_pay')">
+                                <div class="text-center">
+                                    <i class="fa fa-check" aria-hidden="true"></i>
+                                    <b>@lang('lang_v1.pay')</b>
+                                </div>
+                                </button>
+                            </div>
 
 							<div class="div-overlay pos-processing"></div>
 						</td>
