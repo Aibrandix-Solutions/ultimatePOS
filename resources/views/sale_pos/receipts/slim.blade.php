@@ -51,6 +51,10 @@
 						<br>{{ $receipt_details->location_custom_fields }}
 					@endif
 
+	                @if(!empty($receipt_details->contact) || !empty($receipt_details->website) || !empty($receipt_details->location_custom_fields))
+	                    <br/>
+	                @endif
+
 					@if(!empty($receipt_details->sub_heading_line1))
 						{{ $receipt_details->sub_heading_line1 }}<br/>
 					@endif
