@@ -477,6 +477,26 @@ class BusinessController extends Controller
             // Save pos_settings as JSON
             $business_details['pos_settings'] = json_encode($pos_settings);
 
+            // Preserve existing email_settings when fields are empty
+            $submitted_email_settings = $business_details['email_settings'] ?? [];
+            $existing_email_settings = ! empty($business->email_settings) ? $business->email_settings : [];
+            foreach ($submitted_email_settings as $key => $value) {
+                if (empty($value) && ! empty($existing_email_settings[$key])) {
+                    $submitted_email_settings[$key] = $existing_email_settings[$key];
+                }
+            }
+            $business_details['email_settings'] = $submitted_email_settings;
+
+            // Preserve existing sms_settings when fields are empty
+            $submitted_sms_settings = $business_details['sms_settings'] ?? [];
+            $existing_sms_settings = ! empty($business->sms_settings) ? $business->sms_settings : [];
+            foreach ($submitted_sms_settings as $key => $value) {
+                if (empty($value) && ! empty($existing_sms_settings[$key])) {
+                    $submitted_sms_settings[$key] = $existing_sms_settings[$key];
+                }
+            }
+            $business_details['sms_settings'] = $submitted_sms_settings;
+
             $business_details['custom_labels'] = json_encode($business_details['custom_labels']);
 
             $business_details['common_settings'] = ! empty($request->input('common_settings')) ? $request->input('common_settings') : [];
