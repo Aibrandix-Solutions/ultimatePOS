@@ -34,7 +34,7 @@
 			<div class="col-sm-10 col-sm-offset-2">
 				<table class="table table-bordered table-striped table-condensed" id="product_table">
 					<thead>
-						<tr>
+                        <tr>
 							<th>@lang( 'barcode.products' )</th>
 							<th>@lang( 'barcode.no_of_labels' )</th>
 							@if(request()->session()->get('business.enable_lot_number') == 1)
@@ -45,6 +45,7 @@
 							@endif
 							<th>@lang('lang_v1.packing_date')</th>
 							<th>@lang('lang_v1.selling_price_group')</th>
+                            <th>@lang('messages.actions')</th>
 						</tr>
 					</thead>
 					<tbody>

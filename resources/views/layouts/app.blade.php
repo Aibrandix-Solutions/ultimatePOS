@@ -31,6 +31,25 @@
     <link rel="icon" href="{{ asset('favicon.ico') }}">
     <!-- CSRF Token -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
+	<script>
+		(function() {
+			var meta = document.querySelector('meta[name="csrf-token"]');
+			if (!meta) {
+				meta = document.createElement('meta');
+				meta.setAttribute('name', 'csrf-token');
+				document.head.appendChild(meta);
+			}
+			var token = meta.getAttribute('content') || '{{ csrf_token() }}';
+			meta.setAttribute('content', token);
+			window.csrfToken = token;
+			if (window.axios) {
+				window.axios.defaults.headers.common['X-CSRF-TOKEN'] = token;
+			}
+			if (window.jQuery) {
+				jQuery.ajaxSetup({ headers: { 'X-CSRF-TOKEN': token } });
+			}
+		})();
+	</script>
     
     <title>@yield('title') - {{ Session::get('business.name') }}</title>
 
@@ -41,9 +60,14 @@
 
     @yield('css')
 
+    @if ($pos_layout)
+        <script>window.__load_vendor_early = true;</script>
+        <script src="{{ asset('js/vendor.js?v=' . $asset_v) }}"></script>
+    @endif
+
 </head>
 <body
-    class="tw-font-sans tw-antialiased tw-text-gray-900 tw-bg-gray-100 @if ($pos_layout) hold-transition lockscreen @else hold-transition skin-@if (!empty(session('business.theme_color'))){{ session('business.theme_color') }}@else{{ 'blue-light' }} @endif sidebar-mini @endif" >
+    class="tw-font-sans tw-antialiased tw-text-gray-900 tw-bg-gray-100 @if ($pos_layout) hold-transition lockscreen @else hold-transition skin-midnight-blue sidebar-mini @endif" >
     <div class="tw-flex thetop">
         <script type="text/javascript">
             if (localStorage.getItem("upos_sidebar_collapse") == 'true') {
@@ -132,7 +156,19 @@
             {!! $__additional_html !!}
         @endif
 
-        @include('layouts.partials.javascripts')
+        @include('layouts.partials.javascripts', ['vendor_loaded' => $pos_layout])
+        <script>
+            (function ensureAxiosCsrf(retries) {
+                var token = window.csrfToken || (document.querySelector('meta[name="csrf-token"]') || {}).content;
+                if (window.axios) {
+                    window.axios.defaults.headers.common['X-CSRF-TOKEN'] = token;
+                    return;
+                }
+                if (retries > 0) {
+                    setTimeout(function () { ensureAxiosCsrf(retries - 1); }, 200);
+                }
+            })(30);
+        </script>
         
         {{-- Module JS --}}
         @include('layouts.module-assets')
@@ -205,7 +241,12 @@
         position:relative;
     }
     
-
+    /* Product pricing table - themed borders */
+    table.add-product-price-table { border-collapse: separate; border-spacing: 0; }
+    table.add-product-price-table th,
+    table.add-product-price-table td { border: 1px solid #e5e7eb !important; }
+    table.add-product-price-table th { background-color: #16a34a; color: #ffffff; }
+    table.add-product-price-table tr:nth-child(even) td { background-color: #f9fafb; }
 
 
 </style>

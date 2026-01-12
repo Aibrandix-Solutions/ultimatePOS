@@ -15,7 +15,7 @@
                             'data-error-msg' => __('lang_v1.required_advance_balance_not_available'),
                         ]) !!}
                     </div>
-                    <div class="col-md-9">
+                    <div class="col-md-7">
                         <div class="row">
                             <div id="payment_rows_div">
                                 @php
@@ -55,7 +55,7 @@
                             </div>
                         </div>
                         <br>
-                        <div class="row @if ($change_return['amount'] == 0) hide @endif payment_row"
+                        {{-- <div class="row @if ($change_return['amount'] == 0) hide @endif payment_row"
                             id="change_return_payment_data">
                             <div class="col-md-12">
                                 <div class="box box-solid payment_row bg-lightgray">
@@ -109,7 +109,7 @@
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        </div> --}}
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
@@ -133,49 +133,45 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-3">
-                        <div class="box box-solid bg-orange">
-                            <div class="box-body">
+                    <div class="col-md-5">
+                        <div class="box box-solid" style="border-radius:10px; border: 1px solid rgba(22,17,96,0.1); background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);">
+                            <div class="box-body" style="padding: 14px 14px;">
                                 <div class="col-md-12">
-                                    <strong>
-                                        @lang('lang_v1.total_items'):
-                                    </strong>
-                                    <br />
-                                    <span class="lead text-bold total_quantity">0</span>
+                                    <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                                        <span style="font-weight:600; color:#111827;">@lang('lang_v1.total_items'):</span>
+                                        <span class="text-bold total_quantity" style="color:#111827;font-size:1.5rem">0</span>
+                                    </div>
                                 </div>
 
                                 <div class="col-md-12">
-                                    <hr>
-                                    <strong>
-                                        @lang('sale.total_payable'):
-                                    </strong>
-                                    <br />
-                                    <span class="lead text-bold total_payable_span">0</span>
+                                    <hr style="border-color: rgba(22,17,96,0.1);">
+                                    <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                                        <span style="font-weight:700; color:#161160;">@lang('sale.total_payable'):</span>
+                                        <span class="text-bold total_payable_span" style="color:#161160;font-size:1.2rem">0</span>
+                                    </div>
                                 </div>
 
                                 <div class="col-md-12">
-                                    <hr>
-                                    <strong>
-                                        @lang('lang_v1.total_paying'):
-                                    </strong>
-                                    <br />
-                                    <span class="lead text-bold total_paying">0</span>
+                                    <hr style="border-color: rgba(22,17,96,0.1);">
+                                    <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                                        <span style="font-weight:600; color:#111827;">@lang('lang_v1.total_paying'):</span>
+                                        <span class="text-bold total_paying" style="color:#111827;font-size:1.2rem">0</span>
+                                    </div>
                                     <input type="hidden" id="total_paying_input">
                                 </div>
 
                                 <div class="col-md-12">
-                                    <hr>
-                                    <strong>
-                                        @lang('lang_v1.change_return'):
-                                    </strong>
-                                    <br />
-                                    <span class="lead text-bold change_return_span">0</span>
+                                    <hr style="border-color: rgba(22,17,96,0.1);">
+                                    <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                                        <span style="font-weight:600; color:#111827;">@lang('lang_v1.change_return'):</span>
+                                        <span class="text-bold change_return_span" style="color:#111827;font-size:1.5rem">0</span>
+                                    </div>
                                     {!! Form::hidden('change_return', $change_return['amount'], [
                                         'class' => 'form-control change_return input_number',
                                         'required',
                                         'id' => 'change_return',
                                     ]) !!}
-                                    <!-- <span class="lead text-bold total_quantity">0</span> -->
+                                    <!-- <span class="text-bold total_quantity">0</span> -->
                                     @if (!empty($change_return['id']))
                                         <input type="hidden" name="change_return_id"
                                             value="{{ $change_return['id'] }}">
@@ -183,12 +179,11 @@
                                 </div>
 
                                 <div class="col-md-12">
-                                    <hr>
-                                    <strong>
-                                        @lang('lang_v1.balance'):
-                                    </strong>
-                                    <br />
-                                    <span class="lead text-bold balance_due">0</span>
+                                    <hr style="border-color: rgba(22,17,96,0.1);">
+                                    <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                                        <span style="font-weight:700; color:#dc2626;">@lang('lang_v1.balance'):</span>
+                                        <span class="text-bold balance_due" style="color:#dc2626;font-size:1.5rem">0</span>
+                                    </div>
                                     <input type="hidden" id="in_balance_due" value=0>
                                 </div>
 
@@ -201,8 +196,8 @@
                 </div>
             </div>
             <div class="modal-footer" style="background: #f8f9fa; border-radius: 0 0 12px 12px; border-top: 1px solid rgba(22,17,96,0.1);">
-                <button type="button" class="btn btn-default" data-dismiss="modal" style="background: #e8ebed; color: #374151; border: 1px solid #e5e7eb; padding: 8px 20px; border-radius: 6px; font-weight: 500;">@lang('messages.close')</button>
-                <button type="submit" class="btn btn-primary" id="pos-save" style="background: linear-gradient(135deg, #161160 0%, #2a2480 100%); color: #ffffff; border: none; padding: 8px 20px; border-radius: 6px; font-weight: 600;">@lang('sale.finalize_payment')</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal" style="background: #b0b0b0; color: #374151; border: 1px solid #e5e7eb; padding: 8px 20px; border-radius: 6px; font-weight: 500;">@lang('messages.close')</button>
+                <button type="submit" class="btn btn-primary" id="pos-save" style="background: linear-gradient(135deg, #28b77b 0%, #20a16b 100%); border: 1px solid rgba(40,183,123,0.2); color: #ffffff; border: none; padding: 8px 20px; border-radius: 6px; font-weight: 600;">@lang('sale.complete_payment')</button>
             </div>
         </div><!-- /.modal-content -->
     </div><!-- /.modal-dialog -->

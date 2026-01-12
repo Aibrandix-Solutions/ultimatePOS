@@ -55,21 +55,6 @@ class BusinessController extends Controller
         $this->businessUtil = $businessUtil;
         $this->moduleUtil = $moduleUtil;
 
-        $this->theme_colors = [
-            'primary' => 'Blue',
-            // 'black' => 'Black',
-            'purple' => 'Purple',
-            'green' => 'Green',
-            'red' => 'Red',
-            'yellow' => 'Yellow',
-            'orange' => 'Orange',
-            'sky' => 'Sky',
-            // 'blue-light' => 'Blue Light',
-            // 'black-light' => 'Black Light',
-            // 'purple-light' => 'Purple Light',
-            // 'green-light' => 'Green Light',
-            // 'red-light' => 'Red Light',
-        ];
 
         $this->mailDrivers = [
             'smtp' => 'SMTP',
@@ -353,7 +338,6 @@ class BusinessController extends Controller
 
         $modules = $this->moduleUtil->availableModules();
 
-        $theme_colors = $this->theme_colors;
 
         $mail_drivers = $this->mailDrivers;
 
@@ -367,7 +351,7 @@ class BusinessController extends Controller
 
         $payment_types = $this->moduleUtil->payment_types(null, false, $business_id);
 
-        return view('business.settings', compact('business', 'currencies', 'tax_rates', 'timezone_list', 'months', 'accounting_methods', 'commission_agent_dropdown', 'units_dropdown', 'date_formats', 'shortcuts', 'pos_settings', 'modules', 'theme_colors', 'email_settings', 'sms_settings', 'mail_drivers', 'allow_superadmin_email_settings', 'custom_labels', 'common_settings', 'weighing_scale_setting', 'payment_types'));
+        return view('business.settings', compact('business', 'currencies', 'tax_rates', 'timezone_list', 'months', 'accounting_methods', 'commission_agent_dropdown', 'units_dropdown', 'date_formats', 'shortcuts', 'pos_settings', 'modules', 'email_settings', 'sms_settings', 'mail_drivers', 'allow_superadmin_email_settings', 'custom_labels', 'common_settings', 'weighing_scale_setting', 'payment_types'));
     }
 
     /**
@@ -390,7 +374,7 @@ class BusinessController extends Controller
 
             $business_details = $request->only(['name', 'start_date', 'currency_id', 'tax_label_1', 'tax_number_1', 'tax_label_2', 'tax_number_2', 'default_profit_percent', 'default_sales_tax', 'default_sales_discount', 'sell_price_tax', 'sku_prefix', 'time_zone', 'fy_start_month', 'accounting_method', 'transaction_edit_days', 'sales_cmsn_agnt', 'item_addition_method', 'currency_symbol_placement', 'on_product_expiry',
                 'stop_selling_before', 'default_unit', 'expiry_type', 'date_format',
-                'time_format', 'ref_no_prefixes', 'theme_color', 'email_settings',
+                'time_format', 'ref_no_prefixes', 'email_settings',
                 'sms_settings', 'rp_name', 'amount_for_unit_rp',
                 'min_order_total_for_rp', 'max_rp_per_order',
                 'redeem_amount_per_unit_rp', 'min_order_total_for_redeem',
@@ -492,6 +476,26 @@ class BusinessController extends Controller
             }
             // Save pos_settings as JSON
             $business_details['pos_settings'] = json_encode($pos_settings);
+
+            // Preserve existing email_settings when fields are empty
+            $submitted_email_settings = $business_details['email_settings'] ?? [];
+            $existing_email_settings = ! empty($business->email_settings) ? $business->email_settings : [];
+            foreach ($submitted_email_settings as $key => $value) {
+                if (empty($value) && ! empty($existing_email_settings[$key])) {
+                    $submitted_email_settings[$key] = $existing_email_settings[$key];
+                }
+            }
+            $business_details['email_settings'] = $submitted_email_settings;
+
+            // Preserve existing sms_settings when fields are empty
+            $submitted_sms_settings = $business_details['sms_settings'] ?? [];
+            $existing_sms_settings = ! empty($business->sms_settings) ? $business->sms_settings : [];
+            foreach ($submitted_sms_settings as $key => $value) {
+                if (empty($value) && ! empty($existing_sms_settings[$key])) {
+                    $submitted_sms_settings[$key] = $existing_sms_settings[$key];
+                }
+            }
+            $business_details['sms_settings'] = $submitted_sms_settings;
 
             $business_details['custom_labels'] = json_encode($business_details['custom_labels']);
 
