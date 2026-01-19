@@ -38,14 +38,17 @@ class AdminSidebarMenu
             //     <path d="M10 12h4v4h-4z"></path>
             //   </svg>', 'active' => request()->segment(1) == 'home'])->order(5);
 
-            
-                  
-            $menu->url(action([\App\Http\Controllers\HomeController::class, 'index']), __('home.home'), ['icon' => '<svg xmlns="http://www.w3.org/2000/svg" class="tw-size-5 tw-shrink-0" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+
+
+            $menu->url(action([\App\Http\Controllers\HomeController::class, 'index']), __('home.home'), [
+                'icon' => '<svg xmlns="http://www.w3.org/2000/svg" class="tw-size-5 tw-shrink-0" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
             <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
             <path d="M5 12l-2 0l9 -9l9 9l-2 0" />
             <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
             <path d="M10 12h4v4h-4z" />
-          </svg>', 'active' => request()->segment(1) == 'home'])->order(5);
+          </svg>',
+                'active' => request()->segment(1) == 'home'
+            ])->order(5);
 
             //User management dropdown
             if (auth()->user()->can('user.view') || auth()->user()->can('user.create') || auth()->user()->can('roles.view')) {
@@ -74,14 +77,16 @@ class AdminSidebarMenu
                             );
                         }
                     },
-                    ['icon' => '<svg aria-hidden="true" class="tw-size-5 tw-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    [
+                        'icon' => '<svg aria-hidden="true" class="tw-size-5 tw-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                     <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                     <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                     <path d="M9 7m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0"></path>
                     <path d="M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"></path>
                     <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                     <path d="M21 21v-2a4 4 0 0 0 -3 -3.85"></path>
-                  </svg>', ]
+                  </svg>',
+                    ]
                 )->order(10);
             }
 
@@ -125,7 +130,8 @@ class AdminSidebarMenu
                             );
                         }
                     },
-                    ['icon' => '<svg aria-hidden="true" class="tw-size-5 tw-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    [
+                        'icon' => '<svg aria-hidden="true" class="tw-size-5 tw-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                     <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                     <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                     <path d="M20 6v12a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2z"></path>
@@ -134,15 +140,65 @@ class AdminSidebarMenu
                     <path d="M4 8h3"></path>
                     <path d="M4 12h3"></path>
                     <path d="M4 16h3"></path>
-                  </svg>', 'id' => 'tour_step4']
+                  </svg>',
+                        'id' => 'tour_step4'
+                    ]
                 )->order(15);
             }
 
+            // Payment Accounts dropdown
+            if (auth()->user()->can('account.access')) {
+                $menu->dropdown(
+                    'Payment Accounts',
+                    function ($sub) {
+                        $sub->url(
+                            action([\App\Http\Controllers\AccountController::class, 'index']),
+                            'List Accounts',
+                            ['icon' => '', 'active' => request()->segment(1) == 'accounts']
+                        );
+
+                        $sub->url(
+                            action([\App\Http\Controllers\AccountReportsController::class, 'balanceSheet']),
+                            'Balance Sheet',
+                            ['icon' => '', 'active' => request()->segment(1) == 'account-reports' && request()->segment(2) == 'balance-sheet']
+                        );
+
+                        $sub->url(
+                            action([\App\Http\Controllers\AccountReportsController::class, 'trialBalance']),
+                            'Trial Balance',
+                            ['icon' => '', 'active' => request()->segment(1) == 'account-reports' && request()->segment(2) == 'trial-balance']
+                        );
+
+                        $sub->url(
+                            action([\App\Http\Controllers\AccountReportsController::class, 'paymentAccountReport']),
+                            'Payment Account Report',
+                            ['icon' => '', 'active' => request()->segment(1) == 'account-reports' && request()->segment(2) == 'payment-account-report']
+                        );
+
+                        $sub->url(
+                            url('/account/cash-flow'),
+                            'Cash Flow',
+                            ['icon' => '', 'active' => request()->segment(1) == 'account-reports' && request()->segment(2) == 'cash-flow']
+                        );
+                    },
+                    [
+                        'icon' => '<svg aria-hidden="true" class="tw-size-5 tw-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                        <path d="M3 7h18"></path>
+                        <path d="M12 3v18"></path>
+                        <path d="M16 19a2 2 0 1 0 0 -4"></path>
+                      </svg>'
+                    ]
+                )->order(17);
+            }
+
             //Products dropdown
-            if (auth()->user()->can('product.view') || auth()->user()->can('product.create') ||
+            if (
+                auth()->user()->can('product.view') || auth()->user()->can('product.create') ||
                 auth()->user()->can('brand.view') || auth()->user()->can('unit.view') ||
                 auth()->user()->can('category.view') || auth()->user()->can('brand.create') ||
-                auth()->user()->can('unit.create') || auth()->user()->can('category.create')) {
+                auth()->user()->can('unit.create') || auth()->user()->can('category.create')
+            ) {
                 $menu->dropdown(
                     __('sale.products'),
                     function ($sub) {
@@ -229,7 +285,8 @@ class AdminSidebarMenu
                             ['icon' => '', 'active' => request()->segment(1) == 'warranties']
                         );
                     },
-                    ['icon' => '<svg aria-hidden="true" class="tw-size-5 tw-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    [
+                        'icon' => '<svg aria-hidden="true" class="tw-size-5 tw-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                     <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                     <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                     <path d="M12 3l8 4.5v9l-8 4.5l-8 -4.5v-9l8 -4.5"></path>
@@ -237,7 +294,9 @@ class AdminSidebarMenu
                     <path d="M8.2 9.8l7.6 -4.6"></path>
                     <path d="M12 12v9"></path>
                     <path d="M12 12l-8 -4.5"></path>
-                  </svg>', 'id' => 'tour_step5']
+                  </svg>',
+                        'id' => 'tour_step5'
+                    ]
                 )->order(20);
             }
 
@@ -283,13 +342,16 @@ class AdminSidebarMenu
                             );
                         }
                     },
-                    ['icon' => '<svg aria-hidden="true" class="tw-size-5 tw-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    [
+                        'icon' => '<svg aria-hidden="true" class="tw-size-5 tw-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                     <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                     <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                     <path d="M12 3v12"></path>
                     <path d="M16 11l-4 4l-4 -4"></path>
                     <path d="M3 12a9 9 0 0 0 18 0"></path>
-                  </svg>', 'id' => 'tour_step6']
+                  </svg>',
+                        'id' => 'tour_step6'
+                    ]
                 )->order(25);
             }
             //Sell dropdown
@@ -405,13 +467,16 @@ class AdminSidebarMenu
                             );
                         }
                     },
-                    ['icon' => '<svg aria-hidden="true" class="tw-size-5 tw-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    [
+                        'icon' => '<svg aria-hidden="true" class="tw-size-5 tw-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                     <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                     <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                     <path d="M12 15v-12"></path>
                     <path d="M16 7l-4 -4l-4 4"></path>
                     <path d="M3 12a9 9 0 0 0 18 0"></path>
-                  </svg>', 'id' => 'tour_step7']
+                  </svg>',
+                        'id' => 'tour_step7'
+                    ]
                 )->order(30);
             }
 
@@ -435,14 +500,16 @@ class AdminSidebarMenu
                             );
                         }
                     },
-                    ['icon' => '<svg aria-hidden="true" class="tw-size-5 tw-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    [
+                        'icon' => '<svg aria-hidden="true" class="tw-size-5 tw-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                     <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                     <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                     <path d="M7 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"></path>
                     <path d="M17 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"></path>
                     <path d="M5 17h-2v-4m-1 -8h11v12m-4 0h6m4 0h2v-6h-8m0 -5h5l3 5"></path>
                     <path d="M3 9l4 0"></path>
-                  </svg>']
+                  </svg>'
+                    ]
                 )->order(35);
             }
 
@@ -451,7 +518,7 @@ class AdminSidebarMenu
                 $menu->dropdown(
                     __('stock_adjustment.stock_adjustment'),
                     function ($sub) {
-                        if (auth()->user()->can('purchase.view')  || auth()->user()->can('view_own_purchase')) {
+                        if (auth()->user()->can('purchase.view') || auth()->user()->can('view_own_purchase')) {
                             $sub->url(
                                 action([\App\Http\Controllers\StockAdjustmentController::class, 'index']),
                                 __('stock_adjustment.list'),
@@ -466,13 +533,15 @@ class AdminSidebarMenu
                             );
                         }
                     },
-                    ['icon' => '<svg aria-hidden="true" class="tw-size-5 tw-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    [
+                        'icon' => '<svg aria-hidden="true" class="tw-size-5 tw-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                     <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                     <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                     <path d="M12 6m-8 0a8 3 0 1 0 16 0a8 3 0 1 0 -16 0"></path>
                     <path d="M4 6v6a8 3 0 0 0 16 0v-6"></path>
                     <path d="M4 12v6a8 3 0 0 0 16 0v-6"></path>
-                  </svg>']
+                  </svg>'
+                    ]
                 )->order(40);
             }
 
@@ -486,6 +555,22 @@ class AdminSidebarMenu
                             __('lang_v1.list_expenses'),
                             ['icon' => '', 'active' => request()->segment(1) == 'expenses' || request()->segment(1) == 'import-expense' && request()->segment(2) == null]
                         );
+
+
+                        // Damages - accessible to users who can view or add expenses
+                        if (auth()->user()->can('all_expense.access') || auth()->user()->can('view_own_expense') || auth()->user()->can('expense.add')) {
+                            $sub->url(
+                                action([\App\Http\Controllers\DamageController::class, 'index']),
+                                __('lang_v1.add_damage'),
+                                ['icon' => '', 'active' => request()->segment(1) == 'damages' && request()->segment(2) == null]
+                            );
+
+                            $sub->url(
+                                action([\App\Http\Controllers\DamageController::class, 'list']),
+                                __('lang_v1.damages_list'),
+                                ['icon' => '', 'active' => request()->segment(1) == 'damages' && request()->segment(2) == 'list']
+                            );
+                        }
 
                         if (auth()->user()->can('expense.add')) {
                             $sub->url(
@@ -503,13 +588,15 @@ class AdminSidebarMenu
                             );
                         }
                     },
-                    ['icon' => ' <svg aria-hidden="true" class="tw-size-5 tw-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    [
+                        'icon' => ' <svg aria-hidden="true" class="tw-size-5 tw-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                     <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                     <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                     <path d="M5 21v-16a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v16l-3 -2l-2 2l-2 -2l-2 2l-2 -2l-3 2"></path>
                     <path d="M14.8 8a2 2 0 0 0 -1.8 -1h-2a2 2 0 1 0 0 4h2a2 2 0 1 1 0 4h-2a2 2 0 0 1 -1.8 -1"></path>
                     <path d="M12 6v10"></path>
-                  </svg>']
+                  </svg>'
+                    ]
                 )->order(45);
             }
             //Accounts dropdown
@@ -543,22 +630,26 @@ class AdminSidebarMenu
                             ['icon' => '', 'active' => request()->segment(1) == 'account' && request()->segment(2) == 'payment-account-report']
                         );
                     },
-                    ['icon' => '<svg aria-hidden="true" class="tw-size-5 tw-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    [
+                        'icon' => '<svg aria-hidden="true" class="tw-size-5 tw-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                     <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                     <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                     <path d="M3 5m0 3a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v8a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3z"></path>
                     <path d="M3 10l18 0"></path>
                     <path d="M7 15l.01 0"></path>
                     <path d="M11 15l2 0"></path>
-                  </svg>']
+                  </svg>'
+                    ]
                 )->order(50);
             }
 
             //Reports dropdown
-            if (auth()->user()->can('purchase_n_sell_report.view') || auth()->user()->can('contacts_report.view')
+            if (
+                auth()->user()->can('purchase_n_sell_report.view') || auth()->user()->can('contacts_report.view')
                 || auth()->user()->can('stock_report.view') || auth()->user()->can('tax_report.view')
                 || auth()->user()->can('trending_product_report.view') || auth()->user()->can('sales_representative.view') || auth()->user()->can('register_report.view')
-                || auth()->user()->can('expense_report.view')) {
+                || auth()->user()->can('expense_report.view')
+            ) {
                 $menu->dropdown(
                     __('report.reports'),
                     function ($sub) use ($enabled_modules, $is_admin) {
@@ -738,7 +829,8 @@ class AdminSidebarMenu
                             );
                         }
                     },
-                    ['icon' => '<svg aria-hidden="true" class="tw-size-5 tw-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    [
+                        'icon' => '<svg aria-hidden="true" class="tw-size-5 tw-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                     <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                     <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                     <path d="M8 5h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h5.697"></path>
@@ -748,30 +840,38 @@ class AdminSidebarMenu
                     <path d="M18 18m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0"></path>
                     <path d="M8 11h4"></path>
                     <path d="M8 15h3"></path>
-                  </svg>', 'id' => 'tour_step8']
+                  </svg>',
+                        'id' => 'tour_step8'
+                    ]
                 )->order(55);
             }
 
             //Backup menu
             if (auth()->user()->can('backup')) {
-                $menu->url(action([\App\Http\Controllers\BackUpController::class, 'index']), __('lang_v1.backup'), ['icon' => '<svg aria-hidden="true" class="tw-size-5 tw-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                $menu->url(action([\App\Http\Controllers\BackUpController::class, 'index']), __('lang_v1.backup'), [
+                    'icon' => '<svg aria-hidden="true" class="tw-size-5 tw-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                 <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                 <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                 <path d="M12 18.004h-5.343c-2.572 -.004 -4.657 -2.011 -4.657 -4.487c0 -2.475 2.085 -4.482 4.657 -4.482c.393 -1.762 1.794 -3.2 3.675 -3.773c1.88 -.572 3.956 -.193 5.444 1c1.488 1.19 2.162 3.007 1.77 4.769h.99c1.38 0 2.57 .811 3.128 1.986"></path>
                 <path d="M19 22v-6"></path>
                 <path d="M22 19l-3 -3l-3 3"></path>
-              </svg>', 'active' => request()->segment(1) == 'backup'])->order(60);
+              </svg>',
+                    'active' => request()->segment(1) == 'backup'
+                ])->order(60);
             }
 
             //Modules menu
             if (auth()->user()->can('manage_modules')) {
-                $menu->url(action([\App\Http\Controllers\Install\ModulesController::class, 'index']), __('lang_v1.modules'), ['icon' => '<svg aria-hidden="true" class="tw-size-5 tw-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                $menu->url(action([\App\Http\Controllers\Install\ModulesController::class, 'index']), __('lang_v1.modules'), [
+                    'icon' => '<svg aria-hidden="true" class="tw-size-5 tw-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
               <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
               <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
               <path d="M12 4l-8 4l8 4l8 -4l-8 -4"></path>
               <path d="M4 12l8 4l8 -4"></path>
               <path d="M4 16l8 4l8 -4"></path>
-            </svg>', 'active' => request()->segment(1) == 'manage-modules'])->order(60);
+            </svg>',
+                    'active' => request()->segment(1) == 'manage-modules'
+                ])->order(60);
             }
 
             //Booking menu
@@ -791,21 +891,26 @@ class AdminSidebarMenu
 
             //Notification template menu
             if (auth()->user()->can('send_notifications')) {
-                $menu->url(action([\App\Http\Controllers\NotificationTemplateController::class, 'index']), __('lang_v1.notification_templates'), ['icon' => '<svg aria-hidden="true" class="tw-size-5 tw-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                $menu->url(action([\App\Http\Controllers\NotificationTemplateController::class, 'index']), __('lang_v1.notification_templates'), [
+                    'icon' => '<svg aria-hidden="true" class="tw-size-5 tw-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                     <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                     <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                     <path d="M3 7a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-10z"></path>
                     <path d="M3 7l9 6l9 -6"></path>
-                  </svg>', 'active' => request()->segment(1) == 'notification-templates'])->order(80);
+                  </svg>',
+                    'active' => request()->segment(1) == 'notification-templates'
+                ])->order(80);
             }
 
             //Settings Dropdown
-            if (auth()->user()->can('business_settings.access') ||
+            if (
+                auth()->user()->can('business_settings.access') ||
                 auth()->user()->can('barcode_settings.access') ||
                 auth()->user()->can('invoice_settings.access') ||
                 auth()->user()->can('tax_rate.view') ||
                 auth()->user()->can('tax_rate.create') ||
-                auth()->user()->can('access_package_subscriptions')) {
+                auth()->user()->can('access_package_subscriptions')
+            ) {
                 $menu->dropdown(
                     __('business.settings'),
                     function ($sub) use ($enabled_modules) {
@@ -875,12 +980,15 @@ class AdminSidebarMenu
                             );
                         }
                     },
-                    ['icon' => '<svg aria-hidden="true" class="tw-size-5 tw-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    [
+                        'icon' => '<svg aria-hidden="true" class="tw-size-5 tw-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                     <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                     <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                     <path d="M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065z"></path>
                     <path d="M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0"></path>
-                  </svg>', 'id' => 'tour_step3']
+                  </svg>',
+                        'id' => 'tour_step3'
+                    ]
                 )->order(85);
             }
         });
@@ -892,3 +1000,4 @@ class AdminSidebarMenu
         return $next($request);
     }
 }
+

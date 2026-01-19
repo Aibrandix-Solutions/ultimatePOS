@@ -104,6 +104,19 @@
                         </div>
                     @endslot
                 @endcan
+                        {{-- Damages quick link --}}
+                        <div class="pull-right tw-m-2">
+                            <a class="tw-dw-btn tw-bg-gradient-to-r tw-from-red-600 tw-to-pink-500 tw-font-bold tw-text-white tw-border-none tw-rounded-full"
+                                href="{{ action([\App\Http\Controllers\DamageController::class, 'index']) }}">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                    class="icon icon-tabler icons-tabler-alert-circle">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                    <path d="M12 9v2m0 4v.01" />
+                                    <path d="M12 3a9 9 0 1 0 0 18a9 9 0 0 0 0-18" />
+                                </svg> @lang('lang_v1.damages')
+                            </a>
+                        </div>
                 <div class="table-responsive">
                     <table class="table table-bordered table-striped" id="expense_table">
                         <thead>
