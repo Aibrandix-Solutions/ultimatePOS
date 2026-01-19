@@ -141,7 +141,8 @@ class Media extends Model
         $file_name = null;
         if ($file->getSize() <= config('constants.document_size_limit')) {
             $new_file_name = time().'_'.mt_rand().'_'.$file->getClientOriginalName();
-            if ($file->storeAs('/media', $new_file_name)) {
+            // Force using the 'local' disk which maps to public/uploads
+            if ($file->storeAs('/media', $new_file_name, 'local')) {
                 $file_name = $new_file_name;
             }
         }

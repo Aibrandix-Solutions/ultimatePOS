@@ -740,7 +740,8 @@ class Util
                 $sanitized_name = Str::slug($original_name);
                 $new_file_name = time() . '_' . $sanitized_name . ($extension ? '.' . $extension : '');
 
-                if ($file->storeAs($dir_name, $new_file_name)) {
+                // Force using the 'local' disk which maps to public/uploads
+                if ($file->storeAs($dir_name, $new_file_name, 'local')) {
                     $uploaded_file_name = $new_file_name;
                 }
             }

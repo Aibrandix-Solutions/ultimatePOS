@@ -171,5 +171,15 @@ jobs:
             php artisan route:cache  || true
             php artisan view:cache   || true
 
-            # storage:link can fail on shared hosts; ignore error
-            php artisan storage:link || true
+            # Remove old symlink and ensure uploads directory structure
+            cd /home/u972195898/domains/himan.fun/public_html/pos
+            if [ -L uploads ]; then
+              echo "🔧 Removing old uploads symlink"
+              rm -f uploads
+            fi
+            
+            # Ensure physical uploads directories exist
+            mkdir -p uploads/{img,media,business_logos,invoice_logos,files}
+            chmod -R 755 uploads || true
+            
+            echo "✅ Uploads directory structure verified"
