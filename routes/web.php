@@ -59,6 +59,7 @@ use App\Http\Controllers\UnitController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VariationTemplateController;
 use App\Http\Controllers\WarrantyController;
+use App\Http\Controllers\DamageController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -203,6 +204,9 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
     Route::post('/products/toggle-woocommerce-sync', [ProductController::class, 'toggleWooCommerceSync']);
 
     Route::resource('products', ProductController::class);
+    // Products search for damages autocomplete
+    Route::get('/damages/products/search', [DamageController::class, 'searchProducts']);
+    Route::get('/damages/products/{id}/details', [DamageController::class, 'productDetails']);
     Route::get('/toggle-subscription/{id}', 'SellPosController@toggleRecurringInvoices');
     Route::post('/sells/pos/get-types-of-service-details', 'SellPosController@getTypesOfServiceDetails');
     Route::get('/sells/subscriptions', 'SellPosController@listSubscriptions');
@@ -354,6 +358,11 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
     Route::post('/stock-adjustments/get_product_row', [StockAdjustmentController::class, 'getProductRow']);
     Route::resource('stock-adjustments', StockAdjustmentController::class);
 
+    // Damaged items
+    Route::get('/damages/list', [DamageController::class, 'list'])->name('damages.list');
+    Route::get('/damages/list-data', [DamageController::class, 'listData'])->name('damages.list-data');
+    Route::resource('damages', DamageController::class)->only(['index', 'store', 'show', 'destroy']);
+
     Route::get('/cash-register/register-details', [CashRegisterController::class, 'getRegisterDetails']);
     Route::get('/cash-register/close-register/{id?}', [CashRegisterController::class, 'getCloseRegister']);
     Route::post('/cash-register/close-register', [CashRegisterController::class, 'postCloseRegister']);
@@ -437,7 +446,7 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
         Route::get('/payment-account-report', [AccountReportsController::class, 'paymentAccountReport']);
         Route::get('/link-account/{id}', [AccountReportsController::class, 'getLinkAccount']);
         Route::post('/link-account', [AccountReportsController::class, 'postLinkAccount']);
-        Route::get('/cash-flow', [AccountController::class, 'cashFlow']);
+        Route::get('/cash-flow', [AccountReportsController::class, 'cashFlow']);
     });
 
     Route::resource('account-types', AccountTypeController::class);
@@ -484,7 +493,7 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
     Route::resource('warranties', WarrantyController::class);
 
     Route::resource('dashboard-configurator', DashboardConfiguratorController::class)
-    ->only(['edit', 'update']);
+        ->only(['edit', 'update']);
 
     Route::get('view-media/{model_id}', [SellController::class, 'viewMedia']);
 

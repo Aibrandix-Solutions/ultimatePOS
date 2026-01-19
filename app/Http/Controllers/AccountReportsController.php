@@ -146,6 +146,29 @@ class AccountReportsController extends Controller
     }
 
     /**
+     * Displays cash flow report.
+     *
+     * @return Response
+     */
+    public function cashFlow()
+    {
+        if (! auth()->user()->can('account.access')) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $business_id = session()->get('user.business_id');
+
+        if (request()->ajax()) {
+            // Return an empty DataTables response to satisfy client-side serverSide processing.
+            return DataTables::of(collect([]))->make(true);
+        }
+
+        $business_locations = BusinessLocation::forDropdown($business_id, true);
+
+        return view('account_reports.cash_flow')->with(compact('business_locations'));
+    }
+
+    /**
      * Retrives account balances.
      *
      * @return Obj
