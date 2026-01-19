@@ -146,52 +146,6 @@ class AdminSidebarMenu
                 )->order(15);
             }
 
-            // Payment Accounts dropdown
-            if (auth()->user()->can('account.access')) {
-                $menu->dropdown(
-                    'Payment Accounts',
-                    function ($sub) {
-                        $sub->url(
-                            action([\App\Http\Controllers\AccountController::class, 'index']),
-                            'List Accounts',
-                            ['icon' => '', 'active' => request()->segment(1) == 'accounts']
-                        );
-
-                        $sub->url(
-                            action([\App\Http\Controllers\AccountReportsController::class, 'balanceSheet']),
-                            'Balance Sheet',
-                            ['icon' => '', 'active' => request()->segment(1) == 'account-reports' && request()->segment(2) == 'balance-sheet']
-                        );
-
-                        $sub->url(
-                            action([\App\Http\Controllers\AccountReportsController::class, 'trialBalance']),
-                            'Trial Balance',
-                            ['icon' => '', 'active' => request()->segment(1) == 'account-reports' && request()->segment(2) == 'trial-balance']
-                        );
-
-                        $sub->url(
-                            action([\App\Http\Controllers\AccountReportsController::class, 'paymentAccountReport']),
-                            'Payment Account Report',
-                            ['icon' => '', 'active' => request()->segment(1) == 'account-reports' && request()->segment(2) == 'payment-account-report']
-                        );
-
-                        $sub->url(
-                            url('/account/cash-flow'),
-                            'Cash Flow',
-                            ['icon' => '', 'active' => request()->segment(1) == 'account-reports' && request()->segment(2) == 'cash-flow']
-                        );
-                    },
-                    [
-                        'icon' => '<svg aria-hidden="true" class="tw-size-5 tw-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                        <path d="M3 7h18"></path>
-                        <path d="M12 3v18"></path>
-                        <path d="M16 19a2 2 0 1 0 0 -4"></path>
-                      </svg>'
-                    ]
-                )->order(17);
-            }
-
             //Products dropdown
             if (
                 auth()->user()->can('product.view') || auth()->user()->can('product.create') ||
@@ -619,11 +573,11 @@ class AdminSidebarMenu
                             __('account.trial_balance'),
                             ['icon' => '', 'active' => request()->segment(1) == 'account' && request()->segment(2) == 'trial-balance']
                         );
-                        $sub->url(
-                            action([\App\Http\Controllers\AccountController::class, 'cashFlow']),
-                            __('lang_v1.cash_flow'),
-                            ['icon' => '', 'active' => request()->segment(1) == 'account' && request()->segment(2) == 'cash-flow']
-                        );
+                        // $sub->url(
+                        //     action([\App\Http\Controllers\AccountController::class, 'cashFlow']),
+                        //     __('lang_v1.cash_flow'),
+                        //     ['icon' => '', 'active' => request()->segment(1) == 'account' && request()->segment(2) == 'cash-flow']
+                        // );
                         $sub->url(
                             action([\App\Http\Controllers\AccountReportsController::class, 'paymentAccountReport']),
                             __('account.payment_account_report'),
