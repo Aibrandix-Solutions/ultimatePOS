@@ -49,7 +49,9 @@ class Media extends Model
      */
     public function getDisplayPathAttribute()
     {
-        $path = public_path('uploads/media').'/'.rawurlencode($this->file_name);
+        // For split-docroot: use web-accessible uploads directory (sibling to /laravel folder)
+        $base_upload_path = dirname(base_path()) . DIRECTORY_SEPARATOR . 'uploads';
+        $path = $base_upload_path . DIRECTORY_SEPARATOR . 'media' . DIRECTORY_SEPARATOR . rawurlencode($this->file_name);
 
         return $path;
     }
@@ -141,8 +143,16 @@ class Media extends Model
         $file_name = null;
         if ($file->getSize() <= config('constants.document_size_limit')) {
             $new_file_name = time().'_'.mt_rand().'_'.$file->getClientOriginalName();
-            // Force using the 'local' disk which maps to public/uploads
-            if ($file->storeAs('/media', $new_file_name, 'local')) {
+            // For split-docroot: store to web-accessible uploads directory (sibling to /laravel folder)
+            // This ensures files are accessible at https://domain.com/uploads/media/{file}
+            $base_upload_path = dirname(base_path()) . DIRECTORY_SEPARATOR . 'uploads';
+            $upload_dir = $base_upload_path . DIRECTORY_SEPARATOR . 'media';
+            
+            if (!is_dir($upload_dir)) {
+                mkdir($upload_dir, 0755, true);
+            }
+            
+            if ($file->move($upload_dir, $new_file_name)) {
                 $file_name = $new_file_name;
             }
         }
@@ -154,7 +164,15 @@ class Media extends Model
     {
         $file_name = time().'_'.mt_rand().'_media.jpg';
 
-        $output_file = public_path('uploads').'/media/'.$file_name;
+        // For split-docroot: store to web-accessible uploads directory (sibling to /laravel folder)
+        $base_upload_path = dirname(base_path()) . DIRECTORY_SEPARATOR . 'uploads';
+        $upload_dir = $base_upload_path . DIRECTORY_SEPARATOR . 'media';
+        
+        if (!is_dir($upload_dir)) {
+            mkdir($upload_dir, 0755, true);
+        }
+        
+        $output_file = $upload_dir . DIRECTORY_SEPARATOR . $file_name;
 
         // open the output file for writing
         $ifp = fopen($output_file, 'wb');
@@ -175,7 +193,9 @@ class Media extends Model
         $media = Media::where('business_id', $business_id)
                         ->findOrFail($media_id);
 
-        $media_path = public_path('uploads/media/'.$media->file_name);
+        // For split-docroot: use web-accessible uploads directory (sibling to /laravel folder)
+        $base_upload_path = dirname(base_path()) . DIRECTORY_SEPARATOR . 'uploads';
+        $media_path = $base_upload_path . DIRECTORY_SEPARATOR . 'media' . DIRECTORY_SEPARATOR . $media->file_name;
 
         if (file_exists($media_path)) {
             unlink($media_path);
