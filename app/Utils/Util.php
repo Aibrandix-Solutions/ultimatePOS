@@ -740,9 +740,26 @@ class Util
                 $sanitized_name = Str::slug($original_name);
                 $new_file_name = time() . '_' . $sanitized_name . ($extension ? '.' . $extension : '');
 
-                // Force using the 'local' disk which maps to public/uploads
-                if ($file->storeAs($dir_name, $new_file_name, 'local')) {
-                    $uploaded_file_name = $new_file_name;
+                $is_split_docroot = (bool) env('APP_SPLIT_DOCROOT', false);
+
+                if ($is_split_docroot) {
+                    // Production (split docroot): store to web-accessible uploads directory (sibling to /laravel folder)
+                    // Ensures files are accessible at https://domain.com/uploads/{dir}/{file}
+                    $base_upload_path = dirname(base_path()) . DIRECTORY_SEPARATOR . 'uploads';
+                    $upload_dir = $base_upload_path . DIRECTORY_SEPARATOR . $dir_name;
+
+                    if (!is_dir($upload_dir)) {
+                        mkdir($upload_dir, 0755, true);
+                    }
+
+                    if ($file->move($upload_dir, $new_file_name)) {
+                        $uploaded_file_name = $new_file_name;
+                    }
+                } else {
+                    // Local/standard docroot: keep using Laravel disk
+                    if ($file->storeAs($dir_name, $new_file_name, 'local')) {
+                        $uploaded_file_name = $new_file_name;
+                    }
                 }
             }
         }
