@@ -109,7 +109,7 @@
 <div class="col-md-12 col-sm-12 @if(!empty($for_pdf)) width-100 @endif">
 	<p class="text-center" style="text-align: center;"><strong>@lang('lang_v1.ledger_table_heading', ['start_date' => $ledger_details['start_date'], 'end_date' => $ledger_details['end_date']])</strong></p>
 	<div class="table-responsive">
-	<table class="table table-striped @if(!empty($for_pdf)) table-pdf td-border @endif" id="ledger_table">
+	<table class="table table-striped @if(!empty($for_pdf)) table-pdf td-border @endif" id="ledger_table" style="table-layout: fixed; width: 100%;">
 		<thead>
 			<tr class="row-border blue-heading">
 				<th width="18%" class="text-center">@lang('lang_v1.date')</th>
@@ -118,9 +118,9 @@
 				<th width="10%" class="text-center">@lang('sale.location')</th>
 				<th width="5%" class="text-center">@lang('sale.payment_status')</th>
 				{{--<th width="10%" class="text-center">@lang('sale.total')</th>--}}
-				<th width="10%" class="text-center">@lang('account.debit')</th>
-				<th width="10%" class="text-center">@lang('account.credit')</th>
-				{{-- <th width="10%" class="text-center summary_hidden">@lang('lang_v1.balance')</th> --}}
+				<th width="10%" class="text-right">@lang('account.debit')</th>
+				<th width="10%" class="text-right">@lang('account.credit')</th>
+				<th width="10%" class="text-right">@lang('lang_v1.balance')</th>
 				<th width="5%" class="text-center">@lang('lang_v1.payment_method')</th>
 				<th width="15%" class="text-center">@lang('report.others')</th>
 			</tr>
@@ -128,21 +128,21 @@
 		<tbody>
 			@foreach($ledger_details['ledger'] as $data)
 
-                @if($data['type'] == 'Opening Balance') 
+				@if($data['type'] == __('lang_v1.opening_balance'))
                     @continue
                 @endif 
 
 				<tr @if(!empty($for_pdf) && $loop->iteration % 2 == 0) class="odd" @endif>
 					<td class="row-border">{{@format_datetime($data['date'])}}</td>
-					<td>{{$data['ref_no']}}</td>
-					<td>{{$data['type']}}</td>
-					<td>{{$data['location']}}</td>
-					<td>{{$data['payment_status']}}</td>
+					<td class="ws-nowrap">{{$data['ref_no']}}</td>
+					<td class="ws-nowrap">{{$data['type']}}</td>
+					<td class="ws-nowrap">{{$data['location']}}</td>
+					<td class="ws-nowrap text-center">{{$data['payment_status']}}</td>
 					{{--<td class="ws-nowrap align-right">@if($data['total'] !== '') @format_currency($data['total']) @endif</td>--}}
 					<td class="ws-nowrap align-right">@if($data['debit'] != '') @format_currency($data['debit']) @endif</td>
 					<td class="ws-nowrap align-right">@if($data['credit'] != '') @format_currency($data['credit']) @endif</td>
-					{{--<td class="ws-nowrap align-right summary_hidden">{{$data['balance']}}</td>--}}
-					<td>{{$data['payment_method']}}</td>
+					<td class="ws-nowrap align-right">{{$data['balance']}}</td>
+					<td class="ws-nowrap">{{$data['payment_method']}}</td>
 					<td>
 						{!! $data['others'] !!}
 

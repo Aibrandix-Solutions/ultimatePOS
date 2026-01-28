@@ -344,6 +344,16 @@
                                     </td>
                                     <td style="font-weight: bold; direction: rtl; text-align: right;">المبلغ المستحق:</td>
                                 </tr>
+
+								@if(!empty($receipt_details->all_due))
+								<tr>
+									<td style=" font-weight: bold; text-align: right;">@lang('account.customer_due'):</td>
+									<td class="print-red" style="text-align: center;">
+										{{$receipt_details->all_due}}
+									</td>
+									<td style="font-weight: bold; direction: rtl; text-align: right;">مستحقات العميل:</td>
+								</tr>
+								@endif
                                
                             </tbody>
                         </table>

@@ -698,6 +698,14 @@ $(document).ready(function () {
     });
 
     $('#modal_payment').one('shown.bs.modal', function () {
+        // Always start with due date hidden; it will show automatically if balance becomes due
+        try {
+            $('#pos_due_date_wrapper').addClass('hide');
+            $('#pos_due_date').val('');
+        } catch (err) {
+            // ignore
+        }
+
         $('#modal_payment')
             .find('input')
             .filter(':visible:first')
@@ -839,6 +847,100 @@ $(document).ready(function () {
         $('input#is_suspend').val(0);
     });
 
+    function __pos_update_cost_profit($row) {
+        if (!$row || !$row.length) {
+            return;
+        }
+
+        var basePurchasePriceInput = $row.find('input.pos_purchase_price_base');
+        if (!basePurchasePriceInput.length) {
+            return; // user doesn't have permission or panel not rendered
+        }
+
+        var basePurchasePrice = __read_number(basePurchasePriceInput);
+        if (isNaN(basePurchasePrice)) {
+            basePurchasePrice = 0;
+        }
+
+        var multiplierInput = $row.find('input.base_unit_multiplier');
+        var multiplier = multiplierInput.length ? parseFloat(multiplierInput.val()) : 1;
+        if (isNaN(multiplier) || multiplier <= 0) {
+            multiplier = 1;
+        }
+
+        var unitCost = basePurchasePrice * multiplier;
+
+        var unitPriceInput = $row.find('input.pos_unit_price_inc_tax');
+        if (!unitPriceInput.length) {
+            unitPriceInput = $row.find('input.pos_unit_price');
+        }
+
+        var unitSell = unitPriceInput.length ? __read_number(unitPriceInput) : 0;
+        if (isNaN(unitSell)) {
+            unitSell = 0;
+        }
+
+        var qty = __read_number($row.find('input.pos_quantity'));
+        if (isNaN(qty)) {
+            qty = 0;
+        }
+
+        var unitProfit = unitSell - unitCost;
+        var totalProfit = unitProfit * qty;
+
+        var $unitCostEl = $row.find('.pos_unit_cost');
+        var $unitProfitEl = $row.find('.pos_unit_profit');
+        var $totalProfitEl = $row.find('.pos_total_profit');
+
+        var formatCurrency = function (val) {
+            if (typeof __currency_trans_from_en === 'function') {
+                return __currency_trans_from_en(val, true);
+            }
+            return val;
+        };
+
+        $unitCostEl.text(formatCurrency(unitCost));
+        $unitProfitEl.text(formatCurrency(unitProfit));
+        $totalProfitEl.text(formatCurrency(totalProfit));
+
+        $unitProfitEl.toggleClass('text-danger', unitProfit < 0);
+        $totalProfitEl.toggleClass('text-danger', totalProfit < 0);
+    }
+
+    $(document).on('click', 'button.toggle-cost-profit', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $row = $(this).closest('tr.product_row');
+        var $panel = $row.find('div.pos_cost_profit_panel');
+        if (!$panel.length) {
+            if (typeof toastr !== 'undefined') {
+                toastr.error('Cost/Profit panel not found for this row.');
+            }
+            return;
+        }
+
+        $panel.toggle();
+        if ($panel.is(':visible')) {
+            try {
+                __pos_update_cost_profit($row);
+            } catch (err) {
+                if (window.console && console.error) {
+                    console.error('Failed to update cost/profit', err);
+                }
+                if (typeof toastr !== 'undefined') {
+                    toastr.error('Could not calculate cost/profit. Check console for details.');
+                }
+            }
+        }
+    });
+
+    $(document).on('change keyup', 'input.pos_unit_price_inc_tax, input.pos_unit_price, input.pos_quantity, select.sub_unit', function () {
+        var $row = $(this).closest('tr.product_row');
+        if ($row.find('div.pos_cost_profit_panel:visible').length) {
+            __pos_update_cost_profit($row);
+        }
+    });
+
     //fix select2 input issue on modal
     $('#modal_payment')
         .find('.select2')
@@ -873,6 +975,11 @@ $(document).ready(function () {
                         .change()
                         .select();
                     __select2($(appended).find('.select2'));
+
+                    $(appended).find('.datetimepicker').datetimepicker({
+                        format: moment_date_format + ' ' + moment_time_format,
+                        ignoreReadonly: true,
+                    });
                     $(appended).find('#method_' + row_index).change();
                     $('#payment_row_index').val(parseInt(row_index) + 1);
                 }
@@ -904,6 +1011,42 @@ $(document).ready(function () {
 
             //Ignore if the difference is less than 0.5
             if ($('input#in_balance_due').val() >= 0.5) {
+                // Require due date before confirming partial payment
+                try {
+                    var $wrapper = $('#pos_due_date_wrapper');
+                    var $dueInput = $('#pos_due_date');
+
+                    if ($wrapper.length) {
+                        $wrapper.removeClass('hide');
+                    }
+
+                    if ($dueInput.length && typeof $dueInput.datepicker === 'function' && !$dueInput.data('datepicker')) {
+                        $dueInput.datepicker({ autoclose: true });
+                    }
+
+                    if ($dueInput.length && ($dueInput.val() === null || $dueInput.val().toString().trim() === '')) {
+                        // Default to invoice date + 30 days
+                        var txDate = null;
+                        if ($('#transaction_date').length && $('#transaction_date').data('DateTimePicker')) {
+                            txDate = $('#transaction_date').data('DateTimePicker').date();
+                        }
+                        var dueMoment = (txDate ? txDate.clone() : moment()).add(30, 'days');
+                        if (typeof $dueInput.datepicker === 'function') {
+                            $dueInput.datepicker('update', dueMoment.toDate());
+                        }
+                    }
+
+                    if ($dueInput.length && ($dueInput.val() === null || $dueInput.val().toString().trim() === '')) {
+                        if (typeof toastr !== 'undefined') {
+                            toastr.warning(LANG.due_date_is_required || 'Please select a due date for the pending balance.');
+                        }
+                        $dueInput.focus();
+                        return false;
+                    }
+                } catch (err) {
+                    // ignore and continue
+                }
+
                 cnf = confirm(LANG.paid_amount_is_less_than_payable);
                 // if( total_payble > total_paying ){
                 // 	cnf = confirm( LANG.paid_amount_is_less_than_payable );
@@ -983,7 +1126,7 @@ $(document).ready(function () {
         },
     });
 
-    $(document).on('change', '.payment-amount', function () {
+    $(document).on('change keyup', '.payment-amount, .payment_amount', function () {
         calculate_balance_due();
     });
 
@@ -1686,6 +1829,13 @@ $(document).ready(function () {
 // Block partial payments for Walk-In Customer
 $(document).on('click', '#pos-save', function (e) {
     try {
+        // Ensure latest balance is calculated (user may not blur the amount field)
+        try {
+            calculate_balance_due();
+        } catch (errCalc) {
+            // ignore
+        }
+
         var default_customer_id = $('#default_customer_id').val();
         var current_customer_id = $('#customer_id').val();
         if (default_customer_id && current_customer_id == default_customer_id) {
@@ -1710,6 +1860,56 @@ $(document).on('click', '#pos-save', function (e) {
                 }
                 return false;
             }
+        }
+
+        // Require due date for partial payments
+        var bal_due = __number_uf($('input#in_balance_due').val());
+        if (!isNaN(bal_due) && bal_due >= 0.5) {
+            var $wrapper = $('#pos_due_date_wrapper');
+            var $dueInput = $('#pos_due_date');
+
+            if ($wrapper.length) {
+                $wrapper.removeClass('hide');
+            }
+
+            // Initialize datepicker once
+            if ($dueInput.length && typeof $dueInput.datepicker === 'function' && !$dueInput.data('datepicker')) {
+                try {
+                    $dueInput.datepicker({ autoclose: true });
+                } catch (err) {
+                    // ignore
+                }
+            }
+
+            // Default to invoice date + 30 days
+            if ($dueInput.length && ($dueInput.val() === null || $dueInput.val().toString().trim() === '')) {
+                try {
+                    var txDate = null;
+                    if ($('#transaction_date').length && $('#transaction_date').data('DateTimePicker')) {
+                        txDate = $('#transaction_date').data('DateTimePicker').date();
+                    }
+                    var dueMoment = (txDate ? txDate.clone() : moment()).add(30, 'days');
+                    if (typeof $dueInput.datepicker === 'function') {
+                        $dueInput.datepicker('update', dueMoment.toDate());
+                    }
+                } catch (err2) {
+                    // ignore
+                }
+            }
+
+            // If still empty, block submit and ask user to choose
+            if ($dueInput.length && ($dueInput.val() === null || $dueInput.val().toString().trim() === '')) {
+                e.preventDefault();
+                if (typeof toastr !== 'undefined') {
+                    toastr.warning(LANG.due_date_is_required || 'Please select a due date for the pending balance.');
+                }
+                $dueInput.focus();
+                return false;
+            }
+        } else {
+            // Fully paid: hide and clear due date
+            $('#pos_due_date_wrapper').addClass('hide');
+            $('#pos_due_date').val('');
         }
     } catch (err) {
         // fail open to avoid blocking sale unexpectedly
@@ -2280,8 +2480,9 @@ function calculate_balance_due() {
     $('#payment_rows_div')
         .find('.payment-amount')
         .each(function () {
-            if (parseFloat($(this).val())) {
-                total_paying += __read_number($(this));
+            var v = __read_number($(this));
+            if (!isNaN(v) && v) {
+                total_paying += v;
             }
         });
     var bal_due = total_payable - total_paying;
@@ -2311,6 +2512,36 @@ function calculate_balance_due() {
 
     __write_number($('input#in_balance_due'), bal_due);
     $('span.balance_due').text(__currency_trans_from_en(bal_due, true));
+
+    // Show/hide due date field depending on balance
+    try {
+        if (bal_due >= 0.5) {
+            var $wrapper = $('#pos_due_date_wrapper');
+            var $dueInput = $('#pos_due_date');
+
+            $wrapper.removeClass('hide');
+
+            if ($dueInput.length && typeof $dueInput.datepicker === 'function' && !$dueInput.data('datepicker')) {
+                $dueInput.datepicker({ autoclose: true });
+            }
+
+            if ($dueInput.length && ($dueInput.val() === null || $dueInput.val().toString().trim() === '')) {
+                var txDate = null;
+                if ($('#transaction_date').length && $('#transaction_date').data('DateTimePicker')) {
+                    txDate = $('#transaction_date').data('DateTimePicker').date();
+                }
+                var dueMoment = (txDate ? txDate.clone() : moment()).add(30, 'days');
+                if (typeof $dueInput.datepicker === 'function') {
+                    $dueInput.datepicker('update', dueMoment.toDate());
+                }
+            }
+        } else {
+            $('#pos_due_date_wrapper').addClass('hide');
+            $('#pos_due_date').val('');
+        }
+    } catch (err) {
+        // ignore
+    }
 
     __highlight(bal_due * -1, $('span.balance_due'));
     __highlight(change_return * -1, $('span.change_return_span'));
@@ -2368,6 +2599,14 @@ function reset_pos_form() {
     $('#modal_payment').find('.remove_payment_row').each(function () {
         $(this).closest('.payment_row').remove();
     });
+
+    // Reset due date field in payment modal
+    try {
+        $('#pos_due_date_wrapper').addClass('hide');
+        $('#pos_due_date').val('');
+    } catch (err) {
+        // ignore
+    }
 
     if ($('#is_credit_sale').length) {
         $('#is_credit_sale').val(0);
@@ -2921,13 +3160,53 @@ $(document).on('click', '.service_modal_btn', function (e) {
     }
 });
 
+$(document).on('focus', '.payment_types_dropdown', function () {
+    $(this).data('prev_payment_type', $(this).val());
+});
+
 $(document).on('change', '.payment_types_dropdown', function (e) {
+    if ($(this).data('skip_cheque_walkin_check') === true) {
+        return;
+    }
+
     var default_accounts = $('select#select_location_id').length ?
         $('select#select_location_id')
             .find(':selected')
             .data('default_payment_accounts') : $('#location_id').data('default_payment_accounts');
     var payment_type = $(this).val();
     var payment_row = $(this).closest('.payment_row');
+
+    //Walk-in customers are not allowed to pay by cheque
+    if (payment_type === 'cheque') {
+        var default_customer_id = $('#default_customer_id').val();
+        var current_customer_id = $('#customer_id').val();
+
+        if (default_customer_id && current_customer_id == default_customer_id) {
+            var prev_payment_type = $(this).data('prev_payment_type') || 'cash';
+            $(this).data('skip_cheque_walkin_check', true);
+            $(this).val(prev_payment_type).trigger('change');
+            $(this).data('skip_cheque_walkin_check', false);
+
+            if (typeof toastr !== 'undefined') {
+                toastr.error(LANG.cheque_payment_requires_registered_customer);
+            } else {
+                alert(LANG.cheque_payment_requires_registered_customer);
+            }
+
+            //Open quick add customer modal
+            $('#customer_id').select2('close');
+            $('.contact_modal').find('input#name').val('');
+            $('.contact_modal')
+                .find('select#contact_type')
+                .val('customer')
+                .closest('div.contact_type_div')
+                .addClass('hide');
+            $('.contact_modal').modal('show');
+
+            return;
+        }
+    }
+
     if (payment_type && payment_type != 'advance') {
         var default_account = default_accounts && default_accounts[payment_type]['account'] ?
             default_accounts[payment_type]['account'] : '';

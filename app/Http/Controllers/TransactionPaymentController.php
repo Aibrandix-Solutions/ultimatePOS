@@ -6,6 +6,7 @@ use App\Contact;
 use App\Events\TransactionPaymentAdded;
 use App\Events\TransactionPaymentUpdated;
 use App\Exceptions\AdvanceBalanceNotAvailable;
+use App\Exceptions\ChequePaymentNotAllowedForWalkInCustomer;
 use App\Transaction;
 use App\TransactionPayment;
 use App\Utils\ModuleUtil;
@@ -74,7 +75,9 @@ class TransactionPaymentController extends Controller
             if ($transaction->payment_status != 'paid') {
                 $inputs = $request->only(['amount', 'method', 'note',
                     'card_transaction_number', 'card_type', 'card_holder_name',
-                    'cheque_number', 'bank_account_number', ]);
+                    'cheque_number', 'bank_account_number',
+                    'cheque_issue_date', 'cheque_passing_date', 'cheque_bank_name', 'cheque_status',
+                ]);
                 // Never store sensitive card details
                 $inputs['card_number'] = null;
                 $inputs['card_year'] = null;
@@ -85,6 +88,21 @@ class TransactionPaymentController extends Controller
                 $inputs['amount'] = $this->transactionUtil->num_uf($inputs['amount']);
                 $inputs['created_by'] = auth()->user()->id;
                 $inputs['payment_for'] = $transaction->contact_id;
+
+                if ($inputs['method'] == 'cheque') {
+                    $inputs['cheque_issue_date'] = !empty($request->input('cheque_issue_date'))
+                        ? $this->transactionUtil->uf_date($request->input('cheque_issue_date'), true)
+                        : null;
+                    $inputs['cheque_passing_date'] = !empty($request->input('cheque_passing_date'))
+                        ? $this->transactionUtil->uf_date($request->input('cheque_passing_date'), true)
+                        : null;
+                    $inputs['cheque_status'] = $request->input('cheque_status') ?: 'pending';
+                } else {
+                    $inputs['cheque_issue_date'] = null;
+                    $inputs['cheque_passing_date'] = null;
+                    $inputs['cheque_bank_name'] = null;
+                    $inputs['cheque_status'] = null;
+                }
 
                 if ($inputs['method'] == 'custom_pay_1') {
                     $inputs['transaction_no'] = $request->input('transaction_no_1');
@@ -121,6 +139,10 @@ class TransactionPaymentController extends Controller
                     throw new AdvanceBalanceNotAvailable(__('lang_v1.required_advance_balance_not_available'));
                 }
 
+                if ($inputs['method'] == 'cheque' && !empty($transaction->contact) && $transaction->contact->is_default == 1) {
+                    throw new ChequePaymentNotAllowedForWalkInCustomer(__('lang_v1.cheque_payment_requires_registered_customer'));
+                }
+
                 if (! empty($inputs['amount'])) {
                     $tp = TransactionPayment::create($inputs);
 
@@ -149,6 +171,8 @@ class TransactionPaymentController extends Controller
             $msg = __('messages.something_went_wrong');
 
             if (get_class($e) == \App\Exceptions\AdvanceBalanceNotAvailable::class) {
+                $msg = $e->getMessage();
+            } elseif (get_class($e) == \App\Exceptions\ChequePaymentNotAllowedForWalkInCustomer::class) {
                 $msg = $e->getMessage();
             } else {
                 \Log::emergency('File:'.$e->getFile().'Line:'.$e->getLine().'Message:'.$e->getMessage());
@@ -245,7 +269,9 @@ class TransactionPaymentController extends Controller
 
             $inputs = $request->only(['amount', 'method', 'note',
                 'card_transaction_number', 'card_type', 'card_holder_name',
-                'cheque_number', 'bank_account_number', ]);
+                'cheque_number', 'bank_account_number',
+                'cheque_issue_date', 'cheque_passing_date', 'cheque_bank_name', 'cheque_status',
+            ]);
             // Never store sensitive card details
             $inputs['card_number'] = null;
             $inputs['card_year'] = null;
@@ -253,6 +279,21 @@ class TransactionPaymentController extends Controller
             $inputs['card_month'] = null;
             $inputs['paid_on'] = $this->transactionUtil->uf_date($request->input('paid_on'), true);
             $inputs['amount'] = $this->transactionUtil->num_uf($inputs['amount']);
+
+            if ($inputs['method'] == 'cheque') {
+                $inputs['cheque_issue_date'] = !empty($request->input('cheque_issue_date'))
+                    ? $this->transactionUtil->uf_date($request->input('cheque_issue_date'), true)
+                    : null;
+                $inputs['cheque_passing_date'] = !empty($request->input('cheque_passing_date'))
+                    ? $this->transactionUtil->uf_date($request->input('cheque_passing_date'), true)
+                    : null;
+                $inputs['cheque_status'] = $request->input('cheque_status') ?: 'pending';
+            } else {
+                $inputs['cheque_issue_date'] = null;
+                $inputs['cheque_passing_date'] = null;
+                $inputs['cheque_bank_name'] = null;
+                $inputs['cheque_status'] = null;
+            }
 
             if ($inputs['method'] == 'custom_pay_1') {
                 $inputs['transaction_no'] = $request->input('transaction_no_1');
@@ -283,7 +324,12 @@ class TransactionPaymentController extends Controller
             $business_id = $request->session()->get('user.business_id');
 
             $transaction = Transaction::where('business_id', $business_id)
+                                ->with(['contact'])
                                 ->find($payment->transaction_id);
+
+            if ($inputs['method'] == 'cheque' && !empty($transaction->contact) && $transaction->contact->is_default == 1) {
+                throw new ChequePaymentNotAllowedForWalkInCustomer(__('lang_v1.cheque_payment_requires_registered_customer'));
+            }
 
             $transaction_before = $transaction->replicate();
             $document_name = $this->transactionUtil->uploadFile($request, 'document', 'documents');
@@ -311,10 +357,16 @@ class TransactionPaymentController extends Controller
             ];
         } catch (\Exception $e) {
             DB::rollBack();
-            \Log::emergency('File:'.$e->getFile().'Line:'.$e->getLine().'Message:'.$e->getMessage());
+            $msg = __('messages.something_went_wrong');
+
+            if (get_class($e) == \App\Exceptions\ChequePaymentNotAllowedForWalkInCustomer::class) {
+                $msg = $e->getMessage();
+            } else {
+                \Log::emergency('File:'.$e->getFile().'Line:'.$e->getLine().'Message:'.$e->getMessage());
+            }
 
             $output = ['success' => false,
-                'msg' => __('messages.something_went_wrong'),
+                'msg' => $msg,
             ];
         }
 
@@ -381,6 +433,61 @@ class TransactionPaymentController extends Controller
             }
 
             return $output;
+        }
+    }
+
+    /**
+     * Update cheque status for a payment line.
+     *
+     * Allowed statuses: pending, cleared, bounced
+     */
+    public function updateChequeStatus(Request $request, $payment_id)
+    {
+        if (!request()->ajax()) {
+            abort(404);
+        }
+
+        $business_id = $request->session()->get('user.business_id');
+        $status = $request->input('cheque_status');
+        $allowed_statuses = ['pending', 'cleared', 'bounced'];
+
+        if (empty($status) || !in_array($status, $allowed_statuses, true)) {
+            return ['success' => false, 'msg' => __('messages.something_went_wrong')];
+        }
+
+        $payment = TransactionPayment::where('business_id', $business_id)
+            ->where('method', 'cheque')
+            ->findOrFail($payment_id);
+
+        $transaction_type = null;
+        if (!empty($payment->transaction_id)) {
+            $transaction_type = Transaction::where('business_id', $business_id)
+                ->where('id', $payment->transaction_id)
+                ->value('type');
+        }
+
+        $can_edit = false;
+        if (in_array($transaction_type, ['purchase', 'purchase_return'], true)) {
+            $can_edit = auth()->user()->can('edit_purchase_payment');
+        } elseif (in_array($transaction_type, ['sell', 'sell_return'], true)) {
+            $can_edit = auth()->user()->can('edit_sell_payment');
+        } else {
+            $can_edit = auth()->user()->can('edit_purchase_payment') || auth()->user()->can('edit_sell_payment');
+        }
+
+        if (!$can_edit) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        try {
+            $payment->cheque_status = $status;
+            $payment->save();
+
+            return ['success' => true, 'msg' => __('lang_v1.updated_success')];
+        } catch (\Exception $e) {
+            \Log::emergency('File:'.$e->getFile().'Line:'.$e->getLine().'Message:'.$e->getMessage());
+
+            return ['success' => false, 'msg' => __('messages.something_went_wrong')];
         }
     }
 

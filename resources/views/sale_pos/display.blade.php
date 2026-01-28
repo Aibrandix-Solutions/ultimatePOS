@@ -375,7 +375,7 @@
                     let rowHtml = `
                         <tr>
                             <td class="text-left flex items-center">
-                                <img loading="lazy"style="height:50px;display: inline;margin-left: 3px; border: black;border-radius: 5px; margin-top: 5px; width: 50px;object-fit: cover;" src="${imageUrl}" alt="Product Image" class="w-10 h-10 rounded mr-2"> <br/>
+                                <img loading="lazy" style="height:50px;display: inline;margin-left: 3px; border: black;border-radius: 5px; margin-top: 5px; width: 50px;object-fit: cover;" src="${imageUrl}" onerror="this.onerror=null;this.src='${base_path}/img/default.png';" alt="Product Image" class="w-10 h-10 rounded mr-2"> <br/>
                                 <span>${single_product ? single_product.product_name : "-"}</span>
                             </td> 
                             <td class="text-center">${product.quantity || "0"}</td>

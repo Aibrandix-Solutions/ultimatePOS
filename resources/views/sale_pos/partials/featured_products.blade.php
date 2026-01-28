@@ -3,15 +3,13 @@
 		<div class="product_box hover:tw-shadow-lg hover:tw-animate-pulse" data-toggle="tooltip" data-placement="bottom" data-variation_id="{{$variation->id}}" title="{{$variation->full_name}}">
 
 		<div class="image-container" 
-			style="background-image: url(
-					@if(count($variation->media) > 0)
+			style="background-image: url(@if(count($variation->media) > 0)
 						{{$variation->media->first()->display_url}}
 					@elseif(!empty($variation->product->image_url))
 						{{$variation->product->image_url}}
 					@else
 						{{asset('/img/default.png')}}
-					@endif
-				);
+					@endif), url({{asset('/img/default.png')}});
 			background-repeat: no-repeat; background-position: center;
 			background-size: contain;">
 			

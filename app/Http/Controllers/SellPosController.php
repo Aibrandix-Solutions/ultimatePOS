@@ -573,6 +573,36 @@ class SellPosController extends Controller
 
                     $transaction->payment_status = $payment_status;
 
+                    // Save custom due date for partial/due payments (POS)
+                    if ($input['status'] == 'final') {
+                        if ($payment_status != 'paid') {
+                            $due_date_input = $request->input('due_date');
+                            $due_date_mysql = null;
+
+                            if (!empty($due_date_input)) {
+                                $due_date_mysql = $this->productUtil->uf_date($due_date_input);
+                            }
+
+                            if (empty($due_date_mysql)) {
+                                $due_date_mysql = \Carbon::parse($transaction->transaction_date)->addDays(30)->format('Y-m-d');
+                            }
+
+                            // Validate due date is not before invoice date
+                            $invoice_date = \Carbon::parse($transaction->transaction_date)->startOfDay();
+                            $due_date_obj = \Carbon::parse($due_date_mysql)->startOfDay();
+                            if ($due_date_obj->lt($invoice_date)) {
+                                throw new \Exception('Due date cannot be before invoice date.');
+                            }
+
+                            $transaction->due_date = $due_date_mysql;
+                            $transaction->save();
+                        } else {
+                            // Clear due date when fully paid
+                            $transaction->due_date = null;
+                            $transaction->save();
+                        }
+                    }
+
                     if ($request->session()->get('business.enable_rp') == 1) {
                         $redeemed = !empty($input['rp_redeemed']) ? $input['rp_redeemed'] : 0;
                         $this->transactionUtil->updateCustomerRewardPoints($contact_id, $transaction->rp_earned, 0, $redeemed);
@@ -671,6 +701,9 @@ class SellPosController extends Controller
                 $msg = $e->getMessage();
             }
             if (get_class($e) == \App\Exceptions\AdvanceBalanceNotAvailable::class) {
+                $msg = $e->getMessage();
+            }
+            if (get_class($e) == \App\Exceptions\ChequePaymentNotAllowedForWalkInCustomer::class) {
                 $msg = $e->getMessage();
             }
 
@@ -2615,6 +2648,9 @@ class SellPosController extends Controller
             if (get_class($e) == \App\Exceptions\AdvanceBalanceNotAvailable::class) {
                 $msg = $e->getMessage();
             }
+            if (get_class($e) == \App\Exceptions\ChequePaymentNotAllowedForWalkInCustomer::class) {
+                $msg = $e->getMessage();
+            }
 
             $output = ['success' => 0,
                 'error_messages' => [$msg],
@@ -2861,6 +2897,9 @@ class SellPosController extends Controller
                 if (get_class($e) == \App\Exceptions\AdvanceBalanceNotAvailable::class) {
                     $msg = $e->getMessage();
                 }
+                if (get_class($e) == \App\Exceptions\ChequePaymentNotAllowedForWalkInCustomer::class) {
+                    $msg = $e->getMessage();
+                }
 
                 $output = ['success' => 0,
                     'msg' => $msg,
@@ -2889,6 +2928,9 @@ class SellPosController extends Controller
             }
 
             if (get_class($e) == \App\Exceptions\AdvanceBalanceNotAvailable::class) {
+                $msg = $e->getMessage();
+            }
+            if (get_class($e) == \App\Exceptions\ChequePaymentNotAllowedForWalkInCustomer::class) {
                 $msg = $e->getMessage();
             }
 

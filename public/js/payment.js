@@ -14,6 +14,11 @@ $(document).ready(function() {
                         format: moment_date_format + ' ' + moment_time_format,
                         ignoreReadonly: true,
                     });
+
+                    container.find('.datetimepicker').datetimepicker({
+                        format: moment_date_format + ' ' + moment_time_format,
+                        ignoreReadonly: true,
+                    });
                     container.find('form#transaction_payment_add_form').validate();
                     set_default_payment_account();
 
@@ -42,6 +47,11 @@ $(document).ready(function() {
                 container.html(result).modal('show');
                 __currency_convert_recursively(container);
                 $('#paid_on').datetimepicker({
+                    format: moment_date_format + ' ' + moment_time_format,
+                    ignoreReadonly: true,
+                });
+
+                container.find('.datetimepicker').datetimepicker({
                     format: moment_date_format + ' ' + moment_time_format,
                     ignoreReadonly: true,
                 });

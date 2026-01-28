@@ -2,7 +2,8 @@
 @php
     $go_back_url = action([\App\Http\Controllers\SellPosController::class, 'index']);
     $transaction_sub_type = '';
-    $view_suspended_sell_url = action([\App\Http\Controllers\SellController::class, 'index']) . '?suspended=1';
+    // Use relative URLs to avoid APP_URL / scheme mismatches in production (mixed-content/CORS issues).
+    $view_suspended_sell_url = action([\App\Http\Controllers\SellController::class, 'index'], [], false) . '?suspended=1';
     $pos_redirect_url = action([\App\Http\Controllers\SellPosController::class, 'create']);
 @endphp
 

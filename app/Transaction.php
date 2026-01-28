@@ -294,11 +294,20 @@ class Transaction extends Model
     {
         $payment_status = $transaction->payment_status;
 
-        if (in_array($payment_status, ['partial', 'due']) && ! empty($transaction->pay_term_number) && ! empty($transaction->pay_term_type)) {
-            $transaction_date = \Carbon::parse($transaction->transaction_date);
-            $due_date = $transaction->pay_term_type == 'days' ? $transaction_date->addDays($transaction->pay_term_number) : $transaction_date->addMonths($transaction->pay_term_number);
+        if (in_array($payment_status, ['partial', 'due'])) {
+            $due_date = null;
+
+            // Prefer stored due_date if present
+            $stored_due_date = method_exists($transaction, 'getOriginal') ? $transaction->getOriginal('due_date') : null;
+            if (!empty($stored_due_date)) {
+                $due_date = \Carbon::parse($stored_due_date);
+            } elseif (! empty($transaction->pay_term_number) && ! empty($transaction->pay_term_type)) {
+                $transaction_date = \Carbon::parse($transaction->transaction_date);
+                $due_date = $transaction->pay_term_type == 'days' ? $transaction_date->addDays($transaction->pay_term_number) : $transaction_date->addMonths($transaction->pay_term_number);
+            }
+
             $now = \Carbon::now();
-            if ($now->gt($due_date)) {
+            if (!empty($due_date) && $now->gt($due_date)) {
                 $payment_status = $payment_status == 'due' ? 'overdue' : 'partial-overdue';
             }
         }
@@ -309,8 +318,12 @@ class Transaction extends Model
     /**
      * Due date custom attribute
      */
-    public function getDueDateAttribute()
+    public function getDueDateAttribute($value)
     {
+        if (!empty($value)) {
+            return \Carbon::parse($value);
+        }
+
         $transaction_date = \Carbon::parse($this->transaction_date);
         if (! empty($this->pay_term_type) && ! empty($this->pay_term_number)) {
             $due_date = $this->pay_term_type == 'days' ? $transaction_date->addDays($this->pay_term_number) : $transaction_date->addMonths($this->pay_term_number);

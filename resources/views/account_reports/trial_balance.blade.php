@@ -17,7 +17,7 @@
             <div class="col-md-3">
                 <div class="form-group">
                     {!! Form::label('trial_bal_location_id',  __('purchase.business_location') . ':') !!}
-                    {!! Form::select('trial_bal_location_id', $business_locations, null, ['class' => 'form-control select2', 'style' => 'width:100%']); !!}
+                    {!! Form::select('trial_bal_location_id', $business_locations, null, ['class' => 'form-control select2', 'style' => 'width:100%']) !!}
                 </div>
             </div>
             <div class="col-sm-3 col-xs-6">

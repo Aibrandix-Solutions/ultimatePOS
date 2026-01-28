@@ -189,6 +189,24 @@
 
 
 
+                                <div class="col-md-12 hide" id="pos_due_date_wrapper">
+                                    <hr style="border-color: rgba(22,17,96,0.1);">
+                                    <div class="form-group" style="margin-bottom: 0;">
+                                        {!! Form::label('due_date', __('lang_v1.due_date') . ':') !!}
+                                        <div class="input-group">
+                                            <span class="input-group-addon">
+                                                <i class="fa fa-calendar"></i>
+                                            </span>
+                                            {!! Form::text('due_date', null, ['class' => 'form-control pos_due_date', 'id' => 'pos_due_date', 'autocomplete' => 'off', 'placeholder' => __('lang_v1.due_date')]) !!}
+                                        </div>
+                                        <small class="help-block" style="margin: 4px 0 0;">
+                                            @lang('lang_v1.due_date')
+                                        </small>
+                                    </div>
+                                </div>
+
+
+
                             </div>
                             <!-- /.box-body -->
                         </div>

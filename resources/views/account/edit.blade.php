@@ -11,12 +11,12 @@
     <div class="modal-body">
             <div class="form-group">
                 {!! Form::label('name', __( 'lang_v1.name' ) .":*") !!}
-                {!! Form::text('name', $account->name, ['class' => 'form-control', 'required','placeholder' => __( 'lang_v1.name' ) ]); !!}
+                {!! Form::text('name', $account->name, ['class' => 'form-control', 'required','placeholder' => __( 'lang_v1.name' ) ]) !!}
             </div>
 
              <div class="form-group">
                 {!! Form::label('account_number', __( 'account.account_number' ) .":*") !!}
-                {!! Form::text('account_number', $account->account_number, ['class' => 'form-control', 'required','placeholder' => __( 'account.account_number' ) ]); !!}
+                {!! Form::text('account_number', $account->account_number, ['class' => 'form-control', 'required','placeholder' => __( 'account.account_number' ) ]) !!}
             </div>
 
             <div class="form-group">
@@ -48,10 +48,10 @@
                     @foreach($account->account_details as $key => $account_detail)
                         <tr>
                             <td>
-                                {!! Form::text('account_details['.$key.'][label]', !empty($account->account_details[$key]['label'])? $account->account_details[$key]['label'] : null, ['class' => 'form-control']); !!}
+                                {!! Form::text('account_details['.$key.'][label]', !empty($account->account_details[$key]['label'])? $account->account_details[$key]['label'] : null, ['class' => 'form-control']) !!}
                             </td>
                             <td>
-                                {!! Form::text('account_details['.$key.'][value]', !empty($account->account_details[$key]['value'])?$account->account_details[$key]['value']:null, ['class' => 'form-control']); !!}      
+                                {!! Form::text('account_details['.$key.'][value]', !empty($account->account_details[$key]['value'])?$account->account_details[$key]['value']:null, ['class' => 'form-control']) !!}      
                             </td>
                         </tr>
                     @endforeach
@@ -59,10 +59,10 @@
                     @for ($i = 0; $i < 6; $i++)
                         <tr>
                             <td>
-                                {!! Form::text('account_details['.$i.'][label]', null, ['class' => 'form-control']); !!}
+                                {!! Form::text('account_details['.$i.'][label]', null, ['class' => 'form-control']) !!}
                             </td>
                             <td>
-                                {!! Form::text('account_details['.$i.'][value]', null, ['class' => 'form-control']); !!}      
+                                {!! Form::text('account_details['.$i.'][value]', null, ['class' => 'form-control']) !!}      
                             </td>
                         </tr>
                     @endfor
@@ -71,7 +71,7 @@
             
             <div class="form-group">
                 {!! Form::label('note', __( 'brand.note' )) !!}
-                {!! Form::textarea('note', $account->note, ['class' => 'form-control', 'placeholder' => __( 'brand.note' ), 'rows' => 4]); !!}
+                {!! Form::textarea('note', $account->note, ['class' => 'form-control', 'placeholder' => __( 'brand.note' ), 'rows' => 4]) !!}
             </div>
     </div>
 

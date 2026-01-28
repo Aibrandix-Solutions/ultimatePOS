@@ -46,6 +46,26 @@ $(document).ready(function () {
                     .html(result)
                     .modal('show');
             },
+            error: function (xhr) {
+                var msg = (LANG && LANG.something_went_wrong) ? LANG.something_went_wrong : 'Something went wrong.';
+                if (xhr && xhr.status) {
+                    msg += ' (HTTP ' + xhr.status + ')';
+                }
+
+                if (typeof toastr !== 'undefined') {
+                    toastr.error(msg);
+                } else {
+                    alert(msg);
+                }
+
+                if (window.console && console.error) {
+                    console.error('btn-modal AJAX failed', {
+                        url: $(this).data('href'),
+                        status: xhr && xhr.status,
+                        response: xhr && xhr.responseText
+                    });
+                }
+            }.bind(this),
         });
     });
 
@@ -390,6 +410,7 @@ $(document).ready(function () {
             { data: 'address', name: 'address', orderable: false },
             { data: 'mobile', name: 'mobile' },
             { data: 'due', searchable: false, orderable: false },
+            { data: 'due_payable', searchable: false, orderable: false },
             { data: 'return_due', searchable: false, orderable: false },
             { data: 'custom_field1', name: 'custom_field1' },
             { data: 'custom_field2', name: 'custom_field2' },
@@ -499,15 +520,24 @@ $(document).ready(function () {
         },
         "footerCallback": function (row, data, start, end, display) {
             var total_due = 0;
+            var total_due_payable = 0;
             var total_return_due = 0;
             for (var r in data) {
                 total_due += $(data[r].due).data('orig-value') ?
                     parseFloat($(data[r].due).data('orig-value')) : 0;
 
+                if (typeof (data[r].due_payable) != 'undefined') {
+                    total_due_payable += $(data[r].due_payable).data('orig-value') ?
+                        parseFloat($(data[r].due_payable).data('orig-value')) : 0;
+                }
+
                 total_return_due += $(data[r].return_due).data('orig-value') ?
                     parseFloat($(data[r].return_due).data('orig-value')) : 0;
             }
             $('.footer_contact_due').html(__currency_trans_from_en(total_due));
+            if ($('.footer_contact_due_payable').length) {
+                $('.footer_contact_due_payable').html(__currency_trans_from_en(total_due_payable));
+            }
             $('.footer_contact_return_due').html(__currency_trans_from_en(total_return_due));
         }
     });

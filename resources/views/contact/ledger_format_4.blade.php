@@ -85,16 +85,16 @@
     @endif
     <p class="text-center" style="text-align: center;"><strong>@lang('lang_v1.ledger_table_heading', ['start_date' => $ledger_details['start_date'], 'end_date' => $ledger_details['end_date']])</strong></p>
     <div class="table-responsive">
-        <table class="table @if(!empty($for_pdf)) table-pdf td-border @endif" id="ledger_table">
+		<table class="table @if(!empty($for_pdf)) table-pdf td-border @endif" id="ledger_table" style="table-layout: fixed; width: 100%;">
             <thead>
                 <tr class="row-border blue-heading">
                     <th width="18%" class="text-center">@lang('lang_v1.date')</th>
                     <th width="8%" class="text-center">@lang('lang_v1.type')</th>
                     <th width="15%" class="text-center">@lang('purchase.ref_no')</th>
                     <th width="15%" class="text-center">@lang('lang_v1.payment_method')</th>
-                    <th width="10%" class="text-center">@lang('account.debit')</th>
-                    <th width="10%" class="text-center">@lang('account.credit')</th>
-                    <th width="10%" class="text-center">@lang('lang_v1.balance')</th>
+					<th width="10%" class="text-right">@lang('account.debit')</th>
+					<th width="10%" class="text-right">@lang('account.credit')</th>
+					<th width="10%" class="text-right">@lang('lang_v1.balance')</th>
                     <th width="15%" class="text-center">@lang('report.others')</th>
                 </tr>
             </thead>

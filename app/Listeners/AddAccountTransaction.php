@@ -47,7 +47,9 @@ class AddAccountTransaction
         // Get account_id from form OR from default account settings
         $account_id = $event->formInput['account_id'] ?? null;
 
-        // If no account manually selected, use default account for this payment method
+        // If no account manually selected, use default account for this payment method.
+        // Guard: payments without a linked transaction (e.g. some advance/unallocated payments)
+        // don't have a location_id, so skip location-based default lookup.
         if (empty($account_id) && !empty($event->transactionPayment->method) && $event->transactionPayment->method != 'advance') {
             // Get the business location from transaction
             $location_id = null;
@@ -56,6 +58,12 @@ class AddAccountTransaction
             $payment = $event->transactionPayment;
             if (!$payment->relationLoaded('transaction')) {
                 $payment->load('transaction');
+            }
+
+            // Some payments can exist without a transaction_id (unallocated/advance-like).
+            // In that case, we cannot resolve a location-based default payment account.
+            if (empty($payment->transaction_id) || (!empty($payment->is_advance) && (int) $payment->is_advance === 1)) {
+                return;
             }
 
             // Get location_id from transaction

@@ -158,6 +158,7 @@
                                     <th>@lang('business.address')</th>
                                     <th>@lang('contact.mobile')</th>
                                     <th>@lang('contact.total_purchase_due')</th>
+                                    <th>@lang('lang_v1.due_payable')</th>
                                     <th>@lang('lang_v1.total_purchase_return_due')</th>
                                 @elseif($type == 'customer')
                                     <th>@lang('business.business_name')</th>
@@ -233,6 +234,9 @@
                                     </strong>
                                 </td>
                                 <td class="footer_contact_due"></td>
+                                @if ($type == 'supplier')
+                                    <td class="footer_contact_due_payable"></td>
+                                @endif
                                 <td class="footer_contact_return_due"></td>
                                 <td></td>
                                 <td></td>

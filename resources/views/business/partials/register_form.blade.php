@@ -3,7 +3,7 @@
         <h3 class="h5 fw-bold text-primary border-bottom pb-2">@lang('business.business')</h3>
     </div>
 @endif
-{!! Form::hidden('language', request()->lang); !!}
+{!! Form::hidden('language', request()->lang) !!}
 
 <div class="mb-4">
     <h3 class="h5 fw-bold text-primary border-bottom pb-2">@lang('business.business_details')</h3>
@@ -14,7 +14,7 @@
             <span class="input-group-text">
                 <i class="bi bi-building"></i>
             </span>
-            {!! Form::text('name', null, ['class' => 'form-control','placeholder' => __('business.business_name'), 'required']); !!}
+            {!! Form::text('name', null, ['class' => 'form-control','placeholder' => __('business.business_name'), 'required']) !!}
         </div>
     </div>
     
@@ -25,7 +25,7 @@
                 <span class="input-group-text">
                     <i class="bi bi-calendar"></i>
                 </span>
-                {!! Form::text('start_date', null, ['class' => 'form-control start-date-picker','placeholder' => __('business.start_date'), 'autocomplete' => 'off']); !!}
+                {!! Form::text('start_date', null, ['class' => 'form-control start-date-picker','placeholder' => __('business.start_date'), 'autocomplete' => 'off']) !!}
             </div>
         </div>
         <div class="col-md-6">
@@ -34,7 +34,7 @@
                 <span class="input-group-text">
                     <i class="bi bi-currency-dollar"></i>
                 </span>
-                {!! Form::select('currency_id', $currencies, '', ['class' => 'form-select select2_register','placeholder' => __('business.currency_placeholder'), 'required']); !!}
+                {!! Form::select('currency_id', $currencies, '', ['class' => 'form-select select2_register','placeholder' => __('business.currency_placeholder'), 'required']) !!}
             </div>
         </div>
     </div>
@@ -42,7 +42,7 @@
     <div class="row g-3">
         <div class="col-md-6">
             <label class="form-label fw-semibold">@lang('business.upload_logo')</label>
-            {!! Form::file('business_logo', ['accept' => 'image/*', 'class' => 'form-control']); !!}
+            {!! Form::file('business_logo', ['accept' => 'image/*', 'class' => 'form-control']) !!}
         </div>
         <div class="col-md-6">
             <label class="form-label fw-semibold">@lang('lang_v1.website')</label>
@@ -50,7 +50,7 @@
                 <span class="input-group-text">
                     <i class="bi bi-globe"></i>
                 </span>
-                {!! Form::text('website', null, ['class' => 'form-control','placeholder' => __('lang_v1.website')]); !!}
+                {!! Form::text('website', null, ['class' => 'form-control','placeholder' => __('lang_v1.website')]) !!}
             </div>
         </div>
     </div>
@@ -62,7 +62,7 @@
                 <span class="input-group-text">
                     <i class="bi bi-telephone"></i>
                 </span>
-                {!! Form::text('mobile', null, ['class' => 'form-control','placeholder' => __('lang_v1.business_telephone')]); !!}
+                {!! Form::text('mobile', null, ['class' => 'form-control','placeholder' => __('lang_v1.business_telephone')]) !!}
             </div>
         </div>
         <div class="col-md-6">
@@ -71,7 +71,7 @@
                 <span class="input-group-text">
                     <i class="bi bi-telephone"></i>
                 </span>
-                {!! Form::text('alternate_number', null, ['class' => 'form-control','placeholder' => __('business.alternate_number')]); !!}
+                {!! Form::text('alternate_number', null, ['class' => 'form-control','placeholder' => __('business.alternate_number')]) !!}
             </div>
         </div>
     </div>
@@ -84,7 +84,7 @@
                 <span class="input-group-text">
                     <i class="bi bi-globe"></i>
                 </span>
-                {!! Form::text('country', null, ['class' => 'form-control','placeholder' => __('business.country')]); !!}
+                {!! Form::text('country', null, ['class' => 'form-control','placeholder' => __('business.country')]) !!}
             </div>
         </div>
         <div class="col-md-6">
@@ -93,7 +93,7 @@
                 <span class="input-group-text">
                     <i class="bi bi-geo-alt"></i>
                 </span>
-                {!! Form::text('state', null, ['class' => 'form-control','placeholder' => __('business.state')]); !!}
+                {!! Form::text('state', null, ['class' => 'form-control','placeholder' => __('business.state')]) !!}
             </div>
         </div>
     </div>
@@ -105,7 +105,7 @@
                 <span class="input-group-text">
                     <i class="bi bi-geo-alt"></i>
                 </span>
-                {!! Form::text('city', null, ['class' => 'form-control','placeholder' => __('business.city')]); !!}
+                {!! Form::text('city', null, ['class' => 'form-control','placeholder' => __('business.city')]) !!}
             </div>
         </div>
         <div class="col-md-6">
@@ -114,7 +114,7 @@
                 <span class="input-group-text">
                     <i class="bi bi-mailbox"></i>
                 </span>
-                {!! Form::text('zip_code', null, ['class' => 'form-control','placeholder' => __('business.zip_code_placeholder')]); !!}
+                {!! Form::text('zip_code', null, ['class' => 'form-control','placeholder' => __('business.zip_code_placeholder')]) !!}
             </div>
         </div>
     </div>
@@ -126,7 +126,7 @@
                 <span class="input-group-text">
                     <i class="bi bi-geo-alt"></i>
                 </span>
-                {!! Form::text('landmark', null, ['class' => 'form-control','placeholder' => __('business.landmark')]); !!}
+                {!! Form::text('landmark', null, ['class' => 'form-control','placeholder' => __('business.landmark')]) !!}
             </div>
         </div>
         <div class="col-md-6">
@@ -135,7 +135,7 @@
                 <span class="input-group-text">
                     <i class="bi bi-clock"></i>
                 </span>
-                {!! Form::select('time_zone', $timezone_list, config('app.timezone'), ['class' => 'form-select select2_register','placeholder' => __('business.time_zone'), 'required']); !!}
+                {!! Form::select('time_zone', $timezone_list, config('app.timezone'), ['class' => 'form-select select2_register','placeholder' => __('business.time_zone'), 'required']) !!}
             </div>
         </div>
     </div>
@@ -153,7 +153,7 @@
                     <span class="input-group-text">
                         <i class="bi bi-info-circle"></i>
                     </span>
-                    {!! Form::text('tax_label_1', null, ['class' => 'form-control','placeholder' => __('business.tax_1_placeholder')]); !!}
+                    {!! Form::text('tax_label_1', null, ['class' => 'form-control','placeholder' => __('business.tax_1_placeholder')]) !!}
                 </div>
             </div>
             <div class="col-md-6">
@@ -162,7 +162,7 @@
                     <span class="input-group-text">
                         <i class="bi bi-info-circle"></i>
                     </span>
-                    {!! Form::text('tax_number_1', null, ['class' => 'form-control']); !!}
+                    {!! Form::text('tax_number_1', null, ['class' => 'form-control']) !!}
                 </div>
             </div>
         </div>
@@ -174,7 +174,7 @@
                     <span class="input-group-text">
                         <i class="bi bi-info-circle"></i>
                     </span>
-                    {!! Form::text('tax_label_2', null, ['class' => 'form-control','placeholder' => __('business.tax_1_placeholder')]); !!}
+                    {!! Form::text('tax_label_2', null, ['class' => 'form-control','placeholder' => __('business.tax_1_placeholder')]) !!}
                 </div>
             </div>
             <div class="col-md-6">
@@ -183,7 +183,7 @@
                     <span class="input-group-text">
                         <i class="bi bi-info-circle"></i>
                     </span>
-                    {!! Form::text('tax_number_2', null, ['class' => 'form-control']); !!}
+                    {!! Form::text('tax_number_2', null, ['class' => 'form-control']) !!}
                 </div>
             </div>
         </div>
@@ -195,7 +195,7 @@
                     <span class="input-group-text">
                         <i class="bi bi-calendar"></i>
                     </span>
-                    {!! Form::select('fy_start_month', $months, null, ['class' => 'form-select select2_register', 'required']); !!}
+                    {!! Form::select('fy_start_month', $months, null, ['class' => 'form-select select2_register', 'required']) !!}
                 </div>
             </div>
             <div class="col-md-6">
@@ -204,7 +204,7 @@
                     <span class="input-group-text">
                         <i class="bi bi-calculator"></i>
                     </span>
-                    {!! Form::select('accounting_method', $accounting_methods, null, ['class' => 'form-select select2_register', 'required']); !!}
+                    {!! Form::select('accounting_method', $accounting_methods, null, ['class' => 'form-select select2_register', 'required']) !!}
                 </div>
             </div>
         </div>
@@ -228,7 +228,7 @@
                 <span class="input-group-text">
                     <i class="bi bi-person"></i>
                 </span>
-                {!! Form::text('surname', null, ['class' => 'form-control','placeholder' => __('business.prefix_placeholder')]); !!}
+                {!! Form::text('surname', null, ['class' => 'form-control','placeholder' => __('business.prefix_placeholder')]) !!}
             </div>
         </div>
         <div class="col-md-4">
@@ -237,7 +237,7 @@
                 <span class="input-group-text">
                     <i class="bi bi-person"></i>
                 </span>
-                {!! Form::text('first_name', null, ['class' => 'form-control','placeholder' => __('business.first_name'), 'required']); !!}
+                {!! Form::text('first_name', null, ['class' => 'form-control','placeholder' => __('business.first_name'), 'required']) !!}
             </div>
         </div>
         <div class="col-md-4">
@@ -246,7 +246,7 @@
                 <span class="input-group-text">
                     <i class="bi bi-person"></i>
                 </span>
-                {!! Form::text('last_name', null, ['class' => 'form-control','placeholder' =>  __('business.last_name')]); !!}
+                {!! Form::text('last_name', null, ['class' => 'form-control','placeholder' =>  __('business.last_name')]) !!}
             </div>
         </div>
     </div>
@@ -258,7 +258,7 @@
                 <span class="input-group-text">
                     <i class="bi bi-person-circle"></i>
                 </span>
-                {!! Form::text('username', null, ['class' => 'form-control','placeholder' => __('business.username'), 'required']); !!}
+                {!! Form::text('username', null, ['class' => 'form-control','placeholder' => __('business.username'), 'required']) !!}
             </div>
         </div>
         <div class="col-md-6">
@@ -267,7 +267,7 @@
                 <span class="input-group-text">
                     <i class="bi bi-envelope"></i>
                 </span>
-                {!! Form::text('email', null, ['class' => 'form-control','placeholder' => __('business.email')]); !!}
+                {!! Form::text('email', null, ['class' => 'form-control','placeholder' => __('business.email')]) !!}
             </div>
         </div>
     </div>
@@ -279,7 +279,7 @@
                 <span class="input-group-text">
                     <i class="bi bi-lock"></i>
                 </span>
-                {!! Form::password('password', ['class' => 'form-control','placeholder' => __('business.password'), 'required']); !!}
+                {!! Form::password('password', ['class' => 'form-control','placeholder' => __('business.password'), 'required']) !!}
             </div>
         </div>
         <div class="col-md-6">
@@ -288,14 +288,14 @@
                 <span class="input-group-text">
                     <i class="bi bi-lock"></i>
                 </span>
-                {!! Form::password('confirm_password', ['class' => 'form-control','placeholder' => __('business.confirm_password'), 'required']); !!}
+                {!! Form::password('confirm_password', ['class' => 'form-control','placeholder' => __('business.confirm_password'), 'required']) !!}
             </div>
         </div>
     </div>
     
     @if(!empty($system_settings['superadmin_enable_register_tc']) && !empty($is_register))
         <div class="form-check mb-3">
-            {!! Form::checkbox('accept_tc', 0, false, ['required', 'class' => 'form-check-input', 'id' => 'accept_tc']); !!}
+            {!! Form::checkbox('accept_tc', 0, false, ['required', 'class' => 'form-check-input', 'id' => 'accept_tc']) !!}
             <label class="form-check-label" for="accept_tc">
                 <a class="terms_condition cursor-pointer" data-bs-toggle="modal" data-bs-target="#tc_modal">
                     @lang('lang_v1.accept_terms_and_conditions')

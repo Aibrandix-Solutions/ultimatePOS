@@ -11,12 +11,12 @@
     <div class="modal-body">
             <div class="form-group">
                 {!! Form::label('name', __( 'lang_v1.name' ) .":*") !!}
-                {!! Form::text('name', null, ['class' => 'form-control', 'required','placeholder' => __( 'lang_v1.name' ) ]); !!}
+                {!! Form::text('name', null, ['class' => 'form-control', 'required','placeholder' => __( 'lang_v1.name' ) ]) !!}
             </div>
 
             <div class="form-group">
                 {!! Form::label('account_number', __( 'account.account_number' ) .":*") !!}
-                {!! Form::text('account_number', null, ['class' => 'form-control', 'required','placeholder' => __( 'account.account_number' ) ]); !!}
+                {!! Form::text('account_number', null, ['class' => 'form-control', 'required','placeholder' => __( 'account.account_number' ) ]) !!}
             </div>
 
             <div class="form-group">
@@ -36,7 +36,7 @@
 
             <div class="form-group">
                 {!! Form::label('opening_balance', __( 'account.opening_balance' ) .":") !!}
-                {!! Form::text('opening_balance', 0, ['class' => 'form-control input_number','placeholder' => __( 'account.opening_balance' ) ]); !!}
+                {!! Form::text('opening_balance', 0, ['class' => 'form-control input_number','placeholder' => __( 'account.opening_balance' ) ]) !!}
             </div>
 
             <label>@lang('lang_v1.account_details'):</label>
@@ -52,10 +52,10 @@
                 @for ($i = 0; $i < 6; $i++)
                     <tr>
                         <td>
-                            {!! Form::text('account_details['.$i.'][label]', null, ['class' => 'form-control']); !!}
+                            {!! Form::text('account_details['.$i.'][label]', null, ['class' => 'form-control']) !!}
                         </td>
                         <td>
-                            {!! Form::text('account_details['.$i.'][value]', null, ['class' => 'form-control']); !!}      
+                            {!! Form::text('account_details['.$i.'][value]', null, ['class' => 'form-control']) !!}      
                         </td>
                     </tr>
                 @endfor
@@ -63,7 +63,7 @@
         
             <div class="form-group">
                 {!! Form::label('note', __( 'brand.note' )) !!}
-                {!! Form::textarea('note', null, ['class' => 'form-control', 'placeholder' => __( 'brand.note' ), 'rows' => 4]); !!}
+                {!! Form::textarea('note', null, ['class' => 'form-control', 'placeholder' => __( 'brand.note' ), 'rows' => 4]) !!}
             </div>
     </div>
 

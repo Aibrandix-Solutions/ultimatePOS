@@ -50,8 +50,9 @@
 			<tr class="row-border">
 				<th>@lang('lang_v1.date')</th>
 				<th>@lang('lang_v1.transaction')</th>
-				<th>@lang('sale.amount')</th>
-				<th>@lang('lang_v1.balance')</th>
+				<th class="text-right">@lang('sale.amount')</th>
+				<th class="text-right">@lang('lang_v1.due')</th>
+				<th class="text-right">@lang('lang_v1.balance')</th>
 			</tr>
 		</thead>
 		<tbody>
@@ -83,18 +84,20 @@
 				<tr @if(!empty($for_pdf) && $loop->iteration % 2 == 0) class="odd" @endif style="border:hidden;">
 					<td class="row-border">{{@format_datetime($data['date'])}}</td>
 					<td>@if($loop->index == 0) {{$data['type']}} @endif {{$data['ref_no']}} @if(!empty($data['due_date']) && $data['payment_status'] != 'paid') <br>@lang('lang_v1.due') {{@format_date($data['due_date'])}} @endif</td>
-					<td>@format_currency($data['final_total'])</td>
-					<td>@format_currency($data['total_due'])</td>
+					<td class="text-right">@format_currency($data['final_total'])</td>
+					<td class="text-right">@format_currency($data['total_due'])</td>
+					<td class="text-right">{{$data['balance'] ?? ''}}</td>
 				</tr>
 			@endforeach
 			@if(count($ledger_details['ledger']) < 5)
-				<tr style="border:hidden;"><td colspan="4">&nbsp;</td></tr>
-				<tr style="border:hidden;"><td colspan="4">&nbsp;</td></tr>
-				<tr style="border:hidden;"><td colspan="4">&nbsp;</td></tr>
-				<tr style="border:hidden;"><td colspan="4">&nbsp;</td></tr>
-				<tr style="border:hidden;"><td colspan="4">&nbsp;</td></tr>
-				<tr style="border:hidden;"><td colspan="4">&nbsp;</td></tr>
-				<tr style="border:hidden;"><td colspan="4">&nbsp;</td></tr>
+				<tr style="border:hidden;"><td colspan="5">&nbsp;</td></tr>
+				<tr style="border:hidden;"><td colspan="5">&nbsp;</td></tr>
+				<tr style="border:hidden;"><td colspan="5">&nbsp;</td></tr>
+				<tr style="border:hidden;"><td colspan="5">&nbsp;</td></tr>
+				<tr style="border:hidden;"><td colspan="5">&nbsp;</td></tr>
+				<tr style="border:hidden;"><td colspan="5">&nbsp;</td></tr>
+				<tr style="border:hidden;"><td colspan="5">&nbsp;</td></tr>
+				<tr style="border:hidden;"><td colspan="5">&nbsp;</td></tr>
 			@endif
 		</tbody>
 	</table>

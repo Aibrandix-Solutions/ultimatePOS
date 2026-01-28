@@ -1,3 +1,7 @@
+@php
+    use Collective\Html\FormFacade as Form;
+@endphp
+
 <div class="pos-tab-content">
     <div class="row">
         <div class="col-sm-4">
@@ -7,7 +11,7 @@
                     <span class="input-group-addon">
                         <i class="fa fa-info"></i>
                     </span>
-                    {!! Form::text('tax_label_1', $business->tax_label_1, ['class' => 'form-control','placeholder' => __('business.tax_1_placeholder')]); !!}
+                    {!! Form::text('tax_label_1', $business->tax_label_1, ['class' => 'form-control','placeholder' => __('business.tax_1_placeholder')]) !!}
                 </div>
             </div>
         </div>
@@ -18,7 +22,7 @@
                     <span class="input-group-addon">
                         <i class="fa fa-info"></i>
                     </span>
-                    {!! Form::text('tax_number_1', $business->tax_number_1, ['class' => 'form-control']); !!}
+                    {!! Form::text('tax_number_1', $business->tax_number_1, ['class' => 'form-control']) !!}
                 </div>
             </div>
         </div>
@@ -29,7 +33,7 @@
                     <span class="input-group-addon">
                         <i class="fa fa-info"></i>
                     </span>
-                    {!! Form::text('tax_label_2', $business->tax_label_2, ['class' => 'form-control','placeholder' => __('business.tax_1_placeholder')]); !!}
+                    {!! Form::text('tax_label_2', $business->tax_label_2, ['class' => 'form-control','placeholder' => __('business.tax_1_placeholder')]) !!}
                 </div>
             </div>
         </div>
@@ -41,7 +45,7 @@
                     <span class="input-group-addon">
                         <i class="fa fa-info"></i>
                     </span>
-                    {!! Form::text('tax_number_2', $business->tax_number_2, ['class' => 'form-control']); !!}
+                    {!! Form::text('tax_number_2', $business->tax_number_2, ['class' => 'form-control']) !!}
                 </div>
             </div>
         </div>
@@ -51,7 +55,7 @@
                 <br>
                   <label>
                     {!! Form::checkbox('enable_inline_tax', 1, $business->enable_inline_tax , 
-                    [ 'class' => 'input-icheck']); !!} {{ __( 'lang_v1.enable_inline_tax' ) }}
+                                        [ 'class' => 'input-icheck']) !!} {{ __( 'lang_v1.enable_inline_tax' ) }}
                   </label>
                 </div>
             </div>

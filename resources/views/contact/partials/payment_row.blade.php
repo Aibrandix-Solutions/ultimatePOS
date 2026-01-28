@@ -18,6 +18,9 @@
             $method = !empty($payment_types[$payment->method]) ? $payment_types[$payment->method] : '';
             if ($payment->method == 'cheque') {
                 $method .= '<br>(' . __('lang_v1.cheque_no') . ': ' . $payment->cheque_number . ')';
+                if (!empty($payment->cheque_status)) {
+                    $method .= '<br>(' . __('lang_v1.cheque_status') . ': ' . __('lang_v1.' . $payment->cheque_status) . ')';
+                }
             } elseif ($payment->method == 'card') {
                 $method .= '<br>(' . __('lang_v1.card_transaction_no') . ': ' . $payment->card_transaction_number . ')';
             } elseif ($payment->method == 'bank_transfer') {

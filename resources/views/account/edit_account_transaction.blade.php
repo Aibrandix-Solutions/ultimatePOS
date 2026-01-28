@@ -20,7 +20,7 @@
             @endphp 
             <div class="form-group">  
                 {!! Form::label('account_id', $label .":") !!}
-                {!! Form::select('account_id', $accounts, $account_transaction->account_id, ['class' => 'form-control', 'placeholder' => __('messages.please_select') ]); !!}
+                {!! Form::select('account_id', $accounts, $account_transaction->account_id, ['class' => 'form-control', 'placeholder' => __('messages.please_select') ]) !!}
             </div>
             @endif
 
@@ -30,13 +30,13 @@
             @endphp 
             <div class="form-group">  
                 {!! Form::label('account_id', $label .":") !!}
-                {!! Form::select('account_id', $accounts, $account_transaction->account_id, ['class' => 'form-control', 'placeholder' => __('messages.please_select') ]); !!}
+                {!! Form::select('account_id', $accounts, $account_transaction->account_id, ['class' => 'form-control', 'placeholder' => __('messages.please_select') ]) !!}
             </div>
             @endif
 
             <div class="form-group">
                 {!! Form::label('amount', __( 'sale.amount' ) .":*") !!}
-                {!! Form::text('amount', @num_format($account_transaction->amount), ['class' => 'form-control input_number', 'required','placeholder' => __( 'sale.amount' ) ]); !!}
+                {!! Form::text('amount', @num_format($account_transaction->amount), ['class' => 'form-control input_number', 'required','placeholder' => __( 'sale.amount' ) ]) !!}
             </div>
             @if($account_transaction->sub_type == 'deposit')
             @php
@@ -44,7 +44,7 @@
             @endphp 
             <div class="form-group">  
                 {!! Form::label('from_account', $label .":") !!}
-                {!! Form::select('from_account', $accounts, $account_transaction->transfer_transaction->account_id ?? null, ['class' => 'form-control', 'placeholder' => __('messages.please_select') ]); !!}
+                {!! Form::select('from_account', $accounts, $account_transaction->transfer_transaction->account_id ?? null, ['class' => 'form-control', 'placeholder' => __('messages.please_select') ]) !!}
             </div>
             @endif
             @if($account_transaction->sub_type == 'fund_transfer') 
@@ -53,14 +53,14 @@
             @endphp 
             <div class="form-group">
                 {!! Form::label('to_account', $label .":*") !!}
-                {!! Form::select('to_account', $accounts, $account_transaction->transfer_transaction->account_id ?? null, ['class' => 'form-control', 'required' ]); !!}
+                {!! Form::select('to_account', $accounts, $account_transaction->transfer_transaction->account_id ?? null, ['class' => 'form-control', 'required' ]) !!}
             </div>
             @endif
  
             <div class="form-group">
                 {!! Form::label('operation_date', __( 'messages.date' ) .":*") !!}
                 <div class="input-group date">
-                  {!! Form::text('operation_date', @format_datetime($account_transaction->operation_date), ['class' => 'form-control', 'required','placeholder' => __( 'messages.date' ), 'id' => 'od_datetimepicker' ]); !!}
+                  {!! Form::text('operation_date', @format_datetime($account_transaction->operation_date), ['class' => 'form-control', 'required','placeholder' => __( 'messages.date' ), 'id' => 'od_datetimepicker' ]) !!}
                   <span class="input-group-addon">
                     <span class="glyphicon glyphicon-calendar"></span>
                   </span>
@@ -69,7 +69,7 @@
             @if($account_transaction->sub_type == 'fund_transfer' || $account_transaction->sub_type == 'deposit')
             <div class="form-group">
                 {!! Form::label('note', __( 'brand.note' )) !!}
-                {!! Form::textarea('note', $account_transaction->note, ['class' => 'form-control', 'placeholder' => __( 'brand.note' ), 'rows' => 4]); !!}
+                {!! Form::textarea('note', $account_transaction->note, ['class' => 'form-control', 'placeholder' => __( 'brand.note' ), 'rows' => 4]) !!}
             </div>
             @endif
     </div>

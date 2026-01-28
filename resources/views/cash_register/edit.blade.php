@@ -13,37 +13,37 @@
         <div class="col-sm-12">
           <div class="form-group">
             {!! Form::label('name', __( 'invoice.name' ) . ':*') !!}
-              {!! Form::text('name', $location->name, ['class' => 'form-control', 'required', 'placeholder' => __( 'invoice.name' ) ]); !!}
+              {!! Form::text('name', $location->name, ['class' => 'form-control', 'required', 'placeholder' => __( 'invoice.name' ) ]) !!}
           </div>
         </div>
         <div class="col-sm-12">
           <div class="form-group">
             {!! Form::label('landmark', __( 'business.landmark' ) . ':') !!}
-              {!! Form::text('landmark', $location->landmark, ['class' => 'form-control', 'placeholder' => __( 'business.landmark' ) ]); !!}
+              {!! Form::text('landmark', $location->landmark, ['class' => 'form-control', 'placeholder' => __( 'business.landmark' ) ]) !!}
           </div>
         </div>
         <div class="col-sm-12">
           <div class="form-group">
             {!! Form::label('city', __( 'business.city' ) . ':*') !!}
-              {!! Form::text('city', $location->city, ['class' => 'form-control', 'placeholder' => __( 'business.city'), 'required' ]); !!}
+              {!! Form::text('city', $location->city, ['class' => 'form-control', 'placeholder' => __( 'business.city'), 'required' ]) !!}
           </div>
         </div>
         <div class="col-sm-12">
           <div class="form-group">
             {!! Form::label('zip_code', __( 'business.zip_code' ) . ':*') !!}
-              {!! Form::text('zip_code', $location->zip_code, ['class' => 'form-control', 'placeholder' => __( 'business.zip_code'), 'required' ]); !!}
+              {!! Form::text('zip_code', $location->zip_code, ['class' => 'form-control', 'placeholder' => __( 'business.zip_code'), 'required' ]) !!}
           </div>
         </div>
         <div class="col-sm-12">
           <div class="form-group">
             {!! Form::label('state', __( 'business.state' ) . ':*') !!}
-              {!! Form::text('state', $location->state, ['class' => 'form-control', 'placeholder' => __( 'business.state'), 'required' ]); !!}
+              {!! Form::text('state', $location->state, ['class' => 'form-control', 'placeholder' => __( 'business.state'), 'required' ]) !!}
           </div>
         </div>
         <div class="col-sm-12">
           <div class="form-group">
             {!! Form::label('country', __( 'business.country' ) . ':*') !!}
-              {!! Form::text('country', $location->country, ['class' => 'form-control', 'placeholder' => __( 'business.country'), 'required' ]); !!}
+              {!! Form::text('country', $location->country, ['class' => 'form-control', 'placeholder' => __( 'business.country'), 'required' ]) !!}
           </div>
         </div>
         <div class="col-sm-12">

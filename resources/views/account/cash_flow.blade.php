@@ -23,7 +23,7 @@
             <div class="col-md-4">
                 <div class="form-group">
                     {!! Form::label('cash_flow_location_id',  __('purchase.business_location') . ':') !!}
-                    {!! Form::select('cash_flow_location_id', $business_locations, null, ['class' => 'form-control select2', 'style' => 'width:100%']); !!}
+                    {!! Form::select('cash_flow_location_id', $business_locations, null, ['class' => 'form-control select2', 'style' => 'width:100%']) !!}
                 </div>
             </div>
             <div class="col-sm-4">

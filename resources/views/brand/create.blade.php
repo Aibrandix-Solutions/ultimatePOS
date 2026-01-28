@@ -11,12 +11,12 @@
     <div class="modal-body">
       <div class="form-group">
         {!! Form::label('name', __( 'brand.brand_name' ) . ':*') !!}
-          {!! Form::text('name', null, ['class' => 'form-control', 'required', 'placeholder' => __( 'brand.brand_name' ) ]); !!}
+          {!! Form::text('name', null, ['class' => 'form-control', 'required', 'placeholder' => __( 'brand.brand_name' ) ]) !!}
       </div>
 
       <div class="form-group">
         {!! Form::label('description', __( 'brand.short_description' ) . ':') !!}
-          {!! Form::text('description', null, ['class' => 'form-control','placeholder' => __( 'brand.short_description' )]); !!}
+          {!! Form::text('description', null, ['class' => 'form-control','placeholder' => __( 'brand.short_description' )]) !!}
       </div>
 
         @if($is_repair_installed)

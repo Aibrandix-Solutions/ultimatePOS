@@ -157,6 +157,22 @@
             @elseif($single_payment_line->method == "cheque")
               <strong>@lang('lang_v1.cheque_number') :</strong>
               {{ $single_payment_line->cheque_number }}
+              @if(!empty($single_payment_line->cheque_issue_date))
+                <br><strong>@lang('lang_v1.cheque_issue_date') :</strong>
+                {{ @format_datetime($single_payment_line->cheque_issue_date) }}
+              @endif
+              @if(!empty($single_payment_line->cheque_passing_date))
+                <br><strong>@lang('lang_v1.cheque_passing_date') :</strong>
+                {{ @format_datetime($single_payment_line->cheque_passing_date) }}
+              @endif
+              @if(!empty($single_payment_line->cheque_bank_name))
+                <br><strong>@lang('lang_v1.cheque_bank_name') :</strong>
+                {{ $single_payment_line->cheque_bank_name }}
+              @endif
+              @if(!empty($single_payment_line->cheque_status))
+                <br><strong>@lang('lang_v1.cheque_status') :</strong>
+                @lang('lang_v1.' . $single_payment_line->cheque_status)
+              @endif
             @elseif($single_payment_line->method == "bank_transfer")
 
             @elseif($single_payment_line->method == "custom_pay_1")

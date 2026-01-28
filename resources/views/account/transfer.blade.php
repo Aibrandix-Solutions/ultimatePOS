@@ -12,23 +12,23 @@
 
             <div class="form-group">
                 {!! Form::label('from_account', __( 'lang_v1.transfer_from' ) .":*") !!}
-                {!! Form::select('from_account', $to_accounts, $from_account->id, ['class' => 'form-control', 'required' ]); !!}
+                {!! Form::select('from_account', $to_accounts, $from_account->id, ['class' => 'form-control', 'required' ]) !!}
             </div>
 
             <div class="form-group">
                 {!! Form::label('to_account', __( 'account.transfer_to' ) .":*") !!}
-                {!! Form::select('to_account', $to_accounts, null, ['class' => 'form-control', 'required' ]); !!}
+                {!! Form::select('to_account', $to_accounts, null, ['class' => 'form-control', 'required' ]) !!}
             </div>
 
             <div class="form-group">
                 {!! Form::label('amount', __( 'sale.amount' ) .":*") !!}
-                {!! Form::text('amount', 0, ['class' => 'form-control input_number', 'required','placeholder' => __( 'sale.amount' ) ]); !!}
+                {!! Form::text('amount', 0, ['class' => 'form-control input_number', 'required','placeholder' => __( 'sale.amount' ) ]) !!}
             </div>
 
             <div class="form-group">
                 {!! Form::label('od_datetimepicker', __( 'messages.date' ) .":*") !!}
                 <div class="input-group">
-                  {!! Form::text('operation_date', null, ['class' => 'form-control', 'required','placeholder' => __( 'messages.date' ), 'id' => 'od_datetimepicker' ]); !!}
+                  {!! Form::text('operation_date', null, ['class' => 'form-control', 'required','placeholder' => __( 'messages.date' ), 'id' => 'od_datetimepicker' ]) !!}
                   <span class="input-group-addon">
                     <span class="glyphicon glyphicon-calendar"></span>
                   </span>
@@ -37,12 +37,12 @@
 
             <div class="form-group">
                 {!! Form::label('note', __( 'brand.note' )) !!}
-                {!! Form::textarea('note', null, ['class' => 'form-control', 'placeholder' => __( 'brand.note' ), 'rows' => 4]); !!}
+                {!! Form::textarea('note', null, ['class' => 'form-control', 'placeholder' => __( 'brand.note' ), 'rows' => 4]) !!}
             </div>
 
             <div class="form-group">
                 {!! Form::label('document', __('purchase.attach_document') . ':') !!}
-                {!! Form::file('document', ['id' => 'upload_document', 'accept' => implode(',', array_keys(config('constants.document_upload_mimes_types')))]); !!}
+                {!! Form::file('document', ['id' => 'upload_document', 'accept' => implode(',', array_keys(config('constants.document_upload_mimes_types')))]) !!}
                 <p class="help-block">
                   @lang('purchase.max_file_size', ['size' => (config('constants.document_size_limit') / 1000000)])
                   @includeIf('components.document_help_text')

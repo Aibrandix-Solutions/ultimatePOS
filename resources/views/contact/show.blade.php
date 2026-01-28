@@ -10,7 +10,7 @@
             <h3>@lang('contact.view_contact')</h3>
         </div>
         <div class="col-md-4 col-xs-12 mt-15 pull-right">
-            {!! Form::select('contact_id', $contact_dropdown, $contact->id , ['class' => 'form-control select2', 'id' => 'contact_id']); !!}
+            {!! Form::select('contact_id', $contact_dropdown, $contact->id , ['class' => 'form-control select2', 'id' => 'contact_id']) !!}
         </div>
     </div>
     <div class="hide print_table_part">
@@ -119,6 +119,15 @@
                         <a href="#payments_tab" data-toggle="tab" aria-expanded="true"><i class="fas fa-money-bill-alt" aria-hidden="true"></i> @lang('sale.payments')</a>
                     </li>
 
+                    <li class="
+                            @if(!empty($view_type) &&  $view_type == 'cheques')
+                                active
+                            @else
+                                ''
+                            @endif">
+                        <a href="#cheques_tab" data-toggle="tab" aria-expanded="true"><i class="fas fa-money-check" aria-hidden="true"></i> @lang('lang_v1.cheques')</a>
+                    </li>
+
                     @if( in_array($contact->type, ['customer', 'both']) && session('business.enable_rp'))
                         <li class="
                             @if(!empty($view_type) &&  $view_type == 'reward_point')
@@ -176,7 +185,7 @@
                                 <div class="col-md-3">
                                     <div class="form-group">
                                         {!! Form::label('purchase_list_filter_date_range', __('report.date_range') . ':') !!}
-                                        {!! Form::text('purchase_list_filter_date_range', null, ['placeholder' => __('lang_v1.select_a_date_range'), 'class' => 'form-control', 'readonly']); !!}
+                                        {!! Form::text('purchase_list_filter_date_range', null, ['placeholder' => __('lang_v1.select_a_date_range'), 'class' => 'form-control', 'readonly']) !!}
                                     </div>
                                 </div>
                                 <div class="col-md-12">
@@ -234,6 +243,15 @@
                             ''
                         @endif" id="payments_tab">
                         <div id="contact_payments_div" style="height: 500px;overflow-y: scroll;"></div>
+                    </div>
+
+                    <div class="tab-pane 
+                        @if(!empty($view_type) &&  $view_type == 'cheques')
+                            active
+                        @else
+                            ''
+                        @endif" id="cheques_tab">
+                        <div id="contact_cheques_div" style="height: 500px;overflow-y: scroll;"></div>
                     </div>
                     @if( in_array($contact->type, ['customer', 'both']) && session('business.enable_rp'))
                         <div class="tab-pane
@@ -461,6 +479,10 @@ $(document).one('shown.bs.tab', 'a[href="#payments_tab"]', function(){
     get_contact_payments();
 })
 
+$(document).one('shown.bs.tab', 'a[href="#cheques_tab"]', function(){
+    get_contact_cheques();
+})
+
 $(document).on('click', '#contact_payments_pagination a', function(e){
     e.preventDefault();
     get_contact_payments($(this).attr('href'));
@@ -481,6 +503,59 @@ function get_contact_payments(url = null) {
         },
     });
 }
+
+$(document).on('click', '#contact_cheques_pagination a', function(e){
+    e.preventDefault();
+    get_contact_cheques($(this).attr('href'));
+})
+
+function get_contact_cheques(url = null) {
+    if (!url) {
+        url = "{{action([\App\Http\Controllers\ContactController::class, 'getContactCheques'], [$contact->id])}}";
+    }
+    $.ajax({
+        url: url,
+        dataType: 'html',
+        success: function(result) {
+            $('#contact_cheques_div').fadeOut(400, function(){
+                $('#contact_cheques_div')
+                .html(result).fadeIn(400);
+            });
+        },
+    });
+}
+
+$(document).on('click', '.js-update-cheque-status', function(e){
+    e.preventDefault();
+
+    var href = $(this).data('href');
+    var status = $(this).data('status');
+
+    if (!href || !status) {
+        return;
+    }
+
+    $.ajax({
+        method: 'POST',
+        url: href,
+        dataType: 'json',
+        data: {
+            cheque_status: status,
+            _token: "{{ csrf_token() }}"
+        },
+        success: function(result){
+            if (result.success) {
+                toastr.success(result.msg);
+                get_contact_cheques();
+            } else {
+                toastr.error(result.msg);
+            }
+        },
+        error: function(){
+            toastr.error(LANG.something_went_wrong);
+        }
+    });
+});
 
 function get_contact_ledger() {
 
