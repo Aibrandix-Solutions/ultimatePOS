@@ -12,8 +12,8 @@
           <div class="form-group">
             {!! Form::label('name', __('product.product_name') . ':*') !!}
               {!! Form::text('name', $product_name, ['class' => 'form-control', 'required',
-              'placeholder' => __('product.product_name')]); !!}
-              {!! Form::select('type', ['single' => 'Single', 'variable' => 'Variable'], 'single', ['class' => 'hide', 'id' => 'type']); !!}
+              'placeholder' => __('product.product_name')]) !!}
+              {!! Form::select('type', ['single' => 'Single', 'variable' => 'Variable'], 'single', ['class' => 'hide', 'id' => 'type']) !!}
           </div>
         </div>
 
@@ -21,13 +21,13 @@
           <div class="form-group">
             {!! Form::label('sku', __('product.sku') . ':') !!} @show_tooltip(__('tooltip.sku'))
             {!! Form::text('sku', null, ['class' => 'form-control',
-              'placeholder' => __('product.sku')]); !!}
+              'placeholder' => __('product.sku')]) !!}
           </div>
         </div>
         <div class="col-sm-4">
           <div class="form-group">
             {!! Form::label('barcode_type', __('product.barcode_type') . ':*') !!}
-              {!! Form::select('barcode_type', $barcode_types, 'C128', ['class' => 'form-control select2', 'required']); !!}
+              {!! Form::select('barcode_type', $barcode_types, 'C128', ['class' => 'form-control select2', 'required']) !!}
           </div>
         </div>
         <div class="clearfix"></div>
@@ -35,7 +35,7 @@
         <div class="col-sm-4">
           <div class="form-group">
             {!! Form::label('unit_id', __('product.unit') . ':*') !!}
-              {!! Form::select('unit_id', $units, null, ['class' => 'form-control select2', 'required']); !!}
+              {!! Form::select('unit_id', $units, null, ['class' => 'form-control select2', 'required']) !!}
           </div>
         </div>
 
@@ -43,14 +43,14 @@
           <div class="form-group">
             {!! Form::label('sub_unit_ids', __('lang_v1.related_sub_units') . ':') !!} @show_tooltip(__('lang_v1.sub_units_tooltip'))
 
-            {!! Form::select('sub_unit_ids[]', [], null, ['class' => 'form-control select2', 'multiple', 'id' => 'sub_unit_ids']); !!}
+            {!! Form::select('sub_unit_ids[]', [], null, ['class' => 'form-control select2', 'multiple', 'id' => 'sub_unit_ids']) !!}
           </div>
         </div>
 
         <div class="col-sm-4">
           <div class="form-group">
             {!! Form::label('brand_id', __('product.brand') . ':') !!}
-              {!! Form::select('brand_id', $brands, null, ['placeholder' => __('messages.please_select'), 'class' => 'form-control select2']); !!}
+              {!! Form::select('brand_id', $brands, null, ['placeholder' => __('messages.please_select'), 'class' => 'form-control select2']) !!}
           </div>
         </div>
         
@@ -58,14 +58,14 @@
         <div class="col-sm-4">
           <div class="form-group">
             {!! Form::label('category_id', __('product.category') . ':') !!}
-              {!! Form::select('category_id', $categories, null, ['placeholder' => __('messages.please_select'), 'class' => 'form-control select2']); !!}
+              {!! Form::select('category_id', $categories, null, ['placeholder' => __('messages.please_select'), 'class' => 'form-control select2']) !!}
           </div>
         </div>
 
         <div class="col-sm-4 @if(!(session('business.enable_category') && session('business.enable_sub_category'))) hide @endif">
           <div class="form-group">
             {!! Form::label('sub_category_id', __('product.sub_category') . ':') !!}
-              {!! Form::select('sub_category_id', [], null, ['placeholder' => __('messages.please_select'), 'class' => 'form-control select2']); !!}
+              {!! Form::select('sub_category_id', [], null, ['placeholder' => __('messages.please_select'), 'class' => 'form-control select2']) !!}
           </div>
         </div>
 
@@ -73,7 +73,7 @@
           <div class="form-group">
           <br>
             <label>
-              {!! Form::checkbox('enable_stock', 1, true, ['class' => 'input-icheck', 'id' => 'enable_stock']); !!} <strong>@lang('product.manage_stock')</strong>
+              {!! Form::checkbox('enable_stock', 1, true, ['class' => 'input-icheck', 'id' => 'enable_stock']) !!} <strong>@lang('product.manage_stock')</strong>
             </label>@show_tooltip(__('tooltip.enable_stock')) <p class="help-block"><i>@lang('product.enable_stock_help')</i></p>
           </div>
         </div>
@@ -82,14 +82,14 @@
           <div class="form-group">
             {!! Form::label('alert_quantity', __('product.alert_quantity') . ':') !!}
             {!! Form::text('alert_quantity', null, ['class' => 'form-control input_number',
-            'placeholder' => __('product.alert_quantity'), 'min' => '0']); !!}
+            'placeholder' => __('product.alert_quantity'), 'min' => '0']) !!}
           </div>
         </div>
         @if(!empty($common_settings['enable_product_warranty']))
         <div class="col-sm-4">
           <div class="form-group">
             {!! Form::label('warranty_id', __('lang_v1.warranty') . ':') !!}
-            {!! Form::select('warranty_id', $warranties, null, ['class' => 'form-control select2', 'placeholder' => __('messages.please_select')]); !!}
+            {!! Form::select('warranty_id', $warranties, null, ['class' => 'form-control select2', 'placeholder' => __('messages.please_select')]) !!}
           </div>
         </div>
         @endif
@@ -110,8 +110,8 @@
             <div class="multi-input">
               {!! Form::label('expiry_period', __('product.expires_in') . ':') !!}<br>
               {!! Form::text('expiry_period', $expiry_period, ['class' => 'form-control pull-left input_number',
-                'placeholder' => __('product.expiry_period'), 'style' => 'width:60%;']); !!}
-              {!! Form::select('expiry_period_type', ['months'=>__('product.months'), 'days'=>__('product.days'), '' =>__('product.not_applicable') ], 'months', ['class' => 'form-control select2 pull-left', 'style' => 'width:40%;', 'id' => 'expiry_period_type']); !!}
+                'placeholder' => __('product.expiry_period'), 'style' => 'width:60%;']) !!}
+              {!! Form::select('expiry_period_type', ['months'=>__('product.months'), 'days'=>__('product.days'), '' =>__('product.not_applicable') ], 'months', ['class' => 'form-control select2 pull-left', 'style' => 'width:40%;', 'id' => 'expiry_period_type']) !!}
             </div>
           </div>
         </div>
@@ -125,41 +125,41 @@
         <div class="col-sm-4">
           <div class="form-group">
             {!! Form::label('product_locations', __('business.business_locations') . ':') !!} @show_tooltip(__('lang_v1.product_location_help'))
-              {!! Form::select('product_locations[]', $business_locations, $default_location, ['class' => 'form-control select2', 'multiple', 'id' => 'product_locations']); !!}
+              {!! Form::select('product_locations[]', $business_locations, $default_location, ['class' => 'form-control select2', 'multiple', 'id' => 'product_locations']) !!}
           </div>
         </div>
         <div class="col-sm-4">
           <div class="form-group">
             {!! Form::label('weight',  __('lang_v1.weight') . ':') !!}
-            {!! Form::text('weight', null, ['class' => 'form-control', 'placeholder' => __('lang_v1.weight')]); !!}
+            {!! Form::text('weight', null, ['class' => 'form-control', 'placeholder' => __('lang_v1.weight')]) !!}
           </div>
         </div>
         <div class="clearfix"></div>
         <div class="col-sm-8">
           <div class="form-group">
             {!! Form::label('product_description', __('lang_v1.product_description') . ':') !!}
-              {!! Form::textarea('product_description', null, ['class' => 'form-control']); !!}
+              {!! Form::textarea('product_description', null, ['class' => 'form-control']) !!}
           </div>
         </div>
         <div class="clearfix"></div>
         <div class="col-sm-4">
           <div class="form-group">
             {!! Form::label('tax', __('product.applicable_tax') . ':') !!}
-              {!! Form::select('tax', $taxes, null, ['placeholder' => __('messages.please_select'), 'class' => 'form-control select2'], $tax_attributes); !!}
+              {!! Form::select('tax', $taxes, null, ['placeholder' => __('messages.please_select'), 'class' => 'form-control select2'], $tax_attributes) !!}
           </div>
         </div>
         <div class="col-sm-4">
           <div class="form-group">
             {!! Form::label('tax_type', __('product.selling_price_tax_type') . ':*') !!}
               {!! Form::select('tax_type', ['inclusive' => __('product.inclusive'), 'exclusive' => __('product.exclusive')], 'exclusive',
-              ['class' => 'form-control select2', 'required']); !!}
+              ['class' => 'form-control select2', 'required']) !!}
           </div>
         </div>
         <div class="col-sm-4">
           <div class="checkbox">
           <br>
             <label>
-              {!! Form::checkbox('enable_sr_no', 1, false, ['class' => 'input-icheck']); !!} <strong>@lang('lang_v1.enable_imei_or_sr_no')</strong>
+              {!! Form::checkbox('enable_sr_no', 1, false, ['class' => 'input-icheck']) !!} <strong>@lang('lang_v1.enable_imei_or_sr_no')</strong>
             </label>@show_tooltip(__('lang_v1.tooltip_sr_no'))
           </div>
         </div>
@@ -175,7 +175,7 @@
           <div class="form-group">
             <br>
             <label>
-              {!! Form::checkbox('not_for_selling', 1, false, ['class' => 'input-icheck']); !!} <strong>@lang('lang_v1.not_for_selling')</strong>
+              {!! Form::checkbox('not_for_selling', 1, false, ['class' => 'input-icheck']) !!} <strong>@lang('lang_v1.not_for_selling')</strong>
             </label> @show_tooltip(__('lang_v1.tooltip_not_for_selling'))
           </div>
         </div>
@@ -183,28 +183,28 @@
         <div class="col-sm-3">
           <div class="form-group">
             {!! Form::label('product_custom_field1',  $product_custom_field1 . ':') !!}
-            {!! Form::text('product_custom_field1', null, ['class' => 'form-control', 'placeholder' => $product_custom_field1]); !!}
+            {!! Form::text('product_custom_field1', null, ['class' => 'form-control', 'placeholder' => $product_custom_field1]) !!}
           </div>
         </div>
 
         <div class="col-sm-3">
           <div class="form-group">
             {!! Form::label('product_custom_field2',  $product_custom_field2 . ':') !!}
-            {!! Form::text('product_custom_field2',null, ['class' => 'form-control', 'placeholder' => $product_custom_field2]); !!}
+            {!! Form::text('product_custom_field2',null, ['class' => 'form-control', 'placeholder' => $product_custom_field2]) !!}
           </div>
         </div>
 
         <div class="col-sm-3">
           <div class="form-group">
             {!! Form::label('product_custom_field3',  $product_custom_field3 . ':') !!}
-            {!! Form::text('product_custom_field3', null, ['class' => 'form-control', 'placeholder' => $product_custom_field3]); !!}
+            {!! Form::text('product_custom_field3', null, ['class' => 'form-control', 'placeholder' => $product_custom_field3]) !!}
           </div>
         </div>
 
         <div class="col-sm-3">
           <div class="form-group">
             {!! Form::label('product_custom_field4',  $product_custom_field4 . ':') !!}
-            {!! Form::text('product_custom_field4', null, ['class' => 'form-control', 'placeholder' => $product_custom_field4]); !!}
+            {!! Form::text('product_custom_field4', null, ['class' => 'form-control', 'placeholder' => $product_custom_field4]) !!}
           </div>
         </div>
         <div class="clearfix"></div>

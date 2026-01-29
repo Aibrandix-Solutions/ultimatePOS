@@ -13,7 +13,7 @@
         <div class="modal-body">
             <div class="form-group">
                 {!! Form::label('update_status', __('sale.status').':*') !!}
-                {!! Form::select('status', $statuses, null, ['class' => 'form-control select2', 'placeholder' => __('messages.please_select'), 'required', 'id' => 'update_status', 'style' => 'width: 100%;']); !!}
+                {!! Form::select('status', $statuses, null, ['class' => 'form-control select2', 'placeholder' => __('messages.please_select'), 'required', 'id' => 'update_status', 'style' => 'width: 100%;']) !!}
             </div>
         </div>
 

@@ -11,10 +11,10 @@
 <!-- Main content -->
 <section class="content no-print">
 
-	{!! Form::hidden('location_id', $sell->location->id, ['id' => 'location_id', 'data-receipt_printer_type' => $sell->location->receipt_printer_type ]); !!}
+	{!! Form::hidden('location_id', $sell->location->id, ['id' => 'location_id', 'data-receipt_printer_type' => $sell->location->receipt_printer_type ]) !!}
 
 	{!! Form::open(['url' => action([\App\Http\Controllers\SellReturnController::class, 'store']), 'method' => 'post', 'id' => 'sell_return_form' ]) !!}
-	{!! Form::hidden('transaction_id', $sell->id); !!}
+	{!! Form::hidden('transaction_id', $sell->id) !!}
 	<div class="box box-solid">
 		<div class="box-header">
 			<h3 class="box-title">@lang('lang_v1.parent_sale')</h3>
@@ -38,7 +38,7 @@
 				<div class="col-sm-4">
 					<div class="form-group">
 						{!! Form::label('invoice_no', __('sale.invoice_no').':') !!}
-						{!! Form::text('invoice_no', !empty($sell->return_parent->invoice_no) ? $sell->return_parent->invoice_no : null, ['class' => 'form-control']); !!}
+						{!! Form::text('invoice_no', !empty($sell->return_parent->invoice_no) ? $sell->return_parent->invoice_no : null, ['class' => 'form-control']) !!}
 					</div>
 				</div>
 				<div class="col-sm-3">
@@ -51,7 +51,7 @@
 							@php
 							$transaction_date = !empty($sell->return_parent->transaction_date) ? $sell->return_parent->transaction_date : 'now';
 							@endphp
-							{!! Form::text('transaction_date', @format_datetime($transaction_date), ['class' => 'form-control', 'readonly', 'required']); !!}
+							{!! Form::text('transaction_date', @format_datetime($transaction_date), ['class' => 'form-control', 'readonly', 'required']) !!}
 						</div>
 					</div>
 				</div>
@@ -124,13 +124,13 @@
 				<div class="col-sm-4">
 					<div class="form-group">
 						{!! Form::label('discount_type', __( 'purchase.discount_type' ) . ':') !!}
-						{!! Form::select('discount_type', [ '' => __('lang_v1.none'), 'fixed' => __( 'lang_v1.fixed' ), 'percentage' => __( 'lang_v1.percentage' )], $discount_type, ['class' => 'form-control']); !!}
+						{!! Form::select('discount_type', [ '' => __('lang_v1.none'), 'fixed' => __( 'lang_v1.fixed' ), 'percentage' => __( 'lang_v1.percentage' )], $discount_type, ['class' => 'form-control']) !!}
 					</div>
 				</div>
 				<div class="col-sm-4">
 					<div class="form-group">
 						{!! Form::label('discount_amount', __( 'purchase.discount_amount' ) . ':') !!}
-						{!! Form::text('discount_amount', @num_format($discount_amount), ['class' => 'form-control input_number']); !!}
+						{!! Form::text('discount_amount', @num_format($discount_amount), ['class' => 'form-control input_number']) !!}
 					</div>
 				</div>
 			</div>
@@ -140,9 +140,9 @@
 			$tax_percent = $sell->tax->amount;
 			}
 			@endphp
-			{!! Form::hidden('tax_id', $sell->tax_id); !!}
-			{!! Form::hidden('tax_amount', 0, ['id' => 'tax_amount']); !!}
-			{!! Form::hidden('tax_percent', $tax_percent, ['id' => 'tax_percent']); !!}
+			{!! Form::hidden('tax_id', $sell->tax_id) !!}
+			{!! Form::hidden('tax_amount', 0, ['id' => 'tax_amount']) !!}
+			{!! Form::hidden('tax_percent', $tax_percent, ['id' => 'tax_percent']) !!}
 			<div class="row">
 				<div class="col-sm-12 text-right">
 					<strong>@lang('lang_v1.total_return_discount'):</strong>

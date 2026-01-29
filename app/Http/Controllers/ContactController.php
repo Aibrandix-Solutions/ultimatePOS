@@ -1382,7 +1382,7 @@ class ContactController extends Controller
 
         $start_date = request()->start_date;
         $end_date = request()->end_date;
-        $format = request()->format;
+        $format = request()->input('format');
         $location_id = request()->location_id;
 
         $contact = Contact::find($contact_id);

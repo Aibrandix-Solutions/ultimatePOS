@@ -28,7 +28,7 @@
 				<div class="form-group">
 					<div class="checkbox">
 						<label>
-							{!! Form::checkbox('module_info[tables][show_table]', 1, $default['show_table'], ['class' => 'input-icheck']); !!} @lang('restaurant.show_table')
+							{!! Form::checkbox('module_info[tables][show_table]', 1, $default['show_table'], ['class' => 'input-icheck']) !!} @lang('restaurant.show_table')
 						</label>
 					</div>
 				</div>
@@ -37,7 +37,7 @@
 			<div class="col-sm-3">
 				<div class="form-group">
 					{!! Form::label('module_info[tables][table_label]', __('restaurant.table_label') . ':' ) !!}
-					{!! Form::text('module_info[tables][table_label]', $default['table_label'], ['class' => 'form-control', 'placeholder' => __('restaurant.table_label') ]); !!}
+					{!! Form::text('module_info[tables][table_label]', $default['table_label'], ['class' => 'form-control', 'placeholder' => __('restaurant.table_label') ]) !!}
 				</div>
 			</div>
 		@endif
@@ -46,7 +46,7 @@
 				<div class="form-group">
 					<div class="checkbox">
 						<label>
-							{!! Form::checkbox('module_info[service_staff][show_service_staff]', 1, $default['show_service_staff'], ['class' => 'input-icheck']); !!} @lang('restaurant.show_service_staff')
+							{!! Form::checkbox('module_info[service_staff][show_service_staff]', 1, $default['show_service_staff'], ['class' => 'input-icheck']) !!} @lang('restaurant.show_service_staff')
 						</label>
 					</div>
 				</div>
@@ -55,7 +55,7 @@
 			<div class="col-sm-3">
 				<div class="form-group">
 					{!! Form::label('module_info[service_staff][service_staff_label]', __('restaurant.service_staff_label') . ':' ) !!}
-					{!! Form::text('module_info[service_staff][service_staff_label]', $default['service_staff_label'], ['class' => 'form-control', 'placeholder' => __('restaurant.service_staff_label') ]); !!}
+					{!! Form::text('module_info[service_staff][service_staff_label]', $default['service_staff_label'], ['class' => 'form-control', 'placeholder' => __('restaurant.service_staff_label') ]) !!}
 				</div>
 			</div>
 		@endif

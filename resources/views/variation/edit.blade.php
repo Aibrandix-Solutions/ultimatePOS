@@ -34,7 +34,7 @@
           @if( !$loop->first )
             <div class="form-group">
               <div class="col-sm-7 col-sm-offset-3">
-                {!! Form::text('edit_variation_values[' . $attr->id . ']', $attr->name, ['class' => 'form-control', 'required']); !!}
+                {!! Form::text('edit_variation_values[' . $attr->id . ']', $attr->name, ['class' => 'form-control', 'required']) !!}
               </div>
             </div>
           @endif

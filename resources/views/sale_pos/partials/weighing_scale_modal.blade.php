@@ -10,7 +10,7 @@
 					<div class="col-xs-12">
 				        <div class="form-group">
 				            {!! Form::label('weighing_scale_barcode', __('lang_v1.weighing_scale_barcode') . ':' ) !!} @show_tooltip(__('lang_v1.weighing_scale_barcode_help'))
-				            {!! Form::text('weighing_scale_barcode', null, ['class' => 'form-control']); !!}
+				            {!! Form::text('weighing_scale_barcode', null, ['class' => 'form-control']) !!}
 				        </div>
 				    </div>
 				</div>

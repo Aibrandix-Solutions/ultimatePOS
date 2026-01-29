@@ -11,7 +11,7 @@
 <!-- Main content -->
 <section class="content">
 	{!! Form::open(['url' => action([\App\Http\Controllers\PurchaseReturnController::class, 'store']), 'method' => 'post', 'id' => 'purchase_return_form' ]) !!}
-	{!! Form::hidden('transaction_id', $purchase->id); !!}
+	{!! Form::hidden('transaction_id', $purchase->id) !!}
 
 	@component('components.widget', ['class' => 'box-primary', 'title' => __('lang_v1.parent_purchase')])
 		<div class="row">
@@ -31,7 +31,7 @@
 			<div class="col-sm-4">
 				<div class="form-group">
 					{!! Form::label('ref_no', __('purchase.ref_no').':') !!}
-					{!! Form::text('ref_no', !empty($purchase->return_parent->ref_no) ? $purchase->return_parent->ref_no : null, ['class' => 'form-control']); !!}
+					{!! Form::text('ref_no', !empty($purchase->return_parent->ref_no) ? $purchase->return_parent->ref_no : null, ['class' => 'form-control']) !!}
 				</div>
 			</div>
 			<div class="clearfix"></div>
@@ -121,9 +121,9 @@
 						$tax_percent = $purchase->tax->amount;
 					}
 				@endphp
-				{!! Form::hidden('tax_id', $purchase->tax_id); !!}
-				{!! Form::hidden('tax_amount', 0, ['id' => 'tax_amount']); !!}
-				{!! Form::hidden('tax_percent', $tax_percent, ['id' => 'tax_percent']); !!}
+				{!! Form::hidden('tax_id', $purchase->tax_id) !!}
+				{!! Form::hidden('tax_amount', 0, ['id' => 'tax_amount']) !!}
+				{!! Form::hidden('tax_percent', $tax_percent, ['id' => 'tax_percent']) !!}
 			</div>
 		</div>
 		<div class="row">

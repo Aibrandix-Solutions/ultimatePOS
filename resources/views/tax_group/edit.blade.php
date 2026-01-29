@@ -11,12 +11,12 @@
     <div class="modal-body">
       <div class="form-group">
         {!! Form::label('name', __( 'tax_rate.name' ) . ':*') !!}
-          {!! Form::text('name', $tax_rate->name, ['class' => 'form-control', 'required', 'placeholder' => __( 'tax_rate.name' )]); !!}
+          {!! Form::text('name', $tax_rate->name, ['class' => 'form-control', 'required', 'placeholder' => __( 'tax_rate.name' )]) !!}
       </div>
 
       <div class="form-group">
         {!! Form::label('taxes[]', __( 'tax_rate.sub_taxes' ) . ':*') !!}
-          {!! Form::select('taxes[]', $taxes, $sub_taxes, ['class' => 'form-control select2', 'required', 'multiple']); !!}
+          {!! Form::select('taxes[]', $taxes, $sub_taxes, ['class' => 'form-control select2', 'required', 'multiple']) !!}
       </div>
 
     </div>

@@ -11,12 +11,12 @@
     <div class="modal-body">
       <div class="form-group">
         {!! Form::label('name', __( 'restaurant.table_name' ) . ':*') !!}
-          {!! Form::text('name', $table->name, ['class' => 'form-control', 'required', 'placeholder' => __( 'brand.brand_name' )]); !!}
+          {!! Form::text('name', $table->name, ['class' => 'form-control', 'required', 'placeholder' => __( 'brand.brand_name' )]) !!}
       </div>
 
       <div class="form-group">
         {!! Form::label('description', __( 'restaurant.short_description' ) . ':') !!}
-          {!! Form::text('description', $table->description, ['class' => 'form-control','placeholder' => __( 'brand.short_description' )]); !!}
+          {!! Form::text('description', $table->description, ['class' => 'form-control','placeholder' => __( 'brand.short_description' )]) !!}
       </div>
     </div>
 

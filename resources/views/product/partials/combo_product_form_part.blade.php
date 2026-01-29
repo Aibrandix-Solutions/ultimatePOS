@@ -5,7 +5,7 @@
 				<span class="input-group-addon">
 					<i class="fa fa-search"></i>
 				</span>
-				{!! Form::text('search_product', null, ['class' => 'form-control mousetrap', 'id' => 'search_product', 'placeholder' => __('lang_v1.search_product_placeholder')]); !!}
+				{!! Form::text('search_product', null, ['class' => 'form-control mousetrap', 'id' => 'search_product', 'placeholder' => __('lang_v1.search_product_placeholder')]) !!}
 			</div>
 		</div>
 	</div>

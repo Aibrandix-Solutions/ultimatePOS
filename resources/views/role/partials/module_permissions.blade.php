@@ -23,10 +23,10 @@
           <label>
             @if(!empty($module_permission['is_radio']))
               {!! Form::radio('radio_option[' . $module_permission['radio_input_name'] . ']', $module_permission['value'], in_array($module_permission['value'], $module_role_permissions), 
-            [ 'class' => 'input-icheck']); !!} {{ $module_permission['label'] }}
+            [ 'class' => 'input-icheck']) !!} {{ $module_permission['label'] }}
             @else
             {!! Form::checkbox('permissions[]', $module_permission['value'], in_array($module_permission['value'], $module_role_permissions), 
-            [ 'class' => 'input-icheck']); !!} {{ $module_permission['label'] }}
+            [ 'class' => 'input-icheck']) !!} {{ $module_permission['label'] }}
             @endif
           </label>
         </div>

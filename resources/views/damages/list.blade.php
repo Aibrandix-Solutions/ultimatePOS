@@ -14,21 +14,21 @@
                     <div class="col-md-4">
                         <div class="form-group">
                             {!! Form::label('damage_location_id', __('purchase.business_location') . ':') !!}
-                            {!! Form::select('damage_location_id', $business_locations, null, ['class' => 'form-control select2', 'style' => 'width:100%', 'placeholder' => __('lang_v1.all')]); !!}
+                            {!! Form::select('damage_location_id', $business_locations, null, ['class' => 'form-control select2', 'style' => 'width:100%', 'placeholder' => __('lang_v1.all')]) !!}
                         </div>
                     </div>
 
                     <div class="col-md-4">
                         <div class="form-group">
                             {!! Form::label('damage_date_range', __('report.date_range') . ':') !!}
-                            {!! Form::text('damage_date_range', null, ['placeholder' => __('lang_v1.select_a_date_range'), 'class' => 'form-control', 'readonly']); !!}
+                            {!! Form::text('damage_date_range', null, ['placeholder' => __('lang_v1.select_a_date_range'), 'class' => 'form-control', 'readonly']) !!}
                         </div>
                     </div>
 
                     <div class="col-md-4">
                         <div class="form-group">
                             {!! Form::label('damage_product', __('product.product') . ':') !!}
-                            {!! Form::select('damage_product', $products, null, ['class' => 'form-control select2', 'style' => 'width:100%', 'placeholder' => __('lang_v1.all')]); !!}
+                            {!! Form::select('damage_product', $products, null, ['class' => 'form-control select2', 'style' => 'width:100%', 'placeholder' => __('lang_v1.all')]) !!}
                         </div>
                     </div>
                 @endcomponent

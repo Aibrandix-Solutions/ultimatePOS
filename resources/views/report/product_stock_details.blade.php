@@ -31,7 +31,7 @@
                                     <span class="input-group-addon">
                                         <i class="fa fa-search"></i>
                                     </span>
-                                    {!! Form::select('variation_id', [], null, ['class' => 'form-control', 'id' => 'variation_id', 'placeholder' => __('lang_v1.search_product_placeholder')]); !!}
+                                    {!! Form::select('variation_id', [], null, ['class' => 'form-control', 'id' => 'variation_id', 'placeholder' => __('lang_v1.search_product_placeholder')]) !!}
                                 </div>
                             </div>
                         </div>
@@ -43,7 +43,7 @@
                                     <span class="input-group-addon">
                                         <i class="fa fa-map-marker"></i>
                                     </span>
-                                    {!! Form::select('location_id', $business_locations, (!empty($location) ? $location->id: null), ['class' => 'form-control select2', 'placeholder' => __('messages.please_select'), 'required']); !!}
+                                    {!! Form::select('location_id', $business_locations, (!empty($location) ? $location->id: null), ['class' => 'form-control select2', 'placeholder' => __('messages.please_select'), 'required']) !!}
                                 </div>
                             </div>
                         </div>

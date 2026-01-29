@@ -15,7 +15,7 @@
                         <div class="form-group">
                             <div class="option-div">
                                 <h4>FORMAT: <br>XXXX <i class="fa fa-check-circle pull-right icon"></i></h4>
-                                {!! Form::radio('scheme_type', 'blank'); !!}
+                                {!! Form::radio('scheme_type', 'blank') !!}
                             </div>
                         </div>
                     </div>
@@ -23,7 +23,7 @@
                         <div class="form-group">
                             <div class="option-div">
                                 <h4>FORMAT: <br>{{ date('Y') }}{{config('constants.invoice_scheme_separator')}}XXXX <i class="fa fa-check-circle pull-right icon"></i></h4>
-                                {!! Form::radio('scheme_type', 'year'); !!}
+                                {!! Form::radio('scheme_type', 'year') !!}
                             </div>
                         </div>
                     </div>
@@ -37,13 +37,13 @@
                 <div class="col-sm-12">
                     <div class="form-group">
                         {!! Form::label('name', __( 'invoice.name' ) . ':*') !!}
-                        {!! Form::text('name', null, ['class' => 'form-control', 'required', 'placeholder' => __( 'invoice.name' ) ]); !!}
+                        {!! Form::text('name', null, ['class' => 'form-control', 'required', 'placeholder' => __( 'invoice.name' ) ]) !!}
                     </div>
                 </div>
                 <div class="col-sm-12">
                     <div class="form-group">
                         {!! Form::label('invoice_number_type', __( 'invoice.number_type' ) . ':*') !!} @show_tooltip(__('invoice.number_type_tooltip'))
-                        {!! Form::select('number_type', $number_types, null, ['class' => 'form-control select2', 'id' => 'invoice_number_type']); !!}
+                        {!! Form::select('number_type', $number_types, null, ['class' => 'form-control select2', 'id' => 'invoice_number_type']) !!}
                     </div>
                 </div>
 
@@ -55,7 +55,7 @@
                                 <span class="input-group-addon">
                                     <i class="fa fa-info"></i>
                                 </span>
-                                {!! Form::text('prefix', null, ['class' => 'form-control', 'placeholder' => '']); !!}
+                                {!! Form::text('prefix', null, ['class' => 'form-control', 'placeholder' => '']) !!}
                             </div>
                         </div>
                     </div>
@@ -66,7 +66,7 @@
                                 <span class="input-group-addon">
                                     <i class="fa fa-info"></i>
                                 </span>
-                                {!! Form::number('start_number', 0, ['class' => 'form-control', 'required', 'min' => 0 ]); !!}
+                                {!! Form::number('start_number', 0, ['class' => 'form-control', 'required', 'min' => 0 ]) !!}
                             </div>
                         </div>
                     </div>
@@ -79,7 +79,7 @@
                                         <i class="fa fa-info"></i>
                                     </span>
                                     {!! Form::select('total_digits', ['4' => '4', '5' => '5', '6' => '6', '7' => '7',
-                                    '8' => '8', '9'=>'9', '10' => '10'], 4, ['class' => 'form-control', 'required']); !!}
+                                    '8' => '8', '9'=>'9', '10' => '10'], 4, ['class' => 'form-control', 'required']) !!}
                                 </div>
                             </div>
                         </div>
@@ -88,7 +88,7 @@
                                 <br>
                                 <div class="checkbox">
                                     <label>
-                                        {!! Form::checkbox('is_default', 1); !!} @lang('barcode.set_as_default')</label>
+                                        {!! Form::checkbox('is_default', 1) !!} @lang('barcode.set_as_default')</label>
                                 </div>
                             </div>
                         </div>

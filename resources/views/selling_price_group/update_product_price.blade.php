@@ -38,7 +38,7 @@
                     {!! Form::open(['url' => action([\App\Http\Controllers\SellingPriceGroupController::class, 'import']), 'method' => 'post', 'enctype' => 'multipart/form-data' ]) !!}
                     <div class="form-group">
                         {!! Form::label('name', __( 'product.file_to_import' ) . ':') !!}
-                        {!! Form::file('product_group_prices', ['required' => 'required']); !!}
+                        {!! Form::file('product_group_prices', ['required' => 'required']) !!}
                     </div>
                     <div class="form-group">
                         <button type="submit" class="tw-dw-btn tw-dw-btn-primary tw-text-white">@lang('messages.submit')</button>

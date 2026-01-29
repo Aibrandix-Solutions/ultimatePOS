@@ -21,30 +21,30 @@
       @endphp
       <div class="form-group">
         {!! Form::label('name', $name_label . ':*') !!}
-          {!! Form::text('name', null, ['class' => 'form-control', 'required', 'placeholder' => $name_label]); !!}
+          {!! Form::text('name', null, ['class' => 'form-control', 'required', 'placeholder' => $name_label]) !!}
       </div>
       @if($cat_code_enabled)
       <div class="form-group">
         {!! Form::label('short_code', $cat_code_label . ':') !!}
-        {!! Form::text('short_code', null, ['class' => 'form-control', 'placeholder' => $cat_code_label]); !!}
+        {!! Form::text('short_code', null, ['class' => 'form-control', 'placeholder' => $cat_code_label]) !!}
         <p class="help-block">{!! $category_code_help_text !!}</p>
       </div>
       @endif
       <div class="form-group">
         {!! Form::label('description', __( 'lang_v1.description' ) . ':') !!}
-        {!! Form::textarea('description', null, ['class' => 'form-control', 'placeholder' => __( 'lang_v1.description'), 'rows' => 3]); !!}
+        {!! Form::textarea('description', null, ['class' => 'form-control', 'placeholder' => __( 'lang_v1.description'), 'rows' => 3]) !!}
       </div>
       @if(!empty($parent_categories) && $enable_sub_category)
         <div class="form-group">
             <div class="checkbox">
               <label>
-                 {!! Form::checkbox('add_as_sub_cat', 1, false,[ 'class' => 'toggler', 'data-toggle_id' => 'parent_cat_div' ]); !!} @lang( 'lang_v1.add_as_sub_txonomy' )
+                 {!! Form::checkbox('add_as_sub_cat', 1, false,[ 'class' => 'toggler', 'data-toggle_id' => 'parent_cat_div' ]) !!} @lang( 'lang_v1.add_as_sub_txonomy' )
               </label>
             </div>
         </div>
         <div class="form-group hide" id="parent_cat_div">
           {!! Form::label('parent_id', __( 'category.select_parent_category' ) . ':') !!}
-          {!! Form::select('parent_id', $parent_categories, null, ['class' => 'form-control']); !!}
+          {!! Form::select('parent_id', $parent_categories, null, ['class' => 'form-control']) !!}
         </div>
       @endif
     </div>

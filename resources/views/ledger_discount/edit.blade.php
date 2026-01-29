@@ -8,24 +8,24 @@
         <div class="modal-body">
             <div class="form-group">
                 {!! Form::label('edit_discount_date', __( 'lang_v1.date' ) . ':*') !!}
-                  {!! Form::text('date', @format_datetime($discount->transaction_date), ['class' => 'form-control', 'required', 'placeholder' => __( 'lang_v1.date' ), 'id' => 'edit_discount_date']); !!}
+                  {!! Form::text('date', @format_datetime($discount->transaction_date), ['class' => 'form-control', 'required', 'placeholder' => __( 'lang_v1.date' ), 'id' => 'edit_discount_date']) !!}
             </div>
 
             <div class="form-group">
                 {!! Form::label('amount', __( 'sale.amount' ) . ':*') !!}
-                  {!! Form::text('amount', @num_format($discount->final_total), ['class' => 'form-control input_number', 'required', 'placeholder' => __( 'sale.amount' ) ]); !!}
+                  {!! Form::text('amount', @num_format($discount->final_total), ['class' => 'form-control input_number', 'required', 'placeholder' => __( 'sale.amount' ) ]) !!}
             </div>
 
             @if($contact->type == 'both')
             <div class="form-group">
                 {!! Form::label('sub_type', __( 'lang_v1.discount_for' ) . ':') !!}
-                  {!! Form::select('sub_type', ['sell_discount' => __('sale.sale'), 'purchase_discount' => __('lang_v1.purchase')], $discount->sub_type, ['class' => 'form-control', 'required' ]); !!}
+                  {!! Form::select('sub_type', ['sell_discount' => __('sale.sale'), 'purchase_discount' => __('lang_v1.purchase')], $discount->sub_type, ['class' => 'form-control', 'required' ]) !!}
             </div>
             @endif
 
             <div class="form-group">
                 {!! Form::label('note', __( 'brand.note' ) . ':') !!}
-                  {!! Form::textarea('note', $discount->additional_notes, ['class' => 'form-control', 'placeholder' => __( 'brand.note'), 'rows' => 3 ]); !!}
+                  {!! Form::textarea('note', $discount->additional_notes, ['class' => 'form-control', 'placeholder' => __( 'brand.note'), 'rows' => 3 ]) !!}
             </div>
         </div>
         <div class="modal-footer">

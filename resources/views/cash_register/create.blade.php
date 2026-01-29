@@ -30,7 +30,7 @@
           <div class="form-group">
             {!! Form::label('amount', __('cash_register.cash_in_hand') . ':*') !!}
             {!! Form::text('amount', null, ['class' => 'form-control input_number',
-              'placeholder' => __('cash_register.enter_amount'), 'required']); !!}
+              'placeholder' => __('cash_register.enter_amount'), 'required']) !!}
           </div>
         </div>
         @if(count($business_locations) > 1)
@@ -39,11 +39,11 @@
           <div class="form-group">
             {!! Form::label('location_id', __('business.business_location') . ':') !!}
               {!! Form::select('location_id', $business_locations, null, ['class' => 'form-control select2',
-              'placeholder' => __('lang_v1.select_location')]); !!}
+              'placeholder' => __('lang_v1.select_location')]) !!}
           </div>
         </div>
         @else
-          {!! Form::hidden('location_id', array_key_first($business_locations->toArray()) ); !!}
+          {!! Form::hidden('location_id', array_key_first($business_locations->toArray()) ) !!}
         @endif
         <div class="col-sm-8 col-sm-offset-2">
           <button type="submit" class="tw-dw-btn tw-dw-btn-primary tw-text-white pull-right">@lang('cash_register.open_register')</button>

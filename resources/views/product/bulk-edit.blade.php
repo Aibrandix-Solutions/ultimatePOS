@@ -14,7 +14,7 @@
 		<div class="col-md-8 col-md-offset-2 col-xs-12">
 			<div class="form-group">
               	{!! Form::text('search_product', null, ['class' => 'form-control',
-              'placeholder' => __('lang_v1.search_product_to_edit'), 'id' => 'search_product']); !!}
+              'placeholder' => __('lang_v1.search_product_to_edit'), 'id' => 'search_product']) !!}
 			</div>
 		</div>
 	</div>

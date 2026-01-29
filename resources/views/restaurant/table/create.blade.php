@@ -19,17 +19,17 @@
       @endif
       <div class="form-group">
         {!! Form::label('location_id', __('purchase.business_location').':*') !!}
-        {!! Form::select('location_id', $business_locations, $default_location, ['class' => 'form-control select2', 'placeholder' => __('messages.please_select'), 'required']); !!}
+        {!! Form::select('location_id', $business_locations, $default_location, ['class' => 'form-control select2', 'placeholder' => __('messages.please_select'), 'required']) !!}
       </div>
       
       <div class="form-group">
         {!! Form::label('name', __( 'restaurant.table_name' ) . ':*') !!}
-          {!! Form::text('name', null, ['class' => 'form-control', 'required', 'placeholder' => __( 'restaurant.table_name' ) ]); !!}
+          {!! Form::text('name', null, ['class' => 'form-control', 'required', 'placeholder' => __( 'restaurant.table_name' ) ]) !!}
       </div>
 
       <div class="form-group">
         {!! Form::label('description', __( 'restaurant.short_description' ) . ':') !!}
-          {!! Form::text('description', null, ['class' => 'form-control','placeholder' => __( 'restaurant.short_description' )]); !!}
+          {!! Form::text('description', null, ['class' => 'form-control','placeholder' => __( 'restaurant.short_description' )]) !!}
       </div>
     </div>
 

@@ -11,7 +11,7 @@
       <div class="col-md-6">
         <div class="form-group">
           {!! Form::label('exp_date', __( 'product.exp_date' ) . ':*') !!}
-          {!! Form::text('exp_date', @format_date($purchase_line->exp_date), ['class' => 'form-control', 'required', 'id' => 'exp_date_expiry_modal', 'readonly']); !!}
+          {!! Form::text('exp_date', @format_date($purchase_line->exp_date), ['class' => 'form-control', 'required', 'id' => 'exp_date_expiry_modal', 'readonly']) !!}
           <i><p class="help-block">@lang('lang_v1.expiry_date_will_be_changed_in_pl')</p></i>
         </div>
       </div>

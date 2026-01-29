@@ -11,19 +11,19 @@
 <!-- Main content -->
 <section class="content">
     {!! Form::open(['url' => action([\App\Http\Controllers\ImportSalesController::class, 'import']), 'method' => 'post', 'id' => 'import_sale_form']) !!}
-    {!! Form::hidden('file_name', $file_name); !!}
+    {!! Form::hidden('file_name', $file_name) !!}
     @component('components.widget')
     <div class="row">
         <div class="col-md-6">
             <div class="form-group">
                 {!! Form::label('group_by', __('lang_v1.group_sale_line_by') . ':*') !!} @show_tooltip(__('lang_v1.group_by_tooltip'))
-                {!! Form::select('group_by', $parsed_array[0], null, ['class' => 'form-control select2', 'required', 'placeholder' => __('messages.please_select')]); !!}
+                {!! Form::select('group_by', $parsed_array[0], null, ['class' => 'form-control select2', 'required', 'placeholder' => __('messages.please_select')]) !!}
             </div>
         </div>
         <div class="col-md-6">
             <div class="form-group">
                 {!! Form::label('location_id', __('business.business_location') . ':*') !!}
-                {!! Form::select('location_id', $business_locations, null, ['class' => 'form-control', 'required', 'placeholder' => __('messages.please_select')]); !!}
+                {!! Form::select('location_id', $business_locations, null, ['class' => 'form-control', 'required', 'placeholder' => __('messages.please_select')]) !!}
             </div>
         </div>
     </div>
@@ -49,7 +49,7 @@
                             <td>@if($loop->index > 0 ){{$loop->index}}@endif</td>
                             @foreach($row as $k => $v)
                                 <td>
-                                    {!! Form::select('import_fields[' . $k . ']', $import_fields, $match_array[$k], ['class' => 'form-control import_fields select2', 'placeholder' => __('lang_v1.skip'), 'style' => 'width: 100%;']); !!}
+                                    {!! Form::select('import_fields[' . $k . ']', $import_fields, $match_array[$k], ['class' => 'form-control import_fields select2', 'placeholder' => __('lang_v1.skip'), 'style' => 'width: 100%;']) !!}
                                 </td>
                             @endforeach
                             </tr>

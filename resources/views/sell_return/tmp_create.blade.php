@@ -29,7 +29,7 @@
 			<div class="form-group">
 				{!! Form::label('location_id', __('purchase.business_location').':*') !!}
 				{!! Form::select('location_id', $business_locations, $default_location, ['class' => 'form-control', 'placeholder' => __('messages.please_select'), 'required', 
-				'id' => 'select_location_id']); !!}
+				'id' => 'select_location_id']) !!}
 			</div>
 		</div>
 	</div>
@@ -40,7 +40,7 @@
 	<div class="box box-solid">
 		<div class="box-body">
 			<div class="row">
-				{!! Form::hidden('location_id', $default_location, ['id' => 'location_id']); !!}
+				{!! Form::hidden('location_id', $default_location, ['id' => 'location_id']) !!}
 
 				<div class="col-sm-3">
 					<div class="form-group">
@@ -49,14 +49,14 @@
 							<span class="input-group-addon">
 								<i class="fa fa-user"></i>
 							</span>
-							{!! Form::select('contact_id', [], null, ['class' => 'form-control', 'id' => 'customer_id', 'placeholder' => 'Enter Customer name / phone', 'required']); !!}
+							{!! Form::select('contact_id', [], null, ['class' => 'form-control', 'id' => 'customer_id', 'placeholder' => 'Enter Customer name / phone', 'required']) !!}
 						</div>
 					</div>
 				</div>
 				<div class="col-sm-3">
 					<div class="form-group">
 						{!! Form::label('invoice_no', __('purchase.ref_no').':') !!}
-						{!! Form::text('invoice_no', null, ['class' => 'form-control']); !!}
+						{!! Form::text('invoice_no', null, ['class' => 'form-control']) !!}
 					</div>
 				</div>
 
@@ -67,7 +67,7 @@
 							<span class="input-group-addon">
 								<i class="fa fa-calendar"></i>
 							</span>
-							{!! Form::text('transaction_date', @format_date('now'), ['class' => 'form-control', 'readonly', 'required']); !!}
+							{!! Form::text('transaction_date', @format_date('now'), ['class' => 'form-control', 'readonly', 'required']) !!}
 						</div>
 					</div>
 				</div>
@@ -90,7 +90,7 @@
 								'placeholder' => __('lang_v1.search_product_placeholder'),
 								'disabled' => is_null($default_location)? true : false,
 								'autofocus' => is_null($default_location)? false : true,
-								]); !!}
+								]) !!}
 						</div>
 					</div>
 				</div>
@@ -180,13 +180,13 @@
 						<td class="col-md-3">
 							<div class="form-group">
 								{!! Form::label('discount_type', __( 'purchase.discount_type' ) . ':') !!}
-								{!! Form::select('discount_type', [ '' => __('lang_v1.none'), 'fixed' => __( 'lang_v1.fixed' ), 'percentage' => __( 'lang_v1.percentage' )], '', ['class' => 'form-control']); !!}
+								{!! Form::select('discount_type', [ '' => __('lang_v1.none'), 'fixed' => __( 'lang_v1.fixed' ), 'percentage' => __( 'lang_v1.percentage' )], '', ['class' => 'form-control']) !!}
 							</div>
 						</td>
 						<td class="col-md-3">
 							<div class="form-group">
 							{!! Form::label('discount_amount', __( 'purchase.discount_amount' ) . ':') !!}
-							{!! Form::text('discount_amount', 0, ['class' => 'form-control input_number', 'required']); !!}
+							{!! Form::text('discount_amount', 0, ['class' => 'form-control input_number', 'required']) !!}
 							</div>
 						</td>
 						<td class="col-md-3">
@@ -202,7 +202,7 @@
 						<td>&nbsp;</td>
 						<td>&nbsp;</td>
 						<td>
-							{!! Form::hidden('final_total', 0 , ['id' => 'final_total_input']); !!}
+							{!! Form::hidden('final_total', 0 , ['id' => 'final_total_input']) !!}
 							<b>@lang('lang_v1.total_credit_amt'): </b><span id="total_payable" class="display_currency" data-currency_symbol='true'>0</span>
 						</td>
 					</tr>
@@ -210,7 +210,7 @@
 						<td colspan="4">
 							<div class="form-group">
 								{!! Form::label('additional_notes',__('purchase.additional_notes')) !!}
-								{!! Form::textarea('additional_notes', null, ['class' => 'form-control', 'rows' => 3]); !!}
+								{!! Form::textarea('additional_notes', null, ['class' => 'form-control', 'rows' => 3]) !!}
 							</div>
 						</td>
 					</tr>

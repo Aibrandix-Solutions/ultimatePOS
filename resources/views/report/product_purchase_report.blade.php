@@ -22,7 +22,7 @@
                             <i class="fa fa-search"></i>
                         </span>
                         <input type="hidden" value="" id="variation_id">
-                        {!! Form::text('search_product', null, ['class' => 'form-control', 'id' => 'search_product', 'placeholder' => __('lang_v1.search_product_placeholder'), 'autofocus']); !!}
+                        {!! Form::text('search_product', null, ['class' => 'form-control', 'id' => 'search_product', 'placeholder' => __('lang_v1.search_product_placeholder'), 'autofocus']) !!}
                     </div>
                 </div>
             </div>
@@ -33,7 +33,7 @@
                         <span class="input-group-addon">
                             <i class="fa fa-user"></i>
                         </span>
-                        {!! Form::select('supplier_id', $suppliers, null, ['class' => 'form-control select2', 'style' => 'width:100%;', 'placeholder' => __('messages.please_select'), 'required']); !!}
+                        {!! Form::select('supplier_id', $suppliers, null, ['class' => 'form-control select2', 'style' => 'width:100%;', 'placeholder' => __('messages.please_select'), 'required']) !!}
                     </div>
                 </div>
             </div>
@@ -44,7 +44,7 @@
                         <span class="input-group-addon">
                             <i class="fa fa-map-marker"></i>
                         </span>
-                        {!! Form::select('location_id', $business_locations, null, ['class' => 'form-control select2', 'style' => 'width:100%;', 'placeholder' => __('messages.please_select'), 'required']); !!}
+                        {!! Form::select('location_id', $business_locations, null, ['class' => 'form-control select2', 'style' => 'width:100%;', 'placeholder' => __('messages.please_select'), 'required']) !!}
                     </div>
                 </div>
             </div>
@@ -52,14 +52,14 @@
                 <div class="form-group">
 
                     {!! Form::label('product_pr_date_filter', __('report.date_range') . ':') !!}
-                    {!! Form::text('date_range', null, ['placeholder' => __('lang_v1.select_a_date_range'), 'class' => 'form-control', 'id' => 'product_pr_date_filter', 'readonly']); !!}
+                    {!! Form::text('date_range', null, ['placeholder' => __('lang_v1.select_a_date_range'), 'class' => 'form-control', 'id' => 'product_pr_date_filter', 'readonly']) !!}
                 </div>
             </div>
 
             <div class="col-md-3">
                 <div class="form-group">
                     {!! Form::label('ppr_brand_id', __('product.brand').':') !!}
-                    {!! Form::select('ppr_brand_id', $brands, null, ['class' => 'form-control select2', 'style' => 'width:100%;', 'placeholder' => __('lang_v1.all')]); !!}
+                    {!! Form::select('ppr_brand_id', $brands, null, ['class' => 'form-control select2', 'style' => 'width:100%;', 'placeholder' => __('lang_v1.all')]) !!}
                 </div>
             </div>
             {!! Form::close() !!}

@@ -15,7 +15,7 @@
 				<input type="hidden" id="default_customer_balance" 
 				value="{{$transaction->contact->balance}}" >
 				{!! Form::select('contact_id', 
-					[], null, ['class' => 'form-control mousetrap', 'id' => 'customer_id', 'placeholder' => 'Enter Customer name / phone', 'required', 'style' => 'width: 100%; border: none; padding: 12px 15px; font-size: 14px;']); !!}
+					[], null, ['class' => 'form-control mousetrap', 'id' => 'customer_id', 'placeholder' => 'Enter Customer name / phone', 'required', 'style' => 'width: 100%; border: none; padding: 12px 15px; font-size: 14px;']) !!}
 				<span class="input-group-btn">
 					<button type="button" class="btn btn-default bg-white btn-flat add_new_customer" data-name="" style="background: linear-gradient(135deg, #161160 0%, #3d3580 100%); border: none; color: white; padding: 8px 12px;" @if(!auth()->user()->can('customer.create')) disabled @endif><i class="fa fa-plus-circle fa-lg"></i></button>
 				</span>
@@ -32,7 +32,7 @@
                 {{-- Removed mousetrap class as it was causing issue with barcode scanning --}}
 				{!! Form::text('search_product', null, ['class' => 'form-control', 'id' => 'search_product', 'placeholder' => __('lang_v1.search_product_placeholder'),
 				'autofocus' => true, 'style' => 'border: none; padding: 12px 15px; font-size: 14px;'
-				]); !!}
+				]) !!}
 				<span class="input-group-btn">
 
 					<!-- Show button for weighing scale modal -->
@@ -52,7 +52,7 @@
 	<div class="col-md-4">
 		<div class="form-group">
 		{!! Form::select('invoice_layout_id', 
-					$invoice_layouts, $transaction->location->invoice_layout_id, ['class' => 'form-control select2', 'placeholder' => __('lang_v1.select_invoice_layout'), 'id' => 'invoice_layout_id']); !!}
+					$invoice_layouts, $transaction->location->invoice_layout_id, ['class' => 'form-control select2', 'placeholder' => __('lang_v1.select_invoice_layout'), 'id' => 'invoice_layout_id']) !!}
 		</div>
 	</div>
 	@endif
@@ -66,7 +66,7 @@
 		<div class="col-sm-4">
 			<div class="form-group">
 			{!! Form::select('commission_agent', 
-						$commission_agent, $transaction->commission_agent, ['class' => 'form-control select2', 'placeholder' => __('lang_v1.commission_agent'), 'id' => 'commission_agent', 'required' => $is_commission_agent_required]); !!}
+						$commission_agent, $transaction->commission_agent, ['class' => 'form-control select2', 'placeholder' => __('lang_v1.commission_agent'), 'id' => 'commission_agent', 'required' => $is_commission_agent_required]) !!}
 			</div>
 		</div>
 		@endif
@@ -77,7 +77,7 @@
 					<span class="input-group-addon">
 						<i class="fa fa-calendar"></i>
 					</span>
-					{!! Form::text('transaction_date', @format_datetime($transaction->transaction_date), ['class' => 'form-control', 'readonly', 'required', 'id' => 'transaction_date']); !!}
+					{!! Form::text('transaction_date', @format_datetime($transaction->transaction_date), ['class' => 'form-control', 'readonly', 'required', 'id' => 'transaction_date']) !!}
 				</div>
 			</div>
 		</div>
@@ -89,7 +89,7 @@
 					<span class="input-group-addon">
 						<i class="fas fa-exchange-alt"></i>
 					</span>
-					{!! Form::text('exchange_rate', @num_format($transaction->exchange_rate), ['class' => 'form-control input-sm input_number', 'placeholder' => __('lang_v1.currency_exchange_rate'), 'id' => 'exchange_rate']); !!}
+					{!! Form::text('exchange_rate', @num_format($transaction->exchange_rate), ['class' => 'form-control input-sm input_number', 'placeholder' => __('lang_v1.currency_exchange_rate'), 'id' => 'exchange_rate']) !!}
 				</div>
 			</div>
 		</div>
@@ -102,7 +102,7 @@
 						<i class="fas fa-money-bill-alt"></i>
 					</span>
 					{!! Form::hidden('price_group', $transaction->selling_price_group_id, ['id' => 'price_group']) !!}
-					{!! Form::text('price_group_text', $transaction->price_group->name, ['class' => 'form-control', 'readonly']); !!}
+					{!! Form::text('price_group_text', $transaction->price_group->name, ['class' => 'form-control', 'readonly']) !!}
 					<span class="input-group-addon">
 					@show_tooltip(__('lang_v1.price_group_help_text'))
 				</span> 
@@ -118,7 +118,7 @@
 					<span class="input-group-addon">
 						<i class="fas fa-external-link-square-alt text-primary service_modal_btn"></i>
 					</span>
-					{!! Form::text('types_of_service_text', $transaction->types_of_service->name, ['class' => 'form-control', 'readonly']); !!}
+					{!! Form::text('types_of_service_text', $transaction->types_of_service->name, ['class' => 'form-control', 'readonly']) !!}
 
 					{!! Form::hidden('types_of_service_id', $transaction->types_of_service_id, ['id' => 'types_of_service_id']) !!}
 					<span class="input-group-addon">
@@ -137,7 +137,7 @@
 	@if($transaction->status == 'draft' && !empty($pos_settings['show_invoice_scheme']))
 		<div class="col-sm-3">
 			<div class="form-group">
-				{!! Form::select('invoice_scheme_id', $invoice_schemes, $default_invoice_schemes->id, ['class' => 'form-control', 'placeholder' => __('lang_v1.select_invoice_scheme')]); !!}
+				{!! Form::select('invoice_scheme_id', $invoice_schemes, $default_invoice_schemes->id, ['class' => 'form-control', 'placeholder' => __('lang_v1.select_invoice_scheme')]) !!}
 			</div>
 		</div>
 	@endif
@@ -153,7 +153,7 @@
 			<div class="form-group">
 				<div class="checkbox">
 				<label>
-						{!! Form::checkbox('is_kitchen_order', 1, $transaction->is_kitchen_order, ['class' => 'input-icheck status', 'id' => 'is_kitchen_order']); !!} {{ __('lang_v1.kitchen_order') }}
+						{!! Form::checkbox('is_kitchen_order', 1, $transaction->is_kitchen_order, ['class' => 'input-icheck status', 'id' => 'is_kitchen_order']) !!} {{ __('lang_v1.kitchen_order') }}
 				</label>
 				</div>
 			</div>
@@ -162,7 +162,7 @@
     @if(in_array('subscription', $enabled_modules))
 		<div class="col-md-4 col-sm-6">
 			<label>
-              {!! Form::checkbox('is_recurring', 1, $transaction->is_recurring, ['class' => 'input-icheck', 'id' => 'is_recurring']); !!} @lang('lang_v1.subscribe')?
+              {!! Form::checkbox('is_recurring', 1, $transaction->is_recurring, ['class' => 'input-icheck', 'id' => 'is_recurring']) !!} @lang('lang_v1.subscribe')?
             </label><button type="button" data-toggle="modal" data-target="#recurringInvoiceModal" class="btn btn-link"><i class="fa fa-external-link-square-alt"></i></button>@show_tooltip(__('lang_v1.recurring_invoice_help'))
 		</div>
 	@endif

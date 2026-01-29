@@ -23,13 +23,13 @@
           <div class="form-group">
             {!! Form::label('name', __('printer.name') . ':*') !!}
               {!! Form::text('name', $printer->name, ['class' => 'form-control', 'required',
-              'placeholder' => __('lang_v1.printer_name_help')]); !!}
+              'placeholder' => __('lang_v1.printer_name_help')]) !!}
           </div>
         </div>
         <div class="col-sm-12">
           <div class="form-group">
             {!! Form::label('connection_type',__('printer.connection_type') . ':*') !!}
-            {!! Form::select('connection_type', $connection_types, $printer->connection_type, ['class' => 'form-control select2']); !!}
+            {!! Form::select('connection_type', $connection_types, $printer->connection_type, ['class' => 'form-control select2']) !!}
           </div>
         </div>
 
@@ -37,7 +37,7 @@
           <div class="form-group">
             {!! Form::label('capability_profile',__('printer.capability_profile') . ':*') !!}
             @show_tooltip(__('tooltip.capability_profile'))
-            {!! Form::select('capability_profile', $capability_profiles, $printer->capability_profile, ['class' => 'form-control select2']); !!}
+            {!! Form::select('capability_profile', $capability_profiles, $printer->capability_profile, ['class' => 'form-control select2']) !!}
           </div>
         </div>
 
@@ -45,7 +45,7 @@
           <div class="form-group">
             {!! Form::label('char_per_line', __('printer.character_per_line') . ':*') !!}
               {!! Form::number('char_per_line', $printer->char_per_line, ['class' => 'form-control', 'required',
-              'placeholder' => __('lang_v1.char_per_line_help')]); !!}
+              'placeholder' => __('lang_v1.char_per_line_help')]) !!}
           </div>
         </div>
         
@@ -53,14 +53,14 @@
           <div class="form-group">
             {!! Form::label('ip_address', __('printer.ip_address') . ':*') !!}
               {!! Form::text('ip_address', $printer->ip_address, ['class' => 'form-control', 'required',
-              'placeholder' => __('lang_v1.ip_address_help')]); !!}
+              'placeholder' => __('lang_v1.ip_address_help')]) !!}
           </div>
         </div>
 
         <div class="col-sm-12" id="port_div">
           <div class="form-group">
             {!! Form::label('port', __('printer.port') . ':*') !!}
-              {!! Form::text('port', $printer->port, ['class' => 'form-control', 'required']); !!}
+              {!! Form::text('port', $printer->port, ['class' => 'form-control', 'required']) !!}
               <span class="help-block">@lang('lang_v1.port_help')</span>
           </div>
         </div>
@@ -68,7 +68,7 @@
         <div class="col-sm-12 hide" id="path_div">
           <div class="form-group">
             {!! Form::label('path', __('printer.path') . ':*') !!}
-            {!! Form::text('path', $printer->path, ['class' => 'form-control', 'required']); !!}
+            {!! Form::text('path', $printer->path, ['class' => 'form-control', 'required']) !!}
 
             <span class="help-block">
               <b>Connection Type Windows: </b> The device files will be along the lines of <code>LPT1</code> (parallel) or <code>COM1</code> (serial). <br/>

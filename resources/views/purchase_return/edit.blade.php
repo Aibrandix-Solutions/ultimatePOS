@@ -24,14 +24,14 @@
 							<span class="input-group-addon">
 								<i class="fa fa-user"></i>
 							</span>
-							{!! Form::select('contact_id', [ $purchase_return->contact_id => $purchase_return->contact->name], $purchase_return->contact_id, ['class' => 'form-control', 'placeholder' => __('messages.please_select'), 'required', 'id' => 'supplier_id']); !!}
+							{!! Form::select('contact_id', [ $purchase_return->contact_id => $purchase_return->contact->name], $purchase_return->contact_id, ['class' => 'form-control', 'placeholder' => __('messages.please_select'), 'required', 'id' => 'supplier_id']) !!}
 						</div>
 					</div>
 				</div>
 				<div class="col-sm-3">
 					<div class="form-group">
 						{!! Form::label('ref_no', __('purchase.ref_no').':') !!}
-						{!! Form::text('ref_no', $purchase_return->ref_no, ['class' => 'form-control']); !!}
+						{!! Form::text('ref_no', $purchase_return->ref_no, ['class' => 'form-control']) !!}
 					</div>
 				</div>
 				<div class="col-sm-3">
@@ -41,14 +41,14 @@
 							<span class="input-group-addon">
 								<i class="fa fa-calendar"></i>
 							</span>
-							{!! Form::text('transaction_date', @format_datetime($purchase_return->transaction_date), ['class' => 'form-control', 'readonly', 'required']); !!}
+							{!! Form::text('transaction_date', @format_datetime($purchase_return->transaction_date), ['class' => 'form-control', 'readonly', 'required']) !!}
 						</div>
 					</div>
 				</div>
 				<div class="col-sm-3">
 	                <div class="form-group">
 	                    {!! Form::label('document', __('purchase.attach_document') . ':') !!}
-	                    {!! Form::file('document', ['id' => 'upload_document', 'accept' => implode(',', array_keys(config('constants.document_upload_mimes_types')))]); !!}
+	                    {!! Form::file('document', ['id' => 'upload_document', 'accept' => implode(',', array_keys(config('constants.document_upload_mimes_types')))]) !!}
 	                    <p class="help-block">@lang('purchase.max_file_size', ['size' => (config('constants.document_size_limit') / 1000000)])
 	                    @includeIf('components.document_help_text')</p>
 	                </div>
@@ -68,7 +68,7 @@
 							<span class="input-group-addon">
 								<i class="fa fa-search"></i>
 							</span>
-							{!! Form::text('search_product', null, ['class' => 'form-control', 'id' => 'search_product_for_purchase_return', 'placeholder' => __('stock_adjustment.search_products')]); !!}
+							{!! Form::text('search_product', null, ['class' => 'form-control', 'id' => 'search_product_for_purchase_return', 'placeholder' => __('stock_adjustment.search_products')]) !!}
 						</div>
 					</div>
 				</div>
@@ -129,7 +129,7 @@
 								<option value="{{ $tax->id }}" data-tax_amount="{{ $tax->amount }}" data-tax_type="{{ $tax->calculation_type }}" @if($purchase_return->tax_id == $tax->id) selected @endif>{{ $tax->name }}</option>
 							@endforeach
 						</select>
-						{!! Form::hidden('tax_amount', $purchase_return->tax_amount, ['id' => 'tax_amount']); !!}
+						{!! Form::hidden('tax_amount', $purchase_return->tax_amount, ['id' => 'tax_amount']) !!}
 					</div>
 				</div>
 				<div class="col-md-8">

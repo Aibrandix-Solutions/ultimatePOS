@@ -13,61 +13,61 @@
         <div class="col-md-12">
           <div class="form-group">
             {!! Form::label('name', __( 'unit.name' ) . ':*') !!}
-              {!! Form::text('name', $discount->name, ['class' => 'form-control', 'required', 'placeholder' => __( 'unit.name' ) ]); !!}
+              {!! Form::text('name', $discount->name, ['class' => 'form-control', 'required', 'placeholder' => __( 'unit.name' ) ]) !!}
           </div>
         </div>
         <div class="col-md-12">
           <div class="form-group">
             {!! Form::label('variation_ids', __('report.products') . ':') !!}
-              {!! Form::select('variation_ids[]', $variations, array_keys($variations), ['id' => "variation_ids", 'class' => 'form-control', 'multiple']); !!}
+              {!! Form::select('variation_ids[]', $variations, array_keys($variations), ['id' => "variation_ids", 'class' => 'form-control', 'multiple']) !!}
           </div>
         </div>
         <div class="col-md-6 @if(!empty($variations)) hide @endif" id="brand_input">
           <div class="form-group">
             {!! Form::label('brand_id', __('product.brand') . ':') !!}
-              {!! Form::select('brand_id', $brands, $discount->brand_id, ['placeholder' => __('messages.please_select'), 'class' => 'form-control select2', 'style' => 'width: 100%;']); !!}
+              {!! Form::select('brand_id', $brands, $discount->brand_id, ['placeholder' => __('messages.please_select'), 'class' => 'form-control select2', 'style' => 'width: 100%;']) !!}
           </div>
         </div>
         <div class="col-sm-6 @if(!empty($variations)) hide @endif" id="category_input">
           <div class="form-group">
             {!! Form::label('category_id', __('product.category') . ':') !!}
-              {!! Form::select('category_id', $categories, $discount->category_id, ['placeholder' => __('messages.please_select'), 'class' => 'form-control select2', 'style' => 'width: 100%;']); !!}
+              {!! Form::select('category_id', $categories, $discount->category_id, ['placeholder' => __('messages.please_select'), 'class' => 'form-control select2', 'style' => 'width: 100%;']) !!}
           </div>
         </div>
         <div class="col-sm-6">
           <div class="form-group">
             {!! Form::label('location_id', __('sale.location') . ':*') !!}
-              {!! Form::select('location_id', $locations, $discount->location_id, ['placeholder' => __('messages.please_select'), 'class' => 'form-control select2', 'required']); !!}
+              {!! Form::select('location_id', $locations, $discount->location_id, ['placeholder' => __('messages.please_select'), 'class' => 'form-control select2', 'required']) !!}
           </div>
         </div>
         <div class="col-md-6">
           <div class="form-group">
             {!! Form::label('priority', __( 'lang_v1.priority' ) . ':') !!}
-              {!! Form::text('priority', $discount->priority, ['class' => 'form-control input_number', 'required', 'placeholder' => __( 'lang_v1.priority' ) ]); !!}
+              {!! Form::text('priority', $discount->priority, ['class' => 'form-control input_number', 'required', 'placeholder' => __( 'lang_v1.priority' ) ]) !!}
           </div>
         </div>
          <div class="col-sm-6">
           <div class="form-group">
             {!! Form::label('discount_type', __('sale.discount_type') . ':*') !!}
-              {!! Form::select('discount_type', ['fixed' => __('lang_v1.fixed'), 'percentage' => __('lang_v1.percentage')], $discount->discount_type, ['placeholder' => __('messages.please_select'), 'class' => 'form-control select2', 'required']); !!}
+              {!! Form::select('discount_type', ['fixed' => __('lang_v1.fixed'), 'percentage' => __('lang_v1.percentage')], $discount->discount_type, ['placeholder' => __('messages.please_select'), 'class' => 'form-control select2', 'required']) !!}
           </div>
         </div>
         <div class="col-md-6">
           <div class="form-group">
             {!! Form::label('discount_amount', __( 'sale.discount_amount' ) . ':*') !!}
-              {!! Form::text('discount_amount', $discount->discount_amount, ['class' => 'form-control input_number', 'required', 'placeholder' => __( 'sale.discount_amount' ) ]); !!}
+              {!! Form::text('discount_amount', $discount->discount_amount, ['class' => 'form-control input_number', 'required', 'placeholder' => __( 'sale.discount_amount' ) ]) !!}
           </div>
         </div>
         <div class="col-md-6">
           <div class="form-group">
             {!! Form::label('starts_at', __( 'lang_v1.starts_at' ) . ':') !!}
-              {!! Form::text('starts_at', $starts_at, ['class' => 'form-control discount_date', 'required', 'placeholder' => __( 'lang_v1.starts_at' ), 'readonly' ]); !!}
+              {!! Form::text('starts_at', $starts_at, ['class' => 'form-control discount_date', 'required', 'placeholder' => __( 'lang_v1.starts_at' ), 'readonly' ]) !!}
           </div>
         </div>
         <div class="col-md-6">
           <div class="form-group">
             {!! Form::label('ends_at', __( 'lang_v1.ends_at' ) . ':') !!}
-              {!! Form::text('ends_at', $ends_at, ['class' => 'form-control discount_date', 'required', 'placeholder' => __( 'lang_v1.ends_at' ), 'readonly' ]); !!}
+              {!! Form::text('ends_at', $ends_at, ['class' => 'form-control discount_date', 'required', 'placeholder' => __( 'lang_v1.ends_at' ), 'readonly' ]) !!}
           </div>
         </div>
 
@@ -88,7 +88,7 @@
           <div class="form-group">
             <br>
             <label>
-              {!! Form::checkbox('applicable_in_cg', 1, !empty($discount->applicable_in_cg), ['class' => 'input-icheck']); !!} <strong>@lang('lang_v1.applicable_in_cg')</strong>
+              {!! Form::checkbox('applicable_in_cg', 1, !empty($discount->applicable_in_cg), ['class' => 'input-icheck']) !!} <strong>@lang('lang_v1.applicable_in_cg')</strong>
             </label>
           </div>
         </div>
@@ -97,7 +97,7 @@
           <div class="form-group">
             <br>
             <label>
-              {!! Form::checkbox('is_active', 1, !empty($discount->is_active), ['class' => 'input-icheck']); !!} <strong>@lang('lang_v1.is_active')</strong>
+              {!! Form::checkbox('is_active', 1, !empty($discount->is_active), ['class' => 'input-icheck']) !!} <strong>@lang('lang_v1.is_active')</strong>
             </label>
           </div>
         </div>

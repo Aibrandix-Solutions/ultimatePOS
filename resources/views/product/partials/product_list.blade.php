@@ -43,7 +43,7 @@
             <div style="display: flex; width: 100%;">
                 @can('product.delete')
                     {!! Form::open(['url' => action([\App\Http\Controllers\ProductController::class, 'massDestroy']), 'method' => 'post', 'id' => 'mass_delete_form' ]) !!}
-                    {!! Form::hidden('selected_rows', null, ['id' => 'selected_rows']); !!}
+                    {!! Form::hidden('selected_rows', null, ['id' => 'selected_rows']) !!}
                     {!! Form::submit(__('lang_v1.delete_selected'), array('class' => 'tw-dw-btn tw-dw-btn-outline tw-dw-btn-xs tw-dw-btn-error', 'id' => 'delete-selected')) !!}
                     {!! Form::close() !!}
                 @endcan
@@ -54,7 +54,7 @@
                         @if(config('constants.enable_product_bulk_edit'))
                             &nbsp;
                             {!! Form::open(['url' => action([\App\Http\Controllers\ProductController::class, 'bulkEdit']), 'method' => 'post', 'id' => 'bulk_edit_form' ]) !!}
-                            {!! Form::hidden('selected_products', null, ['id' => 'selected_products_for_edit']); !!}
+                            {!! Form::hidden('selected_products', null, ['id' => 'selected_products_for_edit']) !!}
                             <button type="submit" class="tw-dw-btn tw-dw-btn-xs tw-dw-btn-outline tw-dw-btn-primary" id="edit-selected"> <i class="fa fa-edit"></i>{{__('lang_v1.bulk_edit')}}</button>
                             {!! Form::close() !!}
                         @endif
@@ -66,7 +66,7 @@
                 
                 &nbsp;
                 {!! Form::open(['url' => action([\App\Http\Controllers\ProductController::class, 'massDeactivate']), 'method' => 'post', 'id' => 'mass_deactivate_form' ]) !!}
-                {!! Form::hidden('selected_products', null, ['id' => 'selected_products']); !!}
+                {!! Form::hidden('selected_products', null, ['id' => 'selected_products']) !!}
                 {!! Form::submit(__('lang_v1.deactivate_selected'), array('class' => 'tw-dw-btn tw-dw-btn-xs tw-dw-btn-outline tw-dw-btn-warning', 'id' => 'deactivate-selected')) !!}
                 {!! Form::close() !!} @show_tooltip(__('lang_v1.deactive_product_tooltip'))
                 &nbsp;

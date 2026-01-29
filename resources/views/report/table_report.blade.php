@@ -25,14 +25,14 @@
                     <div class="col-md-3">
                         <div class="form-group">
                             {!! Form::label('tr_location_id',  __('purchase.business_location') . ':') !!}
-                            {!! Form::select('tr_location_id', $business_locations, null, ['class' => 'form-control select2', 'style' => 'width:100%']); !!}
+                            {!! Form::select('tr_location_id', $business_locations, null, ['class' => 'form-control select2', 'style' => 'width:100%']) !!}
                         </div>
                     </div>
 
                     <div class="col-md-3">
                         <div class="form-group">
                             {!! Form::label('tr_date_range', __('report.date_range') . ':') !!}
-                            {!! Form::text('date_range', @format_date('first day of this month') . ' ~ ' . @format_date('last day of this month'), ['placeholder' => __('lang_v1.select_a_date_range'), 'class' => 'form-control', 'id' => 'tr_date_range', 'readonly']); !!}
+                            {!! Form::text('date_range', @format_date('first day of this month') . ' ~ ' . @format_date('last day of this month'), ['placeholder' => __('lang_v1.select_a_date_range'), 'class' => 'form-control', 'id' => 'tr_date_range', 'readonly']) !!}
                         </div>
                     </div>
                 </div>

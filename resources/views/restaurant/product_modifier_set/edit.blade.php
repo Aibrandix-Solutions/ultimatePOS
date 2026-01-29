@@ -14,7 +14,7 @@
         
         <div class="col-sm-12">
           <div class="form-group">
-            {!! Form::text('name', null, ['class' => 'form-control', 'placeholder' => __( 'lang_v1.search_product_placeholder' ), 'id' => 'search_product' ]); !!}
+            {!! Form::text('name', null, ['class' => 'form-control', 'placeholder' => __( 'lang_v1.search_product_placeholder' ), 'id' => 'search_product' ]) !!}
           </div>
         </div>
         

@@ -5,7 +5,7 @@
 			<span class="input-group-addon">
 				<i class="fa fa-table"></i>
 			</span>
-			{!! Form::select('res_table_id', $tables, $view_data['res_table_id'], ['class' => 'form-control', 'placeholder' => __('restaurant.select_table')]); !!}
+			{!! Form::select('res_table_id', $tables, $view_data['res_table_id'], ['class' => 'form-control', 'placeholder' => __('restaurant.select_table')]) !!}
 		</div>
 	</div>
 </div>
@@ -22,7 +22,7 @@
 			@endif>
 				<option selected value="">{{ __('restaurant.select_service_staff') }}</option>
 				 @foreach ($waiters as $waiter)
-					<option {{ $waiter->id == $view_data['res_waiter_id'] ? 'selected' : ''; }} value="{{ $waiter->id }}" data-is_enable="{{ $waiter->is_enable_service_staff_pin }}">{{ $waiter->first_name .  $waiter->last_name}}</option>
+					<option @if($waiter->id == $view_data['res_waiter_id']) selected @endif value="{{ $waiter->id }}" data-is_enable="{{ $waiter->is_enable_service_staff_pin }}">{{ $waiter->first_name .  $waiter->last_name}}</option>
 				 @endforeach
 			</select>
 			@if(!empty($pos_settings['inline_service_staff']))

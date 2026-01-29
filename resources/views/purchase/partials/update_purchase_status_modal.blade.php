@@ -13,9 +13,9 @@
 		<div class="modal-body">
 			<div class="form-group">
 				{!! Form::label('status', __('purchase.purchase_status') . ':*') !!} 
-				{!! Form::select('status', $orderStatuses, null, ['class' => 'form-control', 'placeholder' => __('messages.please_select'), 'required']); !!}
+				{!! Form::select('status', $orderStatuses, null, ['class' => 'form-control', 'placeholder' => __('messages.please_select'), 'required']) !!}
 
-				{!! Form::hidden('purchase_id', null, ['id' => 'purchase_id']); !!}
+				{!! Form::hidden('purchase_id', null, ['id' => 'purchase_id']) !!}
 			</div>
 		</div>
 

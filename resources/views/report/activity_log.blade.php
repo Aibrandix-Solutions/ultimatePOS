@@ -18,21 +18,21 @@
                 <div class="col-md-3">
                     <div class="form-group">
                         {!! Form::label('al_users_filter', __( 'lang_v1.by' ) . ':') !!}
-                        {!! Form::select('al_users_filter', $users, null, ['class' => 'form-control select2', 'style' => 'width:100%', 'id' => 'al_users_filter', 'placeholder' => __('lang_v1.all')]); !!}
+                        {!! Form::select('al_users_filter', $users, null, ['class' => 'form-control select2', 'style' => 'width:100%', 'id' => 'al_users_filter', 'placeholder' => __('lang_v1.all')]) !!}
                     </div>
                 </div>
 
                 <div class="col-md-3">
                     <div class="form-group">
                         {!! Form::label('subject_type', __( 'lang_v1.subject_type' ) . ':') !!}
-                        {!! Form::select('subject_type', $transaction_types, null, ['class' => 'form-control select2', 'style' => 'width:100%', 'id' => 'subject_type', 'placeholder' => __('lang_v1.all')]); !!}
+                        {!! Form::select('subject_type', $transaction_types, null, ['class' => 'form-control select2', 'style' => 'width:100%', 'id' => 'subject_type', 'placeholder' => __('lang_v1.all')]) !!}
                     </div>
                 </div>
 
                 <div class="col-md-3">
                     <div class="form-group">
                         {!! Form::label('al_date_filter', __('report.date_range') . ':') !!}
-                        {!! Form::text('al_date_filter', null, ['placeholder' => __('lang_v1.select_a_date_range'), 'class' => 'form-control', 'readonly']); !!}
+                        {!! Form::text('al_date_filter', null, ['placeholder' => __('lang_v1.select_a_date_range'), 'class' => 'form-control', 'readonly']) !!}
                     </div>
                 </div>
 

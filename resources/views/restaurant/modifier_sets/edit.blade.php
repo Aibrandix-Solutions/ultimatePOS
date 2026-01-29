@@ -15,7 +15,7 @@
         <div class="col-sm-12">
           <div class="form-group">
             {!! Form::label('name', __( 'restaurant.modifier_set' ) . ':*') !!}
-            {!! Form::text('name', $modifer_set->name, ['class' => 'form-control', 'required', 'placeholder' => __( 'lang_v1.name' ) ]); !!}
+            {!! Form::text('name', $modifer_set->name, ['class' => 'form-control', 'required', 'placeholder' => __( 'lang_v1.name' ) ]) !!}
           </div>
         </div>
 

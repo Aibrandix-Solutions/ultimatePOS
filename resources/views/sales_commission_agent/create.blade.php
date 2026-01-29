@@ -13,45 +13,45 @@
         <div class="col-md-2">
         <div class="form-group">
           {!! Form::label('surname', __( 'business.prefix' ) . ':') !!}
-            {!! Form::text('surname', null, ['class' => 'form-control', 'placeholder' => __( 'business.prefix_placeholder' ) ]); !!}
+            {!! Form::text('surname', null, ['class' => 'form-control', 'placeholder' => __( 'business.prefix_placeholder' ) ]) !!}
         </div>
       </div>
       <div class="col-md-5">
         <div class="form-group">
           {!! Form::label('first_name', __( 'business.first_name' ) . ':*') !!}
-            {!! Form::text('first_name', null, ['class' => 'form-control', 'required', 'placeholder' => __( 'business.first_name' ) ]); !!}
+            {!! Form::text('first_name', null, ['class' => 'form-control', 'required', 'placeholder' => __( 'business.first_name' ) ]) !!}
         </div>
       </div>
       <div class="col-md-5">
         <div class="form-group">
           {!! Form::label('last_name', __( 'business.last_name' ) . ':') !!}
-            {!! Form::text('last_name', null, ['class' => 'form-control', 'placeholder' => __( 'business.last_name' ) ]); !!}
+            {!! Form::text('last_name', null, ['class' => 'form-control', 'placeholder' => __( 'business.last_name' ) ]) !!}
         </div>
       </div>
       <div class="clearfix"></div>
       <div class="col-md-6">
         <div class="form-group">
           {!! Form::label('email', __( 'business.email' ) . ':') !!}
-            {!! Form::text('email', null, ['class' => 'form-control', 'placeholder' => __( 'business.email' ) ]); !!}
+            {!! Form::text('email', null, ['class' => 'form-control', 'placeholder' => __( 'business.email' ) ]) !!}
         </div>
       </div>
       <div class="col-md-6">
         <div class="form-group">
           {!! Form::label('contact_no', __( 'lang_v1.contact_no' ) . ':') !!}
-            {!! Form::text('contact_no', null, ['class' => 'form-control', 'placeholder' => __( 'lang_v1.contact_no' ) ]); !!}
+            {!! Form::text('contact_no', null, ['class' => 'form-control', 'placeholder' => __( 'lang_v1.contact_no' ) ]) !!}
         </div>
       </div>
       <div class="col-md-12">
         <div class="form-group">
           {!! Form::label('address', __( 'business.address' ) . ':') !!}
-            {!! Form::textarea('address', null, ['class' => 'form-control', 'placeholder' => __( 'business.address'), 'rows' => 3 ]); !!}
+            {!! Form::textarea('address', null, ['class' => 'form-control', 'placeholder' => __( 'business.address'), 'rows' => 3 ]) !!}
         </div>
       </div>
 
       <div class="col-md-6">
         <div class="form-group">
           {!! Form::label('cmmsn_percent', __( 'lang_v1.cmmsn_percent' ) . ':') !!}
-            {!! Form::text('cmmsn_percent', null, ['class' => 'form-control input_number', 'placeholder' => __( 'lang_v1.cmmsn_percent' ), 'required' ]); !!}
+            {!! Form::text('cmmsn_percent', null, ['class' => 'form-control input_number', 'placeholder' => __( 'lang_v1.cmmsn_percent' ), 'required' ]) !!}
         </div>
       </div>
 

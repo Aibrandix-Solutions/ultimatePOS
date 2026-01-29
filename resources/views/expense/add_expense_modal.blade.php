@@ -17,26 +17,26 @@
                 <div class="col-sm-6">
                     <div class="form-group">
                         {!! Form::label('expense_location_id', __('purchase.business_location').':*') !!}
-                        {!! Form::select('location_id', $business_locations, $default_location, ['class' => 'form-control select2', 'placeholder' => __('messages.please_select'), 'required', 'id' => 'expense_location_id'], $bl_attributes); !!}
+                        {!! Form::select('location_id', $business_locations, $default_location, ['class' => 'form-control select2', 'placeholder' => __('messages.please_select'), 'required', 'id' => 'expense_location_id'], $bl_attributes) !!}
                     </div>
                 </div>
                 <div class="col-sm-6">
                     <div class="form-group">
                         {!! Form::label('expense_category_id', __('expense.expense_category').':') !!}
-                        {!! Form::select('expense_category_id', $expense_categories, null, ['class' => 'form-control select2', 'placeholder' => __('messages.please_select')]); !!}
+                        {!! Form::select('expense_category_id', $expense_categories, null, ['class' => 'form-control select2', 'placeholder' => __('messages.please_select')]) !!}
                     </div>
                 </div>
                 <div class="col-md-6">
 					<div class="form-group">
 			            {!! Form::label('expense_sub_category_id', __('product.sub_category') . ':') !!}
-			              {!! Form::select('expense_sub_category_id', [],  null, ['placeholder' => __('messages.please_select'), 'class' => 'form-control select2']); !!}
+			              {!! Form::select('expense_sub_category_id', [],  null, ['placeholder' => __('messages.please_select'), 'class' => 'form-control select2']) !!}
 			          </div>
 				</div>
                 <div class="clearfix"></div>
                 <div class="col-sm-6">
                     <div class="form-group">
                         {!! Form::label('expense_ref_no', __('purchase.ref_no').':') !!}
-                        {!! Form::text('ref_no', null, ['class' => 'form-control', 'id' => 'expense_ref_no']); !!}
+                        {!! Form::text('ref_no', null, ['class' => 'form-control', 'id' => 'expense_ref_no']) !!}
                         <p class="help-block">
                             @lang('lang_v1.leave_empty_to_autogenerate')
                         </p>
@@ -49,7 +49,7 @@
                             <span class="input-group-addon">
                                 <i class="fa fa-calendar"></i>
                             </span>
-                            {!! Form::text('transaction_date', @format_datetime('now'), ['class' => 'form-control', 'readonly', 'required', 'id' => 'expense_transaction_date']); !!}
+                            {!! Form::text('transaction_date', @format_datetime('now'), ['class' => 'form-control', 'readonly', 'required', 'id' => 'expense_transaction_date']) !!}
                         </div>
                     </div>
                 </div>
@@ -57,7 +57,7 @@
                 <div class="col-sm-6">
                     <div class="form-group">
                         {!! Form::label('expense_for', __('expense.expense_for').':') !!} @show_tooltip(__('tooltip.expense_for'))
-                        {!! Form::select('expense_for', $users, null, ['class' => 'form-control select2', 'placeholder' => __('messages.please_select')]); !!}
+                        {!! Form::select('expense_for', $users, null, ['class' => 'form-control select2', 'placeholder' => __('messages.please_select')]) !!}
                     </div>
                 </div>                
                 <div class="col-md-6">
@@ -67,7 +67,7 @@
                             <span class="input-group-addon">
                                 <i class="fa fa-info"></i>
                             </span>
-                            {!! Form::select('tax_id', $taxes['tax_rates'], null, ['class' => 'form-control', 'id'=>'expense_tax_id'], $taxes['attributes']); !!}
+                            {!! Form::select('tax_id', $taxes['tax_rates'], null, ['class' => 'form-control', 'id'=>'expense_tax_id'], $taxes['attributes']) !!}
 
                             <input type="hidden" name="tax_calculation_amount" id="tax_calculation_amount" 
                             value="0">
@@ -78,13 +78,13 @@
                 <div class="col-sm-6">
                     <div class="form-group">
                         {!! Form::label('expense_final_total', __('sale.total_amount') . ':*') !!}
-                        {!! Form::text('final_total', null, ['class' => 'form-control input_number', 'placeholder' => __('sale.total_amount'), 'required', 'id' => 'expense_final_total']); !!}
+                        {!! Form::text('final_total', null, ['class' => 'form-control input_number', 'placeholder' => __('sale.total_amount'), 'required', 'id' => 'expense_final_total']) !!}
                     </div>
                 </div>
                 <div class="col-sm-6">
                     <div class="form-group">
                         {!! Form::label('expense_additional_notes', __('expense.expense_note') . ':') !!}
-                                {!! Form::textarea('additional_notes', null, ['class' => 'form-control', 'rows' => 3, 'id' => 'expense_additional_notes']); !!}
+                                {!! Form::textarea('additional_notes', null, ['class' => 'form-control', 'rows' => 3, 'id' => 'expense_additional_notes']) !!}
                     </div>
                 </div>
             </div>

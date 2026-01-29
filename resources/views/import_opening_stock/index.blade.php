@@ -35,7 +35,7 @@
                             <div class="form-group">
                                 {!! Form::label('name', __( 'product.file_to_import' ) . ':') !!}
                                 @show_tooltip(__('lang_v1.tooltip_import_opening_stock'))
-                                {!! Form::file('products_csv', ['accept'=> '.xls', 'required' => 'required']); !!}
+                                {!! Form::file('products_csv', ['accept'=> '.xls', 'required' => 'required']) !!}
                               </div>
                         </div>
                         <div class="col-sm-4">

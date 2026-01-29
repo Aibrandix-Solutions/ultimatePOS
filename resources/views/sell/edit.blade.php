@@ -27,7 +27,7 @@
 <input type="hidden" id="item_addition_method" value="{{$business_details->item_addition_method}}">
 	{!! Form::open(['url' => action([\App\Http\Controllers\SellPosController::class, 'update'], ['po' => $transaction->id ]), 'method' => 'put', 'id' => 'edit_sell_form', 'files' => true, 'data-transaction-id' => $transaction->id ]) !!}
 
-	{!! Form::hidden('location_id', $transaction->location_id, ['id' => 'location_id', 'data-receipt_printer_type' => !empty($location_printer_type) ? $location_printer_type : 'browser', 'data-default_payment_accounts' => $transaction->location->default_payment_accounts]); !!}
+	{!! Form::hidden('location_id', $transaction->location_id, ['id' => 'location_id', 'data-receipt_printer_type' => !empty($location_printer_type) ? $location_printer_type : 'browser', 'data-default_payment_accounts' => $transaction->location->default_payment_accounts]) !!}
 
 	@if($transaction->type == 'sales_order')
 	 	<input type="hidden" id="sale_type" value="{{$transaction->type}}">
@@ -43,7 +43,7 @@
 									<i class="fas fa-money-bill-alt"></i>
 								</span>
 								{!! Form::hidden('price_group', $transaction->selling_price_group_id, ['id' => 'price_group']) !!}
-								{!! Form::text('price_group_text', $transaction->price_group->name, ['class' => 'form-control', 'readonly']); !!}
+								{!! Form::text('price_group_text', $transaction->price_group->name, ['class' => 'form-control', 'readonly']) !!}
 								<span class="input-group-addon">
 									@show_tooltip(__('lang_v1.price_group_help_text'))
 								</span> 
@@ -59,7 +59,7 @@
 								<span class="input-group-addon">
 									<i class="fas fa-external-link-square-alt text-primary service_modal_btn"></i>
 								</span>
-								{!! Form::text('types_of_service_text', $transaction->types_of_service->name, ['class' => 'form-control', 'readonly']); !!}
+								{!! Form::text('types_of_service_text', $transaction->types_of_service->name, ['class' => 'form-control', 'readonly']) !!}
 
 								{!! Form::hidden('types_of_service_id', $transaction->types_of_service_id, ['id' => 'types_of_service_id']) !!}
 
@@ -81,7 +81,7 @@
 					<div class="col-md-4 pull-right col-sm-6">
 						<div class="checkbox">
 							<label>
-				              {!! Form::checkbox('is_recurring', 1, $transaction->is_recurring, ['class' => 'input-icheck', 'id' => 'is_recurring']); !!} @lang('lang_v1.subscribe')?
+				              {!! Form::checkbox('is_recurring', 1, $transaction->is_recurring, ['class' => 'input-icheck', 'id' => 'is_recurring']) !!} @lang('lang_v1.subscribe')?
 				            </label><button type="button" data-toggle="modal" data-target="#recurringInvoiceModal" class="btn btn-link"><i class="fa fa-external-link"></i></button>@show_tooltip(__('lang_v1.recurring_invoice_help'))
 						</div>
 					</div>
@@ -99,7 +99,7 @@
 							<input type="hidden" id="default_customer_name" 
 							value="{{ $transaction->contact->name }}" >
 							{!! Form::select('contact_id', 
-								[], null, ['class' => 'form-control mousetrap', 'id' => 'customer_id', 'placeholder' => 'Enter Customer name / phone', 'required']); !!}
+								[], null, ['class' => 'form-control mousetrap', 'id' => 'customer_id', 'placeholder' => 'Enter Customer name / phone', 'required']) !!}
 							<span class="input-group-btn">
 								<button type="button" class="btn btn-default bg-white btn-flat add_new_customer" data-name=""><i class="fa fa-plus-circle text-primary fa-lg"></i></button>
 							</span>
@@ -133,13 +133,13 @@
 						@endphp
 		              {!! Form::label('pay_term_number', __('contact.pay_term') . ':') !!} @show_tooltip(__('tooltip.pay_term'))
 		              <br/>
-		              {!! Form::number('pay_term_number', $transaction->pay_term_number, ['class' => 'form-control width-40 pull-left', 'placeholder' => __('contact.pay_term'), 'required' => $is_pay_term_required]); !!}
+		              {!! Form::number('pay_term_number', $transaction->pay_term_number, ['class' => 'form-control width-40 pull-left', 'placeholder' => __('contact.pay_term'), 'required' => $is_pay_term_required]) !!}
 
 		              {!! Form::select('pay_term_type', 
 		              	['months' => __('lang_v1.months'), 
 		              		'days' => __('lang_v1.days')], 
 		              		$transaction->pay_term_type, 
-		              	['class' => 'form-control width-60 pull-left','placeholder' => __('messages.please_select'), 'required' => $is_pay_term_required]); !!}
+		              	['class' => 'form-control width-60 pull-left','placeholder' => __('messages.please_select'), 'required' => $is_pay_term_required]) !!}
 		            </div>
 		          </div>
 		        </div>
@@ -152,7 +152,7 @@
 					<div class="form-group">
 					{!! Form::label('commission_agent', __('lang_v1.commission_agent') . ':') !!}
 					{!! Form::select('commission_agent', 
-								$commission_agent, $transaction->commission_agent, ['class' => 'form-control select2', 'id' => 'commission_agent', 'required' => $is_commission_agent_required]); !!}
+								$commission_agent, $transaction->commission_agent, ['class' => 'form-control select2', 'id' => 'commission_agent', 'required' => $is_commission_agent_required]) !!}
 					</div>
 				</div>
 				@endif
@@ -163,7 +163,7 @@
 							<span class="input-group-addon">
 								<i class="fa fa-calendar"></i>
 							</span>
-							{!! Form::text('transaction_date', $transaction->transaction_date, ['class' => 'form-control', 'readonly', 'required']); !!}
+							{!! Form::text('transaction_date', $transaction->transaction_date, ['class' => 'form-control', 'readonly', 'required']) !!}
 						</div>
 					</div>
 				</div>
@@ -182,7 +182,7 @@
 					<div class="@if(!empty($commission_agent)) col-sm-3 @else col-sm-4 @endif">
 						<div class="form-group">
 							{!! Form::label('status', __('sale.status') . ':*') !!}
-							{!! Form::select('status', $statuses, $status, ['class' => 'form-control select2', 'placeholder' => __('messages.please_select'), 'required']); !!}
+							{!! Form::select('status', $statuses, $status, ['class' => 'form-control select2', 'placeholder' => __('messages.please_select'), 'required']) !!}
 						</div>
 					</div>
 				@endif
@@ -190,7 +190,7 @@
 				<div class="col-sm-3">
 					<div class="form-group">
 						{!! Form::label('invoice_scheme_id', __('invoice.invoice_scheme') . ':') !!}
-						{!! Form::select('invoice_scheme_id', $invoice_schemes, $default_invoice_schemes->id, ['class' => 'form-control select2', 'placeholder' => __('messages.please_select')]); !!}
+						{!! Form::select('invoice_scheme_id', $invoice_schemes, $default_invoice_schemes->id, ['class' => 'form-control select2', 'placeholder' => __('messages.please_select')]) !!}
 					</div>
 				</div>
 				@endif
@@ -198,7 +198,7 @@
 				<div class="col-sm-3">
 					<div class="form-group">
 						{!! Form::label('invoice_no', $transaction->type == 'sales_order' ? __('restaurant.order_no'): __('sale.invoice_no') . ':') !!}
-						{!! Form::text('invoice_no', $transaction->invoice_no, ['class' => 'form-control', 'placeholder' => $transaction->type == 'sales_order' ? __('restaurant.order_no'): __('sale.invoice_no')]); !!}
+						{!! Form::text('invoice_no', $transaction->invoice_no, ['class' => 'form-control', 'placeholder' => $transaction->type == 'sales_order' ? __('restaurant.order_no'): __('sale.invoice_no')]) !!}
 					</div>
 				</div>
 				@endcan
@@ -230,7 +230,7 @@
 		        	<div class="col-md-4">
 				        <div class="form-group">
 				            {!! Form::label('custom_field_1', $label_1 ) !!}
-				            {!! Form::text('custom_field_1', $transaction->custom_field_1, ['class' => 'form-control','placeholder' => $custom_field_1_label, 'required' => $is_custom_field_1_required]); !!}
+				            {!! Form::text('custom_field_1', $transaction->custom_field_1, ['class' => 'form-control','placeholder' => $custom_field_1_label, 'required' => $is_custom_field_1_required]) !!}
 				        </div>
 				    </div>
 		        @endif
@@ -245,7 +245,7 @@
 		        	<div class="col-md-4">
 				        <div class="form-group">
 				            {!! Form::label('custom_field_2', $label_2 ) !!}
-				            {!! Form::text('custom_field_2', $transaction->custom_field_2, ['class' => 'form-control','placeholder' => $custom_field_2_label, 'required' => $is_custom_field_2_required]); !!}
+				            {!! Form::text('custom_field_2', $transaction->custom_field_2, ['class' => 'form-control','placeholder' => $custom_field_2_label, 'required' => $is_custom_field_2_required]) !!}
 				        </div>
 				    </div>
 		        @endif
@@ -260,7 +260,7 @@
 		        	<div class="col-md-4">
 				        <div class="form-group">
 				            {!! Form::label('custom_field_3', $label_3 ) !!}
-				            {!! Form::text('custom_field_3', $transaction->custom_field_3, ['class' => 'form-control','placeholder' => $custom_field_3_label, 'required' => $is_custom_field_3_required]); !!}
+				            {!! Form::text('custom_field_3', $transaction->custom_field_3, ['class' => 'form-control','placeholder' => $custom_field_3_label, 'required' => $is_custom_field_3_required]) !!}
 				        </div>
 				    </div>
 		        @endif
@@ -275,14 +275,14 @@
 		        	<div class="col-md-4">
 				        <div class="form-group">
 				            {!! Form::label('custom_field_4', $label_4 ) !!}
-				            {!! Form::text('custom_field_4', $transaction->custom_field_4, ['class' => 'form-control','placeholder' => $custom_field_4_label, 'required' => $is_custom_field_4_required]); !!}
+				            {!! Form::text('custom_field_4', $transaction->custom_field_4, ['class' => 'form-control','placeholder' => $custom_field_4_label, 'required' => $is_custom_field_4_required]) !!}
 				        </div>
 				    </div>
 		        @endif
 		        <div class="col-sm-3">
 	                <div class="form-group">
 	                    {!! Form::label('upload_document', __('purchase.attach_document') . ':') !!}
-	                    {!! Form::file('sell_document', ['id' => 'upload_document', 'accept' => implode(',', array_keys(config('constants.document_upload_mimes_types')))]); !!}
+	                    {!! Form::file('sell_document', ['id' => 'upload_document', 'accept' => implode(',', array_keys(config('constants.document_upload_mimes_types')))]) !!}
 	                    <p class="help-block">@lang('purchase.max_file_size', ['size' => (config('constants.document_size_limit') / 1000000)])
 	                    @includeIf('components.document_help_text')</p>
 	                </div>
@@ -292,7 +292,7 @@
 					<div class="col-sm-3">
 						<div class="form-group">
 							{!! Form::label('sales_order_ids', __('lang_v1.sales_order').':') !!}
-							{!! Form::select('sales_order_ids[]', $sales_orders, $transaction->sales_order_ids, ['class' => 'form-control select2 not_loaded', 'multiple', 'id' => 'sales_order_ids']); !!}
+							{!! Form::select('sales_order_ids[]', $sales_orders, $transaction->sales_order_ids, ['class' => 'form-control select2 not_loaded', 'multiple', 'id' => 'sales_order_ids']) !!}
 						</div>
 					</div>
 					<div class="clearfix"></div>
@@ -389,7 +389,7 @@
 							</div>
 							{!! Form::text('search_product', null, ['class' => 'form-control mousetrap', 'id' => 'search_product', 'placeholder' => __('lang_v1.search_product_placeholder'),
 							'autofocus' => true,
-							]); !!}
+							]) !!}
 							<span class="input-group-btn">
 								<button type="button" class="btn btn-default bg-white btn-flat pos_add_quick_product" data-href="{{action([\App\Http\Controllers\ProductController::class, 'quickAdd'])}}" data-container=".quick_add_product_modal"><i class="fa fa-plus-circle text-primary fa-lg"></i></button>
 							</span>
@@ -406,7 +406,7 @@
 			                <span class="input-group-addon">
 			                    <i class="fa fa-info"></i>
 			                </span>
-			                {!! Form::select('discount_type', ['fixed' => __('lang_v1.fixed'), 'percentage' => __('lang_v1.percentage')], $transaction->discount_type , ['class' => 'form-control','placeholder' => __('messages.please_select'), 'required', 'data-default' => 'percentage']); !!}
+			                {!! Form::select('discount_type', ['fixed' => __('lang_v1.fixed'), 'percentage' => __('lang_v1.percentage')], $transaction->discount_type , ['class' => 'form-control','placeholder' => __('messages.please_select'), 'required', 'data-default' => 'percentage']) !!}
 			            </div>
 			        </div>
 			    </div>
@@ -420,7 +420,7 @@
 			                <span class="input-group-addon">
 			                    <i class="fa fa-info"></i>
 			                </span>
-			                {!! Form::text('discount_amount', @num_format($transaction->discount_amount), ['class' => 'form-control input_number', 'data-default' => $business_details->default_sales_discount, 'data-max-discount' => $max_discount, 'data-max-discount-error_msg' => __('lang_v1.max_discount_error_msg', ['discount' => $max_discount != '' ? @num_format($max_discount) : '']) ]); !!}
+			                {!! Form::text('discount_amount', @num_format($transaction->discount_amount), ['class' => 'form-control input_number', 'data-default' => $business_details->default_sales_discount, 'data-max-discount' => $max_discount, 'data-max-discount-error_msg' => __('lang_v1.max_discount_error_msg', ['discount' => $max_discount != '' ? @num_format($max_discount) : '']) ]) !!}
 			            </div>
 			        </div>
 			    </div>
@@ -440,7 +440,7 @@
 				                <span class="input-group-addon">
 				                    <i class="fa fa-gift"></i>
 				                </span>
-				                {!! Form::number('rp_redeemed_modal', $transaction->rp_redeemed, ['class' => 'form-control direct_sell_rp_input', 'data-amount_per_unit_point' => session('business.redeem_amount_per_unit_rp'), 'min' => 0, 'data-max_points' => !empty($redeem_details['points']) ? $redeem_details['points'] : 0, 'data-min_order_total' => session('business.min_order_total_for_redeem') ]); !!}
+				                {!! Form::number('rp_redeemed_modal', $transaction->rp_redeemed, ['class' => 'form-control direct_sell_rp_input', 'data-amount_per_unit_point' => session('business.redeem_amount_per_unit_rp'), 'min' => 0, 'data-max_points' => !empty($redeem_details['points']) ? $redeem_details['points'] : 0, 'data-min_order_total' => session('business.min_order_total_for_redeem') ]) !!}
 				                <input type="hidden" id="rp_name" value="{{session('business.rp_name')}}">
 				            </div>
 				        </div>
@@ -460,7 +460,7 @@
 			                <span class="input-group-addon">
 			                    <i class="fa fa-info"></i>
 			                </span>
-			                {!! Form::select('tax_rate_id', $taxes['tax_rates'], $transaction->tax_id, ['placeholder' => __('messages.please_select'), 'class' => 'form-control', 'data-default'=> $business_details->default_sales_tax], $taxes['attributes']); !!}
+			                {!! Form::select('tax_rate_id', $taxes['tax_rates'], $transaction->tax_id, ['placeholder' => __('messages.please_select'), 'class' => 'form-control', 'data-default'=> $business_details->default_sales_tax], $taxes['attributes']) !!}
 
 							<input type="hidden" name="tax_calculation_amount" id="tax_calculation_amount" 
 							value="{{@num_format($transaction->tax?->amount)}}" data-default="{{$business_details->tax_calculation_amount}}">
@@ -474,7 +474,7 @@
 			    <div class="col-md-12">
 			    	<div class="form-group">
 						{!! Form::label('sell_note',__('sale.sell_note') . ':') !!}
-						{!! Form::textarea('sale_note', $transaction->additional_notes, ['class' => 'form-control', 'rows' => 3]); !!}
+						{!! Form::textarea('sale_note', $transaction->additional_notes, ['class' => 'form-control', 'rows' => 3]) !!}
 					</div>
 			    </div>
 			    <input type="hidden" name="is_direct_sale" value="1">
@@ -485,13 +485,13 @@
 			<div class="col-md-4">
 				<div class="form-group">
 		            {!! Form::label('shipping_details', __('sale.shipping_details')) !!}
-		            {!! Form::textarea('shipping_details',$transaction->shipping_details, ['class' => 'form-control','placeholder' => __('sale.shipping_details') ,'rows' => '3', 'cols'=>'30']); !!}
+		            {!! Form::textarea('shipping_details',$transaction->shipping_details, ['class' => 'form-control','placeholder' => __('sale.shipping_details') ,'rows' => '3', 'cols'=>'30']) !!}
 		        </div>
 			</div>
 			<div class="col-md-4">
 				<div class="form-group">
 		            {!! Form::label('shipping_address', __('lang_v1.shipping_address')) !!}
-		            {!! Form::textarea('shipping_address', $transaction->shipping_address, ['class' => 'form-control','placeholder' => __('lang_v1.shipping_address') ,'rows' => '3', 'cols'=>'30']); !!}
+		            {!! Form::textarea('shipping_address', $transaction->shipping_address, ['class' => 'form-control','placeholder' => __('lang_v1.shipping_address') ,'rows' => '3', 'cols'=>'30']) !!}
 		        </div>
 			</div>
 			<div class="col-md-4">
@@ -501,7 +501,7 @@
 					<span class="input-group-addon">
 					<i class="fa fa-info"></i>
 					</span>
-					{!!Form::text('shipping_charges',@num_format($transaction->shipping_charges),['class'=>'form-control input_number','placeholder'=> __('sale.shipping_charges')]);!!}
+					{!!Form::text('shipping_charges',@num_format($transaction->shipping_charges),['class'=>'form-control input_number','placeholder'=> __('sale.shipping_charges')])!!}
 					</div>
 				</div>
 			</div>
@@ -509,19 +509,19 @@
 			<div class="col-md-4">
 				<div class="form-group">
 		            {!! Form::label('shipping_status', __('lang_v1.shipping_status')) !!}
-		            {!! Form::select('shipping_status',$shipping_statuses, $transaction->shipping_status, ['class' => 'form-control','placeholder' => __('messages.please_select')]); !!}
+		            {!! Form::select('shipping_status',$shipping_statuses, $transaction->shipping_status, ['class' => 'form-control','placeholder' => __('messages.please_select')]) !!}
 		        </div>
 			</div>
 			<div class="col-md-4">
 		        <div class="form-group">
 		            {!! Form::label('delivered_to', __('lang_v1.delivered_to') . ':' ) !!}
-		            {!! Form::text('delivered_to', $transaction->delivered_to, ['class' => 'form-control','placeholder' => __('lang_v1.delivered_to')]); !!}
+		            {!! Form::text('delivered_to', $transaction->delivered_to, ['class' => 'form-control','placeholder' => __('lang_v1.delivered_to')]) !!}
 		        </div>
 		    </div>
 			<div class="col-md-4">
 				<div class="form-group">
 					{!! Form::label('delivery_person', __('lang_v1.delivery_person') . ':' ) !!}
-					{!! Form::select('delivery_person', $users, $transaction->delivery_person, ['class' => 'form-control select2','placeholder' => __('messages.please_select')]); !!}
+					{!! Form::select('delivery_person', $users, $transaction->delivery_person, ['class' => 'form-control select2','placeholder' => __('messages.please_select')]) !!}
 				</div>
 			</div>
 		    @php
@@ -557,7 +557,7 @@
 	        	<div class="col-md-4">
 			        <div class="form-group">
 			            {!! Form::label('shipping_custom_field_1', $label_1 ) !!}
-			            {!! Form::text('shipping_custom_field_1', !empty($transaction->shipping_custom_field_1) ? $transaction->shipping_custom_field_1 : null, ['class' => 'form-control','placeholder' => $shipping_custom_label_1, 'required' => $is_shipping_custom_field_1_required]); !!}
+			            {!! Form::text('shipping_custom_field_1', !empty($transaction->shipping_custom_field_1) ? $transaction->shipping_custom_field_1 : null, ['class' => 'form-control','placeholder' => $shipping_custom_label_1, 'required' => $is_shipping_custom_field_1_required]) !!}
 			        </div>
 			    </div>
 	        @endif
@@ -572,7 +572,7 @@
 	        	<div class="col-md-4">
 			        <div class="form-group">
 			            {!! Form::label('shipping_custom_field_2', $label_2 ) !!}
-			            {!! Form::text('shipping_custom_field_2', !empty($transaction->shipping_custom_field_2) ? $transaction->shipping_custom_field_2 : null, ['class' => 'form-control','placeholder' => $shipping_custom_label_2, 'required' => $is_shipping_custom_field_2_required]); !!}
+			            {!! Form::text('shipping_custom_field_2', !empty($transaction->shipping_custom_field_2) ? $transaction->shipping_custom_field_2 : null, ['class' => 'form-control','placeholder' => $shipping_custom_label_2, 'required' => $is_shipping_custom_field_2_required]) !!}
 			        </div>
 			    </div>
 	        @endif
@@ -587,7 +587,7 @@
 	        	<div class="col-md-4">
 			        <div class="form-group">
 			            {!! Form::label('shipping_custom_field_3', $label_3 ) !!}
-			            {!! Form::text('shipping_custom_field_3', !empty($transaction->shipping_custom_field_3) ? $transaction->shipping_custom_field_3 : null, ['class' => 'form-control','placeholder' => $shipping_custom_label_3, 'required' => $is_shipping_custom_field_3_required]); !!}
+			            {!! Form::text('shipping_custom_field_3', !empty($transaction->shipping_custom_field_3) ? $transaction->shipping_custom_field_3 : null, ['class' => 'form-control','placeholder' => $shipping_custom_label_3, 'required' => $is_shipping_custom_field_3_required]) !!}
 			        </div>
 			    </div>
 	        @endif
@@ -602,7 +602,7 @@
 	        	<div class="col-md-4">
 			        <div class="form-group">
 			            {!! Form::label('shipping_custom_field_4', $label_4 ) !!}
-			            {!! Form::text('shipping_custom_field_4', !empty($transaction->shipping_custom_field_4) ? $transaction->shipping_custom_field_4 : null, ['class' => 'form-control','placeholder' => $shipping_custom_label_4, 'required' => $is_shipping_custom_field_4_required]); !!}
+			            {!! Form::text('shipping_custom_field_4', !empty($transaction->shipping_custom_field_4) ? $transaction->shipping_custom_field_4 : null, ['class' => 'form-control','placeholder' => $shipping_custom_label_4, 'required' => $is_shipping_custom_field_4_required]) !!}
 			        </div>
 			    </div>
 	        @endif
@@ -617,14 +617,14 @@
 	        	<div class="col-md-4">
 			        <div class="form-group">
 			            {!! Form::label('shipping_custom_field_5', $label_5 ) !!}
-			            {!! Form::text('shipping_custom_field_5', !empty($transaction->shipping_custom_field_5) ? $transaction->shipping_custom_field_5 : null, ['class' => 'form-control','placeholder' => $shipping_custom_label_5, 'required' => $is_shipping_custom_field_5_required]); !!}
+			            {!! Form::text('shipping_custom_field_5', !empty($transaction->shipping_custom_field_5) ? $transaction->shipping_custom_field_5 : null, ['class' => 'form-control','placeholder' => $shipping_custom_label_5, 'required' => $is_shipping_custom_field_5_required]) !!}
 			        </div>
 			    </div>
 	        @endif
 	        <div class="col-md-4">
                 <div class="form-group">
                     {!! Form::label('shipping_documents', __('lang_v1.shipping_documents') . ':') !!}
-                    {!! Form::file('shipping_documents[]', ['id' => 'shipping_documents', 'multiple', 'accept' => implode(',', array_keys(config('constants.document_upload_mimes_types')))]); !!}
+                    {!! Form::file('shipping_documents[]', ['id' => 'shipping_documents', 'multiple', 'accept' => implode(',', array_keys(config('constants.document_upload_mimes_types')))]) !!}
                     <p class="help-block">
                     	@lang('purchase.max_file_size', ['size' => (config('constants.document_size_limit') / 1000000)])
                     	@includeIf('components.document_help_text')
@@ -650,34 +650,34 @@
 					<tbody>
 						<tr>
 							<td>
-								{!! Form::text('additional_expense_key_1', $transaction->additional_expense_key_1, ['class' => 'form-control', 'id' => 'additional_expense_key_1']); !!}
+								{!! Form::text('additional_expense_key_1', $transaction->additional_expense_key_1, ['class' => 'form-control', 'id' => 'additional_expense_key_1']) !!}
 							</td>
 							<td>
-								{!! Form::text('additional_expense_value_1', @num_format($transaction->additional_expense_value_1), ['class' => 'form-control input_number', 'id' => 'additional_expense_value_1']); !!}
-							</td>
-						</tr>
-						<tr>
-							<td>
-								{!! Form::text('additional_expense_key_2', $transaction->additional_expense_key_2, ['class' => 'form-control', 'id' => 'additional_expense_key_2']); !!}
-							</td>
-							<td>
-								{!! Form::text('additional_expense_value_2', @num_format($transaction->additional_expense_value_2), ['class' => 'form-control input_number', 'id' => 'additional_expense_value_2']); !!}
+								{!! Form::text('additional_expense_value_1', @num_format($transaction->additional_expense_value_1), ['class' => 'form-control input_number', 'id' => 'additional_expense_value_1']) !!}
 							</td>
 						</tr>
 						<tr>
 							<td>
-								{!! Form::text('additional_expense_key_3', $transaction->additional_expense_key_3, ['class' => 'form-control', 'id' => 'additional_expense_key_3']); !!}
+								{!! Form::text('additional_expense_key_2', $transaction->additional_expense_key_2, ['class' => 'form-control', 'id' => 'additional_expense_key_2']) !!}
 							</td>
 							<td>
-								{!! Form::text('additional_expense_value_3', @num_format($transaction->additional_expense_value_3), ['class' => 'form-control input_number', 'id' => 'additional_expense_value_3']); !!}
+								{!! Form::text('additional_expense_value_2', @num_format($transaction->additional_expense_value_2), ['class' => 'form-control input_number', 'id' => 'additional_expense_value_2']) !!}
 							</td>
 						</tr>
 						<tr>
 							<td>
-								{!! Form::text('additional_expense_key_4', $transaction->additional_expense_key_4, ['class' => 'form-control', 'id' => 'additional_expense_key_4']); !!}
+								{!! Form::text('additional_expense_key_3', $transaction->additional_expense_key_3, ['class' => 'form-control', 'id' => 'additional_expense_key_3']) !!}
 							</td>
 							<td>
-								{!! Form::text('additional_expense_value_4', @num_format($transaction->additional_expense_value_4), ['class' => 'form-control input_number', 'id' => 'additional_expense_value_4']); !!}
+								{!! Form::text('additional_expense_value_3', @num_format($transaction->additional_expense_value_3), ['class' => 'form-control input_number', 'id' => 'additional_expense_value_3']) !!}
+							</td>
+						</tr>
+						<tr>
+							<td>
+								{!! Form::text('additional_expense_key_4', $transaction->additional_expense_key_4, ['class' => 'form-control', 'id' => 'additional_expense_key_4']) !!}
+							</td>
+							<td>
+								{!! Form::text('additional_expense_value_4', @num_format($transaction->additional_expense_value_4), ['class' => 'form-control input_number', 'id' => 'additional_expense_value_4']) !!}
 							</td>
 						</tr>
 					</tbody>
@@ -711,7 +711,7 @@
 		                <div class="col-md-4 export_div" @if(empty($transaction->is_export)) style="display: none;" @endif>
 		                    <div class="form-group">
 		                        {!! Form::label('export_custom_field_'.$i, __('lang_v1.export_custom_field'.$i).':') !!}
-		                        {!! Form::text('export_custom_fields_info['.'export_custom_field_'.$i.']', !empty($transaction->export_custom_fields_info['export_custom_field_'.$i]) ? $transaction->export_custom_fields_info['export_custom_field_'.$i] : null, ['class' => 'form-control','placeholder' => __('lang_v1.export_custom_field'.$i), 'id' => 'export_custom_field_'.$i]); !!}
+		                        {!! Form::text('export_custom_fields_info['.'export_custom_field_'.$i.']', !empty($transaction->export_custom_fields_info['export_custom_field_'.$i]) ? $transaction->export_custom_fields_info['export_custom_field_'.$i] : null, ['class' => 'form-control','placeholder' => __('lang_v1.export_custom_field'.$i), 'id' => 'export_custom_field_'.$i]) !!}
 		                    </div>
 		                </div>
 		            @endfor
@@ -734,7 +734,7 @@
 								<span class="input-group-addon">
 									<i class="fas fa-money-bill-alt"></i>
 								</span>
-								{!! Form::select("prefer_payment_method", $payment_types, $transaction->prefer_payment_method, ['class' => 'form-control','style' => 'width:100%;']); !!}
+								{!! Form::select("prefer_payment_method", $payment_types, $transaction->prefer_payment_method, ['class' => 'form-control','style' => 'width:100%;']) !!}
 							</div>
 						</div>
 					</div>
@@ -746,7 +746,7 @@
 								<span class="input-group-addon">
 									<i class="fas fa-money-bill-alt"></i>
 								</span>
-								{!! Form::select("prefer_payment_account", $accounts, $transaction->prefer_payment_account, ['class' => 'form-control','style' => 'width:100%;']); !!}
+								{!! Form::select("prefer_payment_account", $accounts, $transaction->prefer_payment_account, ['class' => 'form-control','style' => 'width:100%;']) !!}
 							</div>
 						</div>
 					</div>
@@ -769,7 +769,7 @@
 				@endif
 
 				@if(!empty($payment_line['id']))
-        			{!! Form::hidden("payment[$loop->index][payment_id]", $payment_line['id']); !!}
+        			{!! Form::hidden("payment[$loop->index][payment_id]", $payment_line['id']) !!}
         		@endif
 				<div class="payment_row" id="payment_rows_div">
 					@include('sale_pos.partials.payment_row_form', ['row_index' => $loop->index, 'show_date' => true, 'payment_line' => $payment_line, 'show_denomination' => true])
@@ -784,7 +784,7 @@
         		</strong>
         		<br/>
         		<span class="lead text-bold change_return_span">0</span>
-        		{!! Form::hidden("change_return", $change_return['amount'], ['class' => 'form-control change_return input_number', 'required', 'id' => "change_return"]); !!}
+        		{!! Form::hidden("change_return", $change_return['amount'], ['class' => 'form-control change_return input_number', 'required', 'id' => "change_return"]) !!}
         		<!-- <span class="lead text-bold total_quantity">0</span> -->
         		@if(!empty($change_return['id']))
             		<input type="hidden" name="change_return_id" 
@@ -808,7 +808,7 @@
 								unset($_payment_types['advance']);
 							}
 						@endphp
-						{!! Form::select("payment[change_return][method]", $_payment_types, $_payment_method, ['class' => 'form-control col-md-12 payment_types_dropdown', 'id' => 'change_return_method', 'style' => 'width:100%;']); !!}
+						{!! Form::select("payment[change_return][method]", $_payment_types, $_payment_method, ['class' => 'form-control col-md-12 payment_types_dropdown', 'id' => 'change_return_method', 'style' => 'width:100%;']) !!}
 					</div>
 				</div>
 			</div>
@@ -820,7 +820,7 @@
 						<span class="input-group-addon">
 							<i class="fas fa-money-bill-alt"></i>
 						</span>
-						{!! Form::select("payment[change_return][account_id]", $accounts, !empty($change_return['account_id']) ? $change_return['account_id'] : '' , ['class' => 'form-control select2', 'id' => 'change_return_account', 'style' => 'width:100%;']); !!}
+						{!! Form::select("payment[change_return][account_id]", $accounts, !empty($change_return['account_id']) ? $change_return['account_id'] : '' , ['class' => 'form-control select2', 'id' => 'change_return_account', 'style' => 'width:100%;']) !!}
 					</div>
 				</div>
 			</div>
@@ -832,7 +832,7 @@
 	@endif
 	<div class="row">
 		<div class="col-md-12 text-center">
-	    	{!! Form::hidden('is_save_and_print', 0, ['id' => 'is_save_and_print']); !!}
+	    	{!! Form::hidden('is_save_and_print', 0, ['id' => 'is_save_and_print']) !!}
 	    	<button type="button" class="tw-dw-btn tw-dw-btn-primary tw-text-white tw-dw-btn-lg" id="submit-sell">@lang('messages.update')</button>
 	    	<button type="button" id="save-and-print" class="tw-dw-btn tw-dw-btn-success tw-text-white tw-dw-btn-lg">@lang('lang_v1.update_and_print')</button>
 	    </div>

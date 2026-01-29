@@ -43,7 +43,7 @@
                                     <span class="input-group-addon">
                                         <i class="fa fa-file-alt"></i>
                                     </span>
-                                    {!! Form::select('print_receipt_on_invoice', $printReceiptOnInvoice, $location->print_receipt_on_invoice, ['class' => 'form-control select2', 'required']); !!}
+                                    {!! Form::select('print_receipt_on_invoice', $printReceiptOnInvoice, $location->print_receipt_on_invoice, ['class' => 'form-control select2', 'required']) !!}
                                 </div>
                             </div>
                         </div>
@@ -55,7 +55,7 @@
                                     <span class="input-group-addon">
                                         <i class="fa fa-print"></i>
                                     </span>
-                                    {!! Form::select('receipt_printer_type', $receiptPrinterType, $location->receipt_printer_type, ['class' => 'form-control select2', 'required']); !!}
+                                    {!! Form::select('receipt_printer_type', $receiptPrinterType, $location->receipt_printer_type, ['class' => 'form-control select2', 'required']) !!}
                                 </div>
                                 @if(config('app.env') == 'demo')
                                     <span class="help-block">Only Browser based option is enabled in demo.</span>
@@ -72,7 +72,7 @@
                                     <span class="input-group-addon">
                                         <i class="fa fa-share-alt"></i>
                                     </span>
-                                    {!! Form::select('printer_id', $printers, $location->printer_id, ['class' => 'form-control select2', 'required']); !!}
+                                    {!! Form::select('printer_id', $printers, $location->printer_id, ['class' => 'form-control select2', 'required']) !!}
                                 </div>
                             </div>
                         </div>
@@ -86,7 +86,7 @@
                                     <span class="input-group-addon">
                                         <i class="fa fa-info"></i>
                                     </span>
-                                    {!! Form::select('invoice_layout_id', $invoice_layouts, $location->invoice_layout_id, ['class' => 'form-control select2', 'required']); !!}
+                                    {!! Form::select('invoice_layout_id', $invoice_layouts, $location->invoice_layout_id, ['class' => 'form-control select2', 'required']) !!}
                                 </div>
                             </div>
                         </div>
@@ -98,7 +98,7 @@
                                     <span class="input-group-addon">
                                         <i class="fa fa-info"></i>
                                     </span>
-                                    {!! Form::select('invoice_scheme_id', $invoice_schemes, $location->invoice_scheme_id, ['class' => 'form-control select2', 'required']); !!}
+                                    {!! Form::select('invoice_scheme_id', $invoice_schemes, $location->invoice_scheme_id, ['class' => 'form-control select2', 'required']) !!}
                                 </div>
                             </div>
                         </div>

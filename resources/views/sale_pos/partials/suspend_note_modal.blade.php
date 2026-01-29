@@ -10,8 +10,8 @@
 					<div class="col-xs-12">
 				        <div class="form-group">
 				            {!! Form::label('additional_notes', __('lang_v1.suspend_note') . ':' ) !!}
-				            {!! Form::textarea('additional_notes', !empty($transaction->additional_notes) ? $transaction->additional_notes : null, ['class' => 'form-control','rows' => '4']); !!}
-				            {!! Form::hidden('is_suspend', 0, ['id' => 'is_suspend']); !!}
+				            {!! Form::textarea('additional_notes', !empty($transaction->additional_notes) ? $transaction->additional_notes : null, ['class' => 'form-control','rows' => '4']) !!}
+				            {!! Form::hidden('is_suspend', 0, ['id' => 'is_suspend']) !!}
 				        </div>
 				    </div>
 				</div>

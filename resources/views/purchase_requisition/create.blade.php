@@ -16,14 +16,14 @@
 			<div class="col-sm-4">
           		<div class="form-group">
             		{!! Form::label('brand_id', __('product.brand') . ':') !!}
-              		{!! Form::select('brand_id[]', $brands, null, ['class' => 'form-control select2', 'multiple', 'id' => 'brand_id']); !!}
+              		{!! Form::select('brand_id[]', $brands, null, ['class' => 'form-control select2', 'multiple', 'id' => 'brand_id']) !!}
            
           		</div>
         	</div>
         	<div class="col-sm-4 @if(!session('business.enable_category')) hide @endif">
           		<div class="form-group">
             		{!! Form::label('category_id', __('product.category') . ':') !!}
-              		{!! Form::select('category_id[]', $categories, null, ['class' => 'form-control select2', 'multiple', 'id' => 'category_id']); !!}
+              		{!! Form::select('category_id[]', $categories, null, ['class' => 'form-control select2', 'multiple', 'id' => 'category_id']) !!}
           		</div>
         	</div>
 			@if(count($business_locations) == 1)
@@ -39,7 +39,7 @@
 			<div class="col-sm-4">
 				<div class="form-group">
 					{!! Form::label('location_id', __('purchase.business_location').':') !!}
-					{!! Form::select('location_id', $business_locations, $default_location, ['class' => 'form-control select2', 'placeholder' => __('messages.please_select')]); !!}
+					{!! Form::select('location_id', $business_locations, $default_location, ['class' => 'form-control select2', 'placeholder' => __('messages.please_select')]) !!}
 				</div>
 			</div>
 		</div>
@@ -57,7 +57,7 @@
 				<div class="form-group">
 					{!! Form::label('ref_no', __('purchase.ref_no').':') !!}
 					@show_tooltip(__('lang_v1.leave_empty_to_autogenerate'))
-					{!! Form::text('ref_no', null, ['class' => 'form-control']); !!}
+					{!! Form::text('ref_no', null, ['class' => 'form-control']) !!}
 				</div>
 			</div>
 			<div class="col-sm-4">
@@ -67,7 +67,7 @@
 						<span class="input-group-addon">
 							<i class="fa fa-calendar"></i>
 						</span>
-						{!! Form::text('delivery_date', null, ['class' => 'form-control', 'readonly']); !!}
+						{!! Form::text('delivery_date', null, ['class' => 'form-control', 'readonly']) !!}
 					</div>
 				</div>
 			</div>

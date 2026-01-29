@@ -17,7 +17,7 @@
         <div class="col-md-3">
             <div class="form-group">
                 {!! Form::label('ledger_date_range', __('report.date_range') . ':') !!}
-                {!! Form::text('ledger_date_range', null, ['placeholder' => __('lang_v1.select_a_date_range'), 'class' => 'form-control', 'readonly']); !!}
+                {!! Form::text('ledger_date_range', null, ['placeholder' => __('lang_v1.select_a_date_range'), 'class' => 'form-control', 'readonly']) !!}
             </div>
         </div>
         <div class="col-md-4">
@@ -42,7 +42,7 @@
         <div class="col-md-3">
             <div class="form-group">
                 {!! Form::label('ledger_location', __('purchase.business_location') . ':') !!}
-                {!! Form::select('ledger_location', $business_locations, null , ['class' => 'form-control select2', 'id' => 'ledger_location']); !!}
+                {!! Form::select('ledger_location', $business_locations, null , ['class' => 'form-control select2', 'id' => 'ledger_location']) !!}
             </div>
         </div>
         <div class="col-md-2 text-right">

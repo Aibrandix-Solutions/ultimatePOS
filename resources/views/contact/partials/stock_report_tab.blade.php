@@ -3,7 +3,7 @@
 	    <div class="form-group">
 	        {!! Form::label('sr_location_id',  __('purchase.business_location') . ':') !!}
 
-	        {!! Form::select('sr_location_id', $business_locations, null, ['class' => 'form-control select2', 'style' => 'width:100%']); !!}
+	        {!! Form::select('sr_location_id', $business_locations, null, ['class' => 'form-control select2', 'style' => 'width:100%']) !!}
 	    </div>
 	</div>
 </div>

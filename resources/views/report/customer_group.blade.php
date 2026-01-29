@@ -18,21 +18,21 @@
                 <div class="col-md-3">
                     <div class="form-group">
                         {!! Form::label('cg_customer_group_id', __( 'lang_v1.customer_group_name' ) . ':') !!}
-                        {!! Form::select('cg_customer_group_id', $customer_group, null, ['class' => 'form-control select2', 'style' => 'width:100%', 'id' => 'cg_customer_group_id']); !!}
+                        {!! Form::select('cg_customer_group_id', $customer_group, null, ['class' => 'form-control select2', 'style' => 'width:100%', 'id' => 'cg_customer_group_id']) !!}
                     </div>
                 </div>
 
                 <div class="col-md-3">
                     <div class="form-group">
                         {!! Form::label('cg_location_id',  __('purchase.business_location') . ':') !!}
-                        {!! Form::select('cg_location_id', $business_locations, null, ['class' => 'form-control select2', 'style' => 'width:100%']); !!}
+                        {!! Form::select('cg_location_id', $business_locations, null, ['class' => 'form-control select2', 'style' => 'width:100%']) !!}
                     </div>
                 </div>
 
                 <div class="col-md-3">
                     <div class="form-group">
                         {!! Form::label('cg_date_range', __('report.date_range') . ':') !!}
-                        {!! Form::text('date_range', null, ['placeholder' => __('lang_v1.select_a_date_range'), 'class' => 'form-control', 'id' => 'cg_date_range', 'readonly']); !!}
+                        {!! Form::text('date_range', null, ['placeholder' => __('lang_v1.select_a_date_range'), 'class' => 'form-control', 'id' => 'cg_date_range', 'readonly']) !!}
                     </div>
                 </div>
 

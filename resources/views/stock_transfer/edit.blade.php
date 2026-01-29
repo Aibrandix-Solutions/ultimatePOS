@@ -21,33 +21,33 @@
 							<span class="input-group-addon">
 								<i class="fa fa-calendar"></i>
 							</span>
-							{!! Form::text('transaction_date', @format_datetime($sell_transfer->transaction_date), ['class' => 'form-control', 'readonly', 'required']); !!}
+							{!! Form::text('transaction_date', @format_datetime($sell_transfer->transaction_date), ['class' => 'form-control', 'readonly', 'required']) !!}
 						</div>
 					</div>
 				</div>
 				<div class="col-sm-4">
 					<div class="form-group">
 						{!! Form::label('ref_no', __('purchase.ref_no').':') !!}
-						{!! Form::text('ref_no', $sell_transfer->ref_no, ['class' => 'form-control', 'readonly']); !!}
+						{!! Form::text('ref_no', $sell_transfer->ref_no, ['class' => 'form-control', 'readonly']) !!}
 					</div>
 				</div>
 				<div class="col-sm-4">
 					<div class="form-group">
 						{!! Form::label('status', __('sale.status').':*') !!} @show_tooltip(__('lang_v1.completed_status_help'))
-						{!! Form::select('status', $statuses, $sell_transfer->status, ['class' => 'form-control select2', 'placeholder' => __('messages.please_select'), 'required', 'id' => 'status']); !!}
+						{!! Form::select('status', $statuses, $sell_transfer->status, ['class' => 'form-control select2', 'placeholder' => __('messages.please_select'), 'required', 'id' => 'status']) !!}
 					</div>
 				</div>
 				<div class="clearfix"></div>
 				<div class="col-sm-6">
 					<div class="form-group">
 						{!! Form::label('location_id', __('lang_v1.location_from').':*') !!}
-						{!! Form::select('location_id', $business_locations, $sell_transfer->location_id, ['class' => 'form-control select2', 'placeholder' => __('messages.please_select'), 'id' => 'location_id', 'disabled']); !!}
+						{!! Form::select('location_id', $business_locations, $sell_transfer->location_id, ['class' => 'form-control select2', 'placeholder' => __('messages.please_select'), 'id' => 'location_id', 'disabled']) !!}
 					</div>
 				</div>
 				<div class="col-sm-6">
 					<div class="form-group">
 						{!! Form::label('transfer_location_id', __('lang_v1.location_to').':*') !!}
-						{!! Form::select('transfer_location_id', $business_locations, $purchase_transfer->location_id, ['class' => 'form-control select2', 'placeholder' => __('messages.please_select'), 'id' => 'transfer_location_id', 'disabled']); !!}
+						{!! Form::select('transfer_location_id', $business_locations, $purchase_transfer->location_id, ['class' => 'form-control select2', 'placeholder' => __('messages.please_select'), 'id' => 'transfer_location_id', 'disabled']) !!}
 					</div>
 				</div>
 				
@@ -66,7 +66,7 @@
 							<span class="input-group-addon">
 								<i class="fa fa-search"></i>
 							</span>
-							{!! Form::text('search_product', null, ['class' => 'form-control', 'id' => 'search_product_for_srock_adjustment', 'placeholder' => __('stock_adjustment.search_product')]); !!}
+							{!! Form::text('search_product', null, ['class' => 'form-control', 'id' => 'search_product_for_srock_adjustment', 'placeholder' => __('stock_adjustment.search_product')]) !!}
 						</div>
 					</div>
 				</div>
@@ -121,13 +121,13 @@
 				<div class="col-sm-4">
 					<div class="form-group">
 							{!! Form::label('shipping_charges', __('lang_v1.shipping_charges') . ':') !!}
-							{!! Form::text('shipping_charges', @num_format($sell_transfer->shipping_charges), ['class' => 'form-control input_number', 'placeholder' => __('lang_v1.shipping_charges')]); !!}
+							{!! Form::text('shipping_charges', @num_format($sell_transfer->shipping_charges), ['class' => 'form-control input_number', 'placeholder' => __('lang_v1.shipping_charges')]) !!}
 					</div>
 				</div>
 				<div class="col-sm-4">
 					<div class="form-group">
 						{!! Form::label('additional_notes',__('purchase.additional_notes')) !!}
-						{!! Form::textarea('additional_notes', $sell_transfer->additional_notes, ['class' => 'form-control', 'rows' => 3]); !!}
+						{!! Form::textarea('additional_notes', $sell_transfer->additional_notes, ['class' => 'form-control', 'rows' => 3]) !!}
 					</div>
 				</div>
 			</div>

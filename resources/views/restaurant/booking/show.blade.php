@@ -35,7 +35,7 @@
 						{!! Form::open(['url' => action([\App\Http\Controllers\Restaurant\BookingController::class, 'update'], [$booking->id]), 'method' => 'PUT', 'id' => 'edit_booking_form' ]) !!}
 							<div class="input-group">
 				                <!-- /btn-group -->
-				                {!! Form::select('booking_status', $booking_statuses, $booking->booking_status, ['class' => 'form-control', 'placeholder' => __('restaurant.change_booking_status'), 'required']); !!}
+				                {!! Form::select('booking_status', $booking_statuses, $booking->booking_status, ['class' => 'form-control', 'placeholder' => __('restaurant.change_booking_status'), 'required']) !!}
 				                <div class="input-group-btn">
 				                  <button type="submit" class="btn btn-primary">@lang('messages.update')</button>
 				                </div>

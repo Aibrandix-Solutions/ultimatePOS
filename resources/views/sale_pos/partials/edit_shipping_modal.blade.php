@@ -11,14 +11,14 @@
 					<div class="col-md-6">
 				        <div class="form-group">
 				            {!! Form::label('shipping_details_modal', __('sale.shipping_details') . ':*' ) !!}
-				            {!! Form::textarea('shipping_details_modal', !empty($transaction->shipping_details) ? $transaction->shipping_details : '', ['class' => 'form-control','placeholder' => __('sale.shipping_details'), 'required' ,'rows' => '4']); !!}
+				            {!! Form::textarea('shipping_details_modal', !empty($transaction->shipping_details) ? $transaction->shipping_details : '', ['class' => 'form-control','placeholder' => __('sale.shipping_details'), 'required' ,'rows' => '4']) !!}
 				        </div>
 				    </div>
 
 				    <div class="col-md-6">
 				        <div class="form-group">
 				            {!! Form::label('shipping_address_modal', __('lang_v1.shipping_address') . ':' ) !!}
-				            {!! Form::textarea('shipping_address_modal',!empty($transaction->shipping_address) ? $transaction->shipping_address : '', ['class' => 'form-control','placeholder' => __('lang_v1.shipping_address') ,'rows' => '4']); !!}
+				            {!! Form::textarea('shipping_address_modal',!empty($transaction->shipping_address) ? $transaction->shipping_address : '', ['class' => 'form-control','placeholder' => __('lang_v1.shipping_address') ,'rows' => '4']) !!}
 				        </div>
 				    </div>
 
@@ -29,7 +29,7 @@
 				                <span class="input-group-addon">
 				                    <i class="fa fa-info"></i>
 				                </span>
-				                {!! Form::text('shipping_charges_modal', !empty($transaction->shipping_charges) ? @num_format($transaction->shipping_charges) : 0, ['class' => 'form-control input_number input_number', 'data-decimal' => 'no_neg', 'placeholder' => __('sale.shipping_charges')]); !!}
+				                {!! Form::text('shipping_charges_modal', !empty($transaction->shipping_charges) ? @num_format($transaction->shipping_charges) : 0, ['class' => 'form-control input_number input_number', 'data-decimal' => 'no_neg', 'placeholder' => __('sale.shipping_charges')]) !!}
 				            </div>
 				        </div>
 				    </div>
@@ -37,20 +37,20 @@
 				    <div class="col-md-6">
 				        <div class="form-group">
 				            {!! Form::label('shipping_status_modal', __('lang_v1.shipping_status') . ':' ) !!}
-				            {!! Form::select('shipping_status_modal',$shipping_statuses, !empty($transaction->shipping_status) ? $transaction->shipping_status : null, ['class' => 'form-control','placeholder' => __('messages.please_select')]); !!}
+				            {!! Form::select('shipping_status_modal',$shipping_statuses, !empty($transaction->shipping_status) ? $transaction->shipping_status : null, ['class' => 'form-control','placeholder' => __('messages.please_select')]) !!}
 				        </div>
 				    </div>
 
 				    <div class="col-md-6">
 				        <div class="form-group">
 				            {!! Form::label('delivered_to_modal', __('lang_v1.delivered_to') . ':' ) !!}
-				            {!! Form::text('delivered_to_modal', !empty($transaction->delivered_to) ? $transaction->delivered_to : null, ['class' => 'form-control','placeholder' => __('lang_v1.delivered_to')]); !!}
+				            {!! Form::text('delivered_to_modal', !empty($transaction->delivered_to) ? $transaction->delivered_to : null, ['class' => 'form-control','placeholder' => __('lang_v1.delivered_to')]) !!}
 				        </div>
 				    </div>
 					<div class="col-md-6">
 				        <div class="form-group">
 				            {!! Form::label('delivery_person_modal', __('lang_v1.delivery_person') . ':' ) !!} <br>
-				            {!! Form::select('delivery_person_modal', $users, !empty($transaction->delivery_person) ? $transaction->delivery_person : null, ['style' => 'width:100%' ,'class' => 'form-control select2 width-100','placeholder' => __('messages.please_select')]); !!}
+				            {!! Form::select('delivery_person_modal', $users, !empty($transaction->delivery_person) ? $transaction->delivery_person : null, ['style' => 'width:100%' ,'class' => 'form-control select2 width-100','placeholder' => __('messages.please_select')]) !!}
 				        </div>
 				    </div>
 				    @php
@@ -88,7 +88,7 @@
 			        	<div class="col-md-6">
 					        <div class="form-group">
 					            {!! Form::label('shipping_custom_field_1', $label_1 ) !!}
-					            {!! Form::text('shipping_custom_field_1', !empty($transaction->shipping_custom_field_1) ? $transaction->shipping_custom_field_1 : null, ['class' => 'form-control','placeholder' => $shipping_custom_label_1, 'required' => $is_shipping_custom_field_1_required]); !!}
+					            {!! Form::text('shipping_custom_field_1', !empty($transaction->shipping_custom_field_1) ? $transaction->shipping_custom_field_1 : null, ['class' => 'form-control','placeholder' => $shipping_custom_label_1, 'required' => $is_shipping_custom_field_1_required]) !!}
 					        </div>
 					    </div>
 			        @endif
@@ -103,7 +103,7 @@
 			        	<div class="col-md-6">
 					        <div class="form-group">
 					            {!! Form::label('shipping_custom_field_2', $label_2 ) !!}
-					            {!! Form::text('shipping_custom_field_2', !empty($transaction->shipping_custom_field_2) ? $transaction->shipping_custom_field_2 : null, ['class' => 'form-control','placeholder' => $shipping_custom_label_2, 'required' => $is_shipping_custom_field_2_required]); !!}
+					            {!! Form::text('shipping_custom_field_2', !empty($transaction->shipping_custom_field_2) ? $transaction->shipping_custom_field_2 : null, ['class' => 'form-control','placeholder' => $shipping_custom_label_2, 'required' => $is_shipping_custom_field_2_required]) !!}
 					        </div>
 					    </div>
 			        @endif
@@ -118,7 +118,7 @@
 			        	<div class="col-md-6">
 					        <div class="form-group">
 					            {!! Form::label('shipping_custom_field_3', $label_3 ) !!}
-					            {!! Form::text('shipping_custom_field_3', !empty($transaction->shipping_custom_field_3) ? $transaction->shipping_custom_field_3 : null, ['class' => 'form-control','placeholder' => $shipping_custom_label_3, 'required' => $is_shipping_custom_field_3_required]); !!}
+					            {!! Form::text('shipping_custom_field_3', !empty($transaction->shipping_custom_field_3) ? $transaction->shipping_custom_field_3 : null, ['class' => 'form-control','placeholder' => $shipping_custom_label_3, 'required' => $is_shipping_custom_field_3_required]) !!}
 					        </div>
 					    </div>
 			        @endif
@@ -133,7 +133,7 @@
 			        	<div class="col-md-6">
 					        <div class="form-group">
 					            {!! Form::label('shipping_custom_field_4', $label_4 ) !!}
-					            {!! Form::text('shipping_custom_field_4', !empty($transaction->shipping_custom_field_4) ? $transaction->shipping_custom_field_4 : null, ['class' => 'form-control','placeholder' => $shipping_custom_label_4, 'required' => $is_shipping_custom_field_4_required]); !!}
+					            {!! Form::text('shipping_custom_field_4', !empty($transaction->shipping_custom_field_4) ? $transaction->shipping_custom_field_4 : null, ['class' => 'form-control','placeholder' => $shipping_custom_label_4, 'required' => $is_shipping_custom_field_4_required]) !!}
 					        </div>
 					    </div>
 			        @endif
@@ -148,7 +148,7 @@
 			        	<div class="col-md-6">
 					        <div class="form-group">
 					            {!! Form::label('shipping_custom_field_5', $label_5 ) !!}
-					            {!! Form::text('shipping_custom_field_5', !empty($transaction->shipping_custom_field_5) ? $transaction->shipping_custom_field_5 : null, ['class' => 'form-control','placeholder' => $shipping_custom_label_5, 'required' => $is_shipping_custom_field_5_required]); !!}
+					            {!! Form::text('shipping_custom_field_5', !empty($transaction->shipping_custom_field_5) ? $transaction->shipping_custom_field_5 : null, ['class' => 'form-control','placeholder' => $shipping_custom_label_5, 'required' => $is_shipping_custom_field_5_required]) !!}
 					        </div>
 					    </div>
 			        @endif
