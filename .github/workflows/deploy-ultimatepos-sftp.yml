@@ -43,6 +43,24 @@ jobs:
               "${{ secrets.ULTIMPOS_SSH_USER }}@${{ secrets.ULTIMPOS_SSH_HOST }}" \
               "echo SSH OK: \$(whoami) on \$(hostname)"
 
+      - name: SSH - ensure remote directories
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.ULTIMPOS_SSH_HOST }}
+          port: ${{ secrets.ULTIMPOS_SSH_PORT }}
+          username: ${{ secrets.ULTIMPOS_SSH_USER }}
+          key: ${{ secrets.ULTIMPOS_SSH_KEY }}
+          script: |
+            set -e
+
+            mkdir -p ~/public_html/nscrystal
+
+            # If a file named 'laravel' exists, remove it so we can create the folder
+            if [ -f ~/public_html/nscrystal/laravel ]; then
+              rm -f ~/public_html/nscrystal/laravel
+            fi
+            mkdir -p ~/public_html/nscrystal/laravel
+
       # --- Build deploy artifacts (no vendor, no node build) ---
       - name: Prepare deploy artifacts
         shell: bash
