@@ -25,8 +25,18 @@ jobs:
 
       - name: SSH preflight (connect & exit)
         run: |
+          set -e
+          echo "Resolving host: ${{ secrets.ULTIMPOS_SSH_HOST }}"
+          getent hosts "${{ secrets.ULTIMPOS_SSH_HOST }}" || true
+
+          echo "Checking TCP connectivity to ${{ secrets.ULTIMPOS_SSH_HOST }}:${{ secrets.ULTIMPOS_SSH_PORT }}"
+          nc -vz -w 10 "${{ secrets.ULTIMPOS_SSH_HOST }}" "${{ secrets.ULTIMPOS_SSH_PORT }}"
+
           ssh -i /tmp/ultimpos_key \
               -p "${{ secrets.ULTIMPOS_SSH_PORT }}" \
+              -o ConnectTimeout=15 \
+              -o ServerAliveInterval=10 \
+              -o ServerAliveCountMax=1 \
               -o StrictHostKeyChecking=no \
               -o IdentitiesOnly=yes \
               "${{ secrets.ULTIMPOS_SSH_USER }}@${{ secrets.ULTIMPOS_SSH_HOST }}" \
