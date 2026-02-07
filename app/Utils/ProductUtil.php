@@ -468,7 +468,16 @@ class ProductUtil extends Util
 
         $query = Variation::join('products AS p', 'variations.product_id', '=', 'p.id')
                 ->join('product_variations AS pv', 'variations.product_variation_id', '=', 'pv.id')
-                ->leftjoin('variation_location_details AS vld', 'variations.id', '=', 'vld.variation_id')
+                ->leftJoin('variation_location_details AS vld_loc', function ($join) use ($location_id) {
+                    $join->on('variations.id', '=', 'vld_loc.variation_id');
+                    if (!empty($location_id)) {
+                        $join->where('vld_loc.location_id', '=', $location_id);
+                    }
+                })
+                ->leftJoin('variation_location_details AS vld_null', function ($join) {
+                    $join->on('variations.id', '=', 'vld_null.variation_id')
+                        ->whereNull('vld_null.location_id');
+                })
                 ->leftjoin('units', 'p.unit_id', '=', 'units.id')
                 ->leftjoin('units as u', 'p.secondary_unit_id', '=', 'u.id')
                 ->leftjoin('brands', function ($join) {
@@ -482,15 +491,7 @@ class ProductUtil extends Util
         if ($check_qty) {
             $query->where(function ($query) {
                 $query->where('p.enable_stock', '!=', 1)
-                    ->orWhere('vld.qty_available', '>', 0);
-            });
-        }
-
-        if (! empty($location_id) && $check_qty) {
-            //Check for enable stock, if enabled check for location id.
-            $query->where(function ($query) use ($location_id) {
-                $query->where('p.enable_stock', '!=', 1)
-                            ->orWhere('vld.location_id', $location_id);
+                    ->orWhereRaw('COALESCE(vld_loc.qty_available, vld_null.qty_available, 0) > 0');
             });
         }
 
@@ -498,6 +499,7 @@ class ProductUtil extends Util
             DB::raw("IF(pv.is_dummy = 0, CONCAT(p.name, 
                     ' (', pv.name, ':',variations.name, ')'), p.name) AS product_name"),
             'p.id as product_id',
+            'p.carton_quantity',
             'p.brand_id',
             'p.category_id',
             'p.tax as tax_id',
@@ -532,7 +534,7 @@ class ProductUtil extends Util
             'variations.name as variation_name',
             'variations.sub_sku',
             'p.barcode_type',
-            'vld.qty_available',
+            DB::raw('COALESCE(vld_loc.qty_available, vld_null.qty_available, 0) as qty_available'),
             'variations.default_sell_price',
             'variations.default_purchase_price',
             'variations.sell_price_inc_tax',
@@ -1608,22 +1610,18 @@ class ProductUtil extends Util
                 ->active()
                 ->whereNull('variations.deleted_at')
                 ->leftjoin('units as U', 'products.unit_id', '=', 'U.id')
-                ->leftjoin(
-                    'variation_location_details AS VLD',
-                    function ($join) use ($location_id) {
-                        $join->on('variations.id', '=', 'VLD.variation_id');
-
-                        //Include Location
-                        if (! empty($location_id)) {
-                            $join->where(function ($query) use ($location_id) {
-                                $query->where('VLD.location_id', '=', $location_id);
-                                //Check null to show products even if no quantity is available in a location.
-                                //TODO: Maybe add a settings to show product not available at a location or not.
-                                $query->orWhereNull('VLD.location_id');
-                            });
-                        }
+                ->leftJoin('variation_location_details AS vld_loc', function ($join) use ($location_id) {
+                    $join->on('variations.id', '=', 'vld_loc.variation_id');
+                    if (! empty($location_id)) {
+                        $join->where('vld_loc.location_id', '=', $location_id);
                     }
-                );
+                })
+                ->leftJoin('variation_location_details AS vld_null', function ($join) {
+                    $join->on('variations.id', '=', 'vld_null.variation_id')
+                        ->whereNull('vld_null.location_id');
+                });
+
+        $qty_available_expr = 'COALESCE(vld_loc.qty_available, vld_null.qty_available, 0)';
 
         if (! is_null($not_for_selling)) {
             $query->where('products.not_for_selling', $not_for_selling);
@@ -1711,7 +1709,7 @@ class ProductUtil extends Util
 
         //Include check for quantity
         if ($check_qty) {
-            $query->where('VLD.qty_available', '>', 0);
+            $query->whereRaw($qty_available_expr . ' > 0');
         }
 
         if (! empty($location_id)) {
@@ -1725,7 +1723,7 @@ class ProductUtil extends Util
                 'products.enable_stock',
                 'variations.id as variation_id',
                 'variations.name as variation',
-                'VLD.qty_available',
+            DB::raw('COALESCE(vld_loc.qty_available, vld_null.qty_available, 0) as qty_available'),
                 'variations.sell_price_inc_tax as selling_price',
                 'variations.sub_sku',
                 'U.short_name as unit'
@@ -1740,7 +1738,7 @@ class ProductUtil extends Util
         }
 
         $data = $query->groupBy('variations.id')
-             ->orderBy('VLD.qty_available', 'desc')
+               ->orderByRaw($qty_available_expr . ' desc')
              ->get();
 
         // 🔐 Escape `name`, `variation`, `sub_sku`

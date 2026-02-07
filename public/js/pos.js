@@ -409,6 +409,116 @@ $(document).ready(function () {
         adjustComboQty(tr);
     });
 
+    //Carton quantity controls (sell by carton + by single piece)
+    $('table#pos_table tbody').on('click', 'a.pos-carton-popover', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        var $trigger = $(this);
+
+        //IMPORTANT: Always (re)initialize on click.
+        //Users often have cached/previously-initialized popovers with old placement settings,
+        //so we destroy+recreate to ensure the latest positioning options apply.
+        try {
+            $trigger.popover('hide');
+            $trigger.popover('destroy'); //Bootstrap 3
+        } catch (err) {
+            try {
+                $trigger.popover('dispose'); //Bootstrap 4+
+            } catch (err2) {}
+        }
+
+        $trigger.popover({
+            container: 'body',
+            html: true,
+            trigger: 'manual',
+            //Bootstrap auto placement handles left/right flipping when near screen edges.
+            placement: 'auto right',
+            //Bootstrap 3 viewport constraint keeps popover within the window.
+            viewport: { selector: 'body', padding: 10 },
+        });
+
+        $trigger.popover('toggle');
+    });
+
+    //Hide carton popovers when clicking elsewhere
+    $(document).on('click', function (e) {
+        if ($(e.target).closest('.popover, a.pos-carton-popover').length === 0) {
+            $('a.pos-carton-popover').popover('hide');
+        }
+    });
+
+    //Handle carton +/- from popover
+    $('body').on('click', '.carton-qty-up, .carton-qty-down', function (e) {
+        e.preventDefault();
+
+        var $popover = $(this).closest('.popover');
+        var popoverId = $popover.attr('id');
+        if (!popoverId) {
+            return;
+        }
+
+        var $trigger = $('[aria-describedby="' + popoverId + '"]');
+        if ($trigger.length === 0) {
+            return;
+        }
+
+        var cartonQty = parseFloat($trigger.data('carton-qty'));
+        if (isNaN(cartonQty) || cartonQty <= 0) {
+            return;
+        }
+
+        var tr = $trigger.closest('tr');
+        var $qtyInput = tr.find('input.pos_quantity');
+        if ($qtyInput.length === 0) {
+            return;
+        }
+
+        var currentQty = __read_number($qtyInput);
+        var minQty = parseFloat($qtyInput.data('min'));
+        if (isNaN(minQty)) {
+            minQty = 1;
+        }
+
+        //Try to respect max rule if present
+        var maxQty = parseFloat($qtyInput.attr('data-rule-max-value'));
+        if (isNaN(maxQty)) {
+            maxQty = undefined;
+        }
+
+        var multiplier = parseFloat(tr.find('input.base_unit_multiplier').val());
+        if (isNaN(multiplier) || multiplier <= 0) {
+            multiplier = 1;
+        }
+
+        //Convert carton pieces to current selected unit quantity
+        var step = cartonQty / multiplier;
+
+        var decimalAllowed = parseInt($qtyInput.data('decimal'), 10);
+        if ((isNaN(decimalAllowed) || decimalAllowed === 0) && step % 1 !== 0) {
+            if (typeof toastr !== 'undefined') {
+                toastr.error('Carton size is not compatible with selected unit.');
+            }
+            return;
+        }
+
+        var newQty;
+        if ($(this).hasClass('carton-qty-up')) {
+            newQty = currentQty + step;
+            if (typeof maxQty !== 'undefined' && newQty > maxQty) {
+                newQty = maxQty;
+            }
+        } else {
+            newQty = currentQty - step;
+            if (newQty < minQty) {
+                newQty = minQty;
+            }
+        }
+
+        __write_number($qtyInput, newQty);
+        $qtyInput.change();
+    });
+
     //If change in unit price update price including tax and line total
     $('table#pos_table tbody').on('change', 'input.pos_unit_price', function () {
         var $unitPriceInput = $(this);

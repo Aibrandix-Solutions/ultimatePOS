@@ -2005,7 +2005,13 @@ class SellPosController extends Controller
             \Log::emergency('File:' . $e->getFile() . 'Line:' . $e->getLine() . 'Message:' . $e->getMessage());
 
             $output['success'] = false;
-            $output['msg'] = __('lang_v1.item_out_of_stock');
+            //If the row could not be generated due to stock check failure, show out of stock.
+            //Otherwise, surface a generic error message.
+            if ($e instanceof \Illuminate\Database\Eloquent\ModelNotFoundException) {
+                $output['msg'] = __('lang_v1.item_out_of_stock');
+            } else {
+                $output['msg'] = trans('messages.something_went_wrong');
+            }
         }
 
         return $output;
@@ -2175,22 +2181,16 @@ class SellPosController extends Controller
             $products = Variation::join('products as p', 'variations.product_id', '=', 'p.id')
                 ->join('product_locations as pl', 'pl.product_id', '=', 'p.id')
                 ->join('units as u', 'p.unit_id', '=', 'u.id')
-                ->leftjoin(
-                    'variation_location_details AS VLD',
-                    function ($join) use ($location_id) {
-                        $join->on('variations.id', '=', 'VLD.variation_id');
-
-                        //Include Location
-                        if (!empty($location_id)) {
-                            $join->where(function ($query) use ($location_id) {
-                                $query->where('VLD.location_id', '=', $location_id);
-                                //Check null to show products even if no quantity is available in a location.
-                                //TODO: Maybe add a settings to show product not available at a location or not.
-                                $query->orWhereNull('VLD.location_id');
-                            });
-                        }
+                ->leftJoin('variation_location_details AS vld_loc', function ($join) use ($location_id) {
+                    $join->on('variations.id', '=', 'vld_loc.variation_id');
+                    if (!empty($location_id)) {
+                        $join->where('vld_loc.location_id', '=', $location_id);
                     }
-                )
+                })
+                ->leftJoin('variation_location_details AS vld_null', function ($join) {
+                    $join->on('variations.id', '=', 'vld_null.variation_id')
+                        ->whereNull('vld_null.location_id');
+                })
                 ->where('p.business_id', $business_id)
                 ->where('p.type', '!=', 'modifier')
                 ->where('p.is_inactive', 0)
@@ -2245,7 +2245,7 @@ class SellPosController extends Controller
                 'p.image as product_image',
                 'variations.id',
                 'variations.name as variation',
-                'VLD.qty_available',
+                DB::raw('COALESCE(vld_loc.qty_available, vld_null.qty_available, 0) as qty_available'),
                 'variations.default_sell_price as selling_price',
                 'variations.sub_sku',
                 'u.short_name as unit'

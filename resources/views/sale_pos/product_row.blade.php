@@ -35,6 +35,29 @@
 			} else {
 				$product_image_url = asset('/img/default.png');
 			}
+
+			//These are used in the info-icon popover, so define them before rendering the icon.
+			$discount_type = !empty($product->line_discount_type) ? $product->line_discount_type : 'fixed';
+			$discount_amount = !empty($product->line_discount_amount) ? $product->line_discount_amount : 0;
+			if(!empty($discount)) {
+				$discount_type = $discount->discount_type;
+				$discount_amount = $discount->discount_amount;
+			}
+			if(!empty($so_line) && $action !== 'edit') {
+				$discount_type = $so_line->line_discount_type;
+				$discount_amount = $so_line->line_discount_amount;
+			}
+			if($discount_type == 'fixed') {
+				$discount_amount = $discount_amount * $multiplier;
+			}
+
+			$sell_line_note = '';
+			if(!empty($product->sell_line_note)){
+				$sell_line_note = $product->sell_line_note;
+			}
+			if(!empty($so_line)){
+				$sell_line_note = $so_line->sell_line_note;
+			}
 		@endphp
 
 		<input type="hidden" class="pos_product_image_url" value="{{$product_image_url}}">
@@ -43,11 +66,92 @@
 		<div title="@lang('lang_v1.pos_edit_product_price_help')" style="display: inline">
 		<span class="text-link text-info cursor-pointer" data-toggle="modal" data-target="#row_edit_product_price_modal" data-row-index="{{$row_count}}" style="color: #161160; text-decoration: none; cursor: pointer; font-weight: 600; font-size: 14px; letter-spacing: 0.2px; transition: all 0.3s ease; display: inline-block; padding: 1px 0;">
 			{!! $product_name !!}
-			&nbsp;<i class="fa fa-info-circle" style="color: #161160; font-size: 13px; opacity: 0.8; transition: all 0.3s ease;"></i>
+			&nbsp;<a href="#" class="pos-carton-popover popover-default" data-toggle="popover" data-placement="bottom" data-html="true" @if(!empty($product->carton_quantity) && $product->carton_quantity > 0) data-carton-qty="{{$product->carton_quantity}}" @endif
+				data-content='<div style="min-width: 250px; max-width: 300px;">
+					<div style="display: flex; gap: 10px; align-items: center; margin-bottom: 8px;">
+						<img src="{{$product_image_url}}" alt="" style="height: 44px; width: 44px; border-radius: 8px; object-fit: cover; border: 1px solid rgba(22,17,96,0.10);" />
+						<div style="flex: 1; min-width: 0;">
+							<div style="font-weight: 600; color: #161160; font-size: 12px; line-height: 1.2;">{{ e($product->product_actual_name ?? $product->product_name ?? '') }}</div>
+							<div style="font-size: 11px; color: #64748b;">{{ e($product->sub_sku ?? '') }}</div>
+						</div>
+					</div>
+
+					@if(!empty($product->carton_quantity) && $product->carton_quantity > 0)
+						<div style="padding: 8px; border-radius: 10px; border: 1px solid rgba(22,17,96,0.10); background: rgba(22,17,96,0.03);">
+							<div style="font-weight: 600; margin-bottom: 6px; color: #161160;">Carton ({{$product->carton_quantity}} pcs)</div>
+							<div class="btn-group btn-group-xs" role="group" aria-label="Carton quantity">
+								<button type="button" class="btn btn-default btn-flat carton-qty-down" title="-1 carton"><i class="fa fa-minus text-danger"></i></button>
+								<button type="button" class="btn btn-default btn-flat carton-qty-up" title="+1 carton"><i class="fa fa-plus text-success"></i></button>
+							</div>
+							<div style="margin-top: 6px; font-size: 11px; color: #64748b;">Use quantity +/− for single piece</div>
+						</div>
+					@endif
+
+					<div style="margin-top: 8px; font-size: 11px; color: #64748b; line-height: 1.35;">
+						<div><span style="color:#161160; font-weight: 600;">Discount:</span> {{ $discount_type == 'percentage' ? (@num_format($discount_amount) . '%') : @num_format($discount_amount) }}</div>
+						@if(!empty($common_settings['enable_product_warranty']))
+							<div><span style="color:#161160; font-weight: 600;">Warranty:</span>
+								@php $w_name = (!empty($warranty_id) && isset($warranties[$warranty_id])) ? $warranties[$warranty_id] : ''; @endphp
+								{{ !empty($w_name) ? e($w_name) : '-' }}
+							</div>
+						@endif
+						<div><span style="color:#161160; font-weight: 600;">Description:</span>
+							@php $note = trim((string) $sell_line_note); @endphp
+							{{ !empty($note) ? e(\Illuminate\Support\Str::limit($note, 80)) : '-' }}
+						</div>
+					</div>
+
+					<div style="margin-top: 8px; text-align: right;">
+						<a href="#" class="btn btn-xs btn-primary" data-target="#row_edit_product_price_modal" data-row-index="{{$row_count}}" style="background: linear-gradient(135deg, #161160 0%, #2a2480 100%); border: none;">Edit</a>
+					</div>
+				</div>'>
+				<i class="fa fa-info-circle" style="color: #161160; font-size: 13px; opacity: 0.8; transition: all 0.3s ease;"></i>
+			</a>
 		</span>
 		</div>
 		@else
 			{!! $product_name !!}
+			&nbsp;<a href="#" class="pos-carton-popover popover-default" data-toggle="popover" data-placement="bottom" data-html="true" @if(!empty($product->carton_quantity) && $product->carton_quantity > 0) data-carton-qty="{{$product->carton_quantity}}" @endif
+				data-content='<div style="min-width: 250px; max-width: 300px;">
+					<div style="display: flex; gap: 10px; align-items: center; margin-bottom: 8px;">
+						<img src="{{$product_image_url}}" alt="" style="height: 44px; width: 44px; border-radius: 8px; object-fit: cover; border: 1px solid rgba(22,17,96,0.10);" />
+						<div style="flex: 1; min-width: 0;">
+							<div style="font-weight: 600; color: #161160; font-size: 12px; line-height: 1.2;">{{ e($product->product_actual_name ?? $product->product_name ?? '') }}</div>
+							<div style="font-size: 11px; color: #64748b;">{{ e($product->sub_sku ?? '') }}</div>
+						</div>
+					</div>
+
+					@if(!empty($product->carton_quantity) && $product->carton_quantity > 0)
+						<div style="padding: 8px; border-radius: 10px; border: 1px solid rgba(22,17,96,0.10); background: rgba(22,17,96,0.03);">
+							<div style="font-weight: 600; margin-bottom: 6px; color: #161160;">Carton ({{$product->carton_quantity}} pcs)</div>
+							<div class="btn-group btn-group-xs" role="group" aria-label="Carton quantity">
+								<button type="button" class="btn btn-default btn-flat carton-qty-down" title="-1 carton"><i class="fa fa-minus text-danger"></i></button>
+								<button type="button" class="btn btn-default btn-flat carton-qty-up" title="+1 carton"><i class="fa fa-plus text-success"></i></button>
+							</div>
+							<div style="margin-top: 6px; font-size: 11px; color: #64748b;">Use quantity +/− for single piece</div>
+						</div>
+					@endif
+
+					<div style="margin-top: 8px; font-size: 11px; color: #64748b; line-height: 1.35;">
+						<div><span style="color:#161160; font-weight: 600;">Discount:</span> {{ $discount_type == 'percentage' ? (@num_format($discount_amount) . '%') : @num_format($discount_amount) }}</div>
+						@if(!empty($common_settings['enable_product_warranty']))
+							<div><span style="color:#161160; font-weight: 600;">Warranty:</span>
+								@php $w_name = (!empty($warranty_id) && isset($warranties[$warranty_id])) ? $warranties[$warranty_id] : ''; @endphp
+								{{ !empty($w_name) ? e($w_name) : '-' }}
+							</div>
+						@endif
+						<div><span style="color:#161160; font-weight: 600;">Description:</span>
+							@php $note = trim((string) $sell_line_note); @endphp
+							{{ !empty($note) ? e(\Illuminate\Support\Str::limit($note, 80)) : '-' }}
+						</div>
+					</div>
+
+					<div style="margin-top: 8px; text-align: right;">
+						<a href="#" class="btn btn-xs btn-primary" data-target="#row_edit_product_price_modal" data-row-index="{{$row_count}}" style="background: linear-gradient(135deg, #161160 0%, #2a2480 100%); border: none;">Edit</a>
+					</div>
+				</div>'>
+				<i class="fa fa-info-circle" style="color: #161160; font-size: 13px; opacity: 0.8; transition: all 0.3s ease;"></i>
+			</a>
 		@endif
 
 		@if(!empty($common_settings['enable_product_warranty']))

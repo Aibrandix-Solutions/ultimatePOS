@@ -57,6 +57,14 @@
             </div>
         </div>
 
+        <div class="col-sm-4">
+            <div class="form-group">
+                {!! Form::label('carton_quantity', 'Pieces per carton:') !!}
+                @show_tooltip('How many pieces are in 1 carton. Example: 12 means 1 carton = 12 pieces.')
+                {!! Form::number('carton_quantity', !empty($duplicate_product->carton_quantity) ? $duplicate_product->carton_quantity : null, ['class' => 'form-control input_number', 'placeholder' => 'e.g. 12', 'min' => '1', 'step' => '1']) !!}
+            </div>
+        </div>
+
         <div class="col-sm-4 @if(!session('business.enable_sub_units')) hide @endif">
             <div class="form-group">
                 {!! Form::label('sub_unit_ids', __('lang_v1.related_sub_units') . ':') !!} @show_tooltip(__('lang_v1.sub_units_tooltip'))

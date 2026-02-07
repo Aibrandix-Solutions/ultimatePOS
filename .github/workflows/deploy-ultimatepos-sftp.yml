@@ -1,0 +1,172 @@
+name: Deploy UltimatePOS (via SFTP)
+
+on:
+  push:
+    branches: [ nscrystal ]
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # --- Validate secrets & connectivity (preflight) ---
+      - name: Validate SSH private key format
+        run: |
+          set -e
+          echo "${{ secrets.ULTIMPOS_SSH_KEY }}" > /tmp/ultimpos_key
+          chmod 600 /tmp/ultimpos_key
+          echo "Fingerprint (ED25519 expected):"
+          ssh-keygen -lf /tmp/ultimpos_key
+
+      - name: SSH preflight (connect & exit)
+        run: |
+          ssh -i /tmp/ultimpos_key \
+              -p "${{ secrets.ULTIMPOS_SSH_PORT }}" \
+              -o StrictHostKeyChecking=no \
+              -o IdentitiesOnly=yes \
+              "${{ secrets.ULTIMPOS_SSH_USER }}@${{ secrets.ULTIMPOS_SSH_HOST }}" \
+              "echo SSH OK: \$(whoami) on \$(hostname)"
+
+      # --- Build deploy artifacts (no vendor, no node build) ---
+      - name: Prepare deploy artifacts
+        shell: bash
+        run: |
+          set -e
+          rm -rf deploy_app deploy_public
+          mkdir -p deploy_app deploy_public
+
+          # Core app (NO vendor, NO public)
+          cp -r \
+            app bootstrap config database routes resources lang \
+            artisan composer.json composer.lock phpunit.xml \
+            .htaccess modules_statuses.json \
+            deploy_app/ 2>/dev/null || true
+
+          # Optional modules folder (nwidart/laravel-modules)
+          cp -r Modules deploy_app/ 2>/dev/null || true
+
+          # Laravel runtime skeleton (keep storage out of repo upload)
+          mkdir -p deploy_app/storage/app
+          mkdir -p deploy_app/storage/framework/{cache,sessions,views}
+          mkdir -p deploy_app/storage/logs
+          mkdir -p deploy_app/bootstrap/cache
+          touch deploy_app/storage/.gitignore
+
+          # Public contents
+          rsync -a public/ deploy_public/
+          if [ -f public/.htaccess ]; then cp public/.htaccess deploy_public/.htaccess; fi
+
+          # Write split-docroot index.php that points to /laravel
+          cat > deploy_public/index.php <<'PHP'
+          <?php
+
+          use Illuminate\Contracts\Http\Kernel;
+          use Illuminate\Http\Request;
+
+          define('LARAVEL_START', microtime(true));
+
+          // maintenance file relative to public docroot
+          if (file_exists($maintenance = __DIR__ . '/laravel/storage/framework/maintenance.php')) {
+              require $maintenance;
+          }
+
+          // Point to the 'laravel' directory (relative to public_html/)
+          define('LARAVEL_BASE', __DIR__ . '/laravel');
+
+          require LARAVEL_BASE . '/vendor/autoload.php';
+          $app = require LARAVEL_BASE . '/bootstrap/app.php';
+
+          /** @var Kernel $kernel */
+          $kernel = $app->make(Kernel::class);
+
+          $response = tap($kernel->handle(
+              $request = Request::capture()
+          ))->send();
+
+          $kernel->terminate($request, $response);
+          PHP
+
+      # --- SFTP uploads ---
+      - name: Upload app via SFTP (to /laravel)
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
+        with:
+          server: ${{ secrets.ULTIMPOS_SSH_HOST }}
+          port: ${{ secrets.ULTIMPOS_SSH_PORT }}
+          username: ${{ secrets.ULTIMPOS_SSH_USER }}
+          ssh_private_key: ${{ secrets.ULTIMPOS_SSH_KEY }}
+          local_path: 'deploy_app/*'
+          # Subdomain docroot layout: public_html/nscrystal/laravel
+          remote_path: 'public_html/nscrystal/laravel/'
+          delete_remote_files: false
+          sftp_only_changed: true
+          exclude: |
+            .env
+            .env.*
+            **/.env
+            **/.env.*
+
+      - name: Upload public via SFTP (to docroot)
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
+        with:
+          server: ${{ secrets.ULTIMPOS_SSH_HOST }}
+          port: ${{ secrets.ULTIMPOS_SSH_PORT }}
+          username: ${{ secrets.ULTIMPOS_SSH_USER }}
+          ssh_private_key: ${{ secrets.ULTIMPOS_SSH_KEY }}
+          local_path: 'deploy_public/*'
+          # Subdomain docroot layout: public_html/nscrystal
+          remote_path: 'public_html/nscrystal/'
+          delete_remote_files: false
+          sftp_only_changed: true
+          exclude: |
+            uploads/**
+            files/**
+            storage/**
+            .well-known/**
+
+      # --- SSH: composer install & caches on the server ---
+      - name: SSH - composer install & caches
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.ULTIMPOS_SSH_HOST }}
+          port: ${{ secrets.ULTIMPOS_SSH_PORT }}
+          username: ${{ secrets.ULTIMPOS_SSH_USER }}
+          key: ${{ secrets.ULTIMPOS_SSH_KEY }}
+          script: |
+            set -e
+
+            cd ~/public_html/nscrystal/laravel
+
+            mkdir -p storage/framework/{cache,sessions,views}
+            mkdir -p bootstrap/cache
+            chmod -R 755 storage bootstrap/cache || true
+
+            REQUIRED="mbstring intl bcmath curl dom fileinfo gd json openssl pdo pdo_mysql tokenizer xml sodium"
+            MISSING=""
+            for ext in $REQUIRED; do php -m | grep -qi "^$ext$" || MISSING="$MISSING $ext"; done
+            if [ -n "$MISSING" ]; then
+              echo "❌ Missing PHP extensions:$MISSING"
+              exit 1
+            fi
+
+            if ! command -v composer >/dev/null 2>&1; then
+              php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+              php composer-setup.php --install-dir=$HOME/bin --filename=composer
+              rm composer-setup.php
+              export PATH="$HOME/bin:$PATH"
+            fi
+
+            composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction --no-progress
+
+            php artisan config:clear || true
+            php artisan route:clear || true
+            php artisan view:clear  || true
+
+            # Ensure uploads directories exist in the public docroot
+            cd ~/public_html/nscrystal
+            mkdir -p uploads/{img,media,business_logos,invoice_logos,files} || true
+            chmod -R 755 uploads || true

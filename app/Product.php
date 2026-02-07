@@ -22,6 +22,7 @@ class Product extends Model
      */
     protected $casts = [
         'sub_unit_ids' => 'array',
+        'carton_quantity' => 'integer',
     ];
 
     /**

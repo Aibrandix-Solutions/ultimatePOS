@@ -125,6 +125,20 @@ class BusinessLocation extends Model
 
         if ($check_location) {
             $query->where('pl.location_id', $this->id);
+
+            //Strictly join stock for this location only.
+            $query->leftJoin('variation_location_details as vld_loc', function ($join) {
+                $join->on('variations.id', '=', 'vld_loc.variation_id')
+                    ->where('vld_loc.location_id', '=', $this->id);
+            });
+
+            //Fallback to NULL-location stock if present (legacy/global stock).
+            $query->leftJoin('variation_location_details as vld_null', function ($join) {
+                $join->on('variations.id', '=', 'vld_null.variation_id')
+                    ->whereNull('vld_null.location_id');
+            });
+
+            $query->addSelect(DB::raw('COALESCE(vld_loc.qty_available, vld_null.qty_available, 0) as qty_available'));
         }
         $featured_products = $query->get();
         if ($is_array) {
