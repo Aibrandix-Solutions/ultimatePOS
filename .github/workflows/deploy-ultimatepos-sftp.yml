@@ -53,13 +53,14 @@ jobs:
           script: |
             set -e
 
-            mkdir -p ~/public_html/nscrystal
+            BASE_DIR="/home/${{ secrets.ULTIMPOS_SSH_USER }}/public_html/nscrystal"
+            mkdir -p "$BASE_DIR"
 
             # If a file named 'laravel' exists, remove it so we can create the folder
-            if [ -f ~/public_html/nscrystal/laravel ]; then
-              rm -f ~/public_html/nscrystal/laravel
+            if [ -f "$BASE_DIR/laravel" ]; then
+              rm -f "$BASE_DIR/laravel"
             fi
-            mkdir -p ~/public_html/nscrystal/laravel
+            mkdir -p "$BASE_DIR/laravel"
 
       # --- Build deploy artifacts (no vendor, no node build) ---
       - name: Prepare deploy artifacts
@@ -136,7 +137,7 @@ jobs:
           ssh_private_key: ${{ secrets.ULTIMPOS_SSH_KEY }}
           local_path: 'deploy_app/*'
           # Subdomain docroot layout: public_html/nscrystal/laravel
-          remote_path: 'public_html/nscrystal/laravel/'
+          remote_path: '/home/${{ secrets.ULTIMPOS_SSH_USER }}/public_html/nscrystal/laravel/'
           delete_remote_files: false
           sftp_only: true
           sftpArgs: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o IdentitiesOnly=yes -o ConnectTimeout=15'
@@ -150,7 +151,7 @@ jobs:
           ssh_private_key: ${{ secrets.ULTIMPOS_SSH_KEY }}
           local_path: 'deploy_public/*'
           # Subdomain docroot layout: public_html/nscrystal
-          remote_path: 'public_html/nscrystal/'
+          remote_path: '/home/${{ secrets.ULTIMPOS_SSH_USER }}/public_html/nscrystal/'
           delete_remote_files: false
           sftp_only: true
           sftpArgs: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o IdentitiesOnly=yes -o ConnectTimeout=15'
@@ -166,7 +167,7 @@ jobs:
           script: |
             set -e
 
-            cd ~/public_html/nscrystal/laravel
+            cd /home/${{ secrets.ULTIMPOS_SSH_USER }}/public_html/nscrystal/laravel
 
             mkdir -p storage/framework/{cache,sessions,views}
             mkdir -p bootstrap/cache
@@ -194,6 +195,6 @@ jobs:
             php artisan view:clear  || true
 
             # Ensure uploads directories exist in the public docroot
-            cd ~/public_html/nscrystal
+            cd /home/${{ secrets.ULTIMPOS_SSH_USER }}/public_html/nscrystal
             mkdir -p uploads/{img,media,business_logos,invoice_logos,files} || true
             chmod -R 755 uploads || true
