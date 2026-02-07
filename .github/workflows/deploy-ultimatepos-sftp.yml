@@ -1,4 +1,4 @@
-name: Deploy UltimatePOS (via SFTP)
+name: Deploy UltimatePOS (nscrystal.digipartner.lk via SFTP)
 
 on:
   push:
@@ -18,7 +18,6 @@ jobs:
       - name: Validate SSH private key format
         run: |
           set -e
-          # Normalize key newlines (strip CR) to avoid "invalid format" on some tools
           printf '%s' "${{ secrets.ULTIMPOS_SSH_KEY }}" | tr -d '\r' > /tmp/ultimpos_key
           chmod 600 /tmp/ultimpos_key
           echo "Fingerprint (ED25519 expected):"
@@ -26,43 +25,29 @@ jobs:
 
       - name: SSH preflight (connect & exit)
         run: |
-          set -e
-          echo "Resolving host: ${{ secrets.ULTIMPOS_SSH_HOST }}"
-          getent hosts "${{ secrets.ULTIMPOS_SSH_HOST }}" || true
-
-          echo "Checking TCP connectivity to ${{ secrets.ULTIMPOS_SSH_HOST }}:${{ secrets.ULTIMPOS_SSH_PORT }}"
-          nc -vz -w 10 "${{ secrets.ULTIMPOS_SSH_HOST }}" "${{ secrets.ULTIMPOS_SSH_PORT }}"
-
+          # Note: ULTIMPOS_SSH_HOST is your server SSH/SFTP host (often an IP/hosting hostname),
+          # not the website URL (nscrystal.digipartner.lk).
           ssh -i /tmp/ultimpos_key \
               -p "${{ secrets.ULTIMPOS_SSH_PORT }}" \
-              -o ConnectTimeout=15 \
-              -o ServerAliveInterval=10 \
-              -o ServerAliveCountMax=1 \
               -o StrictHostKeyChecking=no \
               -o IdentitiesOnly=yes \
               "${{ secrets.ULTIMPOS_SSH_USER }}@${{ secrets.ULTIMPOS_SSH_HOST }}" \
               "echo SSH OK: \$(whoami) on \$(hostname)"
 
-      - name: SSH - ensure remote directories
-        uses: appleboy/ssh-action@v1.0.3
+      # --- Build assets (NPM) ---
+      - name: Install Node.js
+        if: ${{ hashFiles('package.json') != '' }}
+        uses: actions/setup-node@v4
         with:
-          host: ${{ secrets.ULTIMPOS_SSH_HOST }}
-          port: ${{ secrets.ULTIMPOS_SSH_PORT }}
-          username: ${{ secrets.ULTIMPOS_SSH_USER }}
-          key: ${{ secrets.ULTIMPOS_SSH_KEY }}
-          script: |
-            set -e
+          node-version: "20"
 
-            BASE_DIR="/home/${{ secrets.ULTIMPOS_SSH_USER }}/public_html/nscrystal"
-            mkdir -p "$BASE_DIR"
+      - name: Build Assets
+        if: ${{ hashFiles('package.json') != '' }}
+        run: |
+          npm ci
+          npm run build
 
-            # If a file named 'laravel' exists, remove it so we can create the folder
-            if [ -f "$BASE_DIR/laravel" ]; then
-              rm -f "$BASE_DIR/laravel"
-            fi
-            mkdir -p "$BASE_DIR/laravel"
-
-      # --- Build deploy artifacts (no vendor, no node build) ---
+      # --- Build deploy artifacts (no vendor) ---
       - name: Prepare deploy artifacts
         shell: bash
         run: |
@@ -71,16 +56,15 @@ jobs:
           mkdir -p deploy_app deploy_public
 
           # Core app (NO vendor, NO public)
-          cp -r \
-            app bootstrap config database routes resources lang \
-            artisan composer.json composer.lock phpunit.xml \
-            .htaccess modules_statuses.json \
-            deploy_app/ 2>/dev/null || true
+          cp -r app bootstrap config database routes artisan composer.json composer.lock phpunit.xml .htaccess Modules deploy_app/ 2>/dev/null || true
 
-          # Optional modules folder (nwidart/laravel-modules)
-          cp -r Modules deploy_app/ 2>/dev/null || true
+          # Translations
+          if [ -d lang ]; then cp -r lang deploy_app/; fi
+          mkdir -p deploy_app/resources
+          [ -d resources/lang ]  && cp -r resources/lang  deploy_app/resources/
+          [ -d resources/views ] && cp -r resources/views deploy_app/resources/
 
-          # Laravel runtime skeleton (keep storage out of repo upload)
+          # Laravel runtime skeleton
           mkdir -p deploy_app/storage/app
           mkdir -p deploy_app/storage/framework/{cache,sessions,views}
           mkdir -p deploy_app/storage/logs
@@ -88,13 +72,14 @@ jobs:
           touch deploy_app/storage/.gitignore
 
           # Public contents
-          # Exclude runtime/user data from deployment package
-          rsync -a \
-            --exclude='uploads/' \
-            --exclude='files/' \
-            --exclude='storage/' \
-            --exclude='.well-known/' \
-            public/ deploy_public/
+          rsync -a public/ deploy_public/
+
+          # Ensure public/build is deployed and also available under deploy_app/public/build
+          mkdir -p deploy_app/public/build
+          if [ -d public/build ]; then rsync -a public/build/ deploy_public/build/; fi
+          if [ -d public/build ]; then rsync -a public/build/ deploy_app/public/build/; fi
+
+          # ✅ Ensure .htaccess is included explicitly
           if [ -f public/.htaccess ]; then cp public/.htaccess deploy_public/.htaccess; fi
 
           # Write split-docroot index.php that points to /laravel
@@ -135,26 +120,24 @@ jobs:
           port: ${{ secrets.ULTIMPOS_SSH_PORT }}
           username: ${{ secrets.ULTIMPOS_SSH_USER }}
           ssh_private_key: ${{ secrets.ULTIMPOS_SSH_KEY }}
-          local_path: 'deploy_app/*'
-          # Subdomain docroot layout: public_html/nscrystal/laravel
-          remote_path: '/home/${{ secrets.ULTIMPOS_SSH_USER }}/public_html/nscrystal/laravel/'
+          local_path: "deploy_app/*"
+          # Website: https://nscrystal.digipartner.lk
+          remote_path: "domains/digipartner.lk/public_html/nscrystal/laravel/"
           delete_remote_files: false
           sftp_only: true
-          sftpArgs: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o IdentitiesOnly=yes -o ConnectTimeout=15'
 
-      - name: Upload public via SFTP (to docroot)
+      - name: Upload public via SFTP (to /)
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
         with:
           server: ${{ secrets.ULTIMPOS_SSH_HOST }}
           port: ${{ secrets.ULTIMPOS_SSH_PORT }}
           username: ${{ secrets.ULTIMPOS_SSH_USER }}
           ssh_private_key: ${{ secrets.ULTIMPOS_SSH_KEY }}
-          local_path: 'deploy_public/*'
-          # Subdomain docroot layout: public_html/nscrystal
-          remote_path: '/home/${{ secrets.ULTIMPOS_SSH_USER }}/public_html/nscrystal/'
+          local_path: "deploy_public/*"
+          # Website: https://nscrystal.digipartner.lk
+          remote_path: "domains/digipartner.lk/public_html/nscrystal/"
           delete_remote_files: false
           sftp_only: true
-          sftpArgs: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o IdentitiesOnly=yes -o ConnectTimeout=15'
 
       # --- SSH: composer install & caches on the server ---
       - name: SSH - composer install & caches
@@ -166,13 +149,22 @@ jobs:
           key: ${{ secrets.ULTIMPOS_SSH_KEY }}
           script: |
             set -e
+            # Target nscrystal.digipartner.lk Laravel app dir
+            cd ~/domains/digipartner.lk/public_html/nscrystal/laravel
 
-            cd /home/${{ secrets.ULTIMPOS_SSH_USER }}/public_html/nscrystal/laravel
+            # Safety: do not run artisan/migrations until the subdomain has its own .env
+            if [ ! -f .env ]; then
+              echo "❌ Missing .env at $(pwd)/.env"
+              echo "Create it with separate DB credentials and correct APP_URL=https://nscrystal.digipartner.lk"
+              exit 1
+            fi
 
+            # Ensure runtime dirs
             mkdir -p storage/framework/{cache,sessions,views}
             mkdir -p bootstrap/cache
             chmod -R 755 storage bootstrap/cache || true
 
+            # Check PHP extensions
             REQUIRED="mbstring intl bcmath curl dom fileinfo gd json openssl pdo pdo_mysql tokenizer xml sodium"
             MISSING=""
             for ext in $REQUIRED; do php -m | grep -qi "^$ext$" || MISSING="$MISSING $ext"; done
@@ -181,6 +173,7 @@ jobs:
               exit 1
             fi
 
+            # Install composer if missing
             if ! command -v composer >/dev/null 2>&1; then
               php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
               php composer-setup.php --install-dir=$HOME/bin --filename=composer
@@ -190,11 +183,21 @@ jobs:
 
             composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction --no-progress
 
-            php artisan config:clear || true
-            php artisan route:clear || true
-            php artisan view:clear  || true
+            # Clear & rebuild caches
+            php artisan optimize:clear || true
 
-            # Ensure uploads directories exist in the public docroot
-            cd /home/${{ secrets.ULTIMPOS_SSH_USER }}/public_html/nscrystal
-            mkdir -p uploads/{img,media,business_logos,invoice_logos,files} || true
-            chmod -R 755 uploads || true
+            # Publish module assets and migrations
+            php artisan module:publish || true
+            php artisan module:publish-migration Inventory || true
+
+            # Run migrations
+            php artisan migrate --force
+
+            # Storage link
+            php artisan storage:link || true
+
+            # Symlink for user-uploads within nscrystal docroot
+            cd ~/domains/digipartner.lk/public_html/nscrystal
+            rm -rf user-uploads 2>/dev/null || true
+            ln -sf ./laravel/public/user-uploads user-uploads
+            ls -la user-uploads
