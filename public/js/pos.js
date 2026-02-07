@@ -748,6 +748,27 @@ $(document).ready(function () {
         }
     });
 
+    // Installment plan: toggle fields whenever payment modal opens
+    $('#modal_payment').on('shown.bs.modal', function () {
+        try {
+            toggle_installment_plan_fields();
+        } catch (err) {
+            // ignore
+        }
+    });
+
+    // Installment plan: toggle fields when checkbox changes
+    $(document).on('change', '#enable_installment_plan', function () {
+        try {
+            toggle_installment_plan_fields();
+            if (typeof calculate_balance_due === 'function') {
+                calculate_balance_due();
+            }
+        } catch (err) {
+            // ignore
+        }
+    });
+
     //Finalize without showing payment options
     // prevent duplicate express checkout triggers
     if (typeof window.__express_processing === 'undefined') {
@@ -2685,6 +2706,46 @@ function calculate_balance_due() {
     saveFormDataToLocalStorage();
 }
 
+function toggle_installment_plan_fields() {
+    var enabled = $('#enable_installment_plan').length && $('#enable_installment_plan').is(':checked');
+    var $wrapper = $('#installment_plan_fields_wrapper');
+    if (!$wrapper.length) {
+        return;
+    }
+
+    if (enabled) {
+        $wrapper.removeClass('hide');
+
+        // Ensure due date is visible for first installment due date
+        try {
+            var $dueWrapper = $('#pos_due_date_wrapper');
+            var $dueInput = $('#pos_due_date');
+            if ($dueWrapper.length) {
+                $dueWrapper.removeClass('hide');
+            }
+
+            if ($dueInput.length && typeof $dueInput.datepicker === 'function' && !$dueInput.data('datepicker')) {
+                $dueInput.datepicker({ autoclose: true });
+            }
+
+            if ($dueInput.length && ($dueInput.val() === null || $dueInput.val().toString().trim() === '')) {
+                var txDate = null;
+                if ($('#transaction_date').length && $('#transaction_date').data('DateTimePicker')) {
+                    txDate = $('#transaction_date').data('DateTimePicker').date();
+                }
+                var dueMoment = (txDate ? txDate.clone() : moment()).add(30, 'days');
+                if (typeof $dueInput.datepicker === 'function') {
+                    $dueInput.datepicker('update', dueMoment.toDate());
+                }
+            }
+        } catch (e) {
+            // ignore
+        }
+    } else {
+        $wrapper.addClass('hide');
+    }
+}
+
 function isValidPosForm() {
     flag = true;
     $('span.error').remove();
@@ -2743,6 +2804,14 @@ function reset_pos_form() {
         $('#pos_due_date_wrapper').addClass('hide');
         $('#pos_due_date').val('');
     } catch (err) {
+        // ignore
+    }
+
+    // Reset installment plan fields in payment modal
+    try {
+        $('#enable_installment_plan').prop('checked', false);
+        $('#installment_plan_fields_wrapper').addClass('hide');
+    } catch (err2) {
         // ignore
     }
 
@@ -4364,6 +4433,21 @@ function addModernStyling() {
         __write_number($('#modal_discount_amount'), currentDiscountAmount);
         $('#modal_sell_line_note').val(currentNote);
 
+        // Warranty dropdown (if enabled and present in row)
+        var $rowWarrantySelect = $productRow.find('select.row_warranty_id');
+        if ($rowWarrantySelect.length > 0) {
+            var $modalWarrantySelect = $('#modal_warranty_id');
+            $modalWarrantySelect.empty();
+            $rowWarrantySelect.find('option').each(function () {
+                $modalWarrantySelect.append($(this).clone());
+            });
+            $modalWarrantySelect.val($rowWarrantySelect.val() || '');
+            $('#modal_warranty_wrapper').show();
+        } else {
+            $('#modal_warranty_wrapper').hide();
+            $('#modal_warranty_id').empty();
+        }
+
         // Store row index for saving
         $('#row_edit_product_price_modal').data('row-index', rowIndex);
         $('#row_edit_product_price_modal').data('price-field', priceField);
@@ -4388,6 +4472,7 @@ function addModernStyling() {
         var newDiscountType = $('#modal_discount_type').val();
         var newDiscountAmount = __read_number($('#modal_discount_amount'));
         var newNote = $('#modal_sell_line_note').val();
+        var newWarrantyId = ($('#modal_warranty_wrapper').is(':visible') ? ($('#modal_warranty_id').val() || '') : null);
 
         // MSP enforcement (uses min value attached to the row inc-tax input)
         var $rowIncTaxInput = $productRow.find('input.pos_unit_price_inc_tax');
@@ -4458,6 +4543,14 @@ function addModernStyling() {
             $productRow.data('modal-discount-amount', newDiscountAmount);
         }
         $productRow.find('textarea[name*="sell_line_note"]').val(newNote);
+
+        // Persist warranty selection back to row (for form submission)
+        if (newWarrantyId !== null) {
+            var $rowWarrantySelect = $productRow.find('select.row_warranty_id');
+            if ($rowWarrantySelect.length > 0) {
+                $rowWarrantySelect.val(newWarrantyId).trigger('change');
+            }
+        }
 
 
         // Trigger change events to update calculations

@@ -62,8 +62,22 @@
             </tbody>
         </table>
 
-        <a href="{{ action([\App\Http\Controllers\InstallmentPlanController::class, 'index']) }}" class="btn btn-default">@lang('messages.go_back')</a>
+        <div class="tw-flex tw-items-center tw-gap-2">
+            @if(!empty($transaction) && (auth()->user()->can('sell.payments') || auth()->user()->can('sell.create') || auth()->user()->can('direct_sell.access')))
+                <a href="{{ action([\App\Http\Controllers\TransactionPaymentController::class, 'addPayment'], [$transaction->id]) }}" class="btn btn-primary add_payment_modal">
+                    <i class="fas fa-money-bill-alt"></i> @lang('purchase.add_payment')
+                </a>
+            @endif
+            <a href="{{ action([\App\Http\Controllers\InstallmentPlanController::class, 'index']) }}" class="btn btn-default">@lang('messages.go_back')</a>
+        </div>
     @endcomponent
 </section>
 
+<div class="modal fade payment_modal" tabindex="-1" role="dialog" aria-labelledby="gridSystemModalLabel"></div>
+<div class="modal fade edit_payment_modal" tabindex="-1" role="dialog" aria-labelledby="gridSystemModalLabel"></div>
+
 @stop
+
+@section('javascript')
+    <script src="{{ asset('js/payment.js?v=' . $asset_v) }}"></script>
+@endsection
