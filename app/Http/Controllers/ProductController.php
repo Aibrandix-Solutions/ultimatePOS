@@ -511,7 +511,17 @@ class ProductController extends Controller
             }
 
             if ($product->type == 'single') {
-                $this->productUtil->createSingleProductVariation($product->id, $product->sku, $request->input('single_dpp'), $request->input('single_dpp_inc_tax'), $request->input('profit_percent'), $request->input('single_dsp'), $request->input('single_dsp_inc_tax'));
+                $this->productUtil->createSingleProductVariation(
+                    $product->id,
+                    $product->sku,
+                    $request->input('single_dpp'),
+                    $request->input('single_dpp_inc_tax'),
+                    $request->input('profit_percent'),
+                    $request->input('single_dsp'),
+                    $request->input('single_dsp_inc_tax'),
+                    [],
+                    $request->input('single_min_sell_price_inc_tax')
+                );
             } elseif ($product->type == 'variable') {
                 if (! empty($request->input('product_variation'))) {
                     $input_variations = $request->input('product_variation');
@@ -802,7 +812,7 @@ class ProductController extends Controller
             $product->product_locations()->sync($product_locations);
 
             if ($product->type == 'single') {
-                $single_data = $request->only(['single_variation_id', 'single_dpp', 'single_dpp_inc_tax', 'single_dsp_inc_tax', 'profit_percent', 'single_dsp']);
+                $single_data = $request->only(['single_variation_id', 'single_dpp', 'single_dpp_inc_tax', 'single_dsp_inc_tax', 'profit_percent', 'single_dsp', 'single_min_sell_price_inc_tax']);
                 $variation = Variation::find($single_data['single_variation_id']);
 
                 $variation->sub_sku = $product->sku;
@@ -811,6 +821,8 @@ class ProductController extends Controller
                 $variation->profit_percent = $this->productUtil->num_uf($single_data['profit_percent']);
                 $variation->default_sell_price = $this->productUtil->num_uf($single_data['single_dsp']);
                 $variation->sell_price_inc_tax = $this->productUtil->num_uf($single_data['single_dsp_inc_tax']);
+                $min_sell_price_inc_tax = ! empty($single_data['single_min_sell_price_inc_tax']) ? $single_data['single_min_sell_price_inc_tax'] : $single_data['single_dsp_inc_tax'];
+                $variation->min_sell_price_inc_tax = $this->productUtil->num_uf($min_sell_price_inc_tax);
                 $variation->save();
 
                 Media::uploadMedia($product->business_id, $variation, $request, 'variation_images');
@@ -1564,7 +1576,9 @@ class ProductController extends Controller
                 $request->input('single_dpp_inc_tax'),
                 $request->input('profit_percent'),
                 $request->input('single_dsp'),
-                $request->input('single_dsp_inc_tax')
+                $request->input('single_dsp_inc_tax'),
+                [],
+                $request->input('single_min_sell_price_inc_tax')
             );
 
             if ($product->enable_stock == 1 && ! empty($request->input('opening_stock'))) {

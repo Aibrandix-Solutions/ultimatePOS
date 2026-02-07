@@ -26,6 +26,7 @@
      'product.delete' => 'Fshi produktin',
      'purchase.view' => 'Shikoni blerjen dhe përshtatjen e stoqeve',
      'purchase.create' => 'Shto rregullimin e blerjeve dhe aksioneve',
+    'stock_adjustment.create' => 'Add Stock Adjustment',
      'purchase.update' => 'Ndrysho blerjen dhe rregullimin e stoqeve',
      'purchase.delete' => 'Fshi blerjen dhe rregullimin e stoqeve',
      'sell.view' => 'Shikoni POS shitni',

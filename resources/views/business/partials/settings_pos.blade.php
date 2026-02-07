@@ -163,6 +163,18 @@
             </div>
         </div>
 
+                <div class="col-sm-4">
+                        <div class="form-group">
+                                <div class="checkbox">
+                                <br>
+                                    <label>
+                                        {!! Form::checkbox('pos_settings[hide_selected_product_image]', 1,  !empty($pos_settings['hide_selected_product_image']) ? true : false ,
+                                                                                [ 'class' => 'input-icheck']) !!} Hide selected product image (POS cart)
+                                    </label>
+                                </div>
+                        </div>
+                </div>
+
         <div class="col-sm-4">
             <div class="form-group">
                 <div class="checkbox">
@@ -186,6 +198,20 @@
                 </div>
             </div>
         </div>
+
+                <div class="col-sm-4">
+                        <div class="form-group">
+                                <div class="checkbox">
+                                <br>
+                                    <label>
+                                        {!! Form::checkbox('pos_settings[enable_msp]', 1,
+                                        empty($pos_settings['enable_msp']) ? 0 : 1,
+                                                                                [ 'class' => 'input-icheck']) !!} {{ __( 'lang_v1.sale_price_is_minimum_sale_price' ) }}
+                                    </label>
+                                    @show_tooltip(__('lang_v1.minimum_sale_price_help'))
+                                </div>
+                        </div>
+                </div>
 
         <div class="col-sm-4">
             <div class="form-group">

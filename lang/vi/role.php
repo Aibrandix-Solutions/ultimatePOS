@@ -36,6 +36,7 @@ return [
     'product.delete' => 'Xóa sản phẩm',
     'purchase.view' => 'Xem mua & điều chỉnh cổ phiếu',
     'purchase.create' => 'Thêm mua & điều chỉnh cổ phiếu',
+    'stock_adjustment.create' => 'Add Stock Adjustment',
     'purchase.update' => 'Chỉnh sửa mua & điều chỉnh cổ phiếu',
     'purchase.delete' => 'Xóa mua & điều chỉnh cổ phiếu',
     'sell.view' => 'Xem POS bán',

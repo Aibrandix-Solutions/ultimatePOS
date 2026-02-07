@@ -19,6 +19,8 @@ LANG = {
 "last_30_days": "Últimos 30 días",
 "this_month": "Este mes",
 "last_month": "El mes pasado",
+	'last_60_days': 'Los últimos 60 días',
+	'last_90_days': 'Los últimos 90 días',
 "this_financial_year": "Ejercicio actual",
 "clear": "Claro",
 "no_products_added": "No se agregaron productos, agregue algunos productos primero",

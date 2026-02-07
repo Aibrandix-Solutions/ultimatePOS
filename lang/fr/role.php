@@ -26,6 +26,7 @@
      'product.delete' => 'Supprimer le produit',
      'purchase.view' => "Voir l'achat et l'ajustement des stocks",
      'purchase.create' => "Ajouter un achat et l'ajustement des stocks",
+    'stock_adjustment.create' => 'Add Stock Adjustment',
      'purchase.update' => "Modifier l'achat et l'ajustement des stocks",
      'purchase.delete' => "Supprimer l'achat et l'ajustement des stocks",
      'sell.view' => 'Voir les ventes de POS',

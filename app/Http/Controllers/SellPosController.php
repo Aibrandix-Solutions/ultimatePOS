@@ -53,6 +53,7 @@ use App\Utils\NotificationUtil;
 use App\Utils\ProductUtil;
 use App\Utils\TransactionUtil;
 use App\Variation;
+use App\Utils\InstallmentUtil;
 use App\Warranty;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -334,6 +335,8 @@ class SellPosController extends Controller
         try {
             $input = $request->except('_token');
 
+            $enable_installment_plan = isset($input['enable_installment_plan']) && (int) $input['enable_installment_plan'] === 1;
+
             $input['is_quotation'] = 0;
             //status is send as quotation from Add sales screen.
             if ($input['status'] == 'quotation') {
@@ -371,6 +374,53 @@ class SellPosController extends Controller
 
             if (!empty($input['products'])) {
                 $business_id = $request->session()->get('user.business_id');
+
+                //Minimum selling price enforcement (prevents client-side bypass)
+                $pos_settings = !empty($request->session()->get('business.pos_settings'))
+                    ? (json_decode($request->session()->get('business.pos_settings'), true) ?? [])
+                    : [];
+                if (!empty($pos_settings['enable_msp'])) {
+                    $variation_ids = [];
+                    foreach ($input['products'] as $product_line) {
+                        if (!empty($product_line['variation_id'])) {
+                            $variation_ids[] = (int) $product_line['variation_id'];
+                        }
+                    }
+
+                    $variation_ids = array_values(array_unique($variation_ids));
+                    if (!empty($variation_ids)) {
+                        $min_prices = Variation::whereIn('id', $variation_ids)
+                            ->pluck('min_sell_price_inc_tax', 'id');
+
+                        foreach ($input['products'] as $product_line) {
+                            $variation_id = !empty($product_line['variation_id']) ? (int) $product_line['variation_id'] : null;
+                            if (empty($variation_id)) {
+                                continue;
+                            }
+
+                            $min_price = $min_prices->get($variation_id);
+                            if ($min_price === null || $min_price === '') {
+                                continue;
+                            }
+
+                            $unit_price_inc_tax = $this->productUtil->num_uf($product_line['unit_price_inc_tax'] ?? 0);
+                            if ($unit_price_inc_tax < (float) $min_price) {
+                                $output = [
+                                    'success' => 0,
+                                    'msg' => __('lang_v1.minimum_selling_price_error'),
+                                ];
+
+                                if (!$is_direct_sale) {
+                                    return $output;
+                                }
+
+                                return redirect()
+                                    ->action([\App\Http\Controllers\SellController::class, 'index'])
+                                    ->with('status', $output);
+                            }
+                        }
+                    }
+                }
 
                 //Check if subscribed or not, then check for users quota
                 if (!$this->moduleUtil->isSubscribed($business_id)) {
@@ -422,6 +472,11 @@ class SellPosController extends Controller
                 $input['is_suspend'] = isset($input['is_suspend']) && 1 == $input['is_suspend'] ? 1 : 0;
                 if ($input['is_suspend']) {
                     $input['sale_note'] = !empty($input['additional_notes']) ? $input['additional_notes'] : null;
+
+                    // Suspended sales are parked orders; always save as draft.
+                    $input['status'] = 'draft';
+                    $input['is_quotation'] = 0;
+                    $input['sub_status'] = null;
                 }
 
                 //Generate reference number
@@ -502,12 +557,40 @@ class SellPosController extends Controller
                 $change_return['amount'] = $input['change_return'] ?? 0;
                 $change_return['is_return'] = 1;
 
+                if (!isset($input['payment']) || !is_array($input['payment'])) {
+                    $input['payment'] = [];
+                }
+
                 $input['payment'][] = $change_return;
+
+                // New semantics:
+                // - Checkbox checked: keep payment on current invoice
+                // - Checkbox unchecked (default): apply payment to customer's previous due invoices (oldest first)
+                // When applying to previous dues, current invoice remains due (no payment lines for the current sale).
+                $keep_payment_on_current_invoice = !empty($input['apply_payment_to_old_dues']) && (int) $input['apply_payment_to_old_dues'] === 1;
+                $apply_payment_to_old_dues = !$keep_payment_on_current_invoice;
+                $sale_payment_lines = $input['payment'];
+                $old_due_payment_lines = [];
+                if ($apply_payment_to_old_dues) {
+                    $old_due_payment_lines = $sale_payment_lines;
+                    $sale_payment_lines = [];
+                }
+
+                // Installment plans require the down payment to be applied to the current invoice.
+                // Do not rely on the POS checkbox value (it may be disabled in UI and not submitted).
+                if ($enable_installment_plan) {
+                    $keep_payment_on_current_invoice = true;
+                    $apply_payment_to_old_dues = false;
+                    $sale_payment_lines = $input['payment'];
+                    $old_due_payment_lines = [];
+                }
 
                 $is_credit_sale = isset($input['is_credit_sale']) && $input['is_credit_sale'] == 1 ? true : false;
 
-                if (!$transaction->is_suspend && !empty($input['payment']) && !$is_credit_sale) {
-                    $this->transactionUtil->createOrUpdatePaymentLines($transaction, $input['payment']);
+                // (enforced above by overriding apply-to-old-dues when installment plan is enabled)
+
+                if (!$transaction->is_suspend && !empty($sale_payment_lines) && !$is_credit_sale) {
+                    $this->transactionUtil->createOrUpdatePaymentLines($transaction, $sale_payment_lines);
                 }
 
                 //Check for final and do some processing.
@@ -563,9 +646,38 @@ class SellPosController extends Controller
                         }
                     }
 
+                    //Apply POS payment to previous dues if enabled (exclude current invoice)
+                    if (
+                        $apply_payment_to_old_dues &&
+                        !$transaction->is_suspend &&
+                        !empty($contact_id) &&
+                        !empty($old_due_payment_lines) &&
+                        !$is_credit_sale
+                    ) {
+                        $note = 'Adjusted to previous dues from POS invoice: ' . (!empty($transaction->invoice_no) ? $transaction->invoice_no : $transaction->id);
+                        $payments_by_transaction = $this->transactionUtil->allocatePosPaymentToOldSellDues(
+                            $business_id,
+                            $contact_id,
+                            $old_due_payment_lines,
+                            [$transaction->id],
+                            $user_id,
+                            $note
+                        );
+
+                        //Add these payments to cash register.
+                        if (!$is_direct_sale && !$transaction->is_suspend && !empty($payments_by_transaction)) {
+                            foreach ($payments_by_transaction as $paid_transaction_id => $paid_lines) {
+                                $paid_transaction = Transaction::find($paid_transaction_id);
+                                if (!empty($paid_transaction) && !empty($paid_lines)) {
+                                    $this->cashRegisterUtil->addSellPayments($paid_transaction, $paid_lines);
+                                }
+                            }
+                        }
+                    }
+
                     //Add payments to Cash Register
-                    if (!$is_direct_sale && !$transaction->is_suspend && !empty($input['payment']) && !$is_credit_sale) {
-                        $this->cashRegisterUtil->addSellPayments($transaction, $input['payment']);
+                    if (!$is_direct_sale && !$transaction->is_suspend && !empty($sale_payment_lines) && !$is_credit_sale) {
+                        $this->cashRegisterUtil->addSellPayments($transaction, $sale_payment_lines);
                     }
 
                     //Update payment status
@@ -601,6 +713,25 @@ class SellPosController extends Controller
                             $transaction->due_date = null;
                             $transaction->save();
                         }
+                    }
+
+                    // Create installment plan (schedule) if enabled.
+                    if ($enable_installment_plan && !$transaction->is_suspend && $transaction->status === 'final') {
+                        // Require pending balance for installments.
+                        if ($payment_status === 'paid') {
+                            throw new \Exception('Installment plan requires a pending balance (down payment less than total).');
+                        }
+
+                        $down_payment = 0.0;
+                        foreach ($sale_payment_lines as $pl) {
+                            if (!empty($pl['is_return'])) {
+                                continue;
+                            }
+                            $down_payment += (float) $this->transactionUtil->num_uf($pl['amount'] ?? 0);
+                        }
+
+                        $installmentUtil = app(InstallmentUtil::class);
+                        $installmentUtil->createInstallmentPlanForTransaction($transaction, $request, $down_payment, $business_id, $user_id);
                     }
 
                     if ($request->session()->get('business.enable_rp') == 1) {
@@ -666,6 +797,14 @@ class SellPosController extends Controller
                             $print_invoice = true;
                         }
                     } elseif ($input['status'] == 'final') {
+                        $print_invoice = true;
+                    }
+                }
+
+                if ($transaction->is_suspend == 1) {
+                    $msg = trans('sale.suspended_sale_added');
+                    // Allow printing only if enabled in POS settings.
+                    if (!empty($pos_settings['print_on_suspend'])) {
                         $print_invoice = true;
                     }
                 }
@@ -1269,6 +1408,11 @@ class SellPosController extends Controller
                 $input['is_suspend'] = isset($input['is_suspend']) && 1 == $input['is_suspend'] ? 1 : 0;
                 if ($input['is_suspend']) {
                     $input['sale_note'] = !empty($input['additional_notes']) ? $input['additional_notes'] : null;
+
+                    // Suspended sales are parked orders; always save as draft.
+                    $input['status'] = 'draft';
+                    $input['is_quotation'] = 0;
+                    $input['sub_status'] = null;
                 }
 
                 if ($status_before == 'draft' && !empty($request->input('invoice_scheme_id'))) {
@@ -1518,6 +1662,11 @@ class SellPosController extends Controller
                     } else {
                         $receipt = '';
                     }
+                }
+
+                if ($transaction->is_suspend == 1) {
+                    $msg = trans('sale.suspended_sale_updated');
+                    $receipt = '';
                 }
 
                 $output = ['success' => 1, 'msg' => $msg, 'receipt' => $receipt];
@@ -1907,6 +2056,12 @@ class SellPosController extends Controller
             ->where('transactions.created_by', $user_id)
             ->where('transactions.type', 'sell')
             ->where('is_direct_sale', 0);
+
+                // Suspended sales should only appear in the POS Suspended list.
+                $query->where(function ($q) {
+                        $q->whereNull('transactions.is_suspend')
+                            ->orWhere('transactions.is_suspend', 0);
+                });
 
         if ($transaction_status == 'final') {
             //Commented as credit sales not showing

@@ -532,10 +532,7 @@
                                             {{ $line['unit_price_inc_tax'] }}
                                         </td>
                                         <td class="text-right">
-                                            {{ $line['total_line_discount'] ?? 0 }}
-                                            @if (!empty($line['line_discount_percent']))
-                                                ({{ $line['line_discount_percent'] }}%)
-                                            @endif
+                                            {{ $line['line_discount'] ?? '0.00' }}
                                         </td>
                                         <td class="text-right">
                                             {{ $line['tax'] }} {{ $line['tax_name'] }}

@@ -17,6 +17,8 @@ LANG = {
     'yesterday': 'Kemarin',
     'last_7_days': 'Dalam 7 hari terakhir',
     'last_30_days': 'Dalam 30 hari terakhir',
+    'last_60_days': 'Dalam 60 hari terakhir',
+    'last_90_days': 'Dalam 90 hari terakhir',
     'this_month': 'Bulan ini',
     'last_month': 'Bulan sebelumnya',
     'this_financial_year': 'Pembukuan Tahun ini',

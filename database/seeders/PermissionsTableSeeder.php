@@ -40,6 +40,12 @@ class PermissionsTableSeeder extends Seeder
             ['name' => 'purchase.update'],
             ['name' => 'purchase.delete'],
 
+            // Stock adjustment (separate from purchases)
+            ['name' => 'stock_adjustment.create'],
+
+            // Controls visibility of purchase cost/profit fields in UI and related server-side behavior.
+            ['name' => 'purchase.view_cost_price'],
+
             ['name' => 'sell.view'],
             ['name' => 'sell.create'],
             ['name' => 'sell.update'],
@@ -83,13 +89,11 @@ class PermissionsTableSeeder extends Seeder
             ['name' => 'dashboard.data'],
         ];
 
-        $insert_data = [];
-        $time_stamp = \Carbon::now()->toDateTimeString();
         foreach ($data as $d) {
-            $d['guard_name'] = 'web';
-            $d['created_at'] = $time_stamp;
-            $insert_data[] = $d;
+            Permission::firstOrCreate(
+                ['name' => $d['name'], 'guard_name' => 'web'],
+                []
+            );
         }
-        Permission::insert($insert_data);
     }
 }

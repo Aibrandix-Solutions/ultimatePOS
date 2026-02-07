@@ -34,9 +34,10 @@ class ProductUtil extends Util
      * @param $profit_percent
      * @param $selling_price
      * @param $combo_variations = []
+     * @param $min_sell_price_inc_tax
      * @return bool
      */
-    public function createSingleProductVariation($product, $sku, $purchase_price, $dpp_inc_tax, $profit_percent, $selling_price, $selling_price_inc_tax, $combo_variations = [])
+    public function createSingleProductVariation($product, $sku, $purchase_price, $dpp_inc_tax, $profit_percent, $selling_price, $selling_price_inc_tax, $combo_variations = [], $min_sell_price_inc_tax = null)
     {
         if (! is_object($product)) {
             $product = Product::find($product);
@@ -50,6 +51,8 @@ class ProductUtil extends Util
         $product_variation = $product->product_variations()->create($product_variation_data);
 
         //create variations
+        $min_sell_price_inc_tax = ($min_sell_price_inc_tax !== null && $min_sell_price_inc_tax !== '') ? $min_sell_price_inc_tax : $selling_price_inc_tax;
+
         $variation_data = [
             'name' => 'DUMMY',
             'product_id' => $product->id,
@@ -59,6 +62,7 @@ class ProductUtil extends Util
             'profit_percent' => $this->num_uf($profit_percent),
             'default_sell_price' => $this->num_uf($selling_price),
             'sell_price_inc_tax' => $this->num_uf($selling_price_inc_tax),
+            'min_sell_price_inc_tax' => $this->num_uf($min_sell_price_inc_tax),
             'combo_variations' => $combo_variations,
         ];
         $variation = $product_variation->variations()->create($variation_data);
@@ -532,6 +536,7 @@ class ProductUtil extends Util
             'variations.default_sell_price',
             'variations.default_purchase_price',
             'variations.sell_price_inc_tax',
+            'variations.min_sell_price_inc_tax',
             'variations.id as variation_id',
             'variations.combo_variations',  //Used in combo products
             'units.short_name as unit',

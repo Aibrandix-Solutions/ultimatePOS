@@ -17,6 +17,8 @@ LANG = {
 'yesterday': 'Ieri',
 'last_7_days': 'Ultimele 7 zile',
 'last_30_days': 'Ultimele 30 de zile',
+	'last_60_days': 'Ultimele 60 de zile',
+	'last_90_days': 'Ultimele 90 de zile',
 'this_month': 'Luna aceasta',
 'last_month': 'Luna trecuta',
 'this_financial_year': 'Anul financiar curent',

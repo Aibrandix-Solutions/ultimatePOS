@@ -17,6 +17,8 @@ return [
     'add_sale' => 'Add Sale',
     'pos_sale' => 'POS',
     'draft_added' => 'Draft added successfully',
+    'suspended_sale_added' => 'Sale suspended successfully',
+    'suspended_sale_updated' => 'Suspended sale updated successfully',
     'invoice_added' => 'Invoice added successfully',
     'item' => 'Items',
     'total' => 'Total',

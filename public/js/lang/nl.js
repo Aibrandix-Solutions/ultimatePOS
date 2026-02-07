@@ -17,6 +17,8 @@ LANG = {
 "yesterday": "Gisteren",
 "last_7_days": "Laatste 7 dagen",
 "last_30_days": "Laatste 30 dagen",
+"last_60_days": "Laatste 60 dagen",
+"last_90_days": "Laatste 90 dagen",
 "this_month": "Deze maand",
 "last_month": "Vorige maand",
 "this_financial_year": "Huidig ​​boekjaar",

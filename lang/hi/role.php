@@ -26,6 +26,7 @@
      'product.delete' => 'उत्पाद हटाएं',
      'purchase.view' => 'खरीद और स्टॉक समायोजन देखें',
      'purchase.create' => 'खरीद और स्टॉक समायोजन जोड़ें',
+    'stock_adjustment.create' => 'Add Stock Adjustment',
      'purchase.update' => 'खरीद और स्टॉक समायोजन संपादित करें',
      'purchase.delete' => 'खरीद और स्टॉक समायोजन हटाएं',
      'sell.view' => 'POS बेचना देखें',

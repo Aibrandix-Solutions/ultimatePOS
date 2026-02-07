@@ -26,17 +26,34 @@
 		@php
 			$product_name = e($product->product_name) . '<br/>' . $product->sub_sku ;
 			if(!empty($product->brand)){ $product_name .= ' ' . $product->brand ;}
+			$warranty_id = !empty($action) && $action == 'edit' && !empty($product->warranties->first())  ? $product->warranties->first()->id : $product->warranty_id;
+			$product_image_url = '';
+			if(count($product->media) > 0) {
+				$product_image_url = $product->media->first()->display_url;
+			} elseif(!empty($product->product_image)) {
+				$product_image_url = asset('/uploads/img/' . rawurlencode($product->product_image));
+			} else {
+				$product_image_url = asset('/img/default.png');
+			}
 		@endphp
+
+		<input type="hidden" class="pos_product_image_url" value="{{$product_image_url}}">
 
 		@if( ($edit_price || $edit_discount) && empty($is_direct_sell) )
 		<div title="@lang('lang_v1.pos_edit_product_price_help')" style="display: inline">
-		<span class="text-link text-info cursor-pointer" data-toggle="modal" data-target="#row_edit_product_price_modal" data-row-index="{{$row_count}}" style="color: #161160; text-decoration: none; cursor: pointer; font-weight: 600; font-size: 15px; letter-spacing: 0.3px; transition: all 0.3s ease; display: inline-block; padding: 2px 0;">
+		<span class="text-link text-info cursor-pointer" data-toggle="modal" data-target="#row_edit_product_price_modal" data-row-index="{{$row_count}}" style="color: #161160; text-decoration: none; cursor: pointer; font-weight: 600; font-size: 14px; letter-spacing: 0.2px; transition: all 0.3s ease; display: inline-block; padding: 1px 0;">
 			{!! $product_name !!}
 			&nbsp;<i class="fa fa-info-circle" style="color: #161160; font-size: 13px; opacity: 0.8; transition: all 0.3s ease;"></i>
 		</span>
 		</div>
 		@else
 			{!! $product_name !!}
+		@endif
+
+		@if(!empty($common_settings['enable_product_warranty']))
+			<div style="display:none;">
+				{!! Form::select("products[$row_count][warranty_id]", $warranties, $warranty_id ?? ($product->warranty_id ?? null), ['placeholder' => __('messages.please_select'), 'class' => 'row_warranty_id']) !!}
+			</div>
 		@endif
 
 		@can('view_purchase_price')
@@ -47,13 +64,9 @@
 				<i class="fa fa-eye"></i>
 			</button>
 		@endcan
-		<img onerror="this.onerror=null;this.src='{{ asset('/img/default.png') }}';" src="@if(count($product->media) > 0)
-						{{$product->media->first()->display_url}}
-					@elseif(!empty($product->product_image))
-						{{asset('/uploads/img/' . rawurlencode($product->product_image))}}
-					@else
-						{{asset('/img/default.png')}}
-					@endif" alt="product-img" loading="lazy" style="height: 52px; display: inline; margin-left: 8px; border: 2px solid rgba(22,17,96,0.1); border-radius: 10px; margin-top: 6px; width: 52px; object-fit: cover; box-shadow: 0 2px 8px rgba(22,17,96,0.1); transition: all 0.3s ease; cursor: pointer;">
+		@if(empty($pos_settings['hide_selected_product_image']))
+			<img onerror="this.onerror=null;this.src='{{ asset('/img/default.png') }}';" src="{{$product_image_url}}" alt="product-img" loading="lazy" style="height: 40px; display: inline; margin-left: 6px; border: 2px solid rgba(22,17,96,0.1); border-radius: 8px; margin-top: 2px; width: 40px; object-fit: cover; box-shadow: 0 2px 6px rgba(22,17,96,0.08); transition: all 0.3s ease; cursor: pointer;">
+		@endif
 
 
 		<input type="hidden" class="enable_sr_no" value="{{$product->enable_sr_no}}">
@@ -110,15 +123,11 @@
 		@endif
 
 		@php
-			$warranty_id = !empty($action) && $action == 'edit' && !empty($product->warranties->first())  ? $product->warranties->first()->id : $product->warranty_id;
-
 			if($discount_type == 'fixed') {
 				$discount_amount = $discount_amount * $multiplier;
 			}
 		@endphp
-
-<br>
-		<small class="text-muted p-1" style="background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%); padding: 4px 8px !important; border-radius: 6px; font-size: 11px; font-weight: 500; color: #64748b; border: 1px solid rgba(22,17,96,0.08); display: inline-block; margin-top: 4px;">
+		<small class="text-muted p-1" style="background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%); padding: 3px 6px !important; border-radius: 6px; font-size: 11px; font-weight: 500; color: #64748b; border: 1px solid rgba(22,17,96,0.08); display: inline-block; margin-top: 2px;">
 			@if($product->enable_stock)
 			<i class="fa fa-cube" style="margin-right: 4px; color: #161160;"></i>{{ @num_format($product->qty_available) }} {{$product->unit}} @lang('lang_v1.in_stock')
 			@else
@@ -274,9 +283,9 @@
         		@endphp
         	@endif
         @endforeach
-		<div class="input-group input-number" style="border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(22,17,96,0.12), 0 2px 4px rgba(22,17,96,0.08); border: 1px solid rgba(22,17,96,0.15); background: #ffffff; position: relative;">
-			<span class="input-group-btn"><button type="button" class="btn btn-default btn-flat quantity-down" style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%); border: none; color: white; padding: 10px 14px; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); font-weight: 600; box-shadow: inset 0 1px 0 rgba(255,255,255,0.2);"><i class="fa fa-minus" style="font-size: 12px;"></i></button></span>
-		<input type="text" data-min="1" style="width: auto; border: none; padding: 14px 16px; font-size: 15px; font-weight: 600; text-align: center; background: #ffffff; color: #1e293b; letter-spacing: 0.5px;"
+		<div class="input-group input-number" style="border-radius: 10px; overflow: hidden; box-shadow: 0 4px 12px rgba(22,17,96,0.12), 0 2px 4px rgba(22,17,96,0.08); border: 1px solid rgba(22,17,96,0.15); background: #ffffff; position: relative;">
+			<span class="input-group-btn"><button type="button" class="btn btn-default btn-flat quantity-down" style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%); border: none; color: white; padding: 6px 10px; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); font-weight: 600; box-shadow: inset 0 1px 0 rgba(255,255,255,0.2);"><i class="fa fa-minus" style="font-size: 11px;"></i></button></span>
+		<input type="text" data-min="1" style="width: auto; border: none; padding: 8px 10px; font-size: 13px; font-weight: 600; text-align: center; background: #ffffff; color: #1e293b; letter-spacing: 0.3px;"
 			class="form-control pos_quantity input_number mousetrap input_quantity" 
 			value="{{@format_quantity($product->quantity_ordered)}}" name="products[{{$row_count}}][quantity]" data-allow-overselling="@if(empty($pos_settings['allow_overselling'])){{'false'}}@else{{'true'}}@endif" 
 			@if($allow_decimal) 
@@ -293,13 +302,13 @@
 				data-msg_max_default="@lang('validation.custom-messages.quantity_not_available', ['qty'=> $product->formatted_qty_available, 'unit' => $product->unit  ])" 
 			@endif 
 		>
-		<span class="input-group-btn"><button type="button" class="btn btn-default btn-flat quantity-up" style="background: linear-gradient(135deg, #51cf66 0%, #40c057 100%); border: none; color: white; padding: 10px 14px; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); font-weight: 600; box-shadow: inset 0 1px 0 rgba(255,255,255,0.2);"><i class="fa fa-plus" style="font-size: 12px;"></i></button></span>
+		<span class="input-group-btn"><button type="button" class="btn btn-default btn-flat quantity-up" style="background: linear-gradient(135deg, #51cf66 0%, #40c057 100%); border: none; color: white; padding: 6px 10px; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); font-weight: 600; box-shadow: inset 0 1px 0 rgba(255,255,255,0.2);"><i class="fa fa-plus" style="font-size: 11px;"></i></button></span>
 		</div>
 		
 		<input type="hidden" name="products[{{$row_count}}][product_unit_id]" value="{{$product->unit_id}}">
 		@if(count($sub_units) > 0)
 			<br>
-			<select name="products[{{$row_count}}][sub_unit_id]" class="form-control input-sm sub_unit" style="border-radius: 8px; border: 1px solid rgba(22,17,96,0.15); background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); font-size: 12px; font-weight: 500; color: #475569; padding: 6px 10px; box-shadow: 0 2px 4px rgba(22,17,96,0.06); transition: all 0.3s ease;">
+			<select name="products[{{$row_count}}][sub_unit_id]" class="form-control input-sm sub_unit" style="border-radius: 8px; border: 1px solid rgba(22,17,96,0.15); background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); font-size: 11px; font-weight: 500; color: #475569; padding: 4px 8px; box-shadow: 0 2px 4px rgba(22,17,96,0.06); transition: all 0.3s ease;">
                 @foreach($sub_units as $key => $value)
                     <option value="{{$key}}" data-multiplier="{{$value['multiplier']}}" data-unit_name="{{$value['name']}}" data-allow_decimal="{{$value['allow_decimal']}}" @if(!empty($product->sub_unit_id) && $product->sub_unit_id == $key) selected @endif>
                         {{$value['name']}}
@@ -427,13 +436,11 @@
 		@endif
 	@endif
 	<td class="{{$hide_tax}}">
-		<input type="text" style="width: auto" name="products[{{$row_count}}][unit_price_inc_tax]" class="form-control pos_unit_price_inc_tax input_number" value="{{@num_format($unit_price_inc_tax)}}" @if(!$edit_price) readonly @endif @if(!empty($pos_settings['enable_msp'])) data-rule-min-value="{{$unit_price_inc_tax}}" data-msg-min-value="{{__('lang_v1.minimum_selling_price_error_msg', ['price' => @num_format($unit_price_inc_tax)])}}" @endif>
+			@php
+				$msp_unit_price_inc_tax = !empty($product->min_sell_price_inc_tax) ? $product->min_sell_price_inc_tax : $unit_price_inc_tax;
+			@endphp
+			<input type="text" style="width: auto" name="products[{{$row_count}}][unit_price_inc_tax]" class="form-control pos_unit_price_inc_tax input_number" value="{{@num_format($unit_price_inc_tax)}}" @if(!$edit_price) readonly @endif @if(!empty($pos_settings['enable_msp'])) data-rule-min-value="{{$msp_unit_price_inc_tax}}" data-msg-min-value="{{__('lang_v1.minimum_selling_price_error')}}" @endif>
 	</td>
-	@if(!empty($common_settings['enable_product_warranty']) && !empty($is_direct_sell))
-		<td>
-			{!! Form::select("products[$row_count][warranty_id]", $warranties, $warranty_id, ['placeholder' => __('messages.please_select'), 'class' => 'form-control']) !!}
-		</td>
-	@endif
 	<td class="text-center" style="vertical-align: middle;">
 		@php
 			$subtotal_type = !empty($pos_settings['is_pos_subtotal_editable']) ? 'text' : 'hidden';

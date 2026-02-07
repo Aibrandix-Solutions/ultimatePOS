@@ -19,6 +19,8 @@ LANG = {
 "last_30_days" : "Son 30 gün", 
 "this_month" : "Bu ay", 
 "last_month" : "Geçen ay", 
+    "last_60_days" : "Son 60 gün", 
+    "last_90_days" : "Son 90 gün", 
 "this_financial_year" : "Cari mali yıl", 
 "clear" : "Açık", 
 "no_products_added" : "Hiçbir ürün eklenmedi, önce bazı ürünler ekleyin", 

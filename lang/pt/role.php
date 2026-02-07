@@ -26,6 +26,7 @@
      'product.delete' => 'Excluir produto',
      'purchase.view' => 'Ver ajuste de compra e estoque',
      'purchase.create' => 'Adicionar ajuste de compra e estoque',
+    'stock_adjustment.create' => 'Add Stock Adjustment',
      'purchase.update' => 'Editar ajuste de compra e estoque',
      'purchase.delete' => 'Excluir ajuste de compra e estoque',
      'sell.view' => 'Ver venda de PDV',

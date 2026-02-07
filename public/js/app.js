@@ -1685,17 +1685,22 @@ $(document).ready(function () {
             url: $(this).attr('href'),
             dataType: 'html',
             success: function (result) {
-                $('.pay_contact_due_modal')
-                    .html(result)
-                    .modal('show');
-                __currency_convert_recursively($('.pay_contact_due_modal'));
-                $('#paid_on').datetimepicker({
+                var container = $('.pay_contact_due_modal');
+
+                container.html(result).modal('show');
+                __currency_convert_recursively(container);
+
+                // Initialize datetime pickers for dynamically loaded modal content
+                container.find('#paid_on').datetimepicker({
                     format: moment_date_format + ' ' + moment_time_format,
                     ignoreReadonly: true,
                 });
-                $('.pay_contact_due_modal')
-                    .find('form#pay_contact_due_form')
-                    .validate();
+                container.find('.datetimepicker').datetimepicker({
+                    format: moment_date_format + ' ' + moment_time_format,
+                    ignoreReadonly: true,
+                });
+
+                container.find('form#pay_contact_due_form').validate();
             },
         });
     });
@@ -2903,26 +2908,79 @@ function submitContactForm(form) {
 }
 
 $(document).on('submit', 'form#pay_contact_due_form', function (e) {
+    e.preventDefault();
+
     var is_valid = true;
     var payment_type = $('#pay_contact_due_form .payment_types_dropdown').val();
-    var denomination_for_payment_types = JSON.parse($('#pay_contact_due_form .enable_cash_denomination_for_payment_methods').val());
-    if (denomination_for_payment_types.includes(payment_type) && $('#pay_contact_due_form .is_strict').length && $('#pay_contact_due_form .is_strict').val() === '1') {
-        var payment_amount = __read_number($('#pay_contact_due_form .payment_amount'));
-        var total_denomination = $('#pay_contact_due_form').find('input.denomination_total_amount').val();
-        if (payment_amount != total_denomination) {
-            is_valid = false;
+    var denominationInput = $('#pay_contact_due_form .enable_cash_denomination_for_payment_methods');
+    if (denominationInput.length) {
+        var denomination_for_payment_types = JSON.parse(denominationInput.val());
+        if (denomination_for_payment_types.includes(payment_type) && $('#pay_contact_due_form .is_strict').length && $('#pay_contact_due_form .is_strict').val() === '1') {
+            var payment_amount = __read_number($('#pay_contact_due_form .payment_amount'));
+            var total_denomination = $('#pay_contact_due_form').find('input.denomination_total_amount').val();
+            if (payment_amount != total_denomination) {
+                is_valid = false;
+            }
         }
     }
 
-    $('#pay_contact_due_form').find('button[type="submit"]')
-        .attr('disabled', false);
+    var form = $(this);
+    var submitBtn = form.find('button[type="submit"]');
 
     if (!is_valid) {
         $('#pay_contact_due_form').find('.cash_denomination_error').removeClass('hide');
-        e.preventDefault();
         return false;
     } else {
         $('#pay_contact_due_form').find('.cash_denomination_error').addClass('hide');
     }
 
-})
+    submitBtn.attr('disabled', true);
+
+    var formData = new FormData(form[0]);
+    $.ajax({
+        method: 'POST',
+        url: form.attr('action'),
+        dataType: 'json',
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function (result) {
+            submitBtn.attr('disabled', false);
+
+            if (result.success == true) {
+                $('.pay_contact_due_modal').modal('hide');
+                toastr.success(result.msg);
+
+                if (typeof (contact_table) != 'undefined') {
+                    contact_table.ajax.reload();
+                }
+
+                if (typeof (get_contact_ledger) == 'function') {
+                    get_contact_ledger();
+                }
+
+                if (result.receipt && result.receipt.html_content != '') {
+                    $('#receipt_section').html(result.receipt.html_content);
+                    __currency_convert_recursively($('#receipt_section'));
+
+                    var title = document.title;
+                    if (typeof result.print_title != 'undefined') {
+                        document.title = result.print_title;
+                    }
+
+                    __print_receipt('receipt_section');
+
+                    setTimeout(function () {
+                        document.title = title;
+                    }, 1200);
+                }
+            } else {
+                toastr.error(result.msg);
+            }
+        },
+        error: function () {
+            submitBtn.attr('disabled', false);
+            toastr.error(LANG.something_went_wrong);
+        },
+    });
+});

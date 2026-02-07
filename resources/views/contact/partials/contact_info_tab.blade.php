@@ -1,4 +1,15 @@
 <span id="view_contact_page"></span>
+@php
+    $is_supplier = in_array($contact->type, ['supplier', 'both']);
+    $is_customer = in_array($contact->type, ['customer', 'both']);
+
+    $opening_balance_due = ($contact->opening_balance ?? 0) - ($contact->opening_balance_paid ?? 0);
+    $purchase_due = (($contact->total_purchase ?? 0) - ($contact->purchase_paid ?? 0)) + ($is_supplier ? $opening_balance_due : 0);
+    $sell_due = (($contact->total_invoice ?? 0) - ($contact->invoice_received ?? 0)) + ($is_customer ? $opening_balance_due : 0);
+
+    $has_supplier_due = $is_supplier && $purchase_due > 0;
+    $has_customer_due = $is_customer && $sell_due > 0;
+@endphp
 <div class="row">
     <div class="col-md-12">
         <div class="col-sm-3">
@@ -32,16 +43,40 @@
         @endif
         --}}
 
-        @if( $contact->type == 'supplier' || $contact->type == 'both')
-            <div class="clearfix"></div>
-            <div class="col-sm-12">
-                @if(($contact->total_purchase - $contact->purchase_paid) > 0)
-                    <a href="{{action([\App\Http\Controllers\TransactionPaymentController::class, 'getPayContactDue'], [$contact->id])}}?type=purchase" class="pay_purchase_due tw-dw-btn tw-dw-btn-primary tw-text-white tw-dw-btn-sm pull-right"><i class="fas fa-money-bill-alt" aria-hidden="true"></i> @lang("contact.pay_due_amount")</a>
-                @endif
-            </div>
-        @endif
         <div class="col-sm-12">
-            <button type="button" class="tw-dw-btn tw-dw-btn-primary tw-text-white tw-dw-btn-sm pull-right tw-m-2" data-toggle="modal" data-target="#add_discount_modal">@lang('lang_v1.add_discount')</button>
+            <div class="pull-right tw-m-2">
+                @if($has_supplier_due || $has_customer_due)
+                    @if($has_supplier_due && $has_customer_due)
+                        <div class="btn-group">
+                            <button type="button" class="tw-dw-btn tw-dw-btn-primary tw-text-white tw-dw-btn-sm dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-money-bill-alt" aria-hidden="true"></i> @lang('contact.pay_due_amount') <span class="caret"></span>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-right" role="menu">
+                                <li>
+                                    <a href="{{ action([\App\Http\Controllers\TransactionPaymentController::class, 'getPayContactDue'], [$contact->id]) }}?type=purchase" class="pay_purchase_due">
+                                        <i class="fas fa-arrow-circle-down" aria-hidden="true"></i> @lang('lang_v1.pay_to_supplier')
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="{{ action([\App\Http\Controllers\TransactionPaymentController::class, 'getPayContactDue'], [$contact->id]) }}?type=sell" class="pay_sale_due">
+                                        <i class="fas fa-arrow-circle-up" aria-hidden="true"></i> @lang('lang_v1.receive_from_customer')
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    @elseif($has_supplier_due)
+                        <a href="{{ action([\App\Http\Controllers\TransactionPaymentController::class, 'getPayContactDue'], [$contact->id]) }}?type=purchase" class="pay_purchase_due tw-dw-btn tw-dw-btn-primary tw-text-white tw-dw-btn-sm">
+                            <i class="fas fa-money-bill-alt" aria-hidden="true"></i> @lang('contact.pay_due_amount')
+                        </a>
+                    @elseif($has_customer_due)
+                        <a href="{{ action([\App\Http\Controllers\TransactionPaymentController::class, 'getPayContactDue'], [$contact->id]) }}?type=sell" class="pay_sale_due tw-dw-btn tw-dw-btn-primary tw-text-white tw-dw-btn-sm">
+                            <i class="fas fa-money-bill-alt" aria-hidden="true"></i> @lang('contact.pay_due_amount')
+                        </a>
+                    @endif
+                @endif
+
+                <button type="button" class="tw-dw-btn tw-dw-btn-primary tw-text-white tw-dw-btn-sm" data-toggle="modal" data-target="#add_discount_modal">@lang('lang_v1.add_discount')</button>
+            </div>
         </div>
     </div>
 </div>

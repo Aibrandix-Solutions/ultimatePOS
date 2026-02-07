@@ -353,11 +353,7 @@
 						@endif
 						@if(!empty($receipt_details->item_discount_label))
 							<td class="text-right">
-								{{$line['total_line_discount'] ?? '0.00'}}
-
-								@if(!empty($line['line_discount_percent']))
-								 	({{$line['line_discount_percent']}}%)
-								@endif
+								{{$line['line_discount'] ?? '0.00'}}
 							</td>
 						@endif
 						<td class="text-right">{{$line['line_total']}}</td>

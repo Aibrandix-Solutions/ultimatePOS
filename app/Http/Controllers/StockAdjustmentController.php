@@ -46,7 +46,7 @@ class StockAdjustmentController extends Controller
     public function index()
     {
 
-        if (! auth()->user()->can('purchase.view') && ! auth()->user()->can('purchase.create') && ! auth()->user()->can('view_own_purchase')) {
+        if (! auth()->user()->can('purchase.view') && ! auth()->user()->can('stock_adjustment.create') && ! auth()->user()->can('view_own_purchase')) {
             abort(403, 'Unauthorized action.');
         }
 
@@ -149,7 +149,7 @@ class StockAdjustmentController extends Controller
      */
     public function create()
     {
-        if (! auth()->user()->can('purchase.create')) {
+        if (! auth()->user()->can('stock_adjustment.create')) {
             abort(403, 'Unauthorized action.');
         }
 
@@ -174,7 +174,7 @@ class StockAdjustmentController extends Controller
      */
     public function store(Request $request)
     {
-        if (! auth()->user()->can('purchase.create')) {
+        if (! auth()->user()->can('stock_adjustment.create')) {
             abort(403, 'Unauthorized action.');
         }
 

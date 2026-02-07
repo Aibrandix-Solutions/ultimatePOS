@@ -155,7 +155,7 @@ class AdminSidebarMenu
             ) {
                 $menu->dropdown(
                     __('sale.products'),
-                    function ($sub) {
+                    function ($sub) use ($common_settings) {
                         if (auth()->user()->can('product.view')) {
                             $sub->url(
                                 action([\App\Http\Controllers\ProductController::class, 'index']),
@@ -238,6 +238,19 @@ class AdminSidebarMenu
                             __('lang_v1.warranties'),
                             ['icon' => '', 'active' => request()->segment(1) == 'warranties']
                         );
+
+                        if (!empty($common_settings['enable_product_warranty'])) {
+                            $sub->url(
+                                action([\App\Http\Controllers\WarrantyRegisterController::class, 'index']),
+                                __('lang_v1.warranty_register'),
+                                ['icon' => '', 'active' => request()->segment(1) == 'warranties' && request()->segment(2) == 'register']
+                            );
+                            $sub->url(
+                                action([\App\Http\Controllers\WarrantyClaimController::class, 'index']),
+                                __('lang_v1.warranty_claims'),
+                                ['icon' => '', 'active' => request()->segment(1) == 'warranties' && request()->segment(2) == 'claims']
+                            );
+                        }
                     },
                     [
                         'icon' => '<svg aria-hidden="true" class="tw-size-5 tw-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -410,6 +423,14 @@ class AdminSidebarMenu
                                 action([\App\Http\Controllers\SellPosController::class, 'listSubscriptions']),
                                 __('lang_v1.subscriptions'),
                                 ['icon' => '', 'active' => request()->segment(1) == 'subscriptions']
+                            );
+                        }
+
+                        if ($is_admin || auth()->user()->hasAnyPermission(['sell.view', 'sell.payments'])) {
+                            $sub->url(
+                                action([\App\Http\Controllers\InstallmentPlanController::class, 'index']),
+                                __('lang_v1.installment_plans'),
+                                ['icon' => '', 'active' => request()->segment(1) == 'installments']
                             );
                         }
 

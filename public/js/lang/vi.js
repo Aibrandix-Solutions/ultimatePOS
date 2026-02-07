@@ -17,6 +17,8 @@ LANG = {
 'yesterday': 'Hôm qua',
 'last_7_days': '7 ngày qua',
 'last_30_days': '30 ngày trước',
+	'last_60_days': '60 ngy qua',
+	'last_90_days': '90 ngy qua',
 'this_month': 'Tháng này',
 'last_month': 'Tháng trước',
 'this_financial_year': 'Năm tài chính hiện tại',

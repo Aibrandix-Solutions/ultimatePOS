@@ -6,6 +6,11 @@
 		</div>
 		<div class="modal-body">
 			<div class="row">
+				<div class="col-xs-12" style="margin-bottom: 10px;">
+					<div id="modal_product_image_wrapper" style="display:none; text-align:center;">
+						<img id="modal_product_image" src="" alt="Product Image" loading="lazy" onerror="this.onerror=null;this.src='{{ asset('/img/default.png') }}';" style="height: 90px; width: 90px; object-fit: cover; border-radius: 12px; border: 2px solid rgba(22,17,96,0.10); box-shadow: 0 4px 12px rgba(22,17,96,0.12);" />
+					</div>
+				</div>
 				<div class="form-group col-xs-12">
 					<label>@lang('sale.unit_price')</label>
 					<input type="text" id="modal_unit_price" class="form-control pos_unit_price input_number mousetrap" value="">
@@ -20,6 +25,10 @@
 				<div class="form-group col-xs-12 col-sm-6">
 					<label>@lang('sale.discount_amount')</label>
 					<input type="text" id="modal_discount_amount" class="form-control input_number row_discount_amount" value="">
+				</div>
+				<div class="form-group col-xs-12" id="modal_warranty_wrapper" style="display:none;">
+					<label>@lang('lang_v1.warranty')</label>
+					<select id="modal_warranty_id" class="form-control"></select>
 				</div>
 				<div class="form-group col-xs-12">
 					<label>@lang('lang_v1.description')</label>

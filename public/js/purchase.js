@@ -233,6 +233,12 @@ $(document).ready(function() {
     //On Change of quantity
     $(document).on('change', '.purchase_quantity', function() {
         var row = $(this).closest('tr');
+
+        if (window.__hide_purchase_cost) {
+            update_row_selling_line_total(row);
+            return;
+        }
+
         var quantity = __read_number($(this), true);
         var purchase_before_tax = __read_number(row.find('input.purchase_unit_cost'), true);
         var purchase_after_tax = __read_number(
@@ -531,6 +537,12 @@ $(document).ready(function() {
                 if ($('#purchase_list_filter_supplier_id').length) {
                     d.supplier_id = $('#purchase_list_filter_supplier_id').val();
                 }
+
+                //In contact view, also show opening balance as a due row
+                if ($('#is_contact_view').length && d.supplier_id) {
+                    d.from_contact_view = 1;
+                    d.include_opening_balance = 1;
+                }
                 if ($('#purchase_list_filter_payment_status').length) {
                     d.payment_status = $('#purchase_list_filter_payment_status').val();
                 }
@@ -680,6 +692,11 @@ $(document).ready(function() {
 
     $(document).on('change', '.default_sell_price', function() {
         var row = $(this).closest('tr');
+        if (window.__hide_purchase_cost) {
+            update_row_selling_line_total(row);
+            return;
+        }
+
         update_inline_profit_percentage(row);
     });
 
@@ -712,7 +729,6 @@ $(document).ready(function() {
 
     $('table#purchase_entry_table').on('change', 'select.sub_unit', function() {
         var tr = $(this).closest('tr');
-        var base_unit_cost = tr.find('input.base_unit_cost').val();
         var base_unit_selling_price = tr.find('input.base_unit_selling_price').val();
 
         var multiplier = parseFloat(
@@ -722,10 +738,17 @@ $(document).ready(function() {
         );
 
         var unit_sp = base_unit_selling_price * multiplier;
-        var unit_cost = base_unit_cost * multiplier;
 
         var sp_element = tr.find('input.default_sell_price');
         __write_number(sp_element, unit_sp);
+
+        if (window.__hide_purchase_cost) {
+            update_row_selling_line_total(tr);
+            return;
+        }
+
+        var base_unit_cost = tr.find('input.base_unit_cost').val();
+        var unit_cost = base_unit_cost * multiplier;
 
         var cp_element = tr.find('input.purchase_unit_cost_without_discount');
         __write_number(cp_element, unit_cost);
@@ -733,6 +756,18 @@ $(document).ready(function() {
     });
     toggle_search();
 });
+
+function update_row_selling_line_total(row) {
+    if (!row || !row.length) {
+        return;
+    }
+
+    var quantity = __read_number(row.find('input.purchase_quantity'), true);
+    var default_sell_price = __read_number(row.find('input.default_sell_price'), true);
+    var line_total = quantity * default_sell_price;
+
+    row.find('.row_selling_line_total').text(__currency_trans_from_en(line_total, false, true));
+}
 
 function get_purchase_entry_row(product_id, variation_id) {
     if (product_id) {
@@ -775,6 +810,10 @@ function append_purchase_lines(data, row_count, trigger_change = false) {
 
             update_inline_profit_percentage(row);
 
+            if (window.__hide_purchase_cost) {
+                update_row_selling_line_total(row);
+            }
+
             update_table_total();
             update_grand_total();
             update_table_sr_number();
@@ -797,6 +836,19 @@ function append_purchase_lines(data, row_count, trigger_change = false) {
 
 function update_purchase_entry_row_values(row) {
     if (typeof row != 'undefined') {
+        if (window.__hide_purchase_cost) {
+            update_row_selling_line_total(row);
+
+            row.find('.expiry_datepicker').each(function() {
+                $(this).datepicker({
+                    autoclose: true,
+                    format: datepicker_date_format,
+                });
+            });
+
+            return row;
+        }
+
         var quantity = __read_number(row.find('.purchase_quantity'), true);
         var unit_cost_price = __read_number(row.find('.purchase_unit_cost'), true);
         var row_subtotal_before_tax = quantity * unit_cost_price;
@@ -837,6 +889,10 @@ function update_purchase_entry_row_values(row) {
 }
 
 function update_row_price_for_exchange_rate(row) {
+    if (window.__hide_purchase_cost) {
+        return true;
+    }
+
     var exchange_rate = $('input#exchange_rate').val();
 
     if (exchange_rate == 1) {
@@ -905,10 +961,19 @@ function iraqi_dinnar_selling_price_adjustment(row) {
 
     __write_number(row.find('input.default_sell_price'), default_sell_price, true);
 
+    if (window.__hide_purchase_cost) {
+        update_row_selling_line_total(row);
+        return;
+    }
+
     update_inline_profit_percentage(row);
 }
 
 function update_inline_profit_percentage(row) {
+    if (window.__hide_purchase_cost) {
+        return;
+    }
+
     //Update Profit percentage
     var default_sell_price = __read_number(row.find('input.default_sell_price'), true);
     var exchange_rate = $('input#exchange_rate').val();
@@ -920,6 +985,10 @@ function update_inline_profit_percentage(row) {
 }
 
 function update_table_total() {
+    if (window.__hide_purchase_cost) {
+        return true;
+    }
+
     var total_quantity = 0;
     var total_st_before_tax = 0;
     var total_subtotal = 0;
@@ -944,6 +1013,10 @@ function update_table_total() {
 }
 
 function update_grand_total() {
+    if (window.__hide_purchase_cost) {
+        return true;
+    }
+
     var st_before_tax = __read_number($('input#st_before_tax_input'), true);
     var total_subtotal = __read_number($('input#total_subtotal_input'), true);
 

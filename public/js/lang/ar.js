@@ -16,6 +16,8 @@ LANG = {
     'yesterday': 'الأمس',
     'last_7_days': 'اخر 7 ايام',
     'last_30_days': 'آخر 30 يومًا',
+        'last_60_days': 'آخر 60 يومًا',
+        'last_90_days': 'آخر 90 يومًا',
     'this_month': 'هذا الشهر',
     'last_month': 'الشهر الماضي',
     'this_financial_year': 'السنة المالية الحالية',

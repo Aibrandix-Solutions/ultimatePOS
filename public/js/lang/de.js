@@ -17,6 +17,8 @@ LANG = {
 "yesterday": "Gestern",
 "last_7_days": "Letzten 7 Tage",
 "last_30_days": "Letzte 30 Tage",
+"last_60_days": "Letzte 60 Tage",
+"last_90_days": "Letzte 90 Tage",
 "this_month": "Diesen Monat",
 "last_month": "Im vergangenen Monat",
 "this_financial_year": "Aktuelles Geschäftsjahr",

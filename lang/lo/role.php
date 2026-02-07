@@ -41,6 +41,7 @@ return [
 
     'purchase.view' => 'ເບິ່ງການຊື້  & ການປັບສະຕັອກ',
     'purchase.create' => 'ເພີ່ມການຊື້ & ການປັບສະຕັອກ',
+    'stock_adjustment.create' => 'Add Stock Adjustment',
     'purchase.update' => 'ແກ້ໄຂການຊື້ & ການປັບສະຕັອກ',
     'purchase.delete' => 'ລຶບການຊື້ purchase & ການປັບສະຕັອກ',
 

@@ -15,6 +15,17 @@
                             'data-error-msg' => __('lang_v1.required_advance_balance_not_available'),
                         ]) !!}
                     </div>
+
+                    <div class="col-md-12 mb-12" style="margin-top:6px;">
+                        {!! Form::hidden('apply_payment_to_old_dues', 0) !!}
+                        <label style="font-weight: 600; cursor: pointer;">
+                            {!! Form::checkbox('apply_payment_to_old_dues', 1, false, ['id' => 'apply_payment_to_old_dues']) !!}
+                            Keep this payment on the current invoice
+                        </label>
+                        <small class="help-block" style="margin: 2px 0 0;">
+                            If unchecked, payment reduces previous dues first (oldest first) and the current invoice will remain due.
+                        </small>
+                    </div>
                     <div class="col-md-7">
                         <div class="row">
                             <div id="payment_rows_div">
@@ -203,6 +214,43 @@
                                             @lang('lang_v1.due_date')
                                         </small>
                                     </div>
+                                </div>
+
+                                <div class="col-md-12" style="margin-top:10px;">
+                                    <hr style="border-color: rgba(22,17,96,0.1);">
+                                    <label style="font-weight: 600; cursor: pointer;">
+                                        {!! Form::checkbox('enable_installment_plan', 1, false, ['id' => 'enable_installment_plan']) !!}
+                                        @lang('lang_v1.installment_plan')
+                                    </label>
+                                    <small class="help-block" style="margin: 4px 0 0;">
+                                        @lang('lang_v1.installment_plan_help')
+                                    </small>
+                                </div>
+
+                                <div class="col-md-12 hide" id="installment_plan_fields_wrapper">
+                                    <div class="row" style="margin-top:6px;">
+                                        <div class="col-md-4">
+                                            <div class="form-group" style="margin-bottom: 8px;">
+                                                {!! Form::label('installment_count', __('lang_v1.installment_count') . ':*') !!}
+                                                {!! Form::number('installment_count', 3, ['class' => 'form-control', 'id' => 'installment_count', 'min' => 1]) !!}
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-group" style="margin-bottom: 8px;">
+                                                {!! Form::label('installment_interval', __('lang_v1.installment_interval') . ':*') !!}
+                                                {!! Form::number('installment_interval', 1, ['class' => 'form-control', 'id' => 'installment_interval', 'min' => 1]) !!}
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-group" style="margin-bottom: 8px;">
+                                                {!! Form::label('installment_interval_type', __('lang_v1.installment_interval_type') . ':*') !!}
+                                                {!! Form::select('installment_interval_type', ['days' => __('lang_v1.days'), 'weeks' => __('lang_v1.weeks'), 'months' => __('lang_v1.months')], 'months', ['class' => 'form-control', 'id' => 'installment_interval_type']) !!}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <small class="help-block" style="margin: 0;">
+                                        @lang('lang_v1.installment_first_due_help')
+                                    </small>
                                 </div>
 
 

@@ -16,6 +16,8 @@ LANG = {
 'yesterday': '昨天',
 'last_7_days': '过去 7 天',
 'last_30_days': '过去 30 天',
+'last_60_days': '过去 60 天',
+'last_90_days': '过去 90 天',
 'this_month': '这个月',
 'last_month': '上个月',
 'this_financial_year': '当前财政年度',

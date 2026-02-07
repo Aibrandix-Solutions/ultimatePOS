@@ -183,12 +183,17 @@
 		<input type="hidden" id="product_row_count" 
 			value="{{count($sell_details)}}">
 		@php
+			$common_settings = session()->get('business.common_settings');
 			$hide_tax = '';
 			if( session()->get('business.enable_inline_tax') == 0){
 				$hide_tax = 'hide';
 			}
 		@endphp
 		<table class="table table-condensed table-bordered table-striped table-responsive" id="pos_table" style="border-radius: 12px; box-shadow: 0 4px 6px rgba(22,17,96,0.3); border: none;">
+			<style>
+				.pos-warranty-details > summary { list-style: none; }
+				.pos-warranty-details > summary::-webkit-details-marker { display: none; }
+			</style>
 			<thead style="background: linear-gradient(135deg, #161160 0%, #2a2480 100%); color: white;">
 				<tr>
 					<th class="tex-center @if(!empty($pos_settings['inline_service_staff'])) col-md-3 @else col-md-4 @endif" style="color: white; font-weight: 600; padding: 15px 12px;">	

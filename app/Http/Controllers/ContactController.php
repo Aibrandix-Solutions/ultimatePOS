@@ -1767,9 +1767,33 @@ class ContactController extends Controller
             // Get contact data for the panel
             $contact = $this->contactUtil->getContactInfo($business_id, $contact_id);
 
+            if (is_array($contact)) {
+                $contact = (object) $contact;
+            }
+
+            // Calculate pending cheques directly from cheque payments for this contact.
+            // This covers both invoice-linked cheques and due-pay cheques that may not have a transaction_id.
+            $pending_cheques_total = TransactionPayment::where('transaction_payments.business_id', $business_id)
+                ->where('transaction_payments.payment_for', $contact_id)
+                ->whereNull('transaction_payments.parent_id')
+                ->where('transaction_payments.method', 'cheque')
+                // Backward compatible: older "pay due" cheque payments didn't save cheque_status
+                // (it was NULL), so treat NULL as pending for totals.
+                ->where(function ($q) {
+                    $q->where('transaction_payments.cheque_status', 'pending')
+                        ->orWhereNull('transaction_payments.cheque_status');
+                })
+                ->sum('transaction_payments.amount');
+
+            // Keep compatibility with the view logic which uses different fields
+            // depending on whether the contact is a supplier or customer.
+            $contact->purchase_pending_cheques = $pending_cheques_total;
+            $contact->invoice_pending_cheques = $pending_cheques_total;
+
             $payments = TransactionPayment::leftjoin('transactions as t', 'transaction_payments.transaction_id', '=', 't.id')
                 ->where('transaction_payments.business_id', $business_id)
                 ->where('transaction_payments.payment_for', $contact_id)
+                ->whereNull('transaction_payments.parent_id')
                 ->where('transaction_payments.method', 'cheque')
                 ->select(
                     'transaction_payments.id',
@@ -1811,15 +1835,42 @@ class ContactController extends Controller
         if (request()->ajax()) {
             $business_id = request()->session()->get('user.business_id');
 
-            $contact = Contact::where('business_id', $business_id)
-                ->findOrFail($contact_id);
+            // Load contact with computed fields (total_invoice, invoice_received, etc.)
+            // so the modal's "Total Due" matches other contact due panels.
+            $contact = $this->contactUtil->getContactInfo($business_id, $contact_id);
+
+            if (is_array($contact)) {
+                $contact = (object) $contact;
+            }
+
+            // Always compute total due via util as a reliable fallback (covers opening balance, etc.)
+            $total_due = $this->transactionUtil->getContactDue($contact_id, $business_id);
 
             // Get unpaid sell transactions for this contact
             $unpaid_invoices = Transaction::where('business_id', $business_id)
                 ->where('contact_id', $contact_id)
                 ->where('type', 'sell')
                 ->where('status', 'final')
-                ->whereIn('payment_status', ['due', 'partial'])
+                ->where(function ($q) {
+                    // Normal unpaid invoices
+                    $q->whereIn('payment_status', ['due', 'partial'])
+                        // Some flows may mark invoices as "paid" even if payment was a pending/bounced cheque.
+                        // Include those so the user can pick the invoice and record/adjust cheque payments.
+                        ->orWhere(function ($q) {
+                            $q->where('payment_status', 'paid')
+                                ->whereExists(function ($sq) {
+                                    $sq->select(DB::raw(1))
+                                        ->from('transaction_payments as tp')
+                                        ->whereColumn('tp.transaction_id', 'transactions.id')
+                                        ->whereNull('tp.parent_id')
+                                        ->where('tp.method', 'cheque')
+                                        ->where(function ($qq) {
+                                            $qq->whereNull('tp.cheque_status')
+                                                ->orWhere('tp.cheque_status', '!=', 'cleared');
+                                        });
+                                });
+                        });
+                })
                 ->with(['payment_lines'])
                 ->select('id', 'invoice_no', 'transaction_date', 'final_total', 'payment_status')
                 ->orderBy('transaction_date', 'desc')
@@ -1827,12 +1878,27 @@ class ContactController extends Controller
 
             // Calculate remaining amount for each invoice
             foreach ($unpaid_invoices as $invoice) {
-                $paid_amount = $invoice->payment_lines->sum('amount');
+                $paid_amount = $invoice->payment_lines
+                    ->filter(function ($pl) {
+                        if ($pl->method !== 'cheque') {
+                            return true;
+                        }
+
+                        return $pl->cheque_status === 'cleared';
+                    })
+                    ->sum('amount');
                 $invoice->remaining_amount = $invoice->final_total - $paid_amount;
             }
 
+            // Keep only invoices with a remaining balance.
+            $unpaid_invoices = $unpaid_invoices
+                ->filter(function ($invoice) {
+                    return (float) $invoice->remaining_amount > 0;
+                })
+                ->values();
+
             return view('contact.partials.select_invoice_for_payment_modal')
-                ->with(compact('contact', 'unpaid_invoices'));
+                ->with(compact('contact', 'unpaid_invoices', 'total_due'));
         }
     }
 

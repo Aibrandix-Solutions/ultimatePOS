@@ -53,6 +53,9 @@
                         {!! Form::text('single_dsp', @num_format($variation->default_sell_price), ['class' => 'form-control input-sm dsp input_number', 'placeholder' => __('product.exc_of_tax'), 'id' => 'single_dsp', 'required']) !!}
 
                         {!! Form::text('single_dsp_inc_tax', @num_format($variation->sell_price_inc_tax), ['class' => 'form-control input-sm hide input_number', 'placeholder' => __('product.inc_of_tax'), 'id' => 'single_dsp_inc_tax', 'required']) !!}
+
+                      <small class="help-block text-muted min_sell_price_help_text">@lang('lang_v1.minimum_sale_price_help')</small>
+                      {!! Form::text('single_min_sell_price_inc_tax', @num_format($variation->min_sell_price_inc_tax ?? $variation->sell_price_inc_tax), ['class' => 'form-control input-sm input_number', 'placeholder' => 'Minimum selling price (inc tax)', 'id' => 'single_min_sell_price_inc_tax']) !!}
                     </td>
                     
                 </tr>

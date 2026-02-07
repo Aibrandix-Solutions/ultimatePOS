@@ -415,6 +415,23 @@
           <div class="col-md-12">
             <div class="checkbox">
               <label>
+                {!! Form::checkbox('permissions[]', 'stock_adjustment.create', in_array('stock_adjustment.create', $role_permissions),
+                [ 'class' => 'input-icheck']) !!} {{ __( 'role.stock_adjustment.create' ) }}
+              </label>
+            </div>
+          </div>
+          <div class="col-md-12">
+            <div class="checkbox">
+              <label>
+                {!! Form::checkbox('permissions[]', 'purchase.view_cost_price', in_array('purchase.view_cost_price', $role_permissions),['class' => 'input-icheck']) !!}
+                {{ __('lang_v1.view_purchase_cost_price') }}
+              </label>
+              @show_tooltip(__('lang_v1.view_purchase_cost_price_tooltip'))
+            </div>
+          </div>
+          <div class="col-md-12">
+            <div class="checkbox">
+              <label>
                 {!! Form::checkbox('permissions[]', 'purchase.update', in_array('purchase.update', $role_permissions), 
                 [ 'class' => 'input-icheck']) !!} {{ __( 'role.purchase.update' ) }}
               </label>

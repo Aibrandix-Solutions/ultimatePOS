@@ -17,6 +17,8 @@ LANG = {
 'yesterday': 'ມື້ວານນີ້',
 'last_7_days': '7 ມື້ສຸດທ້າຍ',
 'last_30_days': '30 ມື້ສຸດທ້າຍ',
+	'last_60_days': '60 ມື້ສຸດທ້າຍ',
+	'last_90_days': '90 ມື້ສຸດທ້າຍ',
 'this_month': 'ເດືອນນີ້',
 'last_month': 'ເດືອນທີ່ຜ່ານມາ',
 'this_financial_year': 'ປີການເງິນໃນປະຈຸບັນ',

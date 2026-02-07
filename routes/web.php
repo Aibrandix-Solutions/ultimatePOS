@@ -48,6 +48,7 @@ use App\Http\Controllers\SalesOrderController;
 use App\Http\Controllers\SellController;
 use App\Http\Controllers\SellingPriceGroupController;
 use App\Http\Controllers\SellPosController;
+use App\Http\Controllers\InstallmentPlanController;
 use App\Http\Controllers\SellReturnController;
 use App\Http\Controllers\StockAdjustmentController;
 use App\Http\Controllers\StockTransferController;
@@ -59,6 +60,8 @@ use App\Http\Controllers\UnitController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VariationTemplateController;
 use App\Http\Controllers\WarrantyController;
+use App\Http\Controllers\WarrantyRegisterController;
+use App\Http\Controllers\WarrantyClaimController;
 use App\Http\Controllers\DamageController;
 use Illuminate\Support\Facades\Route;
 
@@ -239,6 +242,9 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
     Route::get('/sells/quotations', [SellController::class, 'getQuotations']);
     Route::get('/sells/draft-dt', [SellController::class, 'getDraftDatables']);
     Route::resource('sells', SellController::class)->except(['show']);
+
+    Route::get('/installments', [InstallmentPlanController::class, 'index'])->name('installments.index');
+    Route::get('/installments/{id}', [InstallmentPlanController::class, 'show'])->name('installments.show');
 
     Route::get('/import-sales', [ImportSalesController::class, 'index']);
     Route::post('/import-sales/preview', [ImportSalesController::class, 'preview']);
@@ -493,7 +499,15 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
         ->only(['index', 'update']);
     Route::get('regenerate', [Install\ModulesController::class, 'regenerate']);
 
-    Route::resource('warranties', WarrantyController::class);
+    // NOTE: Excluding `show` to avoid conflicts with custom routes like /warranties/register & /warranties/claims
+    // and because WarrantyController@show is not implemented.
+    Route::resource('warranties', WarrantyController::class)->except(['show']);
+
+    Route::get('warranties/register', [WarrantyRegisterController::class, 'index'])->name('warranties.register');
+    Route::get('warranties/claims', [WarrantyClaimController::class, 'index'])->name('warranties.claims.index');
+    Route::post('warranties/claims', [WarrantyClaimController::class, 'store'])->name('warranties.claims.store');
+    Route::get('warranties/claims/{warranty_claim}', [WarrantyClaimController::class, 'show'])->name('warranties.claims.show');
+    Route::post('warranties/claims/{warranty_claim}/status', [WarrantyClaimController::class, 'updateStatus'])->name('warranties.claims.status');
 
     Route::resource('dashboard-configurator', DashboardConfiguratorController::class)
         ->only(['edit', 'update']);

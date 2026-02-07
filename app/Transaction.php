@@ -61,6 +61,11 @@ class Transaction extends Model
         return $this->hasMany(\App\TransactionPayment::class, 'transaction_id');
     }
 
+    public function installment_plan()
+    {
+        return $this->hasOne(\App\InstallmentPlan::class, 'transaction_id');
+    }
+
     public function location()
     {
         return $this->belongsTo(\App\BusinessLocation::class, 'location_id');

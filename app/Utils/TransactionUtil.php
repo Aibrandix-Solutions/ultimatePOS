@@ -589,7 +589,17 @@ class TransactionUtil extends Util
             }
         }
 
+        $item_tax = 0;
+        if (isset($product['item_tax'])) {
+            $item_tax = $uf_data ? $this->num_uf($product['item_tax']) : $product['item_tax'];
+        }
+
         //Update sell lines.
+        $tax_id = $sell_line->tax_id;
+        if (array_key_exists('tax_id', $product)) {
+            $tax_id = $product['tax_id'];
+        }
+
         $sell_line->fill([
             'product_id' => $product['product_id'],
             'variation_id' => $product['variation_id'],
@@ -598,8 +608,8 @@ class TransactionUtil extends Util
             'unit_price' => $unit_price,
             'line_discount_type' => !empty($product['line_discount_type']) ? $product['line_discount_type'] : null,
             'line_discount_amount' => $line_discount_amount,
-            'item_tax' => $uf_data ? $this->num_uf($product['item_tax']) / $multiplier : $product['item_tax'] / $multiplier,
-            'tax_id' => $product['tax_id'],
+            'item_tax' => $item_tax / $multiplier,
+            'tax_id' => $tax_id,
             'unit_price_inc_tax' => $uf_data ? $this->num_uf($product['unit_price_inc_tax']) / $multiplier : $product['unit_price_inc_tax'] / $multiplier,
             'sell_line_note' => !empty($product['sell_line_note']) ? $product['sell_line_note'] : '',
             'sub_unit_id' => !empty($product['sub_unit_id']) ? $product['sub_unit_id'] : null,
@@ -828,6 +838,140 @@ class TransactionUtil extends Util
             }
 
             //add denominations
+
+            if (!empty($denominations)) {
+                foreach ($denominations as $key => $value) {
+                    $payment = $payment_lines->where('payment_ref_no', $key)->first();
+                    $this->addCashDenominations($payment, $value);
+                }
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Append payment lines to a transaction WITHOUT deleting existing payment lines.
+     *
+     * NOTE: createOrUpdatePaymentLines() is destructive (it removes missing lines).
+     * This helper is intended for cases like allocating a new payment to an existing
+     * due invoice where previous payment history must be preserved.
+     */
+    public function appendPaymentLines($transaction, $payments, $business_id = null, $user_id = null, $uf_data = true)
+    {
+        if (empty($payments) || !is_array($payments)) {
+            return true;
+        }
+
+        if (!is_object($transaction)) {
+            $transaction = Transaction::findOrFail($transaction);
+        }
+
+        //If status is draft don't add payment
+        if ($transaction->status == 'draft') {
+            return true;
+        }
+
+        $business_id = !empty($business_id) ? $business_id : $transaction->business_id;
+        $user_id = !is_null($user_id) ? $user_id : (auth()->user()->id ?? null);
+
+        $payments_formatted = [];
+        $account_transactions = [];
+        $denominations = [];
+        $c = 0;
+
+        $contact_balance = Contact::where('id', $transaction->contact_id)->value('balance');
+        $is_walk_in_customer = Contact::where('id', $transaction->contact_id)->value('is_default');
+
+        foreach ($payments as $payment) {
+            //Never edit existing lines here.
+            if (!empty($payment['payment_id'])) {
+                unset($payment['payment_id']);
+            }
+
+            $payment_amount = $uf_data ? $this->num_uf($payment['amount'] ?? 0) : ($payment['amount'] ?? 0);
+
+            if (!empty($payment['method']) && $payment['method'] == 'advance' && $payment_amount > $contact_balance) {
+                throw new AdvanceBalanceNotAvailable(__('lang_v1.required_advance_balance_not_available'));
+            }
+            if (!empty($payment['method']) && $payment['method'] === 'cheque' && $is_walk_in_customer == 1) {
+                throw new ChequePaymentNotAllowedForWalkInCustomer(__('lang_v1.cheque_payment_requires_registered_customer'));
+            }
+
+            //If amount is 0 then skip.
+            if (empty($payment['method']) || $payment_amount == 0) {
+                continue;
+            }
+
+            $prefix_type = 'sell_payment';
+            if ($transaction->type == 'purchase') {
+                $prefix_type = 'purchase_payment';
+            }
+            $ref_count = $this->setAndGetReferenceCount($prefix_type, $business_id);
+            $payment_ref_no = $this->generateReferenceNumber($prefix_type, $ref_count, $business_id);
+
+            if (!empty($payment['paid_on'])) {
+                $paid_on = $uf_data ? $this->uf_date($payment['paid_on'], true) : $payment['paid_on'];
+            } else {
+                $paid_on = \Carbon::now()->toDateTimeString();
+            }
+
+            $payment_data = [
+                'amount' => $payment_amount,
+                'method' => $payment['method'],
+                'business_id' => $transaction->business_id,
+                'is_return' => isset($payment['is_return']) ? $payment['is_return'] : 0,
+                'card_transaction_number' => isset($payment['card_transaction_number']) ? $payment['card_transaction_number'] : null,
+                'card_number' => null,
+                'card_type' => isset($payment['card_type']) ? $payment['card_type'] : null,
+                'card_holder_name' => isset($payment['card_holder_name']) ? $payment['card_holder_name'] : null,
+                'card_month' => null,
+                'card_security' => null,
+                'cheque_number' => isset($payment['cheque_number']) ? $payment['cheque_number'] : null,
+                'cheque_issue_date' => !empty($payment['cheque_issue_date'])
+                    ? ($uf_data ? $this->uf_date($payment['cheque_issue_date'], true) : $payment['cheque_issue_date'])
+                    : null,
+                'cheque_passing_date' => !empty($payment['cheque_passing_date'])
+                    ? ($uf_data ? $this->uf_date($payment['cheque_passing_date'], true) : $payment['cheque_passing_date'])
+                    : null,
+                'cheque_bank_name' => isset($payment['cheque_bank_name']) ? $payment['cheque_bank_name'] : null,
+                'cheque_status' => !empty($payment['cheque_status']) ? $payment['cheque_status'] : (isset($payment['method']) && $payment['method'] === 'cheque' ? 'pending' : null),
+                'bank_account_number' => isset($payment['bank_account_number']) ? $payment['bank_account_number'] : null,
+                'note' => isset($payment['note']) ? $payment['note'] : null,
+                'paid_on' => $paid_on,
+                'created_by' => $user_id,
+                'payment_for' => $transaction->contact_id,
+                'payment_ref_no' => $payment_ref_no,
+                'account_id' => !empty($payment['account_id']) && $payment['method'] != 'advance' ? $payment['account_id'] : null,
+            ];
+
+            for ($i = 1; $i < 8; $i++) {
+                if ($payment['method'] == 'custom_pay_' . $i) {
+                    $payment_data['transaction_no'] = $payment["transaction_no_{$i}"] ?? null;
+                }
+            }
+
+            $payments_formatted[] = new TransactionPayment($payment_data);
+
+            if (!empty($payment['denominations'])) {
+                $denominations[$payment_ref_no] = $payment['denominations'];
+            }
+
+            $payment_data['transaction_type'] = $transaction->type;
+            $account_transactions[$c] = $payment_data;
+            $c++;
+        }
+
+        if (!empty($payments_formatted)) {
+            $transaction->payment_lines()->saveMany($payments_formatted);
+            $payment_lines = $transaction->payment_lines;
+
+            foreach ($account_transactions as $account_transaction) {
+                $payment = $payment_lines->where('payment_ref_no', $account_transaction['payment_ref_no'])->first();
+                if (!empty($payment)) {
+                    event(new TransactionPaymentAdded($payment, $account_transaction));
+                }
+            }
 
             if (!empty($denominations)) {
                 foreach ($denominations as $key => $value) {
@@ -1391,6 +1535,11 @@ class TransactionUtil extends Util
             if (!empty($il->common_settings['total_items_label'])) {
                 $output['total_items_label'] = $il->common_settings['total_items_label'];
                 $output['total_items'] = count($unique_items);
+            }
+
+            //Show per-item discount column only when a line-discount exists.
+            if (empty($output['item_discount_label']) && $total_line_discount > 0) {
+                $output['item_discount_label'] = __('sale.discount');
             }
 
             $output['subtotal_exc_tax'] = $this->num_f($subtotal_exc_tax, true, $business_details);
@@ -3092,6 +3241,10 @@ class TransactionUtil extends Util
     public function getTotalPaid($transaction_id)
     {
         $total_paid = TransactionPayment::where('transaction_id', $transaction_id)
+            ->where(function ($q) {
+                $q->where('method', '!=', 'cheque')
+                    ->orWhere('cheque_status', 'cleared');
+            })
             ->select(DB::raw('SUM(IF( is_return = 0, amount, amount*-1))as total_paid'))
             ->first()
             ->total_paid;
@@ -3194,6 +3347,9 @@ class TransactionUtil extends Util
     public function payAtOnce($parent_payment, $type)
     {
 
+        //Only count cheque payments as paid once cleared.
+        $payment_counts_as_paid = ($parent_payment->method != 'cheque' || $parent_payment->cheque_status === 'cleared');
+
         //Get all unpaid transaction for the contact
         $types = ['opening_balance', $type];
 
@@ -3236,6 +3392,10 @@ class TransactionUtil extends Util
                         'card_year' => $parent_payment->card_year,
                         'card_security' => $parent_payment->card_security,
                         'cheque_number' => $parent_payment->cheque_number,
+                        'cheque_issue_date' => $parent_payment->cheque_issue_date,
+                        'cheque_passing_date' => $parent_payment->cheque_passing_date,
+                        'cheque_bank_name' => $parent_payment->cheque_bank_name,
+                        'cheque_status' => $parent_payment->cheque_status,
                         'bank_account_number' => $parent_payment->bank_account_number,
                         'paid_on' => $parent_payment->paid_on,
                         'created_by' => $parent_payment->created_by,
@@ -3258,13 +3418,15 @@ class TransactionUtil extends Util
                         $array['amount'] = $due;
                         $transaction_payments[] = $array;
 
-                        //Update transaction status to paid
-                        $transaction->payment_status = 'paid';
-                        $transaction->save();
+                        if ($payment_counts_as_paid) {
+                            //Update transaction status to paid (only if payment counts now)
+                            $transaction->payment_status = 'paid';
+                            $transaction->save();
 
-                        if ($transaction->type == 'sell') {
-                            $moduleUtil = new ModuleUtil();
-                            $moduleUtil->getModuleData('after_sale_saved', ['transaction' => $transaction, 'input' => []]);
+                            if ($transaction->type == 'sell') {
+                                $moduleUtil = new ModuleUtil();
+                                $moduleUtil->getModuleData('after_sale_saved', ['transaction' => $transaction, 'input' => []]);
+                            }
                         }
 
                         $total_amount = $total_amount - $due;
@@ -3274,9 +3436,11 @@ class TransactionUtil extends Util
                         $array['amount'] = $total_amount;
                         $transaction_payments[] = $array;
 
-                        //Update transaction status to partial
-                        $transaction->payment_status = 'partial';
-                        $transaction->save();
+                        if ($payment_counts_as_paid) {
+                            //Update transaction status to partial (only if payment counts now)
+                            $transaction->payment_status = 'partial';
+                            $transaction->save();
+                        }
                         $total_amount = 0;
                         $this->activityLog($transaction, 'payment_edited', $transaction_before);
 
@@ -3288,10 +3452,172 @@ class TransactionUtil extends Util
             //Insert new transaction payments
             if (!empty($transaction_payments)) {
                 TransactionPayment::insert($transaction_payments);
+
+                //If cheque is not cleared yet, recompute payment_status for affected transactions
+                //so they stay due/partial based on cleared amounts only.
+                if (!$payment_counts_as_paid) {
+                    $affected_transaction_ids = collect($transaction_payments)
+                        ->pluck('transaction_id')
+                        ->filter()
+                        ->unique()
+                        ->values();
+
+                    foreach ($affected_transaction_ids as $tid) {
+                        $t = Transaction::find($tid);
+                        if (!empty($t)) {
+                            $this->updatePaymentStatus($tid, $t->final_total);
+                        }
+                    }
+                }
             }
         }
 
         return $total_amount;
+    }
+
+    /**
+     * Allocate POS-entered payments to customer's previous due sell invoices (oldest first).
+     *
+     * - Creates payment lines on the due invoices (so due reduces on old bills)
+     * - Does NOT touch the current invoice (pass it in $exclude_transaction_ids)
+     * - Returns payments grouped by transaction_id (useful for cash register entries)
+     */
+    public function allocatePosPaymentToOldSellDues(
+        $business_id,
+        $contact_id,
+        $payment_lines,
+        $exclude_transaction_ids = [],
+        $user_id = null,
+        $note = null
+    ) {
+        $user_id = !is_null($user_id) ? $user_id : auth()->user()->id;
+
+        $payments_by_transaction = [];
+
+        if (empty($contact_id) || empty($payment_lines) || !is_array($payment_lines)) {
+            return $payments_by_transaction;
+        }
+
+        //Prepare remaining amounts per payment line (skip change return lines)
+        $normalized_payment_lines = [];
+        foreach ($payment_lines as $pl) {
+            if (!empty($pl['is_return']) && (int) $pl['is_return'] === 1) {
+                continue;
+            }
+
+            $amount = isset($pl['amount']) ? $this->num_uf($pl['amount']) : 0;
+            if (empty($pl['method']) || $amount == 0) {
+                continue;
+            }
+
+            $pl['_remaining'] = $amount;
+            $normalized_payment_lines[] = $pl;
+        }
+
+        if (empty($normalized_payment_lines)) {
+            return $payments_by_transaction;
+        }
+
+        $due_transactions = Transaction::where('business_id', $business_id)
+            ->where('contact_id', $contact_id)
+            ->where('type', 'sell')
+            ->where('status', 'final')
+            ->where('payment_status', '!=', 'paid');
+
+        if (!empty($exclude_transaction_ids) && is_array($exclude_transaction_ids)) {
+            $due_transactions->whereNotIn('id', $exclude_transaction_ids);
+        }
+
+        $due_transactions = $due_transactions->orderBy('transaction_date', 'asc')->get();
+
+        if ($due_transactions->isEmpty()) {
+            //No old dues to apply against. Treat as advance balance.
+            $remaining_total = 0;
+            foreach ($normalized_payment_lines as $pl) {
+                $remaining_total += $pl['_remaining'];
+            }
+
+            if ($remaining_total > 0) {
+                $this->updateContactBalance($contact_id, $remaining_total, 'add');
+            }
+
+            return $payments_by_transaction;
+        }
+
+        foreach ($due_transactions as $transaction) {
+            $total_paid = $this->getTotalPaid($transaction->id);
+            $due = $transaction->final_total - $total_paid;
+
+            if ($due <= 0) {
+                continue;
+            }
+
+            foreach ($normalized_payment_lines as $idx => $pl) {
+                if ($due <= 0) {
+                    break;
+                }
+
+                if (empty($normalized_payment_lines[$idx]['_remaining']) || $normalized_payment_lines[$idx]['_remaining'] <= 0) {
+                    continue;
+                }
+
+                $alloc = min($due, $normalized_payment_lines[$idx]['_remaining']);
+                if ($alloc <= 0) {
+                    continue;
+                }
+
+                $payment_for_tx = $pl;
+                unset($payment_for_tx['_remaining']);
+                $payment_for_tx['amount'] = $alloc;
+                $payment_for_tx['is_return'] = 0;
+
+                if (!empty($note)) {
+                    if (!empty($payment_for_tx['note'])) {
+                        $payment_for_tx['note'] .= ' | ' . $note;
+                    } else {
+                        $payment_for_tx['note'] = $note;
+                    }
+                }
+
+                //Append payment line; do not overwrite older payments on that invoice.
+                $this->appendPaymentLines($transaction, [$payment_for_tx], $business_id, $user_id, true);
+                $this->updatePaymentStatus($transaction->id, $transaction->final_total);
+
+                if (!isset($payments_by_transaction[$transaction->id])) {
+                    $payments_by_transaction[$transaction->id] = [];
+                }
+                //Keep the same shape expected by CashRegisterUtil
+                $payments_by_transaction[$transaction->id][] = $payment_for_tx;
+
+                $due -= $alloc;
+                $normalized_payment_lines[$idx]['_remaining'] = $normalized_payment_lines[$idx]['_remaining'] - $alloc;
+            }
+
+            //Stop if nothing remains to allocate
+            $has_remaining = false;
+            foreach ($normalized_payment_lines as $pl) {
+                if (!empty($pl['_remaining']) && $pl['_remaining'] > 0) {
+                    $has_remaining = true;
+                    break;
+                }
+            }
+            if (!$has_remaining) {
+                break;
+            }
+        }
+
+        //Any leftover becomes advance balance
+        $remaining_total = 0;
+        foreach ($normalized_payment_lines as $pl) {
+            if (!empty($pl['_remaining']) && $pl['_remaining'] > 0) {
+                $remaining_total += $pl['_remaining'];
+            }
+        }
+        if ($remaining_total > 0) {
+            $this->updateContactBalance($contact_id, $remaining_total, 'add');
+        }
+
+        return $payments_by_transaction;
     }
 
     /**
@@ -4521,10 +4847,12 @@ class TransactionUtil extends Util
      * @param  int  $transaction_id
     public function getTotalAmountPaid($transaction_id)
     {
-        $paid = TransactionPayment::where(
-            'transaction_id',
-            $transaction_id
-        )->sum('amount');
+        $paid = TransactionPayment::where('transaction_id', $transaction_id)
+            ->where(function ($q) {
+                $q->where('method', '!=', 'cheque')
+                    ->orWhere('cheque_status', 'cleared');
+            })
+            ->sum('amount');
 
         return $paid;
     }
@@ -5037,7 +5365,7 @@ class TransactionUtil extends Util
      * @param  int  $business_id
      * @return object
      */
-    public function getListPurchases($business_id)
+    public function getListPurchases($business_id, $include_opening_balance = false)
     {
         $purchases = Transaction::leftJoin('contacts', 'transactions.contact_id', '=', 'contacts.id')
             ->join(
@@ -5060,12 +5388,13 @@ class TransactionUtil extends Util
             )
             ->leftJoin('users as u', 'transactions.created_by', '=', 'u.id')
             ->where('transactions.business_id', $business_id)
-            ->where('transactions.type', 'purchase')
+            ->whereIn('transactions.type', $include_opening_balance ? ['purchase', 'opening_balance'] : ['purchase'])
             ->select(
                 'transactions.id',
                 'transactions.document',
                 'transactions.transaction_date',
                 'transactions.ref_no',
+                'transactions.type',
                 'contacts.name',
                 'contacts.supplier_business_name',
                 'transactions.status',
@@ -5079,7 +5408,7 @@ class TransactionUtil extends Util
                 'transactions.custom_field_2',
                 'transactions.custom_field_3',
                 'transactions.custom_field_4',
-                DB::raw('SUM(TP.amount) as amount_paid'),
+                DB::raw('COALESCE(SUM(TP.amount), 0) as amount_paid'),
                 DB::raw('(SELECT SUM(TP2.amount) FROM transaction_payments AS TP2 WHERE
                         TP2.transaction_id=PR.id ) as return_paid'),
                 DB::raw('COUNT(PR.id) as return_exists'),
@@ -5155,8 +5484,13 @@ class TransactionUtil extends Util
      * @param  int  $business_id
      * @return object
      */
-    public function getListSells($business_id, $sale_type = 'sell')
+    public function getListSells($business_id, $sale_type = 'sell', $include_opening_balance = false, $include_suspended = false)
     {
+        $types = [$sale_type];
+        if ($include_opening_balance && $sale_type === 'sell') {
+            $types[] = 'opening_balance';
+        }
+
         $sells = Transaction::leftJoin('contacts', 'transactions.contact_id', '=', 'contacts.id')
             // ->leftJoin('transaction_payments as tp', 'transactions.id', '=', 'tp.transaction_id')
             ->leftJoin('transaction_sell_lines as tsl', function ($join) {
@@ -5186,7 +5520,7 @@ class TransactionUtil extends Util
                 'tos.id'
             )
             ->where('transactions.business_id', $business_id)
-            ->where('transactions.type', $sale_type)
+            ->whereIn('transactions.type', $types)
             ->select(
                 'transactions.id',
                 'transactions.transaction_date',
@@ -5194,6 +5528,7 @@ class TransactionUtil extends Util
                 'transactions.is_direct_sale',
                 'transactions.invoice_no',
                 'transactions.invoice_no as invoice_no_text',
+                'transactions.ref_no',
                 'contacts.name',
                 'contacts.mobile',
                 'contacts.contact_id',
@@ -5227,12 +5562,12 @@ class TransactionUtil extends Util
                 'transactions.custom_field_4',
                 DB::raw('DATE_FORMAT(transactions.transaction_date, "%Y/%m/%d") as sale_date'),
                 DB::raw("CONCAT(COALESCE(u.surname, ''),' ',COALESCE(u.first_name, ''),' ',COALESCE(u.last_name,'')) as added_by"),
-                DB::raw('(SELECT SUM(IF(TP.is_return = 1,-1*TP.amount,TP.amount)) FROM transaction_payments AS TP WHERE
-                        TP.transaction_id=transactions.id) as total_paid'),
+                DB::raw('COALESCE((SELECT SUM(IF(TP.is_return = 1,-1*TP.amount,TP.amount)) FROM transaction_payments AS TP WHERE
+                    TP.transaction_id=transactions.id), 0) as total_paid'),
                 'bl.name as business_location',
                 DB::raw('COUNT(SR.id) as return_exists'),
                 DB::raw('(SELECT SUM(TP2.amount) FROM transaction_payments AS TP2 WHERE
-                        TP2.transaction_id=SR.id ) as return_paid'),
+                    TP2.transaction_id=SR.id ) as return_paid'),
                 DB::raw('COALESCE(SR.final_total, 0) as amount_return'),
                 'SR.id as return_transaction_id',
                 'tos.name as types_of_service_name',
@@ -5246,7 +5581,14 @@ class TransactionUtil extends Util
             );
 
         if ($sale_type == 'sell') {
-            $sells->where('transactions.status', 'final');
+            $sells->where(function ($q) use ($include_suspended) {
+                $q->where('transactions.type', 'opening_balance')
+                  ->orWhere('transactions.status', 'final');
+
+                if ($include_suspended) {
+                    $q->orWhere('transactions.is_suspend', 1);
+                }
+            });
         }
 
         return $sells;
@@ -6137,6 +6479,10 @@ class TransactionUtil extends Util
             'card_security',
             'cheque_number',
             'bank_account_number',
+            'cheque_issue_date',
+            'cheque_passing_date',
+            'cheque_bank_name',
+            'cheque_status',
         ]);
 
         //payment type option is available on pay contact modal
@@ -6151,6 +6497,21 @@ class TransactionUtil extends Util
         if ($format_data) {
             $inputs['paid_on'] = $this->uf_date($inputs['paid_on'], true);
             $inputs['amount'] = $this->num_uf($inputs['amount']);
+        }
+
+        if ($inputs['method'] == 'cheque') {
+            $inputs['cheque_issue_date'] = !empty($request->input('cheque_issue_date'))
+                ? $this->uf_date($request->input('cheque_issue_date'), true)
+                : null;
+            $inputs['cheque_passing_date'] = !empty($request->input('cheque_passing_date'))
+                ? $this->uf_date($request->input('cheque_passing_date'), true)
+                : null;
+            $inputs['cheque_status'] = $request->input('cheque_status') ?: 'pending';
+        } else {
+            $inputs['cheque_issue_date'] = null;
+            $inputs['cheque_passing_date'] = null;
+            $inputs['cheque_bank_name'] = null;
+            $inputs['cheque_status'] = null;
         }
 
         $inputs['created_by'] = auth()->user()->id;

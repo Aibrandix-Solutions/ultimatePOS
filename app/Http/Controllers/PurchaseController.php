@@ -64,7 +64,8 @@ class PurchaseController extends Controller
         }
         $business_id = request()->session()->get('user.business_id');
         if (request()->ajax()) {
-            $purchases = $this->transactionUtil->getListPurchases($business_id);
+            $include_opening_balance = request()->boolean('include_opening_balance') && request()->boolean('from_contact_view');
+            $purchases = $this->transactionUtil->getListPurchases($business_id, $include_opening_balance);
 
             $permitted_locations = auth()->user()->permitted_locations();
             if ($permitted_locations != 'all') {
@@ -103,6 +104,29 @@ class PurchaseController extends Controller
 
             return Datatables::of($purchases)
                 ->addColumn('action', function ($row) {
+                    if ($row->type === 'opening_balance') {
+                        $html = '<div class="btn-group">
+                            <button type="button" class="btn-modal tw-dw-btn tw-dw-btn-xs tw-dw-btn-outline  tw-dw-btn-info tw-w-max dropdown-toggle" 
+                                data-toggle="dropdown" aria-expanded="false">'.
+                                __('messages.actions').
+                                '<span class="caret"></span><span class="sr-only">Toggle Dropdown
+                                </span>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-left" role="menu">';
+
+                        if ((auth()->user()->can('purchase.payments') || auth()->user()->can('edit_purchase_payment') || auth()->user()->can('delete_purchase_payment')) && $row->payment_status != 'paid') {
+                            $html .= '<li><a href="'.action([\App\Http\Controllers\TransactionPaymentController::class, 'addPayment'], [$row->id]).'" class="add_payment_modal"><i class="fas fa-money-bill-alt" aria-hidden="true"></i>'.__('purchase.add_payment').'</a></li>';
+                        }
+
+                        if (auth()->user()->can('purchase.payments') || auth()->user()->can('edit_purchase_payment') || auth()->user()->can('delete_purchase_payment')) {
+                            $html .= '<li><a href="'.action([\App\Http\Controllers\TransactionPaymentController::class, 'show'], [$row->id]).'" class="view_payment_modal"><i class="fas fa-money-bill-alt" aria-hidden="true" ></i>'.__('purchase.view_payments').'</a></li>';
+                        }
+
+                        $html .= '</ul></div>';
+
+                        return $html;
+                    }
+
                     $html = '<div class="btn-group">
                             <button type="button" class="btn-modal tw-dw-btn tw-dw-btn-xs tw-dw-btn-outline  tw-dw-btn-info tw-w-max dropdown-toggle" 
                                 data-toggle="dropdown" aria-expanded="false">'.
@@ -180,8 +204,8 @@ class PurchaseController extends Controller
                 ->editColumn('name', '@if(!empty($supplier_business_name)) {{$supplier_business_name}}, <br> @endif {{$name}}')
                 ->editColumn(
                     'status',
-                    '<a href="#" @if(auth()->user()->can("purchase.update") || auth()->user()->can("purchase.update_status")) class="update_status no-print" data-purchase_id="{{$id}}" data-status="{{$status}}" @endif><span class="label @transaction_status($status) status-label" data-status-name="{{__(\'lang_v1.\' . $status)}}" data-orig-value="{{$status}}">{{__(\'lang_v1.\' . $status)}}
-                        </span></a>'
+                    '@if($type === "opening_balance")<span class="label bg-gray status-label" data-status-name="{{__(\'lang_v1.opening_balance\')}}" data-orig-value="opening_balance">{{__(\'lang_v1.opening_balance\')}}</span>@else<a href="#" @if(auth()->user()->can("purchase.update") || auth()->user()->can("purchase.update_status")) class="update_status no-print" data-purchase_id="{{$id}}" data-status="{{$status}}" @endif><span class="label @transaction_status($status) status-label" data-status-name="{{__(\'lang_v1.\' . $status)}}" data-orig-value="{{$status}}">{{__(\'lang_v1.\' . $status)}}
+                        </span></a>@endif'
                 )
                 ->editColumn(
                     'payment_status',
@@ -193,9 +217,10 @@ class PurchaseController extends Controller
                 )
                 ->addColumn('payment_due', function ($row) {
                     $due = $row->final_total - $row->amount_paid;
-                    $due_html = '<strong>'.__('lang_v1.purchase').':</strong> <span class="payment_due" data-orig-value="'.$due.'">'.$this->transactionUtil->num_f($due, true).'</span>';
+                    $label = $row->type === 'opening_balance' ? __('lang_v1.opening_balance') : __('lang_v1.purchase');
+                    $due_html = '<strong>'.$label.':</strong> <span class="payment_due" data-orig-value="'.$due.'">'.$this->transactionUtil->num_f($due, true).'</span>';
 
-                    if (! empty($row->return_exists)) {
+                    if ($row->type !== 'opening_balance' && ! empty($row->return_exists)) {
                         $return_due = $row->amount_return - $row->return_paid;
                         $due_html .= '<br><strong>'.__('lang_v1.purchase_return').':</strong> <a href="'.action([\App\Http\Controllers\TransactionPaymentController::class, 'show'], [$row->return_transaction_id]).'" class="view_purchase_return_payment_modal"><span class="purchase_return" data-orig-value="'.$return_due.'">'.$this->transactionUtil->num_f($return_due, true).'</span></a>';
                     }
@@ -204,6 +229,9 @@ class PurchaseController extends Controller
                 })
                 ->setRowAttr([
                     'data-href' => function ($row) {
+                        if ($row->type === 'opening_balance') {
+                            return '';
+                        }
                         if (auth()->user()->can('purchase.view')) {
                             return  action([\App\Http\Controllers\PurchaseController::class, 'show'], [$row->id]);
                         } else {
@@ -297,12 +325,25 @@ class PurchaseController extends Controller
         try {
             $business_id = $request->session()->get('user.business_id');
 
+            $can_view_purchase_cost = auth()->user()->can('superadmin')
+                || auth()->user()->hasAnyPermission('Admin#'.auth()->user()->business_id)
+                || auth()->user()->can('purchase.view_cost_price');
+
             //Check if subscribed or not
             if (! $this->moduleUtil->isSubscribed($business_id)) {
                 return $this->moduleUtil->expiredResponse(action([\App\Http\Controllers\PurchaseController::class, 'index']));
             }
 
             $transaction_data = $request->only(['ref_no', 'status', 'contact_id', 'transaction_date', 'total_before_tax', 'location_id', 'discount_type', 'discount_amount', 'tax_id', 'tax_amount', 'shipping_details', 'shipping_charges', 'final_total', 'additional_notes', 'exchange_rate', 'pay_term_number', 'pay_term_type', 'purchase_order_ids']);
+
+            $transaction_data['exchange_rate'] = $transaction_data['exchange_rate'] ?? 1;
+            $transaction_data['discount_type'] = $transaction_data['discount_type'] ?? 'fixed';
+            $transaction_data['discount_amount'] = $transaction_data['discount_amount'] ?? 0;
+            $transaction_data['tax_id'] = $transaction_data['tax_id'] ?? null;
+            $transaction_data['tax_amount'] = $transaction_data['tax_amount'] ?? 0;
+            $transaction_data['shipping_charges'] = $transaction_data['shipping_charges'] ?? 0;
+            $transaction_data['total_before_tax'] = $transaction_data['total_before_tax'] ?? 0;
+            $transaction_data['final_total'] = $transaction_data['final_total'] ?? 0;
 
             $exchange_rate = $transaction_data['exchange_rate'];
 
@@ -311,15 +352,22 @@ class PurchaseController extends Controller
 
             //TODO: Check for "Undefined index: total_before_tax" issue
             //Adding temporary fix by validating
-            $request->validate([
+            $validation_rules = [
                 'status' => 'required',
                 'contact_id' => 'required',
                 'transaction_date' => 'required',
-                'total_before_tax' => 'required',
                 'location_id' => 'required',
-                'final_total' => 'required',
                 'document' => 'file|max:'.(config('constants.document_size_limit') / 1000),
-            ]);
+            ];
+
+            if ($can_view_purchase_cost) {
+                $validation_rules['total_before_tax'] = 'required';
+                $validation_rules['final_total'] = 'required';
+            } else {
+                $validation_rules['purchases'] = 'required|array|min:1';
+            }
+
+            $request->validate($validation_rules);
 
             $user_id = $request->session()->get('user.id');
             $enable_product_editing = $request->session()->get('business.enable_editing_product_from_purchase');
@@ -328,6 +376,90 @@ class PurchaseController extends Controller
             Business::update_business($business_id, ['p_exchange_rate' => ($transaction_data['exchange_rate'])]);
 
             $currency_details = $this->transactionUtil->purchaseCurrencyDetails($business_id);
+
+            $purchases = $request->input('purchases', []);
+
+            //Cashier/Cost-hidden mode: derive cost fields server-side.
+            if (! $can_view_purchase_cost) {
+                $transaction_data['status'] = 'pending';
+                $transaction_data['discount_type'] = 'fixed';
+                $transaction_data['discount_amount'] = 0;
+                $transaction_data['tax_id'] = null;
+                $transaction_data['tax_amount'] = 0;
+                $transaction_data['shipping_details'] = null;
+                $transaction_data['shipping_charges'] = 0;
+
+                $enable_inline_tax = $request->session()->get('business.enable_inline_tax') == 1;
+                $tax_amounts = TaxRate::where('business_id', $business_id)
+                    ->select('id', 'amount')
+                    ->get()
+                    ->keyBy('id');
+
+                $total_before_tax = 0;
+                $total_after_tax = 0;
+                $sanitized_purchases = [];
+
+                foreach ($purchases as $purchase_line) {
+                    if (empty($purchase_line) || empty($purchase_line['variation_id']) || empty($purchase_line['product_id'])) {
+                        continue;
+                    }
+
+                    $variation = Variation::with('product')
+                        ->where('id', $purchase_line['variation_id'])
+                        ->first();
+
+                    if (empty($variation) || empty($variation->product) || $variation->product->business_id != $business_id) {
+                        continue;
+                    }
+
+                    $multiplier = 1;
+                    $product_unit_id = $purchase_line['product_unit_id'] ?? null;
+                    $sub_unit_id = $purchase_line['sub_unit_id'] ?? null;
+                    if (! empty($sub_unit_id) && ! empty($product_unit_id) && $sub_unit_id == $product_unit_id) {
+                        $sub_unit_id = null;
+                    }
+                    if (! empty($sub_unit_id)) {
+                        $unit = \App\Unit::find($sub_unit_id);
+                        $multiplier = ! empty($unit) && ! empty($unit->base_unit_multiplier) ? $unit->base_unit_multiplier : 1;
+                    }
+
+                    $qty = $this->productUtil->num_uf($purchase_line['quantity'] ?? 0, $currency_details);
+                    $purchase_price = (float) $variation->default_purchase_price * $multiplier;
+
+                    $purchase_line_tax_id = null;
+                    $item_tax = 0;
+                    $purchase_price_inc_tax = $purchase_price;
+
+                    if ($enable_inline_tax && ! empty($variation->product->tax)) {
+                        $candidate_tax_id = $variation->product->tax;
+
+                        // Only apply tax if it exists for this business.
+                        if (! empty($candidate_tax_id) && ! empty($tax_amounts[$candidate_tax_id])) {
+                            $purchase_line_tax_id = $candidate_tax_id;
+                            $tax_rate = (float) $tax_amounts[$purchase_line_tax_id]->amount;
+                            $item_tax = ($tax_rate / 100) * $purchase_price;
+                            $purchase_price_inc_tax = $purchase_price + $item_tax;
+                        }
+                    }
+
+                    $total_before_tax += ($qty * $purchase_price);
+                    $total_after_tax += ($qty * $purchase_price_inc_tax);
+
+                    $sanitized_purchases[] = array_merge($purchase_line, [
+                        'pp_without_discount' => $purchase_price,
+                        'discount_percent' => 0,
+                        'purchase_price' => $purchase_price,
+                        'purchase_price_inc_tax' => $purchase_price_inc_tax,
+                        'item_tax' => $item_tax,
+                        'purchase_line_tax_id' => $purchase_line_tax_id,
+                        'sub_unit_id' => $sub_unit_id,
+                    ]);
+                }
+
+                $purchases = $sanitized_purchases;
+                $transaction_data['total_before_tax'] = $total_before_tax;
+                $transaction_data['final_total'] = $total_after_tax;
+            }
 
             //unformat input values
             $transaction_data['total_before_tax'] = $this->productUtil->num_uf($transaction_data['total_before_tax'], $currency_details) * $exchange_rate;
@@ -397,12 +529,11 @@ class PurchaseController extends Controller
             $transaction = Transaction::create($transaction_data);
 
             $purchase_lines = [];
-            $purchases = $request->input('purchases');
 
             $this->productUtil->createOrUpdatePurchaseLines($transaction, $purchases, $currency_details, $enable_product_editing);
 
             //Add Purchase payments
-            $this->transactionUtil->createOrUpdatePaymentLines($transaction, $request->input('payment'));
+            $this->transactionUtil->createOrUpdatePaymentLines($transaction, $request->input('payment', []));
 
             //update payment status
             $this->transactionUtil->updatePaymentStatus($transaction->id, $transaction->final_total);

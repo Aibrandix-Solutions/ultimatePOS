@@ -26,6 +26,7 @@
      'product.delete' => 'Product verwijderen',
      'purchase.view' => 'Bekijk aankoop en voorraadcorrectie',
      'purchase.create' => 'Koop toevoegen & Voorraad aanpassen',
+    'stock_adjustment.create' => 'Add Stock Adjustment',
      'purchase.update' => 'Bewerk aankoop & voorraadcorrectie',
      'purchase.delete' => 'Koop en voorraad aanpassen',
      'sell.view' => 'Bekijk verkoop POS',

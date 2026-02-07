@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\BusinessLocation;
 use App\Contact;
 use App\Events\TransactionPaymentAdded;
 use App\Events\TransactionPaymentUpdated;
@@ -480,11 +481,63 @@ class TransactionPaymentController extends Controller
         }
 
         try {
+            DB::beginTransaction();
+
+            //Update the clicked payment
             $payment->cheque_status = $status;
             $payment->save();
 
+            //If this is a parent due-pay cheque payment, update its child allocations too.
+            //If this is a child payment, also update its parent + siblings for consistency.
+            if (empty($payment->parent_id)) {
+                TransactionPayment::where('business_id', $business_id)
+                    ->where('parent_id', $payment->id)
+                    ->where('method', 'cheque')
+                    ->update(['cheque_status' => $status]);
+            } else {
+                TransactionPayment::where('business_id', $business_id)
+                    ->where(function ($q) use ($payment) {
+                        $q->where('id', $payment->parent_id)
+                            ->orWhere('parent_id', $payment->parent_id);
+                    })
+                    ->where('method', 'cheque')
+                    ->update(['cheque_status' => $status]);
+            }
+
+            //Recalculate payment_status for affected transactions.
+            $affected_transaction_ids = collect();
+
+            if (!empty($payment->transaction_id)) {
+                $affected_transaction_ids->push($payment->transaction_id);
+            }
+
+            if (empty($payment->parent_id)) {
+                $child_transaction_ids = TransactionPayment::where('business_id', $business_id)
+                    ->where('parent_id', $payment->id)
+                    ->whereNotNull('transaction_id')
+                    ->pluck('transaction_id');
+                $affected_transaction_ids = $affected_transaction_ids->merge($child_transaction_ids);
+            } else {
+                $sibling_transaction_ids = TransactionPayment::where('business_id', $business_id)
+                    ->where('parent_id', $payment->parent_id)
+                    ->whereNotNull('transaction_id')
+                    ->pluck('transaction_id');
+                $affected_transaction_ids = $affected_transaction_ids->merge($sibling_transaction_ids);
+            }
+
+            $affected_transaction_ids = $affected_transaction_ids->filter()->unique()->values();
+            foreach ($affected_transaction_ids as $tid) {
+                $t = Transaction::where('business_id', $business_id)->find($tid);
+                if (!empty($t)) {
+                    $this->transactionUtil->updatePaymentStatus($t->id, $t->final_total);
+                }
+            }
+
+            DB::commit();
+
             return ['success' => true, 'msg' => __('lang_v1.updated_success')];
         } catch (\Exception $e) {
+            DB::rollBack();
             \Log::emergency('File:'.$e->getFile().'Line:'.$e->getLine().'Message:'.$e->getMessage());
 
             return ['success' => false, 'msg' => __('messages.something_went_wrong')];
@@ -565,7 +618,7 @@ class TransactionPaymentController extends Controller
             if ($due_payment_type == 'purchase') {
                 $query->select(
                     DB::raw("SUM(IF(t.type = 'purchase', final_total, 0)) as total_purchase"),
-                    DB::raw("SUM(IF(t.type = 'purchase', (SELECT SUM(amount) FROM transaction_payments WHERE transaction_payments.transaction_id=t.id), 0)) as total_paid"),
+                    DB::raw("SUM(IF(t.type = 'purchase', (SELECT COALESCE(SUM(amount), 0) FROM transaction_payments WHERE transaction_payments.transaction_id=t.id AND (transaction_payments.method != 'cheque' OR transaction_payments.cheque_status = 'cleared')), 0)) as total_paid"),
                     'contacts.name',
                     'contacts.supplier_business_name',
                     'contacts.id as contact_id'
@@ -573,7 +626,7 @@ class TransactionPaymentController extends Controller
             } elseif ($due_payment_type == 'purchase_return') {
                 $query->select(
                     DB::raw("SUM(IF(t.type = 'purchase_return', final_total, 0)) as total_purchase_return"),
-                    DB::raw("SUM(IF(t.type = 'purchase_return', (SELECT SUM(amount) FROM transaction_payments WHERE transaction_payments.transaction_id=t.id), 0)) as total_return_paid"),
+                    DB::raw("SUM(IF(t.type = 'purchase_return', (SELECT COALESCE(SUM(amount), 0) FROM transaction_payments WHERE transaction_payments.transaction_id=t.id AND (transaction_payments.method != 'cheque' OR transaction_payments.cheque_status = 'cleared')), 0)) as total_return_paid"),
                     'contacts.name',
                     'contacts.supplier_business_name',
                     'contacts.id as contact_id'
@@ -581,7 +634,7 @@ class TransactionPaymentController extends Controller
             } elseif ($due_payment_type == 'sell') {
                 $query->select(
                     DB::raw("SUM(IF(t.type = 'sell' AND t.status = 'final', final_total, 0)) as total_invoice"),
-                    DB::raw("SUM(IF(t.type = 'sell' AND t.status = 'final', (SELECT SUM(IF(is_return = 1,-1*amount,amount)) FROM transaction_payments WHERE transaction_payments.transaction_id=t.id), 0)) as total_paid"),
+                    DB::raw("SUM(IF(t.type = 'sell' AND t.status = 'final', (SELECT COALESCE(SUM(IF(is_return = 1,-1*amount,amount)), 0) FROM transaction_payments WHERE transaction_payments.transaction_id=t.id AND (transaction_payments.method != 'cheque' OR transaction_payments.cheque_status = 'cleared')), 0)) as total_paid"),
                     'contacts.name',
                     'contacts.supplier_business_name',
                     'contacts.id as contact_id'
@@ -589,7 +642,7 @@ class TransactionPaymentController extends Controller
             } elseif ($due_payment_type == 'sell_return') {
                 $query->select(
                     DB::raw("SUM(IF(t.type = 'sell_return', final_total, 0)) as total_sell_return"),
-                    DB::raw("SUM(IF(t.type = 'sell_return', (SELECT SUM(amount) FROM transaction_payments WHERE transaction_payments.transaction_id=t.id), 0)) as total_return_paid"),
+                    DB::raw("SUM(IF(t.type = 'sell_return', (SELECT COALESCE(SUM(amount), 0) FROM transaction_payments WHERE transaction_payments.transaction_id=t.id AND (transaction_payments.method != 'cheque' OR transaction_payments.cheque_status = 'cleared')), 0)) as total_return_paid"),
                     'contacts.name',
                     'contacts.supplier_business_name',
                     'contacts.id as contact_id'
@@ -599,7 +652,7 @@ class TransactionPaymentController extends Controller
             //Query for opening balance details
             $query->addSelect(
                 DB::raw("SUM(IF(t.type = 'opening_balance', final_total, 0)) as opening_balance"),
-                DB::raw("SUM(IF(t.type = 'opening_balance', (SELECT SUM(amount) FROM transaction_payments WHERE transaction_payments.transaction_id=t.id), 0)) as opening_balance_paid")
+                DB::raw("SUM(IF(t.type = 'opening_balance', (SELECT COALESCE(SUM(amount), 0) FROM transaction_payments WHERE transaction_payments.transaction_id=t.id AND (transaction_payments.method != 'cheque' OR transaction_payments.cheque_status = 'cleared')), 0)) as opening_balance_paid")
             );
             $contact_details = $query->first();
 
@@ -659,9 +712,14 @@ class TransactionPaymentController extends Controller
         }
 
         try {
-            DB::beginTransaction();
+            $business_id = $request->session()->get('business.id');
+            $contact_id = $request->input('contact_id');
+            $due_payment_type = $request->input('due_payment_type', 'sell');
 
-            $business_id = request()->session()->get('business.id');
+            $previous_due = $this->getContactDueAmountByType($contact_id, $due_payment_type, $business_id);
+            $amount_paid = $this->transactionUtil->num_uf($request->input('amount'));
+
+            DB::beginTransaction();
             $tp = $this->transactionUtil->payContact($request);
 
             $pos_settings = ! empty(session()->get('business.pos_settings')) ? json_decode(session()->get('business.pos_settings'), true) : [];
@@ -686,9 +744,66 @@ class TransactionPaymentController extends Controller
             }
 
             DB::commit();
-            $output = ['success' => true,
+
+            $output = [
+                'success' => true,
                 'msg' => __('purchase.payment_added_success'),
             ];
+
+            if ($request->ajax()) {
+                $contact = Contact::where('business_id', $business_id)->findOrFail($contact_id);
+                $total_due = $this->getContactDueAmountByType($contact_id, $due_payment_type, $business_id);
+
+                $business = $request->session()->get('business');
+                $business_name = $request->session()->get('business.name');
+                if (empty($business_name)) {
+                    $business_name = is_array($business) ? ($business['name'] ?? '') : ($business->name ?? '');
+                }
+
+                $location = BusinessLocation::where('business_id', $business_id)
+                    ->where('is_active', 1)
+                    ->first();
+
+                $cashier_name = trim((auth()->user()->first_name ?? '').' '.(auth()->user()->last_name ?? ''));
+                if (empty($cashier_name)) {
+                    $cashier_name = auth()->user()->username ?? '';
+                }
+
+                $next_due_date = null;
+                if (! empty($contact->pay_term_number) && ! empty($contact->pay_term_type)) {
+                    $next_due_date = $contact->pay_term_type === 'months'
+                        ? \Carbon\Carbon::now()->addMonths($contact->pay_term_number)
+                        : \Carbon\Carbon::now()->addDays($contact->pay_term_number);
+                    $next_due_date = $this->transactionUtil->format_date($next_due_date->toDateTimeString());
+                }
+
+                $receipt_html = view('transaction_payment.due_payment_receipt', [
+                    'business_name' => $business_name,
+                    'location_name' => $location->name ?? null,
+                    'location_address' => $location->location_address ?? null,
+                    'location_contact' => $location->mobile ?? null,
+                    'location_email' => $location->email ?? null,
+
+                    'payment_date' => $this->transactionUtil->format_date($tp->paid_on, true),
+                    'payment_ref_no' => $tp->payment_ref_no ?? '',
+                    'cashier_name' => $cashier_name,
+
+                    'contact_name' => $contact->name ?? '',
+                    'contact_mobile' => $contact->mobile ?? '',
+
+                    'previous_due' => $previous_due,
+                    'amount_paid' => $amount_paid,
+                    'total_due' => $total_due,
+                    'next_due_date' => $next_due_date,
+
+                    'footer_text' => $request->session()->get('business.receipt_footer') ?? '',
+                ])->render();
+
+                $output['receipt'] = [
+                    'html_content' => $receipt_html,
+                ];
+                $output['print_title'] = $tp->payment_ref_no ?? 'Payment Receipt';
+            }
         } catch (\Exception $e) {
             DB::rollBack();
             \Log::emergency('File:'.$e->getFile().'Line:'.$e->getLine().'Message:'.$e->getMessage());
@@ -698,7 +813,56 @@ class TransactionPaymentController extends Controller
             ];
         }
 
+        if ($request->ajax()) {
+            return response()->json($output);
+        }
+
         return redirect()->back()->with(['status' => $output]);
+    }
+
+    private function getContactDueAmountByType($contact_id, $due_payment_type, $business_id)
+    {
+        $query = Contact::where('contacts.id', $contact_id)
+            ->where('contacts.business_id', $business_id)
+            ->leftJoin('transactions as t', 'contacts.id', '=', 't.contact_id');
+
+        if ($due_payment_type === 'purchase') {
+            $query->select(
+                DB::raw("SUM(IF(t.type = 'purchase', final_total, 0)) as total_purchase"),
+                DB::raw("SUM(IF(t.type = 'purchase', (SELECT COALESCE(SUM(amount), 0) FROM transaction_payments WHERE transaction_payments.transaction_id=t.id AND (transaction_payments.method != 'cheque' OR transaction_payments.cheque_status = 'cleared')), 0)) as total_paid")
+            );
+        } else {
+            // default to sell
+            $query->select(
+                DB::raw("SUM(IF(t.type = 'sell' AND t.status = 'final', final_total, 0)) as total_invoice"),
+                DB::raw("SUM(IF(t.type = 'sell' AND t.status = 'final', (SELECT COALESCE(SUM(IF(is_return = 1,-1*amount,amount)), 0) FROM transaction_payments WHERE transaction_payments.transaction_id=t.id AND (transaction_payments.method != 'cheque' OR transaction_payments.cheque_status = 'cleared')), 0)) as total_paid")
+            );
+        }
+
+        $query->addSelect(
+            DB::raw("SUM(IF(t.type = 'opening_balance', final_total, 0)) as opening_balance"),
+            DB::raw("SUM(IF(t.type = 'opening_balance', (SELECT COALESCE(SUM(amount), 0) FROM transaction_payments WHERE transaction_payments.transaction_id=t.id AND (transaction_payments.method != 'cheque' OR transaction_payments.cheque_status = 'cleared')), 0)) as opening_balance_paid")
+        );
+
+        $details = $query->first();
+        if (empty($details)) {
+            return 0;
+        }
+
+        $ob_due = (float) (($details->opening_balance ?? 0) - ($details->opening_balance_paid ?? 0));
+        $due = 0;
+
+        if ($due_payment_type === 'purchase') {
+            $due = (float) (($details->total_purchase ?? 0) - ($details->total_paid ?? 0));
+        } else {
+            $due = (float) (($details->total_invoice ?? 0) - ($details->total_paid ?? 0));
+        }
+
+        if ($ob_due > 0) {
+            $due += $ob_due;
+        }
+
+        return $due;
     }
 
     /**

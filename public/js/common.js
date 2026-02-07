@@ -350,6 +350,8 @@ ranges[LANG.today] = [moment(), moment()];
 ranges[LANG.yesterday] = [moment().subtract(1, 'days'), moment().subtract(1, 'days')];
 ranges[LANG.last_7_days] = [moment().subtract(6, 'days'), moment()];
 ranges[LANG.last_30_days] = [moment().subtract(29, 'days'), moment()];
+ranges[LANG.last_60_days] = [moment().subtract(59, 'days'), moment()];
+ranges[LANG.last_90_days] = [moment().subtract(89, 'days'), moment()];
 ranges[LANG.this_month] = [moment().startOf('month'), moment().endOf('month')];
 ranges[LANG.last_month] = [
     moment().subtract(1, 'month').startOf('month'),

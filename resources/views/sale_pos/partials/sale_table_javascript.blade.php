@@ -45,6 +45,12 @@ sell_table = $('#sell_table').DataTable({
                 }
                 d.customer_id = $('#sell_list_filter_customer_id').val();
 
+                //In contact view, also show opening balance as a due row
+                if ($('#is_contact_view').length && d.customer_id) {
+                    d.from_contact_view = 1;
+                    d.include_opening_balance = 1;
+                }
+
                 if($('#sell_list_filter_payment_status').length) {
                     d.payment_status = $('#sell_list_filter_payment_status').val();
                 }

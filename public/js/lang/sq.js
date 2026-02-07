@@ -19,6 +19,8 @@ LANG = {
 "last_30_days": "30 ditët e fundit",
 "this_month": "Këtë muaj",
 "last_month": "Muajin e kaluar",
+	'last_60_days': '60 ditët e fundit',
+	'last_90_days': '90 ditët e fundit',
 "this_financial_year": "Viti financiar i tanishëm",
 "clear": "Qartë",
 "no_products_added": "Asnjë Produkt nuk është shtuar, shtoni disa produkte së pari",

@@ -14,8 +14,10 @@
                 <div class="col-md-12">
                     <div class="well well-sm">
                         <strong>Customer:</strong> {{ $contact->name }}<br>
-                        <strong>Total Due:</strong> <span class="display_currency"
-                            data-currency_symbol="true">{{ ($contact->total_invoice ?? 0) - ($contact->invoice_received ?? 0) }}</span>
+                        <strong>Total Due:</strong>
+                        <span class="display_currency" data-currency_symbol="true">
+                            {{ $total_due ?? ((($contact->total_invoice ?? 0) - ($contact->invoice_received ?? 0)) + (($contact->opening_balance ?? 0) - ($contact->opening_balance_paid ?? 0))) }}
+                        </span>
                     </div>
                 </div>
             </div>
@@ -68,6 +70,13 @@
                         <p class="text-muted">
                             <i class="fa fa-check-circle fa-3x"></i><br><br>
                             No unpaid invoices found for this customer.
+                            @if(!empty($total_due) && (float) $total_due > 0)
+                                <br>
+                                <small>
+                                    There is still an outstanding due amount. It may be from opening balance or non-invoice adjustments.
+                                    Use <strong>Pay Due Amount</strong> to record a cheque payment not linked to a specific invoice.
+                                </small>
+                            @endif
                         </p>
                     </div>
                 </div>

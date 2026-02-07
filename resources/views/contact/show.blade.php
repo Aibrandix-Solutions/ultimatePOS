@@ -39,6 +39,7 @@
             </div>
         </div>
     </div>
+    <input type="hidden" id="is_contact_view" value="1">
     <input type="hidden" id="sell_list_filter_customer_id" value="{{$contact->id}}">
     <input type="hidden" id="purchase_list_filter_supplier_id" value="{{$contact->id}}">
     <br>

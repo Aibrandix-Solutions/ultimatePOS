@@ -95,7 +95,9 @@ class SellController extends Controller
 
             $sale_type = ! empty(request()->input('sale_type')) ? request()->input('sale_type') : 'sell';
 
-            $sells = $this->transactionUtil->getListSells($business_id, $sale_type);
+            $include_opening_balance = request()->boolean('include_opening_balance') && request()->boolean('from_contact_view');
+            $include_suspended = !empty(request()->suspended);
+            $sells = $this->transactionUtil->getListSells($business_id, $sale_type, $include_opening_balance, $include_suspended);
 
             // only display sell invoice we add it because project invoive show in sell list
             if($sale_type == 'sell'){
@@ -397,6 +399,28 @@ class SellController extends Controller
 
 
                         }
+
+                        if ($row->type === 'opening_balance') {
+                            $html = '<div class="btn-group">
+                                    <button type="button" class="tw-dw-btn tw-dw-btn-xs tw-dw-btn-outline tw-dw-btn-info tw-w-max dropdown-toggle"
+                                        data-toggle="dropdown" aria-expanded="false">' .
+                                __('messages.actions') .
+                                '<span class="caret"></span><span class="sr-only">Toggle Dropdown</span>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-left" role="menu">';
+
+                            if ((auth()->user()->can('sell.payments') || auth()->user()->can('edit_sell_payment') || auth()->user()->can('delete_sell_payment')) && $row->payment_status != 'paid') {
+                                $html .= '<li><a href="'.action([\App\Http\Controllers\TransactionPaymentController::class, 'addPayment'], [$row->id]).'" class="add_payment_modal"><i class="fas fa-money-bill-alt"></i> '.__('purchase.add_payment').'</a></li>';
+                            }
+
+                            if (auth()->user()->can('sell.payments') || auth()->user()->can('edit_sell_payment') || auth()->user()->can('delete_sell_payment')) {
+                                $html .= '<li><a href="'.action([\App\Http\Controllers\TransactionPaymentController::class, 'show'], [$row->id]).'" class="view_payment_modal"><i class="fas fa-money-bill-alt"></i> '.__('purchase.view_payments').'</a></li>';
+                            }
+
+                            $html .= '</ul></div>';
+
+                            return $html;
+                        }
                         $html = '<div class="btn-group">
                                     <button type="button" class="tw-dw-btn tw-dw-btn-xs tw-dw-btn-outline  tw-dw-btn-info tw-w-max dropdown-toggle"
                                         data-toggle="dropdown" aria-expanded="false">' .
@@ -565,6 +589,12 @@ class SellController extends Controller
                     return $return_due_html;
                 })
                 ->editColumn('invoice_no', function ($row) use ($is_crm) {
+                    if ($row->type === 'opening_balance') {
+                        $ref = !empty($row->ref_no) ? e($row->ref_no) : '';
+                        $label = e(__('lang_v1.opening_balance'));
+                        return $ref ? $label . '<br><small>' . $ref . '</small>' : $label;
+                    }
+
                     $invoice_no = $row->invoice_no;
                     if (! empty($row->woocommerce_order_id)) {
                         $invoice_no .= ' <i class="fab fa-wordpress text-primary no-print" title="'.__('lang_v1.synced_from_woocommerce').'"></i>';
@@ -592,7 +622,13 @@ class SellController extends Controller
                 })
                 ->editColumn('shipping_status', function ($row) use ($shipping_statuses) {
                     $status_color = ! empty($this->shipping_status_colors[$row->shipping_status]) ? $this->shipping_status_colors[$row->shipping_status] : 'bg-gray';
-                    $status = ! empty($row->shipping_status) ? '<a href="#" class="btn-modal" data-href="'.action([\App\Http\Controllers\SellController::class, 'editShipping'], [$row->id]).'" data-container=".view_modal"><span class="label '.$status_color.'">'.$shipping_statuses[$row->shipping_status].'</span></a>' : '';
+                    $shipping_status_label = ! empty($row->shipping_status)
+                        ? ($shipping_statuses[$row->shipping_status] ?? $row->shipping_status)
+                        : '';
+
+                    $status = ! empty($shipping_status_label)
+                        ? '<a href="#" class="btn-modal" data-href="'.action([\App\Http\Controllers\SellController::class, 'editShipping'], [$row->id]).'" data-container=".view_modal"><span class="label '.$status_color.'">'.$shipping_status_label.'</span></a>'
+                        : '';
 
                     return $status;
                 })
@@ -660,6 +696,9 @@ class SellController extends Controller
                 ->editColumn('so_qty_remaining', '{{@format_quantity($so_qty_remaining)}}')
                 ->setRowAttr([
                     'data-href' => function ($row) {
+                        if ($row->type === 'opening_balance') {
+                            return '';
+                        }
                         if (auth()->user()->can('sell.view') || auth()->user()->can('view_own_sell_only')) {
                             return  action([\App\Http\Controllers\SellController::class, 'show'], [$row->id]);
                         } else {
@@ -1347,6 +1386,10 @@ class SellController extends Controller
                 ->where('transactions.business_id', $business_id)
                 ->where('transactions.type', 'sell')
                 ->where('transactions.status', 'draft')
+                                ->where(function ($q) {
+                                        $q->whereNull('transactions.is_suspend')
+                                            ->orWhere('transactions.is_suspend', 0);
+                                })
                 ->select(
                     'transactions.id',
                     'transaction_date',

@@ -26,6 +26,7 @@
      'product.delete' => 'Eliminar producto',
      'purchase.view' => 'Ver ajuste de compra y stock',
      'purchase.create' => 'Agregar compra y ajuste de stock',
+    'stock_adjustment.create' => 'Add Stock Adjustment',
      'purchase.update' => 'Editar compra y ajuste de stock',
      'purchase.delete' => 'Eliminar compra y ajuste de stock',
      'sell.view' => 'Ver venta POS',

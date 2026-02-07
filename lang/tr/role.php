@@ -41,6 +41,7 @@ return [
 
     'purchase.view' => 'Satınalma ve Stok Ayarlarını Görüntüleme',
     'purchase.create' => 'Satınalma ve Stok Ayarlarını Ekleme',
+    'stock_adjustment.create' => 'Add Stock Adjustment',
     'purchase.update' => 'Satınalma ve Stok Ayarlarını Düzenleme',
     'purchase.delete' => 'Satınalma ve Stok Ayarlarını Silme',
 

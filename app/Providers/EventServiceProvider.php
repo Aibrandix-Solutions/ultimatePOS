@@ -18,14 +18,17 @@ class EventServiceProvider extends ServiceProvider
         // ],
         \App\Events\TransactionPaymentAdded::class => [
             \App\Listeners\AddAccountTransaction::class,
+            \App\Listeners\SyncInstallmentPlanOnPaymentChange::class,
         ],
 
         \App\Events\TransactionPaymentUpdated::class => [
             \App\Listeners\UpdateAccountTransaction::class,
+            \App\Listeners\SyncInstallmentPlanOnPaymentChange::class,
         ],
 
         \App\Events\TransactionPaymentDeleted::class => [
             \App\Listeners\DeleteAccountTransaction::class,
+            \App\Listeners\SyncInstallmentPlanOnPaymentChange::class,
         ],
         \App\Events\SellCreatedOrModified::class => [
             \App\Listeners\DecreaseDamageOnSell::class,

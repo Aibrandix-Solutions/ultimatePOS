@@ -138,6 +138,11 @@ $(document).ready(function () {
 
         var selling_price_inc_tax = __add_percent(selling_price, tax_rate);
         __write_number($('input#single_dsp_inc_tax'), selling_price_inc_tax);
+
+        var $minSellPrice = $('input#single_min_sell_price_inc_tax');
+        if ($minSellPrice.length && ($minSellPrice.val() === '' || $minSellPrice.val() === null)) {
+            __write_number($minSellPrice, selling_price_inc_tax);
+        }
     });
 
     $(document).on('change', 'input#single_dsp_inc_tax', function (e) {
@@ -160,6 +165,11 @@ $(document).ready(function () {
         }
 
         __write_number($('input#profit_percent'), profit_percent);
+
+        var $minSellPrice = $('input#single_min_sell_price_inc_tax');
+        if ($minSellPrice.length && ($minSellPrice.val() === '' || $minSellPrice.val() === null)) {
+            __write_number($minSellPrice, selling_price_inc_tax);
+        }
     });
 
     if ($('#product_add_form').length) {
@@ -624,6 +634,10 @@ function toggle_dsp_input() {
         $('#single_dsp').addClass('hide');
         $('#single_dsp_inc_tax').removeClass('hide');
 
+        // Keep MSP input visible in all tax modes; it stores inc-tax minimum.
+        $('#single_min_sell_price_inc_tax').removeClass('hide');
+        $('.min_sell_price_help_text').removeClass('hide');
+
         // Toggle help text visibility
         $('.dsp_help_text').addClass('hide');
         $('.dsp_inc_tax_help_text').removeClass('hide');
@@ -644,6 +658,10 @@ function toggle_dsp_input() {
         });
         $('#single_dsp').removeClass('hide');
         $('#single_dsp_inc_tax').addClass('hide');
+
+        // Keep MSP input visible in all tax modes; it stores inc-tax minimum.
+        $('#single_min_sell_price_inc_tax').removeClass('hide');
+        $('.min_sell_price_help_text').removeClass('hide');
 
         // Toggle help text visibility
         $('.dsp_help_text').removeClass('hide');

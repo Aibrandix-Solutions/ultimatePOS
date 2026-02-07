@@ -26,6 +26,7 @@
      'product.delete' => 'حذف المنتج',
      'purchase.view' => 'عرض المشتريات والمخزون التالف',
      'purchase.create' => 'أضف عملية شراء وتعديل المخزونات',
+    'stock_adjustment.create' => 'Add Stock Adjustment',
      'purchase.update' => 'تعديل المشتريات والمخزون التالف',
      'purchase.delete' => 'حذف المشتريات والمخزون التالف',
      'sell.view' => 'عرض مبيعات نقطة البيع',

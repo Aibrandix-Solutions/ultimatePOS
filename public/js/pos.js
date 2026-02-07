@@ -404,12 +404,25 @@ $(document).ready(function () {
 
         pos_total_row();
 
+        updatePosProductListStock();
+
         adjustComboQty(tr);
     });
 
     //If change in unit price update price including tax and line total
     $('table#pos_table tbody').on('change', 'input.pos_unit_price', function () {
-        var unit_price = __read_number($(this));
+        var $unitPriceInput = $(this);
+        var unit_price = __read_number($unitPriceInput);
+
+        var min_value = parseFloat($unitPriceInput.attr('data-rule-min-value'));
+        if (!isNaN(min_value) && unit_price < min_value) {
+            var msg = $unitPriceInput.attr('data-msg-min-value');
+            if (typeof toastr !== 'undefined' && msg) {
+                toastr.error(msg);
+            }
+            unit_price = min_value;
+            __write_number($unitPriceInput, unit_price);
+        }
         var tr = $(this).parents('tr');
 
         //calculate discounted unit price
@@ -450,11 +463,22 @@ $(document).ready(function () {
 
     //If change in unit price including tax, update unit price
     $('table#pos_table tbody').on('change', 'input.pos_unit_price_inc_tax', function () {
-        var unit_price_inc_tax = __read_number($(this));
+        var $unitPriceIncTaxInput = $(this);
+        var unit_price_inc_tax = __read_number($unitPriceIncTaxInput);
+
+        var min_value = parseFloat($unitPriceIncTaxInput.attr('data-rule-min-value'));
+        if (!isNaN(min_value) && unit_price_inc_tax < min_value) {
+            var msg = $unitPriceIncTaxInput.attr('data-msg-min-value');
+            if (typeof toastr !== 'undefined' && msg) {
+                toastr.error(msg);
+            }
+            unit_price_inc_tax = min_value;
+            __write_number($unitPriceIncTaxInput, unit_price_inc_tax);
+        }
 
         if (iraqi_selling_price_adjustment) {
             unit_price_inc_tax = round_to_iraqi_dinnar(unit_price_inc_tax);
-            __write_number($(this), unit_price_inc_tax);
+            __write_number($unitPriceIncTaxInput, unit_price_inc_tax);
         }
 
         var tr = $(this).parents('tr');
@@ -574,6 +598,8 @@ $(document).ready(function () {
             .parents('tr')
             .remove();
         pos_total_row();
+
+        updatePosProductListStock();
     });
 
     //Cancel the invoice
@@ -616,6 +642,9 @@ $(document).ready(function () {
             return;
         }
 
+        // Ensure row-level edits (discount/price) are in inputs before serialize
+        syncProductRowsToInputs();
+
         var data = pos_form_obj.serialize();
         data = data + '&status=draft';
         var url = pos_form_obj.attr('action');
@@ -650,6 +679,9 @@ $(document).ready(function () {
         if (is_valid != true) {
             return;
         }
+
+        // Ensure row-level edits (discount/price) are in inputs before serialize
+        syncProductRowsToInputs();
 
         var data = pos_form_obj.serialize();
         data = data + '&status=quotation';
@@ -725,8 +757,7 @@ $(document).ready(function () {
         if (window.__express_processing) {
             return false;
         }
-        window.__express_processing = true;
-        try { $(this).prop('disabled', true); } catch (e) { }
+        var $expressBtn = $(this);
 
         //Check if product is present or not.
         if ($('table#pos_table tbody').find('.product_row').length <= 0) {
@@ -741,6 +772,10 @@ $(document).ready(function () {
                 return false;
             }
         }
+
+        // lock only after basic validations pass
+        window.__express_processing = true;
+        try { $expressBtn.prop('disabled', true); } catch (e) { }
 
         var pay_method = $(this).data('pay_method');
 
@@ -760,6 +795,8 @@ $(document).ready(function () {
                 } else {
                     alert(LANG.contact_register_required || 'Please register this customer to allow Credit Sale.');
                 }
+                window.__express_processing = false;
+                try { $expressBtn.prop('disabled', false); } catch (e) { }
                 return false;
             }
             $('#is_credit_sale').val(1);
@@ -794,8 +831,14 @@ $(document).ready(function () {
         payment_method_dropdown.val(pay_method);
         payment_method_dropdown.change();
         if (pay_method == 'card') {
+            // unlock so card modal action can proceed
+            window.__express_processing = false;
+            try { $expressBtn.prop('disabled', false); } catch (e) { }
             $('div#card_details_modal').modal('show');
         } else if (pay_method == 'suspend') {
+            // unlock so suspend modal action can proceed
+            window.__express_processing = false;
+            try { $expressBtn.prop('disabled', false); } catch (e) { }
             $('div#confirmSuspendModal').modal('show');
         } else {
             pos_form_obj.submit();
@@ -815,6 +858,12 @@ $(document).ready(function () {
                 } catch (err) { }
                 $(this).select2({ dropdownParent: $('#card_details_modal'), width: '100%' });
             });
+    });
+
+    // If user closes card/suspend modal without completing, allow clicking again
+    $('div#card_details_modal, div#confirmSuspendModal').on('hidden.bs.modal', function () {
+        window.__express_processing = false;
+        try { $('button.pos-express-finalize').prop('disabled', false); } catch (e) { }
     });
 
     $('div#confirmSuspendModal').on('shown.bs.modal', function (e) {
@@ -1009,8 +1058,15 @@ $(document).ready(function () {
             // var total_paying = __read_number($('input#total_paying_input'));
             var cnf = true;
 
+            var is_suspend = false;
+            try {
+                is_suspend = $('input#is_suspend').length && parseInt($('input#is_suspend').val() || '0') === 1;
+            } catch (e) {
+                is_suspend = false;
+            }
+
             //Ignore if the difference is less than 0.5
-            if ($('input#in_balance_due').val() >= 0.5) {
+            if (!is_suspend && $('input#in_balance_due').val() >= 0.5) {
                 // Require due date before confirming partial payment
                 try {
                     var $wrapper = $('#pos_due_date_wrapper');
@@ -1074,11 +1130,10 @@ $(document).ready(function () {
                 if (!$(this).is(":visible") && $(this).data('rule-min-value')) {
                     var val = __read_number($(this));
                     var error_msg_td = $(this).closest('tr').find('.pos_line_total_text').closest('td');
-                    if (val > $(this).data('rule-min-value')) {
+                    error_msg_td.find('label.error').remove();
+                    if (val < $(this).data('rule-min-value')) {
                         is_msp_valid = false;
                         error_msg_td.append('<label class="error">' + $(this).data('msg-min-value') + '</label>');
-                    } else {
-                        error_msg_td.find('label.error').remove();
                     }
                 }
             });
@@ -1410,11 +1465,10 @@ $(document).ready(function () {
             if (!$(this).is(":visible") && $(this).data('rule-min-value')) {
                 var val = __read_number($(this));
                 var error_msg_td = $(this).closest('tr').find('.pos_line_total_text').closest('td');
-                if (val > $(this).data('rule-min-value')) {
+                error_msg_td.find('label.error').remove();
+                if (val < $(this).data('rule-min-value')) {
                     is_msp_valid = false;
                     error_msg_td.append('<label class="error">' + $(this).data('msg-min-value') + '</label>');
-                } else {
-                    error_msg_td.find('label.error').remove();
                 }
             }
         });
@@ -1836,9 +1890,11 @@ $(document).on('click', '#pos-save', function (e) {
             // ignore
         }
 
+        var installmentEnabled = $('#enable_installment_plan').length && $('#enable_installment_plan').is(':checked');
+
         var default_customer_id = $('#default_customer_id').val();
         var current_customer_id = $('#customer_id').val();
-        if (default_customer_id && current_customer_id == default_customer_id) {
+        if (!installmentEnabled && default_customer_id && current_customer_id == default_customer_id) {
             // Calculate total payments entered
             var totalEntered = 0;
             $('input.payment-amount, input.payment_amount').each(function () {
@@ -1958,6 +2014,8 @@ function get_featured_products() {
                     $('#feature_product_div').addClass('hide');
                     $('#featured_products_box').html('');
                 }
+
+                updatePosProductListStock();
             },
         });
     } else {
@@ -1998,7 +2056,81 @@ function get_product_suggestion_list(category_id, brand_id, location_id, url = n
         success: function (result) {
             $('div#product_list_body').append(result);
             $('#suggestion_page_loader').fadeOut(700);
+
+            updatePosProductListStock();
         },
+    });
+}
+
+function getCartQtyByVariationInBaseUnits() {
+    var qtyMap = {};
+
+    if ($('#pos_table').length === 0) {
+        return qtyMap;
+    }
+
+    $('#pos_table tbody tr.product_row').each(function () {
+        var $row = $(this);
+        var variationId = $row.find('input.row_variation_id').val();
+        if (!variationId) {
+            return;
+        }
+
+        var qty = __read_number($row.find('input.pos_quantity'));
+        if (isNaN(qty)) {
+            qty = 0;
+        }
+
+        var multiplier = parseFloat($row.find('input.base_unit_multiplier').val());
+        if (isNaN(multiplier) || multiplier <= 0) {
+            multiplier = 1;
+        }
+
+        var qtyInBase = qty * multiplier;
+        if (!qtyMap[variationId]) {
+            qtyMap[variationId] = 0;
+        }
+        qtyMap[variationId] += qtyInBase;
+    });
+
+    return qtyMap;
+}
+
+function updatePosProductListStock() {
+    // UI-only live stock indicator for product cards.
+    // Stock is finally deducted on save, this only reflects cart quantities.
+
+    var qtyMap = getCartQtyByVariationInBaseUnits();
+
+    $('.product_box[data-variation_id]').each(function () {
+        var $box = $(this);
+        var enableStock = parseInt($box.data('enable_stock')) === 1;
+        if (!enableStock) {
+            return;
+        }
+
+        var variationId = $box.data('variation_id');
+        if (!variationId) {
+            return;
+        }
+
+        var origQty = parseFloat($box.data('orig_qty_available'));
+        if (isNaN(origQty)) {
+            return;
+        }
+
+        var qtyInCart = qtyMap[String(variationId)] || qtyMap[parseInt(variationId)] || 0;
+        var availableQty = origQty - qtyInCart;
+        if (availableQty < 0) {
+            availableQty = 0;
+        }
+
+        var formattedQty = availableQty;
+        if (typeof __number_f === 'function') {
+            formattedQty = __number_f(availableQty, false);
+        }
+
+        $box.find('span.js_pos_product_stock_qty').text(formattedQty);
     });
 }
 
@@ -2050,7 +2182,6 @@ function pos_product_row(variation_id = null, purchase_line_id = null, weighing_
                 if ($(this).find('input.modifiers_exist').length > 0) {
                     modifiers_exist = true;
                 }
-
                 if (
                     row_v_id == variation_id &&
                     enable_sr_no !== '1' &&
@@ -2211,6 +2342,8 @@ function pos_product_row(variation_id = null, purchase_line_id = null, weighing_
                     this_row.find('span.pos_line_total_text').text(line_total);
 
                     pos_total_row();
+
+                    updatePosProductListStock();
 
                     //Check if multipler is present then multiply it when a new row is added.
                     if (__getUnitMultiplier(this_row) > 1) {
@@ -2485,11 +2618,15 @@ function calculate_balance_due() {
                 total_paying += v;
             }
         });
-    var bal_due = total_payable - total_paying;
+    // New semantics: checkbox checked = keep payment on current invoice.
+    // Default (unchecked) = apply payment to previous due invoices (oldest first).
+    var keep_on_current_invoice = $('#apply_payment_to_old_dues').length && $('#apply_payment_to_old_dues').is(':checked');
+    var apply_to_old_dues = !keep_on_current_invoice;
+    var bal_due = apply_to_old_dues ? total_payable : (total_payable - total_paying);
     var change_return = 0;
 
-    //change_return
-    if (bal_due < 0 || Math.abs(bal_due) < 0.05) {
+    //change_return (disable when applying payment to old dues)
+    if (!apply_to_old_dues && (bal_due < 0 || Math.abs(bal_due) < 0.05)) {
         __write_number($('input#change_return'), bal_due * -1);
         $('span.change_return_span').text(__currency_trans_from_en(bal_due * -1, true));
         change_return = bal_due * -1;
@@ -2498,7 +2635,6 @@ function calculate_balance_due() {
         __write_number($('input#change_return'), 0);
         $('span.change_return_span').text(__currency_trans_from_en(0, true));
         change_return = 0;
-
     }
 
     if (change_return !== 0) {
@@ -2596,6 +2732,8 @@ function reset_pos_form() {
     $('span.total_quantity, span.price_total, span#total_discount, span#order_tax, span#total_payable, span#shipping_charges_amount').text(0);
     $('span.total_payable_span', 'span.total_paying', 'span.balance_due').text(0);
 
+    updatePosProductListStock();
+
     $('#modal_payment').find('.remove_payment_row').each(function () {
         $(this).closest('.payment_row').remove();
     });
@@ -2667,6 +2805,13 @@ function reset_pos_form() {
     global_is_clear_local_storage = true;
     saveFormDataToLocalStorage();
 }
+
+//POS: when applying payment to old dues, recalc totals immediately
+$(document).on('change', '#apply_payment_to_old_dues', function () {
+    if (typeof calculate_balance_due === 'function') {
+        calculate_balance_due();
+    }
+});
 
 function set_default_customer() {
     var default_customer_id = $('#default_customer_id').val();
@@ -3268,6 +3413,10 @@ function enable_pos_form_actions() {
     $('div.pos-processing').hide();
     $('#pos-save').removeAttr('disabled');
     $('div.pos-form-actions').find('button').removeAttr('disabled');
+
+    // Always clear express lock when actions are re-enabled
+    window.__express_processing = false;
+    try { $('button.pos-express-finalize').prop('disabled', false); } catch (e) { }
 }
 
 $(document).on('change', '#recur_interval_type', function () {
@@ -4174,6 +4323,21 @@ function addModernStyling() {
         // Get product name for modal title
         var productName = $productRow.find('span.text-link').text().replace(/\s*&nbsp;.*$/, '').trim();
 
+        // Populate product image in modal (if available)
+        try {
+            var imgUrl = $productRow.find('input.pos_product_image_url').val();
+            if (imgUrl && String(imgUrl).trim() !== '') {
+                $('#modal_product_image').attr('src', imgUrl);
+                $('#modal_product_image_wrapper').show();
+            } else {
+                $('#modal_product_image').attr('src', '');
+                $('#modal_product_image_wrapper').hide();
+            }
+        } catch (err) {
+            $('#modal_product_image').attr('src', '');
+            $('#modal_product_image_wrapper').hide();
+        }
+
         console.log('Product data:', {
             unitPrice: currentUnitPrice,
             discountType: currentDiscountType,
@@ -4224,6 +4388,46 @@ function addModernStyling() {
         var newDiscountType = $('#modal_discount_type').val();
         var newDiscountAmount = __read_number($('#modal_discount_amount'));
         var newNote = $('#modal_sell_line_note').val();
+
+        // MSP enforcement (uses min value attached to the row inc-tax input)
+        var $rowIncTaxInput = $productRow.find('input.pos_unit_price_inc_tax');
+        var minIncTax = parseFloat($rowIncTaxInput.data('rule-min-value'));
+        if (!isNaN(minIncTax)) {
+            var tax_rate = $productRow.find('select.tax_id').find(':selected').data('rate');
+            if (typeof tax_rate === 'undefined' || isNaN(parseFloat(tax_rate))) {
+                tax_rate = 0;
+            }
+
+            var discounted = newUnitPrice;
+            if (newDiscountType === 'percentage') {
+                discounted = discounted - (discounted * (newDiscountAmount / 100));
+            } else {
+                discounted = discounted - newDiscountAmount;
+            }
+            if (discounted < 0) {
+                discounted = 0;
+            }
+
+            var expectedIncTax = __add_percent(discounted, tax_rate);
+            if (expectedIncTax < minIncTax) {
+                var msg = $rowIncTaxInput.attr('data-msg-min-value') || (LANG.minimum_selling_price_error || 'Price cannot be below the minimum selling price.');
+
+                // Improve clarity: show min price and computed final price after discount
+                try {
+                    var minFmt = __currency_trans_from_en(minIncTax, true);
+                    var finalFmt = __currency_trans_from_en(expectedIncTax, true);
+                    if (typeof msg === 'string' && msg.indexOf(':price') !== -1) {
+                        msg = msg.replace(':price', minFmt);
+                    }
+                    msg = msg + ' Final price after discount (' + finalFmt + ') cannot be below minimum selling price (' + minFmt + ').';
+                } catch (e) { }
+
+                if (typeof toastr !== 'undefined' && msg) {
+                    toastr.error(msg);
+                }
+                return;
+            }
+        }
 
 
         // Update the product row with new values

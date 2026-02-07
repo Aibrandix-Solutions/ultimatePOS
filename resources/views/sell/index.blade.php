@@ -97,17 +97,76 @@
                     </thead>
                     <tbody></tbody>
                     <tfoot>
-                        <tr class="bg-gray font-17 footer-total text-center">
-                            <td colspan="6"><strong>@lang('sale.total'):</strong></td>
-                            <td class="footer_payment_status_count"></td>
-                            <td class="payment_method_count"></td>
-                            <td class="footer_sale_total"></td>
-                            <td class="footer_total_paid"></td>
-                            <td class="footer_total_remaining"></td>
-                            <td class="footer_total_sell_return_due"></td>
-                            <td colspan="2"></td>
-                            <td class="service_type_count"></td>
-                            <td colspan="7"></td>
+                        <tr class="footer-total">
+                            <td colspan="26" style="padding: 0 !important; background: #f6f7fb;">
+                                <div class="sell-summary-wrap" style="padding: 8px 10px;">
+                                    <div class="row" style="margin: 0 -4px;">
+                                        <div class="col-md-3 col-sm-6 col-xs-12" style="padding: 4px;">
+                                            <div class="info-box" style="margin-bottom: 0; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                                                <span class="info-box-icon bg-purple" style="border-radius: 10px 0 0 10px;"><i class="fa fa-receipt"></i></span>
+                                                <div class="info-box-content">
+                                                    <span class="info-box-text">@lang('sale.total_amount')</span>
+                                                    <span class="info-box-number footer_sale_total"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3 col-sm-6 col-xs-12" style="padding: 4px;">
+                                            <div class="info-box" style="margin-bottom: 0; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                                                <span class="info-box-icon bg-green" style="border-radius: 10px 0 0 10px;"><i class="fa fa-check-circle"></i></span>
+                                                <div class="info-box-content">
+                                                    <span class="info-box-text">@lang('sale.total_paid')</span>
+                                                    <span class="info-box-number footer_total_paid"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3 col-sm-6 col-xs-12" style="padding: 4px;">
+                                            <div class="info-box" style="margin-bottom: 0; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                                                <span class="info-box-icon bg-yellow" style="border-radius: 10px 0 0 10px;"><i class="fa fa-hourglass-half"></i></span>
+                                                <div class="info-box-content">
+                                                    <span class="info-box-text">@lang('lang_v1.sell_due')</span>
+                                                    <span class="info-box-number footer_total_remaining"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3 col-sm-6 col-xs-12" style="padding: 4px;">
+                                            <div class="info-box" style="margin-bottom: 0; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                                                <span class="info-box-icon bg-red" style="border-radius: 10px 0 0 10px;"><i class="fa fa-undo"></i></span>
+                                                <div class="info-box-content">
+                                                    <span class="info-box-text">@lang('lang_v1.sell_return_due')</span>
+                                                    <span class="info-box-number footer_total_sell_return_due"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row" style="margin: 4px -4px 0;">
+                                        <div class="col-md-4 col-sm-6 col-xs-12" style="padding: 4px;">
+                                            <div class="box box-solid" style="margin-bottom: 0; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-top: 0;">
+                                                <div class="box-body" style="padding: 8px 10px;">
+                                                    <div style="font-size: 11px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; color: #6b7280;">@lang('sale.payment_status')</div>
+                                                    <div class="footer_payment_status_count sell-summary-kv"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4 col-sm-6 col-xs-12" style="padding: 4px;">
+                                            <div class="box box-solid" style="margin-bottom: 0; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-top: 0;">
+                                                <div class="box-body" style="padding: 8px 10px;">
+                                                    <div style="font-size: 11px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; color: #6b7280;">@lang('lang_v1.payment_method')</div>
+                                                    <div class="payment_method_count sell-summary-kv"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4 col-sm-6 col-xs-12" style="padding: 4px;">
+                                            <div class="box box-solid" style="margin-bottom: 0; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-top: 0;">
+                                                <div class="box-body" style="padding: 8px 10px;">
+                                                    <div style="font-size: 11px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; color: #6b7280;">@lang('lang_v1.types_of_service')</div>
+                                                    <div class="service_type_count sell-summary-kv"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
                         </tr>
                     </tfoot>
                 </table>
@@ -128,6 +187,28 @@
 @stop
 
 @section('javascript')
+    <style>
+        /* Make the footer summary compact & readable */
+        #sell_table tfoot .sell-summary-kv p { margin: 0; }
+        #sell_table tfoot .sell-summary-kv small { line-height: 1.35; }
+        #sell_table tfoot .info-box-text { font-size: 11px; font-weight: 800; color: #6b7280; text-transform: uppercase; letter-spacing: .4px; }
+        #sell_table tfoot .info-box-number { font-size: 16px; font-weight: 900; color: #111827; }
+        #sell_table tfoot .info-box { background: #ffffff; }
+        #sell_table tfoot .info-box-icon { width: 46px; font-size: 16px; line-height: 72px; }
+        #sell_table tfoot .info-box-content { margin-left: 46px; padding: 8px 10px; }
+
+        /* Reduce box widths on wide screens (keep responsive wrapping) */
+        #sell_table tfoot .sell-summary-wrap .info-box {
+            max-width: 300px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        #sell_table tfoot .sell-summary-wrap .box.box-solid {
+            max-width: 420px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+    </style>
     <script type="text/javascript">
         $(document).ready(function() {
             //Date range as a button

@@ -41,6 +41,7 @@ return [
 
     'purchase.view' => 'د خریدارۍ او د سټاک تعدیلات وګورئ',
     'purchase.create' => 'د خریدارۍ او د سټاک بدلول اضافه کړئ',
+    'stock_adjustment.create' => 'Add Stock Adjustment',
     'purchase.update' => 'د خریدارۍ او د سټاک بدلول سم کړئ',
     'purchase.delete' => 'د خریدارۍ او د سټاک بدلول پاک کړئ',
 

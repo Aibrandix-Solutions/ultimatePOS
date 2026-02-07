@@ -17,6 +17,8 @@ LANG = {
 "yesterday": "बिता कल",
 "last_7_days": "आखिरी 7 दिन",
 "last_30_days": "पिछले 30 दिनों में",
+"last_60_days": "पिछले 60 दिनों में",
+"last_90_days": "पिछले 90 दिनों में",
 "this_month": "इस महीने",
 "last_month": "पिछले महीने",
 "this_financial_year": "चालू वित्तीय वर्ष",

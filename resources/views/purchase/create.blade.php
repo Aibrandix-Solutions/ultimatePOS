@@ -5,6 +5,9 @@
 
 @php
 	$custom_labels = json_decode(session('business.custom_labels'), true);
+	$can_view_purchase_cost = auth()->user()->can('superadmin')
+		|| auth()->user()->hasAnyPermission('Admin#'.auth()->user()->business_id)
+		|| auth()->user()->can('purchase.view_cost_price');
 @endphp
 <!-- Content Header (Page header) -->
 <section class="content-header">
@@ -63,12 +66,24 @@
 					</div>
 				</div>
 			</div>
-			<div class="col-sm-3 @if(!empty($default_purchase_status)) hide @endif">
-				<div class="form-group">
-					{!! Form::label('status', __('purchase.purchase_status') . ':*') !!} @show_tooltip(__('tooltip.order_status'))
-					{!! Form::select('status', $orderStatuses, $default_purchase_status, ['class' => 'form-control select2', 'placeholder' => __('messages.please_select'), 'required']) !!}
+			@if($can_view_purchase_cost)
+				<div class="col-sm-3 @if(!empty($default_purchase_status)) hide @endif">
+					<div class="form-group">
+						{!! Form::label('status', __('purchase.purchase_status') . ':*') !!} @show_tooltip(__('tooltip.order_status'))
+						{!! Form::select('status', $orderStatuses, $default_purchase_status, ['class' => 'form-control select2', 'placeholder' => __('messages.please_select'), 'required']) !!}
+					</div>
 				</div>
-			</div>			
+			@else
+				{!! Form::hidden('status', 'pending') !!}
+				<div class="col-sm-3 @if(!empty($default_purchase_status)) hide @endif">
+					<div class="form-group">
+						{!! Form::label('status', __('purchase.purchase_status') . ':*') !!}
+						<div class="form-control" style="background:#f9f9f9;">
+							@lang('lang_v1.pending')
+						</div>
+					</div>
+				</div>
+			@endif
 			@if(count($business_locations) == 1)
 				@php 
 					$default_location = current(array_keys($business_locations->toArray()));
@@ -261,20 +276,28 @@
 								<th>#</th>
 								<th>@lang( 'product.product_name' )</th>
 								<th>@lang( 'purchase.purchase_quantity' )</th>
-								<th>@lang( 'lang_v1.unit_cost_before_discount' )</th>
-								<th>@lang( 'lang_v1.discount_percent' )</th>
-								<th>@lang( 'purchase.unit_cost_before_tax' )</th>
-								<th class="{{$hide_tax}}">@lang( 'purchase.subtotal_before_tax' )</th>
-								<th class="{{$hide_tax}}">@lang( 'purchase.product_tax' )</th>
-								<th class="{{$hide_tax}}">@lang( 'purchase.net_cost' )</th>
-								<th>@lang( 'purchase.line_total' )</th>
-								<th class="@if(!session('business.enable_editing_product_from_purchase')) hide @endif">
-									@lang( 'lang_v1.profit_margin' )
-								</th>
-								<th>
-									@lang( 'purchase.unit_selling_price' )
-									<small>(@lang('product.inc_of_tax'))</small>
-								</th>
+								@if($can_view_purchase_cost)
+									<th>@lang( 'lang_v1.unit_cost_before_discount' )</th>
+									<th>@lang( 'lang_v1.discount_percent' )</th>
+									<th>@lang( 'purchase.unit_cost_before_tax' )</th>
+									<th class="{{$hide_tax}}">@lang( 'purchase.subtotal_before_tax' )</th>
+									<th class="{{$hide_tax}}">@lang( 'purchase.product_tax' )</th>
+									<th class="{{$hide_tax}}">@lang( 'purchase.net_cost' )</th>
+									<th>@lang( 'purchase.line_total' )</th>
+									<th class="@if(!session('business.enable_editing_product_from_purchase')) hide @endif">
+										@lang( 'lang_v1.profit_margin' )
+									</th>
+									<th>
+										@lang( 'purchase.unit_selling_price' )
+										<small>(@lang('product.inc_of_tax'))</small>
+									</th>
+								@else
+									<th>
+										@lang( 'purchase.unit_selling_price' )
+										<small>(@lang('product.inc_of_tax'))</small>
+									</th>
+									<th>@lang( 'purchase.line_total' )</th>
+								@endif
 								@if(session('business.enable_lot_number'))
 									<th>
 										@lang('lang_v1.lot_number')
@@ -292,7 +315,7 @@
 					</table>
 				</div>
 				<hr/>
-				<div class="pull-right col-md-5">
+				<div class="pull-right col-md-5 @if(!$can_view_purchase_cost) hide @endif">
 					<table class="pull-right col-md-12">
 						<tr>
 							<th class="col-md-7 text-right">@lang( 'lang_v1.total_items' ):</th>
@@ -323,6 +346,7 @@
 		</div>
 	@endcomponent
 
+	@if($can_view_purchase_cost)
 	@component('components.widget', ['class' => 'box-primary'])
 		<div class="row">
 			<div class="col-sm-12">
@@ -574,6 +598,23 @@
 			</div>
 		</div>
 	@endcomponent
+	@else
+		@component('components.widget', ['class' => 'box-primary'])
+			<div class="row">
+				<div class="col-sm-12">
+					<div class="form-group">
+						{!! Form::label('additional_notes',__('purchase.additional_notes')) !!}
+						{!! Form::textarea('additional_notes', null, ['class' => 'form-control', 'rows' => 3]) !!}
+					</div>
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-sm-12 text-center">
+					<button type="button" id="submit_purchase_form" class="tw-dw-btn tw-dw-btn-primary tw-dw-btn-lg tw-text-white">@lang('messages.save')</button>
+				</div>
+			</div>
+		@endcomponent
+	@endif
 
 {!! Form::close() !!}
 </section>
@@ -591,6 +632,7 @@
 	<script src="{{ asset('js/purchase.js?v=' . $asset_v) }}"></script>
 	<script src="{{ asset('js/product.js?v=' . $asset_v) }}"></script>
 	<script type="text/javascript">
+		window.__hide_purchase_cost = {{ $can_view_purchase_cost ? 'false' : 'true' }};
 		$(document).ready( function(){
       		__page_leave_confirmation('#add_purchase_form');
       		$('.paid_on').datetimepicker({

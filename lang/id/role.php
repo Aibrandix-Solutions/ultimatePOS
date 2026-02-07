@@ -41,6 +41,7 @@ return [
 
     'purchase.view' => 'Liha pembelian & Penyesuaian Stok',
     'purchase.create' => 'Tambah pembelian & Penyesuaian Stok',
+    'stock_adjustment.create' => 'Add Stock Adjustment',
     'purchase.update' => 'Edit pembelian & Penyesuaian Stok',
     'purchase.delete' => 'Hapus pembelian & Penyesuaian Stok',
 

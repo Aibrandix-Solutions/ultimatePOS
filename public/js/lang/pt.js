@@ -17,6 +17,8 @@ LANG = {
     'yesterday': 'Ontem',
     'last_7_days': 'Ultimos 7 Dias',
     'last_30_days': 'Ultimos 30 Dias',
+    'last_60_days': 'ltimos 60 Dias',
+    'last_90_days': 'ltimos 90 Dias',
     'this_month': 'Este Mês',
     'last_month': 'Mês Passado',
     'this_financial_year': 'Exercício em curso',
