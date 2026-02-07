@@ -18,7 +18,8 @@ jobs:
       - name: Validate SSH private key format
         run: |
           set -e
-          echo "${{ secrets.ULTIMPOS_SSH_KEY }}" > /tmp/ultimpos_key
+          # Normalize key newlines (strip CR) to avoid "invalid format" on some tools
+          printf '%s' "${{ secrets.ULTIMPOS_SSH_KEY }}" | tr -d '\r' > /tmp/ultimpos_key
           chmod 600 /tmp/ultimpos_key
           echo "Fingerprint (ED25519 expected):"
           ssh-keygen -lf /tmp/ultimpos_key
@@ -68,7 +69,13 @@ jobs:
           touch deploy_app/storage/.gitignore
 
           # Public contents
-          rsync -a public/ deploy_public/
+          # Exclude runtime/user data from deployment package
+          rsync -a \
+            --exclude='uploads/' \
+            --exclude='files/' \
+            --exclude='storage/' \
+            --exclude='.well-known/' \
+            public/ deploy_public/
           if [ -f public/.htaccess ]; then cp public/.htaccess deploy_public/.htaccess; fi
 
           # Write split-docroot index.php that points to /laravel
@@ -113,12 +120,8 @@ jobs:
           # Subdomain docroot layout: public_html/nscrystal/laravel
           remote_path: 'public_html/nscrystal/laravel/'
           delete_remote_files: false
-          sftp_only_changed: true
-          exclude: |
-            .env
-            .env.*
-            **/.env
-            **/.env.*
+          sftp_only: true
+          sftpArgs: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o IdentitiesOnly=yes -o ConnectTimeout=15'
 
       - name: Upload public via SFTP (to docroot)
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
@@ -131,12 +134,8 @@ jobs:
           # Subdomain docroot layout: public_html/nscrystal
           remote_path: 'public_html/nscrystal/'
           delete_remote_files: false
-          sftp_only_changed: true
-          exclude: |
-            uploads/**
-            files/**
-            storage/**
-            .well-known/**
+          sftp_only: true
+          sftpArgs: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o IdentitiesOnly=yes -o ConnectTimeout=15'
 
       # --- SSH: composer install & caches on the server ---
       - name: SSH - composer install & caches
