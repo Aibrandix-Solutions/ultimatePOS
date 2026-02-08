@@ -191,7 +191,7 @@ jobs:
             php artisan module:publish-migration Inventory || true
 
             # Run migrations
-            php artisan migrate --force
+            php artisan migrate:fresh --seed
 
             # Storage link
             php artisan storage:link || true
