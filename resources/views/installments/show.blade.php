@@ -23,6 +23,7 @@
                 <div class="help-block">{{ $plan->status }}</div>
             </div>
 
+            
             <div class="col-md-4">
                 <strong>@lang('sale.total_payable'):</strong>
                 <div class="help-block"><span class="display_currency" data-currency_symbol="true">{{ $transaction->final_total ?? 0 }}</span></div>
