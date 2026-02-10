@@ -661,7 +661,8 @@ class SellPosController extends Controller
                             $old_due_payment_lines,
                             [$transaction->id],
                             $user_id,
-                            $note
+                            $note,
+                            $transaction
                         );
 
                         //Add these payments to cash register.
@@ -717,9 +718,9 @@ class SellPosController extends Controller
 
                     // Create installment plan (schedule) if enabled.
                     if ($enable_installment_plan && !$transaction->is_suspend && $transaction->status === 'final') {
-                        // Require pending balance for installments.
+                        // If fully paid, silently skip installment plan (nothing to schedule).
                         if ($payment_status === 'paid') {
-                            throw new \Exception('Installment plan requires a pending balance (down payment less than total).');
+                            $enable_installment_plan = false;
                         }
 
                         $down_payment = 0.0;
