@@ -3488,7 +3488,8 @@ class TransactionUtil extends Util
         $payment_lines,
         $exclude_transaction_ids = [],
         $user_id = null,
-        $note = null
+        $note = null,
+        $current_transaction = null
     ) {
         $user_id = !is_null($user_id) ? $user_id : auth()->user()->id;
 
@@ -3520,8 +3521,11 @@ class TransactionUtil extends Util
 
         $due_transactions = Transaction::where('business_id', $business_id)
             ->where('contact_id', $contact_id)
-            ->where('type', 'sell')
-            ->where('status', 'final')
+            ->whereIn('type', ['sell', 'opening_balance'])
+            ->where(function ($q) {
+                $q->where('type', 'opening_balance')
+                  ->orWhere('status', 'final');
+            })
             ->where('payment_status', '!=', 'paid');
 
         if (!empty($exclude_transaction_ids) && is_array($exclude_transaction_ids)) {
@@ -3531,10 +3535,50 @@ class TransactionUtil extends Util
         $due_transactions = $due_transactions->orderBy('transaction_date', 'asc')->get();
 
         if ($due_transactions->isEmpty()) {
-            //No old dues to apply against. Treat as advance balance.
+            //No old dues to apply against. Apply to current transaction if provided.
+            if (!empty($current_transaction)) {
+                $current_total_paid = $this->getTotalPaid($current_transaction->id);
+                $current_due = $current_transaction->final_total - $current_total_paid;
+
+                if ($current_due > 0) {
+                    foreach ($normalized_payment_lines as $idx => $pl) {
+                        if ($current_due <= 0) {
+                            break;
+                        }
+                        if (empty($normalized_payment_lines[$idx]['_remaining']) || $normalized_payment_lines[$idx]['_remaining'] <= 0) {
+                            continue;
+                        }
+
+                        $alloc = min($current_due, $normalized_payment_lines[$idx]['_remaining']);
+                        if ($alloc <= 0) {
+                            continue;
+                        }
+
+                        $payment_for_current = $pl;
+                        unset($payment_for_current['_remaining']);
+                        $payment_for_current['amount'] = $alloc;
+                        $payment_for_current['is_return'] = 0;
+
+                        $this->appendPaymentLines($current_transaction, [$payment_for_current], $business_id, $user_id, true);
+                        $this->updatePaymentStatus($current_transaction->id, $current_transaction->final_total);
+
+                        if (!isset($payments_by_transaction[$current_transaction->id])) {
+                            $payments_by_transaction[$current_transaction->id] = [];
+                        }
+                        $payments_by_transaction[$current_transaction->id][] = $payment_for_current;
+
+                        $current_due -= $alloc;
+                        $normalized_payment_lines[$idx]['_remaining'] -= $alloc;
+                    }
+                }
+            }
+
+            //Any remaining becomes advance balance
             $remaining_total = 0;
             foreach ($normalized_payment_lines as $pl) {
-                $remaining_total += $pl['_remaining'];
+                if (!empty($pl['_remaining']) && $pl['_remaining'] > 0) {
+                    $remaining_total += $pl['_remaining'];
+                }
             }
 
             if ($remaining_total > 0) {
@@ -3603,6 +3647,44 @@ class TransactionUtil extends Util
             }
             if (!$has_remaining) {
                 break;
+            }
+        }
+
+        //Apply any leftover to the current transaction (if provided)
+        if (!empty($current_transaction)) {
+            $current_total_paid = $this->getTotalPaid($current_transaction->id);
+            $current_due = $current_transaction->final_total - $current_total_paid;
+
+            if ($current_due > 0) {
+                foreach ($normalized_payment_lines as $idx => $pl) {
+                    if ($current_due <= 0) {
+                        break;
+                    }
+                    if (empty($normalized_payment_lines[$idx]['_remaining']) || $normalized_payment_lines[$idx]['_remaining'] <= 0) {
+                        continue;
+                    }
+
+                    $alloc = min($current_due, $normalized_payment_lines[$idx]['_remaining']);
+                    if ($alloc <= 0) {
+                        continue;
+                    }
+
+                    $payment_for_current = $pl;
+                    unset($payment_for_current['_remaining']);
+                    $payment_for_current['amount'] = $alloc;
+                    $payment_for_current['is_return'] = 0;
+
+                    $this->appendPaymentLines($current_transaction, [$payment_for_current], $business_id, $user_id, true);
+                    $this->updatePaymentStatus($current_transaction->id, $current_transaction->final_total);
+
+                    if (!isset($payments_by_transaction[$current_transaction->id])) {
+                        $payments_by_transaction[$current_transaction->id] = [];
+                    }
+                    $payments_by_transaction[$current_transaction->id][] = $payment_for_current;
+
+                    $current_due -= $alloc;
+                    $normalized_payment_lines[$idx]['_remaining'] -= $alloc;
+                }
             }
         }
 

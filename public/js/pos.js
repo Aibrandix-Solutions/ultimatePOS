@@ -1197,7 +1197,14 @@ $(document).ready(function () {
             }
 
             //Ignore if the difference is less than 0.5
-            if (!is_suspend && $('input#in_balance_due').val() >= 0.5) {
+            // When "Keep this payment on the current invoice" is unchecked, payment goes
+            // to old dues — the current invoice is expected to remain due, so skip the alert.
+            var keepOnCurrent = $('input[name="apply_payment_to_old_dues"]').length
+                ? parseInt($('input[name="apply_payment_to_old_dues"]:checked').val() || $('input[name="apply_payment_to_old_dues"][type="hidden"]').val() || '0')
+                : 1;
+            var applyToOldDues = (keepOnCurrent !== 1);
+
+            if (!is_suspend && !applyToOldDues && $('input#in_balance_due').val() >= 0.5) {
                 // Require due date before confirming partial payment
                 try {
                     var $wrapper = $('#pos_due_date_wrapper');
