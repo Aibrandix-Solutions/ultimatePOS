@@ -50,7 +50,7 @@
                 <br><br>
                 <div class="row">
                     <div class="col-sm-4">
-                        <a href="{{ asset('files/import_products_csv_template.xls') }}" class="tw-dw-btn tw-dw-btn-success tw-text-white" download><i class="fa fa-download"></i> @lang('lang_v1.download_template_file')</a>
+                        <a href="{{ asset('files/import_products_csv_template.csv') }}" class="tw-dw-btn tw-dw-btn-success tw-text-white" download><i class="fa fa-download"></i> @lang('lang_v1.download_template_file')</a>
                     </div>
                 </div>
             @endcomponent
@@ -274,6 +274,13 @@
                         <td>37</td>
                         <td>@lang('lang_v1.product_locations') <small class="text-muted">(@lang('lang_v1.optional'))</small></td>
                         <td>@lang('lang_v1.product_locations_ins')
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>38</td>
+                        <td>@lang('lang_v1.minimum_selling_price') <small class="text-muted">(@lang('lang_v1.optional'))</small></td>
+                        <td>@lang('lang_v1.minimum_selling_price_import_ins')<br>
+                            <small class="text-muted">{!! __('lang_v1.minimum_selling_price_import_ins2') !!}</small>
                         </td>
                     </tr>
 

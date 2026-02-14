@@ -57,7 +57,7 @@
 
 			{{-- Price --}}
 			@if(!empty($print['price']))
-				<b>@lang('lang_v1.price'):</b>
+				{{-- <b>@lang('lang_v1.price'):</b> --}}
 				{{session('currency')['symbol'] ?? ''}}
 
 				@if($print['price_type'] == 'inclusive')

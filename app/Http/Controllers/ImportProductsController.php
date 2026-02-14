@@ -391,6 +391,9 @@ class ImportProductsController extends Controller
                         $product_array['variation']['dsp_inc_tax'] = $product_prices['dsp_inc_tax'];
                         $product_array['variation']['dsp_exc_tax'] = $product_prices['dsp_exc_tax'];
 
+                        //Minimum Selling Price (Inc. Tax)
+                        $product_array['variation']['min_sell_price_inc_tax'] = isset($value[37]) && trim($value[37]) !== '' ? trim($value[37]) : null;
+
                         //Opening stock
                         if (! empty($value[21]) && $enable_stock == 1) {
                             $product_array['opening_stock_details']['quantity'] = trim($value[21]);
@@ -513,8 +516,26 @@ class ImportProductsController extends Controller
                             }
                         }
 
+                        //Map Minimum Selling Price with variation values
+                        $min_sell_price_string = isset($value[37]) ? trim($value[37]) : '';
+                        $min_sell_price = [];
+                        if (! empty($min_sell_price_string)) {
+                            $min_sell_price = array_map('trim', explode(
+                                '|',
+                                $min_sell_price_string
+                            ));
+                        } else {
+                            foreach ($variation_values as $k => $v) {
+                                $min_sell_price[$k] = null;
+                            }
+                        }
+
                         //Check if length of prices array is equal to variation values array length
                         $array_lengths_count = [count($variation_values), count($dpp_inc_tax), count($dpp_exc_tax), count($selling_price), count($profit_margin)];
+
+                        if (! empty($min_sell_price_string)) {
+                            $array_lengths_count[] = count($min_sell_price);
+                        }
 
                         if (! empty($variation_skus)) {
                             $array_lengths_count[] = count($variation_skus);
@@ -557,6 +578,7 @@ class ImportProductsController extends Controller
                                 'default_sell_price' => $variation_prices['dsp_exc_tax'],
                                 'sell_price_inc_tax' => $variation_prices['dsp_inc_tax'],
                                 'sub_sku' => ! empty($variation_skus[$k]) ? $variation_skus[$k] : '',
+                                'min_sell_price_inc_tax' => isset($min_sell_price[$k]) && $min_sell_price[$k] !== '' ? $min_sell_price[$k] : null,
                             ];
                         }
 
@@ -665,7 +687,9 @@ class ImportProductsController extends Controller
                                 $variation_data['dpp_inc_tax'],
                                 $variation_data['profit_percent'],
                                 $variation_data['dsp_exc_tax'],
-                                $variation_data['dsp_inc_tax']
+                                $variation_data['dsp_inc_tax'],
+                                [],
+                                $variation_data['min_sell_price_inc_tax'] ?? null
                             );
                             if (! empty($opening_stock)) {
                                 $this->addOpeningStock($opening_stock, $product, $business_id);

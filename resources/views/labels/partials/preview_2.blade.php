@@ -58,7 +58,7 @@
 					{{-- Price --}}
 					@if(!empty($print['price']))
 					<span style="font-size: {{$print['price_size']}}px;">
-						@lang('lang_v1.price'):
+						{{-- @lang('lang_v1.price'): --}}
 						<b>{{session('currency')['symbol'] ?? ''}}
 
 						
@@ -114,12 +114,15 @@
 			page-break-after: always;
 		}
 
-		
-		@page {
-		size: {{$paper_width}}in {{$paper_height}}in;
+		.no-print{
+			display: none !important;
+		}
 
-		/*width: {{$barcode_details->paper_width}}in !important;*/
-		/*height:@if($barcode_details->paper_height != 0){{$barcode_details->paper_height}}in !important @else auto @endif;*/
+		@page {
+		@if(!$barcode_details->is_continuous)
+			size: {{$paper_width}}in {{$paper_height}}in;
+		@endif
+
 		margin-top: {{$margin_top}}in !important;
 		margin-bottom: {{$margin_top}}in !important;
 		margin-left: {{$margin_left}}in !important;

@@ -212,7 +212,7 @@ class LabelsController extends Controller
                 $i++;
             }
 
-            print_r('<script>window.print()</script>');
+            print_r('<div class="no-print" style="text-align:center;padding:10px;"><button onclick="window.print()" style="padding:10px 30px;font-size:16px;cursor:pointer;background:#4CAF50;color:white;border:none;border-radius:5px;">Print Labels</button></div>');
             exit;
             //return $output;
 
@@ -234,7 +234,10 @@ class LabelsController extends Controller
         } catch (\Exception $e) {
             \Log::emergency('File:'.$e->getFile().'Line:'.$e->getLine().'Message:'.$e->getMessage());
 
-            $output = __('lang_v1.barcode_label_error');
+            echo '<h2 style="color:red;">Error: '.$e->getMessage().'</h2>';
+            echo '<p>File: '.$e->getFile().' Line: '.$e->getLine().'</p>';
+            exit;
+            //$output = __('lang_v1.barcode_label_error');
         }
 
         //return $output;

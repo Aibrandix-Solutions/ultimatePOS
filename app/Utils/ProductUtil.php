@@ -164,6 +164,10 @@ class ProductUtil extends Util
                         }
                     }
 
+                    $min_sell_price_val = isset($v['min_sell_price_inc_tax']) && $v['min_sell_price_inc_tax'] !== null && $v['min_sell_price_inc_tax'] !== ''
+                        ? $this->num_uf($v['min_sell_price_inc_tax'])
+                        : $this->num_uf($v['sell_price_inc_tax']);
+
                     $variation_data[] = [
                         'name' => $variation_value_name,
                         'variation_value_id' => $variation_value_id,
@@ -174,6 +178,7 @@ class ProductUtil extends Util
                         'profit_percent' => $this->num_uf($v['profit_percent']),
                         'default_sell_price' => $this->num_uf($v['default_sell_price']),
                         'sell_price_inc_tax' => $this->num_uf($v['sell_price_inc_tax']),
+                        'min_sell_price_inc_tax' => $min_sell_price_val,
                     ];
                     $c++;
                     $images[] = 'variation_images_'.$key.'_'.$k;
