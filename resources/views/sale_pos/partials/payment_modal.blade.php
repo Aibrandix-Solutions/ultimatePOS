@@ -19,7 +19,7 @@
                     <div class="col-md-12 mb-12" style="margin-top:6px;">
                         {!! Form::hidden('apply_payment_to_old_dues', 0) !!}
                         <label style="font-weight: 600; cursor: pointer;">
-                            {!! Form::checkbox('apply_payment_to_old_dues', 1, false, ['id' => 'apply_payment_to_old_dues']) !!}
+                            {!! Form::checkbox('apply_payment_to_old_dues', 1, true, ['id' => 'apply_payment_to_old_dues']) !!}
                             Keep this payment on the current invoice
                         </label>
                         <small class="help-block" style="margin: 2px 0 0;">
