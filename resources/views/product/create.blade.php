@@ -137,6 +137,14 @@
             </div>
         </div>
         @endif
+        <div class="col-sm-4">
+            <div class="form-group">
+                {!! Form::label('discount', __('lang_v1.discount') . ':') !!} @show_tooltip(__('lang_v1.product_discount_help'))
+                {!! Form::text('discount', null , ['class' => 'form-control input_number',
+                'placeholder' => __('lang_v1.discount')]) !!}
+                <p class="help-block"><small>@lang('lang_v1.fixed_discount_amount')</small></p>
+            </div>
+        </div>
         <!-- include module fields -->
         @if(!empty($pos_module_data))
         @foreach($pos_module_data as $key => $value)

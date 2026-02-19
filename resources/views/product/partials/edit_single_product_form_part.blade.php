@@ -19,6 +19,7 @@
         <tr>
           <th>@lang('product.default_purchase_price') @show_tooltip(__('tooltip.product_cost_help'))</th>
           <th>@lang('product.profit_percent') @show_tooltip(__('tooltip.profit_percent'))</th>
+          <th>Actual Price</th>
           <th>@lang('product.default_selling_price') @show_tooltip(__('tooltip.product_price_help'))</th>
         </tr>
         @foreach($product_deatails->variations as $variation )
@@ -46,6 +47,10 @@
                     <td>
                         <br/>
                         {!! Form::text('profit_percent', @num_format($variation->profit_percent), ['class' => 'form-control input-sm input_number', 'id' => 'profit_percent', 'required']) !!}
+                    </td>
+                    <td>
+                        <br/>
+                        {!! Form::text('actual_price', @num_format($product->actual_price), ['class' => 'form-control input-sm input_number', 'id' => 'actual_price', 'placeholder' => 'Actual Price']) !!}
                     </td>
 
                     <td>

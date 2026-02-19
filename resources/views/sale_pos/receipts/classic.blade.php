@@ -275,7 +275,10 @@
 	<div class="col-xs-12">
 		<br/>
 		@php
-			$p_width = 45;
+			$p_width = 35;
+		@endphp
+		@php
+			$p_width -= 10;
 		@endphp
 		@if(!empty($receipt_details->item_discount_label))
 			@php
@@ -291,6 +294,8 @@
 			<thead>
 				<tr>
 					<th width="{{$p_width}}%">{{$receipt_details->table_product_label}}</th>
+					<th class="text-right" width="10%">Actual Price</th>
+					<th class="text-right" width="10%">Discount</th>
 					<th class="text-right" width="15%">{{$receipt_details->table_qty_label}}</th>
 					<th class="text-right" width="15%">{{$receipt_details->table_unit_price_label}}</th>
 					@if(!empty($receipt_details->discounted_unit_price_label))
@@ -336,6 +341,8 @@
                             </small>
                             @endif
                         </td>
+						<td class="text-right">{{$line['product_actual_price'] ?? ''}}</td>
+						<td class="text-right">{{$line['product_discount'] ?? ''}}</td>
 						<td class="text-right">
 							{{$line['quantity']}} {{$line['units']}} 
 
@@ -366,6 +373,8 @@
 		                            @if(!empty($modifier['sub_sku'])), {{$modifier['sub_sku']}} @endif @if(!empty($modifier['cat_code'])), {{$modifier['cat_code']}}@endif
 		                            @if(!empty($modifier['sell_line_note']))({!!$modifier['sell_line_note']!!}) @endif 
 		                        </td>
+								<td class="text-right"></td>
+								<td class="text-right"></td>
 								<td class="text-right">{{$modifier['quantity']}} {{$modifier['units']}} </td>
 								<td class="text-right">{{$modifier['unit_price_inc_tax']}}</td>
 								@if(!empty($receipt_details->discounted_unit_price_label))

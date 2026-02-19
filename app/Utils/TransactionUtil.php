@@ -2233,6 +2233,8 @@ class TransactionUtil extends Util
             $line_array = [
                 //Field for 1st column
                 'name' => $product->name,
+                'product_actual_price' => !empty($product->actual_price) ? $this->num_f($product->actual_price, false, $business_details) : null,
+                'product_discount' => !empty($product->discount) ? $this->num_f($product->discount, false, $business_details) : null,
                 'product_description' => !empty($show_product_description) ? $product->product_description : null,
                 'variation' => (empty($variation->name) || $variation->name == 'DUMMY') ? '' : $variation->name,
                 'product_variation' => (empty($product_variation->name) || $product_variation->name == 'DUMMY') ? '' : $product_variation->name,
@@ -3524,7 +3526,7 @@ class TransactionUtil extends Util
             ->whereIn('type', ['sell', 'opening_balance'])
             ->where(function ($q) {
                 $q->where('type', 'opening_balance')
-                  ->orWhere('status', 'final');
+                    ->orWhere('status', 'final');
             })
             ->where('payment_status', '!=', 'paid');
 
@@ -5665,7 +5667,7 @@ class TransactionUtil extends Util
         if ($sale_type == 'sell') {
             $sells->where(function ($q) use ($include_suspended) {
                 $q->where('transactions.type', 'opening_balance')
-                  ->orWhere('transactions.status', 'final');
+                    ->orWhere('transactions.status', 'final');
 
                 if ($include_suspended) {
                     $q->orWhere('transactions.is_suspend', 1);

@@ -623,7 +623,20 @@ $(document).ready(function () {
             height: 250
         });
     }
+
+    //Calculates selling price based on actual price and discount
+    $(document).on('change', 'input#actual_price, input#discount', function () {
+        var actual_price = __read_number($('input#actual_price'));
+        var discount = __read_number($('input#discount'));
+
+        if (actual_price > 0) {
+            var selling_price_inc_tax = actual_price - discount;
+            __write_number($('input#single_dsp_inc_tax'), selling_price_inc_tax);
+            $('input#single_dsp_inc_tax').change();
+        }
+    });
 });
+
 
 function toggle_dsp_input() {
     var tax_type = $('#tax_type').val();
