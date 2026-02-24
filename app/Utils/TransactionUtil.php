@@ -1791,6 +1791,9 @@ class TransactionUtil extends Util
         $output['additional_notes'] = $transaction->additional_notes;
         $output['footer_text'] = $invoice_layout->footer_text;
 
+        // Pass common_settings for template-level toggles (e.g. DigiPartner branding)
+        $output['common_settings'] = !empty($il->common_settings) ? $il->common_settings : [];
+
         //Barcode related information.
         $output['show_barcode'] = !empty($il->show_barcode) ? true : false;
 
@@ -3524,7 +3527,7 @@ class TransactionUtil extends Util
             ->whereIn('type', ['sell', 'opening_balance'])
             ->where(function ($q) {
                 $q->where('type', 'opening_balance')
-                  ->orWhere('status', 'final');
+                    ->orWhere('status', 'final');
             })
             ->where('payment_status', '!=', 'paid');
 
@@ -5665,7 +5668,7 @@ class TransactionUtil extends Util
         if ($sale_type == 'sell') {
             $sells->where(function ($q) use ($include_suspended) {
                 $q->where('transactions.type', 'opening_balance')
-                  ->orWhere('transactions.status', 'final');
+                    ->orWhere('transactions.status', 'final');
 
                 if ($include_suspended) {
                     $q->orWhere('transactions.is_suspend', 1);

@@ -644,6 +644,9 @@ class InvoiceLayoutController extends Controller
         $receipt_details->repair_checklist = [];
         $receipt_details->repair_activities = [];
 
+        // Pass common_settings for template-level toggles (e.g. DigiPartner branding)
+        $receipt_details->common_settings = ['show_digipartner_website' => 1, 'show_digipartner_phone' => 1];
+
         $template = 'sale_pos.receipts.' . $design;
 
         $html = view($template, compact('receipt_details'))->render();

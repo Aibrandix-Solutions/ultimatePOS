@@ -14,9 +14,9 @@
     }
     body {
         font-family: Arial, Helvetica, sans-serif;
-        font-size: 11px;
+        font-size: 9px;
         color: #000 !important;
-        line-height: 1.35;
+        line-height: 1.2;
         background: #fff;
     }
     a, a:visited, a:hover, a:active {
@@ -28,7 +28,7 @@
     .receipt {
         width: 100%;
         max-width: 100%;
-        padding: 5px 3px;
+        padding: 3px 2px;
         color: #000 !important;
     }
     .receipt * {
@@ -43,51 +43,52 @@
 
     /* ===== Logo ===== */
     .receipt-logo {
-        max-height: 70px;
+        max-height: 50px;
         width: auto;
-        margin-bottom: 2px;
+        margin: 0 auto 1px auto;
+        display: block;
     }
 
     /* ===== Header ===== */
     .header-tagline {
-        font-size: 10px;
+        font-size: 8px;
         font-style: italic;
-        margin-bottom: 2px;
+        margin-bottom: 1px;
     }
     .business-name {
-        font-size: 13px;
+        font-size: 11px;
         font-weight: 700;
         text-transform: uppercase;
         margin-bottom: 1px;
-        letter-spacing: 0.5px;
+        letter-spacing: 0.3px;
     }
     .business-info {
-        font-size: 10px;
-        line-height: 1.4;
-        margin-bottom: 2px;
+        font-size: 8px;
+        line-height: 1.3;
+        margin-bottom: 1px;
     }
     .sub-heading {
-        font-size: 12px;
+        font-size: 10px;
         font-weight: 700;
         text-transform: uppercase;
-        margin: 3px 0;
+        margin: 2px 0;
     }
 
     /* ===== Separators ===== */
     .sep {
         border: none;
         border-bottom: 1px solid #000;
-        margin: 3px 0;
+        margin: 2px 0;
     }
     .sep-thick {
         border: none;
         border-bottom: 1px solid #000;
-        margin: 3px 0;
+        margin: 2px 0;
     }
     .sep-dashed {
         border: none;
         border-bottom: 1px dashed #999;
-        margin: 3px 0;
+        margin: 2px 0;
     }
 
     /* ===== Info Rows (key-value on same line) ===== */
@@ -95,17 +96,17 @@
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
-        font-size: 10px;
-        line-height: 1.5;
-        gap: 4px;
+        font-size: 8px;
+        line-height: 1.3;
+        gap: 2px;
     }
     .info-row .r {
         text-align: right;
         flex-shrink: 0;
     }
     .info-line {
-        font-size: 10px;
-        line-height: 1.5;
+        font-size: 8px;
+        line-height: 1.3;
         word-break: break-word;
     }
 
@@ -113,7 +114,7 @@
     .ptable {
         width: 100%;
         border-collapse: collapse;
-        font-size: 10px;
+        font-size: 8px;
         table-layout: fixed;
     }
     .ptable thead {
@@ -121,17 +122,17 @@
     }
     .ptable th {
         font-weight: 700;
-        padding: 2px 1px;
-        font-size: 9px;
+        padding: 1px 1px;
+        font-size: 8px;
         text-align: left;
         overflow: hidden;
         text-overflow: ellipsis;
     }
     .ptable th.r { text-align: right; }
     .ptable td {
-        padding: 3px 1px;
+        padding: 2px 1px;
         vertical-align: top;
-        font-size: 10px;
+        font-size: 8px;
         word-wrap: break-word;
         overflow-wrap: break-word;
     }
@@ -142,26 +143,25 @@
         border-bottom: none;
     }
 
-    /* Fixed column widths for 3-col layout: SNo(6%) + Item(auto) + Qty(12%) + Price(17%) + Total(18%) */
-    .c-sno  { width: 6%;  text-align: center; }
+    .c-sno  { width: 5%;  text-align: center; }
     .c-item { width: auto; }
-    .c-qty  { width: 13%; text-align: right; }
+    .c-qty  { width: 14%; text-align: right; }
     .c-uprc { width: 18%; text-align: right; }
     .c-disc { width: 14%; text-align: right; }
     .c-tot  { width: 19%; text-align: right; }
 
     .item-name {
         font-weight: 600;
-        font-size: 10px;
+        font-size: 8px;
         word-wrap: break-word;
     }
     .item-sub {
-        font-size: 8px;
+        font-size: 7px;
         color: #555 !important;
-        margin-top: 1px;
+        margin-top: 0;
     }
     .modifier-row td {
-        font-size: 9px;
+        font-size: 7px;
         color: #555 !important;
         padding: 1px 1px;
     }
@@ -171,9 +171,9 @@
         display: flex;
         justify-content: space-between;
         align-items: baseline;
-        padding: 1px 0;
-        font-size: 11px;
-        line-height: 1.5;
+        padding: 0;
+        font-size: 9px;
+        line-height: 1.4;
     }
     .tot-row .lbl {
         font-weight: 600;
@@ -189,54 +189,54 @@
         display: flex;
         justify-content: space-between;
         align-items: baseline;
-        padding: 4px 0;
-        font-size: 14px;
+        padding: 2px 0;
+        font-size: 12px;
         font-weight: 900;
         border-top: 2px solid #000;
         border-bottom: 2px solid #000;
-        margin: 3px 0;
+        margin: 2px 0;
     }
 
     .total-due-box {
         display: flex;
         justify-content: space-between;
         align-items: baseline;
-        padding: 3px 0;
-        font-size: 13px;
+        padding: 2px 0;
+        font-size: 11px;
         font-weight: 800;
         border-top: 1px solid #000;
         border-bottom: 1px solid #000;
-        margin: 3px 0;
+        margin: 2px 0;
     }
 
     .total-words {
-        font-size: 8px;
+        font-size: 7px;
         color: #555 !important;
-        margin: 1px 0;
+        margin: 0;
         font-style: italic;
     }
 
     /* ===== Notes ===== */
     .notes-section {
-        font-size: 9px;
-        line-height: 1.4;
-        margin: 4px 0;
-        padding: 2px 0;
+        font-size: 8px;
+        line-height: 1.3;
+        margin: 2px 0;
+        padding: 1px 0;
     }
 
     /* ===== Footer ===== */
     .footer-text {
         text-align: center;
-        font-size: 10px;
-        margin: 4px 0;
-        line-height: 1.4;
+        font-size: 8px;
+        margin: 2px 0;
+        line-height: 1.3;
     }
     .thank-you {
         text-align: center;
-        font-size: 9px;
+        font-size: 8px;
         color: #666 !important;
-        margin-top: 4px;
-        padding-top: 3px;
+        margin-top: 3px;
+        padding-top: 2px;
     }
 
     /* ===== Print Styles ===== */
@@ -364,7 +364,7 @@
                     <strong>{{$receipt_details->customer_label}}</strong>
                 @endif
                 @if(!empty($receipt_details->customer_info))
-                    {!! $receipt_details->customer_info !!}
+                    {!! preg_replace('/<br\s*\/?\>?\s*Mobile\s*:.*$/i', '', $receipt_details->customer_info) !!}
                 @endif
             </div>
         @endif
@@ -783,6 +783,25 @@
 
         <div class="thank-you">
             ★ Thank you for your business! ★
+        </div>
+
+        @php
+            $cs = !empty($receipt_details->common_settings) ? $receipt_details->common_settings : [];
+            $show_website = !empty($cs['show_digipartner_website']);
+            $show_phone = !empty($cs['show_digipartner_phone']);
+        @endphp
+        <div style="text-align:center; font-size:8px; color:#888 !important; margin-top:5px; padding-top:3px; border-top:1px dashed #ccc;">
+            Powered by : <strong>DigiPartner</strong>
+            @if($show_website || $show_phone)
+                <br>
+                @if($show_website && $show_phone)
+                    digipartner.lk / 074 410 3531
+                @elseif($show_website)
+                    digipartner.lk
+                @elseif($show_phone)
+                    074 410 3531
+                @endif
+            @endif
         </div>
 
     </div>
