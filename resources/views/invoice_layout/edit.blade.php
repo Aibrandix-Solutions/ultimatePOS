@@ -158,6 +158,10 @@
       </div>
     </div>
   </div>
+
+  {{-- Invoice Design Preview --}}
+  @include('invoice_layout.partials.invoice_layout_preview')
+
   <div class="box box-solid">
     <div class="box-body">
       <div class="row">
@@ -1211,7 +1215,12 @@
 
       $('#design_select').on('change', function () {
         toggleEnglishArabicMessage();
+        // Load preview for the newly selected design
+        loadInvoicePreview($(this).val());
       });
+
+      // Load initial preview for current design
+      loadInvoicePreview($('#design_select').val());
   });
 </script>
 @endsection

@@ -96,13 +96,6 @@ jobs:
                   local_path: 'deploy_app/*'
                   remote_path: 'domains/himan.fun/public_html/pos/laravel/'
                   delete_remote_files: false # keep .env and vendor on server
-                  sftp_only_changed: true
-                  # 🚫 Belt & braces: never upload any .env file even if it appears locally
-                  exclude: |
-                      .env
-                      .env.*
-                      **/.env
-                      **/.env.*
 
             - name: Upload public via SFTP (to /pos/)
               uses: wlixcc/SFTP-Deploy-Action@v1.2.4
@@ -113,13 +106,7 @@ jobs:
                   ssh_private_key: ${{ secrets.POS_SSH_KEY }}
                   local_path: 'deploy_public/*'
                   remote_path: 'domains/himan.fun/public_html/pos/'
-                  delete_remote_files: false # ⚠️ don’t wipe uploads/files
-                  sftp_only_changed: true
-                  exclude: |
-                      uploads/**
-                      files/**
-                      storage/**
-                      .well-known/**
+                  delete_remote_files: false # ⚠️ don't wipe uploads/files
 
             # --- SSH: composer install & caches on the server ---
             - name: SSH - composer install & caches
