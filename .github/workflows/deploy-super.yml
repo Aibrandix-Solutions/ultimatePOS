@@ -18,20 +18,20 @@ jobs:
       - name: Validate SSH private key format
         run: |
           set -e
-          printf '%s' "${{ secrets.ULTIMPOS_SSH_KEY }}" | tr -d '\r' > /tmp/ultimpos_key
-          chmod 600 /tmp/ultimpos_key
+          printf '%s' "${{ secrets.POS_SSH_KEY }}" | tr -d '\r' > /tmp/pos_key
+          chmod 600 /tmp/pos_key
           echo "Fingerprint (ED25519 expected):"
-          ssh-keygen -lf /tmp/ultimpos_key
+          ssh-keygen -lf /tmp/pos_key
 
       - name: SSH preflight (connect & exit)
         run: |
           # Note: ULTIMPOS_SSH_HOST is your server SSH/SFTP host (often an IP/hosting hostname),
           # not the website URL (pos.himan.fun via SFTP).
-          ssh -i /tmp/ultimpos_key \
-              -p "${{ secrets.ULTIMPOS_SSH_PORT }}" \
+          ssh -i /tmp/pos_key \
+              -p "${{ secrets.POS_SSH_PORT }}" \
               -o StrictHostKeyChecking=no \
               -o IdentitiesOnly=yes \
-              "${{ secrets.ULTIMPOS_SSH_USER }}@${{ secrets.ULTIMPOS_SSH_HOST }}" \
+              "${{ secrets.POS_SSH_USER }}@${{ secrets.POS_SSH_HOST }}" \
               "echo SSH OK: \$(whoami) on \$(hostname)"
 
       # --- Build assets (NPM) ---
@@ -116,10 +116,10 @@ jobs:
       - name: Upload app via SFTP (to /laravel)
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
         with:
-          server: ${{ secrets.ULTIMPOS_SSH_HOST }}
-          port: ${{ secrets.ULTIMPOS_SSH_PORT }}
-          username: ${{ secrets.ULTIMPOS_SSH_USER }}
-          ssh_private_key: ${{ secrets.ULTIMPOS_SSH_KEY }}
+          server: ${{ secrets.POS_SSH_HOST }}
+          port: ${{ secrets.POS_SSH_PORT }}
+          username: ${{ secrets.POS_SSH_USER }}
+          ssh_private_key: ${{ secrets.POS_SSH_KEY }}
           local_path: "deploy_app/*"
           # Website: https://pos.himan.fun
           remote_path: "domains/himan.fun/public_html/pos/laravel/"
@@ -129,10 +129,10 @@ jobs:
       - name: Upload public via SFTP (to /)
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
         with:
-          server: ${{ secrets.ULTIMPOS_SSH_HOST }}
-          port: ${{ secrets.ULTIMPOS_SSH_PORT }}
-          username: ${{ secrets.ULTIMPOS_SSH_USER }}
-          ssh_private_key: ${{ secrets.ULTIMPOS_SSH_KEY }}
+          server: ${{ secrets.POS_SSH_HOST }}
+          port: ${{ secrets.POS_SSH_PORT }}
+          username: ${{ secrets.POS_SSH_USER }}
+          ssh_private_key: ${{ secrets.POS_SSH_KEY }}
           local_path: "deploy_public/*"
           # Website: https://pos.himan.fun
           remote_path: "domains/himan.fun/public_html/pos/"
@@ -143,10 +143,10 @@ jobs:
       - name: SSH - composer install & caches
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.ULTIMPOS_SSH_HOST }}
-          port: ${{ secrets.ULTIMPOS_SSH_PORT }}
-          username: ${{ secrets.ULTIMPOS_SSH_USER }}
-          key: ${{ secrets.ULTIMPOS_SSH_KEY }}
+          host: ${{ secrets.POS_SSH_HOST }}
+          port: ${{ secrets.POS_SSH_PORT }}
+          username: ${{ secrets.POS_SSH_USER }}
+          key: ${{ secrets.POS_SSH_KEY }}
           script: |
             set -e
             # Target pos.himan.fun Laravel app dir
