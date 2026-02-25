@@ -122,7 +122,7 @@ jobs:
           ssh_private_key: ${{ secrets.ULTIMPOS_SSH_KEY }}
           local_path: "deploy_app/*"
           # Website: https://pos.himan.fun
-          remote_path: "domains/pos.himan.fun/public_html/laravel/"
+          remote_path: "domains/himan.fun/public_html/pos/laravel/"
           delete_remote_files: false
           sftp_only: true
 
@@ -135,7 +135,7 @@ jobs:
           ssh_private_key: ${{ secrets.ULTIMPOS_SSH_KEY }}
           local_path: "deploy_public/*"
           # Website: https://pos.himan.fun
-          remote_path: "domains/pos.himan.fun/public_html/"
+          remote_path: "domains/himan.fun/public_html/pos/"
           delete_remote_files: false
           sftp_only: true
 
@@ -150,7 +150,7 @@ jobs:
           script: |
             set -e
             # Target pos.himan.fun Laravel app dir
-            cd ~/domains/pos.himan.fun/public_html/laravel
+            cd ~/domains/himan.fun/public_html/pos/laravel
 
             # Safety: do not run artisan/migrations until the subdomain has its own .env
             if [ ! -f .env ]; then
@@ -197,7 +197,7 @@ jobs:
             php artisan storage:link || true
 
             # Symlink for user-uploads within pos.himan.fun docroot
-            cd ~/domains/pos.himan.fun/public_html
+            cd ~/domains/himan.fun/public_html/pos
             rm -rf user-uploads 2>/dev/null || true
             ln -sf ./laravel/public/user-uploads user-uploads
             ls -la user-uploads
