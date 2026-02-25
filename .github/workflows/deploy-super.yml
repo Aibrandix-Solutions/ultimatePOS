@@ -1,8 +1,8 @@
-name: Deploy UltimatePOS (super.digipartner.lk via SFTP)
+name: Deploy UltimatePOS (pos.himan.fun via SFTP)
 
 on:
   push:
-    branches: [ super ]
+    branches: [ update ]
   workflow_dispatch:
 
 jobs:
@@ -26,7 +26,7 @@ jobs:
       - name: SSH preflight (connect & exit)
         run: |
           # Note: ULTIMPOS_SSH_HOST is your server SSH/SFTP host (often an IP/hosting hostname),
-          # not the website URL (forestgreen-meerkat-965140.hostingersite.com ).
+          # not the website URL (pos.himan.fun via SFTP).
           ssh -i /tmp/ultimpos_key \
               -p "${{ secrets.ULTIMPOS_SSH_PORT }}" \
               -o StrictHostKeyChecking=no \
@@ -121,8 +121,8 @@ jobs:
           username: ${{ secrets.ULTIMPOS_SSH_USER }}
           ssh_private_key: ${{ secrets.ULTIMPOS_SSH_KEY }}
           local_path: "deploy_app/*"
-          # Website: https://forestgreen-meerkat-965140.hostingersite.com/
-          remote_path: "domains/forestgreen-meerkat-965140.hostingersite.com/public_html/laravel/"
+          # Website: https://pos.himan.fun
+          remote_path: "domains/pos.himan.fun/public_html/laravel/"
           delete_remote_files: false
           sftp_only: true
 
@@ -134,8 +134,8 @@ jobs:
           username: ${{ secrets.ULTIMPOS_SSH_USER }}
           ssh_private_key: ${{ secrets.ULTIMPOS_SSH_KEY }}
           local_path: "deploy_public/*"
-          # Website: https://forestgreen-meerkat-965140.hostingersite.com/
-          remote_path: "domains/forestgreen-meerkat-965140.hostingersite.com/public_html/"
+          # Website: https://pos.himan.fun
+          remote_path: "domains/pos.himan.fun/public_html/"
           delete_remote_files: false
           sftp_only: true
 
@@ -149,13 +149,13 @@ jobs:
           key: ${{ secrets.ULTIMPOS_SSH_KEY }}
           script: |
             set -e
-            # Target forestgreen-meerkat-965140.hostingersite.com Laravel app dir
-            cd ~/domains/forestgreen-meerkat-965140.hostingersite.com/public_html/laravel
+            # Target pos.himan.fun Laravel app dir
+            cd ~/domains/pos.himan.fun/public_html/laravel
 
             # Safety: do not run artisan/migrations until the subdomain has its own .env
             if [ ! -f .env ]; then
               echo "❌ Missing .env at $(pwd)/.env"
-              echo "Create it with separate DB credentials and correct APP_URL=https://forestgreen-meerkat-965140.hostingersite.com"
+              echo "Create it with separate DB credentials and correct APP_URL=https://pos.himan.fun"
               exit 1
             fi
 
@@ -196,8 +196,8 @@ jobs:
             # Storage link
             php artisan storage:link || true
 
-            # Symlink for user-uploads within forestgreen-meerkat-965140.hostingersite.com docroot
-            cd ~/domains/forestgreen-meerkat-965140.hostingersite.com/public_html
+            # Symlink for user-uploads within pos.himan.fun docroot
+            cd ~/domains/pos.himan.fun/public_html
             rm -rf user-uploads 2>/dev/null || true
             ln -sf ./laravel/public/user-uploads user-uploads
             ls -la user-uploads
