@@ -392,7 +392,7 @@
 			}
 		@endphp
 		<td class="@if(!auth()->user()->can('edit_product_price_from_sale_screen')) hide @endif">
-			<input type="text" name="products[{{$row_count}}][unit_price]" class="form-control pos_unit_price input_number mousetrap" value="{{@num_format($pos_unit_price)}}" @if(!empty($pos_settings['enable_msp'])) data-rule-min-value="{{$pos_unit_price}}" data-msg-min-value="{{__('lang_v1.minimum_selling_price_error_msg', ['price' => @num_format($pos_unit_price)])}}" @endif> 
+			<input type="text" name="products[{{$row_count}}][unit_price]" class="form-control pos_unit_price input_number mousetrap" value="{{@num_format($pos_unit_price)}}" @if(!empty($pos_settings['enable_msp']) && empty($bypass_msp)) data-rule-min-value="{{$pos_unit_price}}" data-msg-min-value="{{__('lang_v1.minimum_selling_price_error_msg', ['price' => @num_format($pos_unit_price)])}}" @endif> 
 
 			@if(!empty($last_sell_line))
 				<br>
@@ -439,7 +439,7 @@
 			@php
 				$msp_unit_price_inc_tax = !empty($product->min_sell_price_inc_tax) ? $product->min_sell_price_inc_tax : $unit_price_inc_tax;
 			@endphp
-			<input type="text" style="width: auto" name="products[{{$row_count}}][unit_price_inc_tax]" class="form-control pos_unit_price_inc_tax input_number" value="{{@num_format($unit_price_inc_tax)}}" @if(!$edit_price) readonly @endif @if(!empty($pos_settings['enable_msp'])) data-rule-min-value="{{$msp_unit_price_inc_tax}}" data-msg-min-value="{{__('lang_v1.minimum_selling_price_error')}}" @endif>
+			<input type="text" style="width: auto" name="products[{{$row_count}}][unit_price_inc_tax]" class="form-control pos_unit_price_inc_tax input_number" value="{{@num_format($unit_price_inc_tax)}}" @if(!$edit_price) readonly @endif @if(!empty($pos_settings['enable_msp']) && empty($bypass_msp)) data-rule-min-value="{{$msp_unit_price_inc_tax}}" data-msg-min-value="{{__('lang_v1.minimum_selling_price_error')}}" @endif>
 	</td>
 	<td class="text-center" style="vertical-align: middle;">
 		@php

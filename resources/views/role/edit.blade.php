@@ -654,6 +654,14 @@
                   <div class="col-md-12">
                     <div class="checkbox">
                       <label>
+                        {!! Form::checkbox('permissions[]', 'bypass_minimum_selling_price', in_array('bypass_minimum_selling_price', $role_permissions), ['class' => 'input-icheck']) !!}
+                        {{ __('lang_v1.bypass_minimum_selling_price') }}
+                      </label>
+                    </div>
+                  </div>
+                  <div class="col-md-12">
+                    <div class="checkbox">
+                      <label>
                         {!! Form::checkbox('permissions[]', 'edit_pos_payment', 
                             in_array('edit_pos_payment', $role_permissions), ['class' => 'input-icheck']) !!}
                         {{ __('lang_v1.add_edit_payment') }}
