@@ -2649,12 +2649,63 @@ function calculate_balance_due() {
     var keep_on_current_invoice = $('#apply_payment_to_old_dues').length && $('#apply_payment_to_old_dues').is(':checked');
     var apply_to_old_dues = !keep_on_current_invoice;
 
-    var past_due = 0;
-    if (apply_to_old_dues && $('#advance_balance').length) {
-        past_due = __read_number($('#advance_balance'));
-        if (isNaN(past_due) || past_due < 0) {
-            past_due = 0;
+    // Check if the selected customer is the walk-in customer
+    var is_walk_in = false;
+    if ($('#customer_id').length && $('#default_customer_id').length) {
+        if ($('#customer_id').val() == $('#default_customer_id').val()) {
+            is_walk_in = true;
         }
+    }
+
+    // Determine past due amounts BEFORE evaluating the UI rules for walk-ins
+    var past_due = 0;
+    if ($('.contact_due_text').length && !$('.contact_due_text').hasClass('hide')) {
+        var due_text = $('.contact_due_text').find('span').text();
+        if (due_text) {
+            past_due = __number_uf(due_text);
+            if (isNaN(past_due) || past_due < 0) {
+                past_due = 0;
+            }
+        }
+    }
+
+    // Hide/show the "Keep payment on current invoice" wrapper based on whether they have past due
+    // Walk-ins inherently shouldn't have past due applying logic exposed to them anyway
+    if (past_due > 0 && !is_walk_in) {
+        $('.apply_to_old_dues_wrapper').removeClass('hide');
+    } else {
+        $('.apply_to_old_dues_wrapper').addClass('hide');
+    }
+
+    // Force payment to current invoice for walk-in customers (preventing it from applying to old dues)
+    if (is_walk_in) {
+        apply_to_old_dues = false;
+        $('#apply_payment_to_old_dues').prop('checked', true);
+    } else if ($('.apply_to_old_dues_wrapper').hasClass('hide')) {
+        // If it's a registered customer but the wrapper is hidden (no past due),
+        // we default it to checked so any overpayment becomes change instead of being un-applied.
+        // Or actually, if they don't have past due, it doesn't matter, but setting to checked is safer.
+        apply_to_old_dues = false;
+        $('#apply_payment_to_old_dues').prop('checked', true);
+    } else {
+        // If it's a registered customer WITH a past due (wrapper IS visible),
+        // we want to ensure it defaults to UNCHECKED to prioritize paying old dues,
+        // UNLESS the user explicitly checked it. But wait, we shouldn't wipe their manual check.
+        // Let's only uncheck it if they JUST switched to this customer. We can tracking that by
+        // checking if the past_due was just populated.
+        // Actually, if we just let the UI handle it, we shouldn't force uncheck it every time
+        // calculate is called, otherwise they can never check it!
+        // So we only force it to unchecked if it was previously forced to checked by the walk-in logic.
+        // Let's add a data attribute when we force check it.
+        if ($('#apply_payment_to_old_dues').data('forced_checked')) {
+            $('#apply_payment_to_old_dues').prop('checked', false);
+            $('#apply_payment_to_old_dues').data('forced_checked', false);
+            apply_to_old_dues = true; // since we just unchecked it
+        }
+    }
+
+    if (is_walk_in) {
+        $('#apply_payment_to_old_dues').data('forced_checked', true);
     }
 
     var payment_for_old_dues = 0;
@@ -2665,7 +2716,10 @@ function calculate_balance_due() {
         payment_for_current = total_paying - payment_for_old_dues;
     }
 
-    var bal_due = total_payable - payment_for_current;
+    // Visual calculation for Balance Due and Change Return
+    // User requested that Change Return *always* equals Amount Given - Current Bill,
+    // even if the backend silently uses the excess to pay down past dues.
+    var bal_due = total_payable - total_paying;
     var change_return = 0;
 
     if (bal_due < 0 || Math.abs(bal_due) < 0.05) {
@@ -2687,6 +2741,13 @@ function calculate_balance_due() {
 
     __write_number($('input#in_balance_due'), bal_due);
     $('span.balance_due').text(__currency_trans_from_en(bal_due, true));
+
+    // Hide balance row if balance is <= 0
+    if (bal_due <= 0) {
+        $('.balance_due_row').addClass('hide');
+    } else {
+        $('.balance_due_row').removeClass('hide');
+    }
 
     // Show/hide due date field depending on balance
     try {
@@ -2778,6 +2839,17 @@ function isValidPosForm() {
         flag = false;
         error = '<span class="error">' + LANG.no_products + '</span>';
         $(error).insertAfter($('input#search_product').parent('div'));
+    }
+
+    // Prevent walk-in customers from making partial payments
+    if ($('#customer_id').length && $('#default_customer_id').length) {
+        if ($('#customer_id').val() == $('#default_customer_id').val()) {
+            var bal_due = __read_number($('input#in_balance_due'));
+            if (bal_due > 0) {
+                flag = false;
+                toastr.error('Walk-In Customers must pay the full amount. Partial payments are not allowed.');
+            }
+        }
     }
 
     return flag;
