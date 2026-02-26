@@ -2,13 +2,13 @@ name: Deploy Laravel (pos.himan.fun via SFTP)
 
 on:
   push:
-    branches: [ himan ]
+    branches: [ update ]
   workflow_dispatch:
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 90
 
     steps:
       - name: Checkout
