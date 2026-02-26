@@ -160,15 +160,17 @@ jobs:
             php artisan route:cache  || true
             php artisan view:cache   || true
 
-            # Remove old symlink and ensure uploads directory structure
+            # Remove old symlink/directory and ensure uploads directory structure
             cd /home/u972195898/domains/himan.fun/public_html/pos
-            if [ -L uploads ]; then
-              echo "🔧 Removing old uploads symlink"
-              rm -f uploads
-            fi
+            rm -rf uploads user-uploads 2>/dev/null || true
             
-            # Ensure physical uploads directories exist
-            mkdir -p uploads/{img,media,business_logos,invoice_logos,files}
-            chmod -R 755 uploads || true
+            # Ensure physical uploads directories exist inside laravel/public
+            mkdir -p laravel/public/uploads/{img,media,business_logos,invoice_logos,files}
+            mkdir -p laravel/public/user-uploads
+            chmod -R 755 laravel/public/uploads laravel/public/user-uploads || true
             
-            echo "✅ Uploads directory structure verified"
+            # Create symlinks
+            ln -sf laravel/public/uploads uploads
+            ln -sf laravel/public/user-uploads user-uploads
+            
+            echo "✅ Uploads symlinks verified"
