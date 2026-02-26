@@ -2452,11 +2452,11 @@ function pos_each_row(row_obj) {
 
     // Apply row discount on the base unit price
     // Discount values may be hidden; fallback to data attrs
-    var row_discount_type = (row_obj.find('select.row_discount_type').length ? row_obj.find('select.row_discount_type').val() : null);
+    var row_discount_type = (row_obj.find('.row_discount_type').length ? row_obj.find('.row_discount_type').val() : null);
     if (!row_discount_type) {
         row_discount_type = row_obj.data('modal-discount-type') || 'fixed';
     }
-    var row_discount_amount = (row_obj.find('input.row_discount_amount').length ? __read_number(row_obj.find('input.row_discount_amount')) : null);
+    var row_discount_amount = (row_obj.find('.row_discount_amount').length ? __read_number(row_obj.find('.row_discount_amount')) : null);
     if (row_discount_amount === null || isNaN(row_discount_amount)) {
         row_discount_amount = row_obj.data('modal-discount-amount') || 0;
     }
@@ -2646,24 +2646,35 @@ function calculate_balance_due() {
                 total_paying += v;
             }
         });
-    // New semantics: checkbox checked = keep payment on current invoice.
-    // Default (unchecked) = apply payment to previous due invoices (oldest first).
     var keep_on_current_invoice = $('#apply_payment_to_old_dues').length && $('#apply_payment_to_old_dues').is(':checked');
     var apply_to_old_dues = !keep_on_current_invoice;
-    var bal_due = apply_to_old_dues ? total_payable : (total_payable - total_paying);
+
+    var past_due = 0;
+    if (apply_to_old_dues && $('#advance_balance').length) {
+        past_due = __read_number($('#advance_balance'));
+        if (isNaN(past_due) || past_due < 0) {
+            past_due = 0;
+        }
+    }
+
+    var payment_for_old_dues = 0;
+    var payment_for_current = total_paying;
+
+    if (apply_to_old_dues && past_due > 0) {
+        payment_for_old_dues = Math.min(total_paying, past_due);
+        payment_for_current = total_paying - payment_for_old_dues;
+    }
+
+    var bal_due = total_payable - payment_for_current;
     var change_return = 0;
 
-    //change_return (disable when applying payment to old dues)
-    if (!apply_to_old_dues && (bal_due < 0 || Math.abs(bal_due) < 0.05)) {
-        __write_number($('input#change_return'), bal_due * -1);
-        $('span.change_return_span').text(__currency_trans_from_en(bal_due * -1, true));
+    if (bal_due < 0 || Math.abs(bal_due) < 0.05) {
         change_return = bal_due * -1;
         bal_due = 0;
-    } else {
-        __write_number($('input#change_return'), 0);
-        $('span.change_return_span').text(__currency_trans_from_en(0, true));
-        change_return = 0;
     }
+
+    __write_number($('input#change_return'), change_return);
+    $('span.change_return_span').text(__currency_trans_from_en(change_return, true));
 
     if (change_return !== 0) {
         $('#change_return_payment_data').removeClass('hide');
@@ -3063,11 +3074,11 @@ function calculate_discounted_unit_price(row) {
         }
     }
 
-    var row_discount_type = (row.find('select.row_discount_type').length ? row.find('select.row_discount_type').val() : null);
+    var row_discount_type = (row.find('.row_discount_type').length ? row.find('.row_discount_type').val() : null);
     if (!row_discount_type) {
         row_discount_type = row.data('modal-discount-type') || 'fixed';
     }
-    var row_discount_amount = (row.find('input.row_discount_amount').length ? __read_number(row.find('input.row_discount_amount')) : null);
+    var row_discount_amount = (row.find('.row_discount_amount').length ? __read_number(row.find('.row_discount_amount')) : null);
     if (row_discount_amount === null || isNaN(row_discount_amount)) {
         row_discount_amount = row.data('modal-discount-amount') || 0;
     }
@@ -3085,8 +3096,14 @@ function calculate_discounted_unit_price(row) {
 
 function get_unit_price_from_discounted_unit_price(row, discounted_unit_price) {
     var this_unit_price = discounted_unit_price;
-    var row_discount_type = row.find('select.row_discount_type').val();
-    var row_discount_amount = __read_number(row.find('input.row_discount_amount'));
+    var row_discount_type = (row.find('.row_discount_type').length ? row.find('.row_discount_type').val() : null);
+    if (!row_discount_type) {
+        row_discount_type = row.data('modal-discount-type') || 'fixed';
+    }
+    var row_discount_amount = (row.find('.row_discount_amount').length ? __read_number(row.find('.row_discount_amount')) : null);
+    if (row_discount_amount === null || isNaN(row_discount_amount)) {
+        row_discount_amount = row.data('modal-discount-amount') || 0;
+    }
     if (row_discount_amount) {
         if (row_discount_type == 'fixed') {
             this_unit_price = discounted_unit_price + row_discount_amount;
@@ -4538,14 +4555,14 @@ function addModernStyling() {
 
         // Always persist base price for reliable future edits
         $productRow.data('modal-base-unit-price', newUnitPrice);
-        if ($productRow.find('select.row_discount_type').length) {
-            $productRow.find('select.row_discount_type').val(newDiscountType);
+        if ($productRow.find('.row_discount_type').length) {
+            $productRow.find('.row_discount_type').val(newDiscountType);
         } else {
             $productRow.data('modal-discount-type', newDiscountType);
         }
 
-        if ($productRow.find('input.row_discount_amount').length) {
-            __write_number($productRow.find('input.row_discount_amount'), newDiscountAmount);
+        if ($productRow.find('.row_discount_amount').length) {
+            __write_number($productRow.find('.row_discount_amount'), newDiscountAmount);
         } else {
             $productRow.data('modal-discount-amount', newDiscountAmount);
         }

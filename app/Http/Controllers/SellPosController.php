@@ -582,17 +582,18 @@ class SellPosController extends Controller
 
                 $input['payment'][] = $change_return;
 
-                // New semantics:
-                // - Checkbox checked: keep payment on current invoice
-                // - Checkbox unchecked (default): apply payment to customer's previous due invoices (oldest first)
-                // When applying to previous dues, current invoice remains due (no payment lines for the current sale).
                 $keep_payment_on_current_invoice = !empty($input['apply_payment_to_old_dues']) && (int) $input['apply_payment_to_old_dues'] === 1;
                 $apply_payment_to_old_dues = !$keep_payment_on_current_invoice;
                 $sale_payment_lines = $input['payment'];
                 $old_due_payment_lines = [];
                 if ($apply_payment_to_old_dues) {
-                    $old_due_payment_lines = $sale_payment_lines;
-                    $sale_payment_lines = [];
+                    foreach ($sale_payment_lines as $idx => $line) {
+                        if (empty($line['is_return'])) {
+                            $old_due_payment_lines[] = $line;
+                            unset($sale_payment_lines[$idx]);
+                        }
+                    }
+                    $sale_payment_lines = array_values($sale_payment_lines); // Retain change_return
                 }
 
                 // Installment plans require the down payment to be applied to the current invoice.
@@ -1982,6 +1983,11 @@ class SellPosController extends Controller
             $is_cg = !empty($cg->id) ? true : false;
 
             $discount = $this->productUtil->getProductDiscount($product, $business_id, $location_id, $is_cg, $price_group, $variation_id);
+
+            if (!empty($discount)) {
+                // Discount details are captured and passed to the view separately. 
+                // Do not modify the product's base selling prices here because pos.js will subtract them on the fly.
+            }
 
             if ($is_direct_sell) {
                 $edit_discount = auth()->user()->can('edit_product_discount_from_sale_screen');

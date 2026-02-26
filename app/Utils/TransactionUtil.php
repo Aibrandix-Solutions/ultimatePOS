@@ -1189,11 +1189,11 @@ class TransactionUtil extends Util
         if ($il->show_letter_head == 1) {
             $output['letter_head'] = !empty($il->letter_head) &&
                 file_exists($invoice_logos_path . $il->letter_head) ?
-                asset('uploads/invoice_logos/' . $il->letter_head) : null;
+                $is_split ? url('uploads/invoice_logos/' . $il->letter_head) : asset('uploads/invoice_logos/' . $il->letter_head) : null;
         }
 
         //Logo
-        $output['logo'] = $il->show_logo != 0 && !empty($il->logo) && file_exists($invoice_logos_path . $il->logo) ? asset('uploads/invoice_logos/' . $il->logo) : false;
+        $output['logo'] = $il->show_logo != 0 && !empty($il->logo) && file_exists($invoice_logos_path . $il->logo) ? ($is_split ? url('uploads/invoice_logos/' . $il->logo) : asset('uploads/invoice_logos/' . $il->logo)) : false;
 
         //Address
         $output['address'] = '';
@@ -6988,7 +6988,7 @@ class TransactionUtil extends Util
         $invoice_logos_path = $is_split
             ? dirname(base_path()) . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'invoice_logos' . DIRECTORY_SEPARATOR
             : public_path('uploads/invoice_logos/');
-        $logo = $invoice_layout->show_logo != 0 && !empty($invoice_layout->logo) && file_exists($invoice_logos_path . $invoice_layout->logo) ? asset('uploads/invoice_logos/' . $invoice_layout->logo) : false;
+        $logo = $invoice_layout->show_logo != 0 && !empty($invoice_layout->logo) && file_exists($invoice_logos_path . $invoice_layout->logo) ? ($is_split ? url('uploads/invoice_logos/' . $invoice_layout->logo) : asset('uploads/invoice_logos/' . $invoice_layout->logo)) : false;
 
         $word_format = $invoice_layout->common_settings['num_to_word_format'] ? $invoice_layout->common_settings['num_to_word_format'] : 'international';
         $total_in_words = $this->numToWord($purchase->final_total, null, $word_format);

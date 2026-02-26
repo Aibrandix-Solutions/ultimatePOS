@@ -861,7 +861,8 @@ class PurchaseOrderController extends Controller
         $invoice_logos_path = $is_split
             ? dirname(base_path()) . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'invoice_logos' . DIRECTORY_SEPARATOR
             : public_path('uploads/invoice_logos/');
-        $logo = $invoice_layout->show_logo != 0 && !empty($invoice_layout->logo) && file_exists($invoice_logos_path . $invoice_layout->logo) ? asset('uploads/invoice_logos/' . $invoice_layout->logo) : false;
+        $logo_url = $is_split ? url('/uploads/invoice_logos/' . $invoice_layout->logo) : asset('uploads/invoice_logos/' . $invoice_layout->logo);
+        $logo = $invoice_layout->show_logo != 0 && !empty($invoice_layout->logo) && file_exists($invoice_logos_path . $invoice_layout->logo) ? $logo_url : false;
 
         $word_format = $invoice_layout->common_settings['num_to_word_format'] ? $invoice_layout->common_settings['num_to_word_format'] : 'international';
         $total_in_words = $this->transactionUtil->numToWord($purchase->final_total, null, $word_format);

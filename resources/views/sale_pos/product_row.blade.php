@@ -434,6 +434,10 @@
 				</div>
 			</td>
 		@endif
+
+		<!-- Hidden fields for discount so auto-discounts apply in POS JS calculator -->
+		<input type="hidden" name="products[{{$row_count}}][line_discount_amount]" class="row_discount_amount" value="{{@num_format($discount_amount)}}">
+		<input type="hidden" name="products[{{$row_count}}][line_discount_type]" class="row_discount_type" value="{{$discount_type}}">
 	@endif
 	<td class="{{$hide_tax}}">
 			@php
