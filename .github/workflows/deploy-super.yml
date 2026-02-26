@@ -8,7 +8,7 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 90
 
     steps:
       - name: Checkout
@@ -112,6 +112,10 @@ jobs:
           $kernel->terminate($request, $response);
           PHP
 
+          # Compress public assets into a single tarball for fast SFTP transfer
+          # (avoids uploading thousands of font/vendor files one-by-one)
+          tar -czf deploy_public.tar.gz -C deploy_public .
+
       # --- SFTP uploads ---
       - name: Upload app via SFTP (to /laravel)
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
@@ -126,15 +130,16 @@ jobs:
           delete_remote_files: false
           sftp_only: true
 
-      - name: Upload public via SFTP (to /)
+      - name: Upload public tarball via SFTP (single-file, fast)
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
         with:
           server: ${{ secrets.POS_SSH_HOST }}
           port: ${{ secrets.POS_SSH_PORT }}
           username: ${{ secrets.POS_SSH_USER }}
           ssh_private_key: ${{ secrets.POS_SSH_KEY }}
-          local_path: "deploy_public/*"
-          # Website: https://pos.himan.fun
+          local_path: "deploy_public.tar.gz"
+          # Website: https://pos.himan.fun — uploads a single archive instead of
+          # thousands of individual font/vendor files to avoid SFTP timeout
           remote_path: "domains/himan.fun/public_html/pos/"
           delete_remote_files: false
           sftp_only: true
@@ -149,6 +154,18 @@ jobs:
           key: ${{ secrets.POS_SSH_KEY }}
           script: |
             set -e
+
+            # Extract public assets tarball (uploaded as single file to avoid SFTP timeout)
+            PUBLIC_DIR=~/domains/himan.fun/public_html/pos
+            if [ -f "$PUBLIC_DIR/deploy_public.tar.gz" ]; then
+              echo "Extracting public assets..."
+              tar -xzf "$PUBLIC_DIR/deploy_public.tar.gz" -C "$PUBLIC_DIR"
+              rm -f "$PUBLIC_DIR/deploy_public.tar.gz"
+              echo "Public assets extracted."
+            else
+              echo "⚠️  deploy_public.tar.gz not found — skipping extraction"
+            fi
+
             # Target pos.himan.fun Laravel app dir
             cd ~/domains/himan.fun/public_html/pos/laravel
 
