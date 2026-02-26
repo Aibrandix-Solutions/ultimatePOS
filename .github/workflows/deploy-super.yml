@@ -185,6 +185,7 @@ jobs:
 
             # Clear & rebuild caches
             php artisan optimize:clear || true
+            php artisan optimize
 
             # Publish module assets and migrations
             php artisan module:publish || true
@@ -194,10 +195,12 @@ jobs:
             php artisan migrate --force
 
             # Storage link
-            php artisan storage:link || true
+            php artisan storage:link --force || true
 
             # Symlink for user-uploads within pos.himan.fun docroot
+            # Ensure the target directory actually exists before symlinking
+            mkdir -p ~/domains/himan.fun/public_html/pos/laravel/public/user-uploads
             cd ~/domains/himan.fun/public_html/pos
             rm -rf user-uploads 2>/dev/null || true
-            ln -sf ./laravel/public/user-uploads user-uploads
+            ln -sf ~/domains/himan.fun/public_html/pos/laravel/public/user-uploads user-uploads
             ls -la user-uploads
