@@ -5392,8 +5392,15 @@ class TransactionUtil extends Util
             $log_type = $transaction->type == 'sales_order' ? 'so_deleted' : 'sell_deleted';
             $this->activityLog($transaction, $log_type, null, $log_properities);
 
-            //If status is draft direct delete transaction
+            //If status is draft (suspended), restore stock before deleting
             if ($transaction->status == 'draft') {
+                // Restore stock for all sell lines
+                $deleted_sell_lines = $transaction->sell_lines;
+                $deleted_sell_lines_ids = $deleted_sell_lines->pluck('id')->toArray();
+                $this->deleteSellLines(
+                    $deleted_sell_lines_ids,
+                    $transaction->location_id
+                );
                 foreach ($transaction->sell_lines as $sell_line) {
                     $this->updateSalesOrderLine($sell_line->so_line_id, 0, $sell_line->quantity);
                 }
@@ -5401,7 +5408,6 @@ class TransactionUtil extends Util
                 if (!empty($sales_order_ids)) {
                     $this->updateSalesOrderStatus($sales_order_ids);
                 }
-
                 $transaction->delete();
             } else {
                 $business = Business::findOrFail($business_id);

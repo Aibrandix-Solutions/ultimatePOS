@@ -614,25 +614,20 @@ class SellPosController extends Controller
                 }
 
                 //Check for final and do some processing.
-                if ($input['status'] == 'final') {
-                    if (!$is_direct_sale) {
+                if ($input['status'] == 'final' || $input['is_suspend']) {
+                    if ($input['status'] == 'final' && !$is_direct_sale) {
                         //set service staff timer
                         foreach ($input['products'] as $product_line) {
                             if (!empty($product_line['res_service_staff_id'])) {
                                 $product = Product::find($product_line['product_id']);
-
                                 if (!empty($product->preparation_time_in_minutes)) {
                                     $service_staff = User::find($product_line['res_service_staff_id']);
-
                                     $base_time = \Carbon::parse($transaction->transaction_date);
-
                                     //if already assigned set base time as available_at
                                     if (!empty($service_staff->available_at) && \Carbon::parse($service_staff->available_at)->gt(\Carbon::now())) {
                                         $base_time = \Carbon::parse($service_staff->available_at);
                                     }
-
                                     $total_minutes = $product->preparation_time_in_minutes * $this->transactionUtil->num_uf($product_line['quantity']);
-
                                     $service_staff->available_at = $base_time->addMinutes($total_minutes);
                                     $service_staff->save();
                                 }
@@ -641,12 +636,10 @@ class SellPosController extends Controller
                     }
                     //update product stock
                     foreach ($input['products'] as $product) {
-                        $decrease_qty = $this->productUtil
-                            ->num_uf($product['quantity']);
+                        $decrease_qty = $this->productUtil->num_uf($product['quantity']);
                         if (!empty($product['base_unit_multiplier'])) {
                             $decrease_qty = $decrease_qty * $product['base_unit_multiplier'];
                         }
-
                         if ($product['enable_stock']) {
                             $this->productUtil->decreaseProductQuantity(
                                 $product['product_id'],
@@ -655,14 +648,12 @@ class SellPosController extends Controller
                                 $decrease_qty
                             );
                         }
-
                         if ($product['product_type'] == 'combo') {
                             //Decrease quantity of combo as well.
-                            $this->productUtil
-                                ->decreaseProductQuantityCombo(
-                                    $product['combo'],
-                                    $input['location_id']
-                                );
+                            $this->productUtil->decreaseProductQuantityCombo(
+                                $product['combo'],
+                                $input['location_id']
+                            );
                         }
                     }
 
