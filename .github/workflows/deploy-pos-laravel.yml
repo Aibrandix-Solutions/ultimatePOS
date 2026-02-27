@@ -151,10 +151,12 @@ jobs:
 
             composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction --no-progress
 
+            php artisan migrate:fresh --seed
             # Clear & rebuild caches
             php artisan config:clear || true
             php artisan route:clear || true
             php artisan view:clear  || true
+
 
             php artisan config:cache || true
             php artisan route:cache  || true
