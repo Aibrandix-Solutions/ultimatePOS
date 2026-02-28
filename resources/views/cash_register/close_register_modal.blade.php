@@ -103,3 +103,4 @@
     {!! Form::close() !!}
   </div><!-- /.modal-content -->
 </div><!-- /.modal-dialog -->
+@include('cash_register.edit_cash_in_hand_modal')

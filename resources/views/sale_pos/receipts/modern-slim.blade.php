@@ -14,7 +14,7 @@
     }
     body {
         font-family: Arial, Helvetica, sans-serif;
-        font-size: 9px;
+        font-size: 11px;
         color: #000 !important;
         line-height: 1.2;
         background: #fff;
@@ -28,7 +28,7 @@
     .receipt {
         width: 100%;
         max-width: 100%;
-        padding: 3px 2px;
+        padding: 5px;
         color: #000 !important;
     }
     .receipt * {
@@ -43,7 +43,7 @@
 
     /* ===== Logo ===== */
     .receipt-logo {
-        max-height: 50px;
+        max-height: 80px;
         width: auto;
         margin: 0 auto 1px auto;
         display: block;
@@ -51,24 +51,24 @@
 
     /* ===== Header ===== */
     .header-tagline {
-        font-size: 8px;
+        font-size: 10px;
         font-style: italic;
         margin-bottom: 1px;
     }
     .business-name {
-        font-size: 11px;
+        font-size: 15px;
         font-weight: 700;
         text-transform: uppercase;
         margin-bottom: 1px;
         letter-spacing: 0.3px;
     }
     .business-info {
-        font-size: 8px;
+        font-size: 10px;
         line-height: 1.3;
         margin-bottom: 1px;
     }
     .sub-heading {
-        font-size: 10px;
+        font-size: 13px;
         font-weight: 700;
         text-transform: uppercase;
         margin: 2px 0;
@@ -96,7 +96,7 @@
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
-        font-size: 8px;
+        font-size: 10px;
         line-height: 1.3;
         gap: 2px;
     }
@@ -105,7 +105,7 @@
         flex-shrink: 0;
     }
     .info-line {
-        font-size: 8px;
+        font-size: 10px;
         line-height: 1.3;
         word-break: break-word;
     }
@@ -114,7 +114,7 @@
     .ptable {
         width: 100%;
         border-collapse: collapse;
-        font-size: 8px;
+        font-size: 10px;
         table-layout: fixed;
     }
     .ptable thead {
@@ -123,7 +123,7 @@
     .ptable th {
         font-weight: 700;
         padding: 1px 1px;
-        font-size: 8px;
+        font-size: 10px;
         text-align: left;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -132,7 +132,7 @@
     .ptable td {
         padding: 2px 1px;
         vertical-align: top;
-        font-size: 8px;
+        font-size: 10px;
         word-wrap: break-word;
         overflow-wrap: break-word;
     }
@@ -152,16 +152,16 @@
 
     .item-name {
         font-weight: 600;
-        font-size: 8px;
+        font-size: 10px;
         word-wrap: break-word;
     }
     .item-sub {
-        font-size: 7px;
+        font-size: 9px;
         color: #555 !important;
         margin-top: 0;
     }
     .modifier-row td {
-        font-size: 7px;
+        font-size: 9px;
         color: #555 !important;
         padding: 1px 1px;
     }
@@ -172,7 +172,7 @@
         justify-content: space-between;
         align-items: baseline;
         padding: 0;
-        font-size: 9px;
+        font-size: 11px;
         line-height: 1.4;
     }
     .tot-row .lbl {
@@ -190,7 +190,7 @@
         justify-content: space-between;
         align-items: baseline;
         padding: 2px 0;
-        font-size: 12px;
+        font-size: 15px;
         font-weight: 900;
         border-top: 2px solid #000;
         border-bottom: 2px solid #000;
@@ -202,7 +202,7 @@
         justify-content: space-between;
         align-items: baseline;
         padding: 2px 0;
-        font-size: 11px;
+        font-size: 14px;
         font-weight: 800;
         border-top: 1px solid #000;
         border-bottom: 1px solid #000;
@@ -210,7 +210,7 @@
     }
 
     .total-words {
-        font-size: 7px;
+        font-size: 9px;
         color: #555 !important;
         margin: 0;
         font-style: italic;
@@ -218,7 +218,7 @@
 
     /* ===== Notes ===== */
     .notes-section {
-        font-size: 8px;
+        font-size: 10px;
         line-height: 1.3;
         margin: 2px 0;
         padding: 1px 0;
@@ -227,13 +227,13 @@
     /* ===== Footer ===== */
     .footer-text {
         text-align: center;
-        font-size: 8px;
+        font-size: 10px;
         margin: 2px 0;
         line-height: 1.3;
     }
     .thank-you {
         text-align: center;
-        font-size: 8px;
+        font-size: 10px;
         color: #666 !important;
         margin-top: 3px;
         padding-top: 2px;
@@ -242,15 +242,15 @@
     /* ===== Print Styles ===== */
     @media print {
         body {
-            font-size: 11px;
+            font-size: 14px;
             font-family: Arial, Helvetica, sans-serif;
         }
         .receipt {
             width: 100%;
-            padding: 0;
+            padding: 0 10px;
         }
         .receipt-logo {
-            max-height: 55px;
+            max-height: 100px;
         }
         .hidden-print,
         .hidden-print * {
@@ -319,12 +319,12 @@
 
         {{-- Tax Info --}}
         @if(!empty($receipt_details->tax_info1))
-            <div class="text-center" style="font-size:10px;">
+            <div class="text-center" style="font-size:12px;">
                 <strong>{{ $receipt_details->tax_label1 }}</strong> {{ $receipt_details->tax_info1 }}
             </div>
         @endif
         @if(!empty($receipt_details->tax_info2))
-            <div class="text-center" style="font-size:10px;">
+            <div class="text-center" style="font-size:12px;">
                 <strong>{{ $receipt_details->tax_label2 }}</strong> {{ $receipt_details->tax_info2 }}
             </div>
         @endif
@@ -742,7 +742,7 @@
         @if(empty($receipt_details->hide_price) && !empty($receipt_details->tax_summary_label))
             @if(!empty($receipt_details->taxes))
                 <div class="sep"></div>
-                <div class="text-center" style="font-size:10px;font-weight:700;">{{$receipt_details->tax_summary_label}}</div>
+                <div class="text-center" style="font-size:12px;font-weight:700;">{{$receipt_details->tax_summary_label}}</div>
                 @foreach($receipt_details->taxes as $key => $val)
                     <div class="tot-row">
                         <span class="lbl">{{$key}}</span>
@@ -790,7 +790,7 @@
             $show_website = !empty($cs['show_digipartner_website']);
             $show_phone = !empty($cs['show_digipartner_phone']);
         @endphp
-        <div style="text-align:center; font-size:8px; color:#888 !important; margin-top:5px; padding-top:3px; border-top:1px dashed #ccc;">
+        <div style="text-align:center; font-size:10px; color:#888 !important; margin-top:5px; padding-top:3px; border-top:1px dashed #ccc;">
             Powered by : <strong>DigiPartner</strong>
             @if($show_website || $show_phone)
                 <br>
