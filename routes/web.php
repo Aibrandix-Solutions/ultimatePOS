@@ -377,6 +377,7 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
     Route::get('/cash-register/close-register/{id?}', [CashRegisterController::class, 'getCloseRegister']);
     Route::post('/cash-register/close-register', [CashRegisterController::class, 'postCloseRegister']);
     Route::resource('cash-register', CashRegisterController::class);
+    Route::post('/cash-register/update-cash-in-hand/{id}', [CashRegisterController::class, 'updateCashInHand'])->name('cash_register.update_cash_in_hand');
 
     //Import products
     Route::get('/import-products', [ImportProductsController::class, 'index']);
