@@ -90,27 +90,43 @@
 
 @stop
 
+
 @section('javascript')
-	<script src="{{ asset('js/pos.js?v=' . $asset_v) }}"></script>
-	<script src="{{ asset('js/printer.js?v=' . $asset_v) }}"></script>
-	<script src="{{ asset('js/product.js?v=' . $asset_v) }}"></script>
-	<script src="{{ asset('js/opening_stock.js?v=' . $asset_v) }}"></script>
-	@include('sale_pos.partials.keyboard_shortcuts')
+   <script src="{{ asset('js/pos.js?v=' . $asset_v) }}"></script>
+   <script src="{{ asset('js/printer.js?v=' . $asset_v) }}"></script>
+   <script src="{{ asset('js/product.js?v=' . $asset_v) }}"></script>
+   <script src="{{ asset('js/opening_stock.js?v=' . $asset_v) }}"></script>
+   @include('sale_pos.partials.keyboard_shortcuts')
 
-	<!-- Call restaurant module if defined -->
-    @if(in_array('tables' ,$enabled_modules) || in_array('modifiers' ,$enabled_modules) || in_array('service_staff' ,$enabled_modules))
-    	<script src="{{ asset('js/restaurant.js?v=' . $asset_v) }}"></script>
-    @endif
+   <!-- Force customer dropdown to correct value on edit -->
+   <script>
+   $(document).ready(function() {
+	   var correctCustomerId = "{{ $transaction->contact->id }}";
+	   if ($('#customer_id').length && $('#customer_id').val() != correctCustomerId) {
+		   // Add option if not present
+		   if ($('#customer_id option[value="' + correctCustomerId + '"]').length === 0) {
+			   var customerName = @json($transaction->contact->name);
+			   $('#customer_id').append(new Option(customerName, correctCustomerId, true, true));
+		   }
+		   $('#customer_id').val(correctCustomerId).trigger('change');
+	   }
+   });
+   </script>
 
-    <!-- include module js -->
-    @if(!empty($pos_module_data))
-	    @foreach($pos_module_data as $key => $value)
-            @if(!empty($value['module_js_path']))
-                @includeIf($value['module_js_path'], ['view_data' => $value['view_data']])
-            @endif
-	    @endforeach
+   <!-- Call restaurant module if defined -->
+	@if(in_array('tables' ,$enabled_modules) || in_array('modifiers' ,$enabled_modules) || in_array('service_staff' ,$enabled_modules))
+	   <script src="{{ asset('js/restaurant.js?v=' . $asset_v) }}"></script>
 	@endif
-	
+
+	<!-- include module js -->
+	@if(!empty($pos_module_data))
+	   @foreach($pos_module_data as $key => $value)
+			@if(!empty($value['module_js_path']))
+				@includeIf($value['module_js_path'], ['view_data' => $value['view_data']])
+			@endif
+	   @endforeach
+   @endif
+   
 @endsection
 
 @section('css')

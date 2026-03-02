@@ -98,3 +98,4 @@
       });
   });
 </script>
+@include('cash_register.edit_cash_in_hand_modal')

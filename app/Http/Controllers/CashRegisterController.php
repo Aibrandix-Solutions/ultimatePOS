@@ -28,11 +28,29 @@ class CashRegisterController extends Controller
         $this->cashRegisterUtil = $cashRegisterUtil;
         $this->moduleUtil = $moduleUtil;
     }
+    /**
+     * Update cash in hand amount for a register.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function updateCashInHand(Request $request, $id): \Illuminate\Http\RedirectResponse
+    {
+        if (!auth()->user()->can('edit_cash_register')) {
+            abort(403, 'Unauthorized action.');
+        }
+        $cash_in_hand = $this->cashRegisterUtil->num_uf($request->input('cash_in_hand_amount'));
+        $register = CashRegister::findOrFail($id);
+        $register->cash_in_hand = $cash_in_hand;
+        $register->save();
+        return redirect()->back()->with('status', ['success' => 1, 'msg' => 'Cash in hand updated successfully!']);
+    }
 
     /**
      * Display a listing of the resource.
      *
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\Response|\Illuminate\Contracts\View\View
      */
     public function index()
     {
@@ -42,7 +60,7 @@ class CashRegisterController extends Controller
     /**
      * Show the form for creating a new resource.
      *
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\Response|\Illuminate\Contracts\View\View|\Illuminate\Http\RedirectResponse
      */
     public function create()
     {
@@ -63,7 +81,7 @@ class CashRegisterController extends Controller
      * Store a newly created resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\Response|\Illuminate\Http\RedirectResponse
      */
     public function store(Request $request)
     {
@@ -104,7 +122,7 @@ class CashRegisterController extends Controller
      * Display the specified resource.
      *
      * @param  \App\CashRegister  $cashRegister
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\Response|\Illuminate\Contracts\View\View
      */
     public function show($id)
     {
@@ -129,8 +147,7 @@ class CashRegisterController extends Controller
     /**
      * Shows register details modal.
      *
-     * @param  void
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\Response|\Illuminate\Contracts\View\View
      */
     public function getRegisterDetails()
     {
@@ -159,8 +176,7 @@ class CashRegisterController extends Controller
     /**
      * Shows close register form.
      *
-     * @param  void
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\Response|\Illuminate\Contracts\View\View
      */
     public function getCloseRegister($id = null)
     {
@@ -191,7 +207,7 @@ class CashRegisterController extends Controller
      * Closes currently opened register.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\Response|\Illuminate\Http\RedirectResponse
      */
     public function postCloseRegister(Request $request)
     {
