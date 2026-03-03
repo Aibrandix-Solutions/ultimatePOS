@@ -369,9 +369,10 @@ class ContactController extends Controller
         $contacts = Datatables::of($query)
             ->addColumn('address', '{{implode(", ", array_filter([$address_line_1, $address_line_2, $city, $state, $country, $zip_code]))}}')
             //    + $sell_return_paid add this in due because after paymnet for sell return not calculated 
+            //    + ($opening_balance - $opening_balance_paid) included to show total due including opening balance
             ->addColumn(
                 'due',
-                '<span class="contact_due" data-orig-value="{{$total_invoice - $invoice_received - $total_ledger_discount - $total_sell_return  + $sell_return_paid}}" data-highlight=true>@format_currency($total_invoice - $invoice_received - $total_ledger_discount -  $total_sell_return + $sell_return_paid)  </span>'
+                '<span class="contact_due" data-orig-value="{{$total_invoice - $invoice_received - $total_ledger_discount - $total_sell_return + $sell_return_paid + ($opening_balance - $opening_balance_paid)}}" data-highlight=true>@format_currency($total_invoice - $invoice_received - $total_ledger_discount - $total_sell_return + $sell_return_paid + ($opening_balance - $opening_balance_paid))  </span>'
             )
             ->addColumn(
                 'return_due',
@@ -1857,19 +1858,19 @@ class ContactController extends Controller
                         // Some flows may mark invoices as "paid" even if payment was a pending/bounced cheque.
                         // Include those so the user can pick the invoice and record/adjust cheque payments.
                         ->orWhere(function ($q) {
-                            $q->where('payment_status', 'paid')
-                                ->whereExists(function ($sq) {
-                                    $sq->select(DB::raw(1))
-                                        ->from('transaction_payments as tp')
-                                        ->whereColumn('tp.transaction_id', 'transactions.id')
-                                        ->whereNull('tp.parent_id')
-                                        ->where('tp.method', 'cheque')
-                                        ->where(function ($qq) {
-                                            $qq->whereNull('tp.cheque_status')
-                                                ->orWhere('tp.cheque_status', '!=', 'cleared');
-                                        });
-                                });
-                        });
+                        $q->where('payment_status', 'paid')
+                            ->whereExists(function ($sq) {
+                                $sq->select(DB::raw(1))
+                                    ->from('transaction_payments as tp')
+                                    ->whereColumn('tp.transaction_id', 'transactions.id')
+                                    ->whereNull('tp.parent_id')
+                                    ->where('tp.method', 'cheque')
+                                    ->where(function ($qq) {
+                                        $qq->whereNull('tp.cheque_status')
+                                            ->orWhere('tp.cheque_status', '!=', 'cleared');
+                                    });
+                            });
+                    });
                 })
                 ->with(['payment_lines'])
                 ->select('id', 'invoice_no', 'transaction_date', 'final_total', 'payment_status')

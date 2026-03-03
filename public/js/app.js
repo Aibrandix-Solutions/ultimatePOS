@@ -462,6 +462,7 @@ $(document).ready(function () {
     contact_table = $('#contact_table').DataTable({
         processing: true,
         serverSide: true,
+        stateSave: true,
         fixedHeader: false,
         scrollY: "75vh",
         scrollX: true,
