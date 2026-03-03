@@ -35,30 +35,34 @@ class CashRegisterController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function updateCashInHand(Request $request, $id): \Illuminate\Http\RedirectResponse
+    public function updateCashInHand(Request $request, $id)
     {
-        if (!auth()->user()->can('edit_cash_register')) {
-            abort(403, 'Unauthorized action.');
+        if (!auth()->user()->can('view_cash_register')) {
+            return response()->json(['success' => false, 'msg' => 'Unauthorized action.'], 403);
         }
-        $cash_in_hand = $this->cashRegisterUtil->num_uf($request->input('cash_in_hand_amount'));
-        $register = CashRegister::findOrFail($id);
+        try {
+            $cash_in_hand = $this->cashRegisterUtil->num_uf($request->input('cash_in_hand_amount'));
+            $register = CashRegister::findOrFail($id);
 
-        $initial_transaction = $register->cash_register_transactions()
-            ->where('transaction_type', 'initial')
-            ->first();
+            $initial_transaction = $register->cash_register_transactions()
+                ->where('transaction_type', 'initial')
+                ->first();
 
-        if ($initial_transaction) {
-            $initial_transaction->amount = $cash_in_hand;
-            $initial_transaction->save();
-        } else {
-            $register->cash_register_transactions()->create([
-                'amount' => $cash_in_hand,
-                'pay_method' => 'cash',
-                'type' => 'credit',
-                'transaction_type' => 'initial'
-            ]);
+            if ($initial_transaction) {
+                $initial_transaction->amount = $cash_in_hand;
+                $initial_transaction->save();
+            } else {
+                $register->cash_register_transactions()->create([
+                    'amount' => $cash_in_hand,
+                    'pay_method' => 'cash',
+                    'type' => 'credit',
+                    'transaction_type' => 'initial'
+                ]);
+            }
+            return response()->json(['success' => true, 'msg' => 'Cash in hand updated successfully!']);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'msg' => $e->getMessage()], 500);
         }
-        return redirect()->back()->with('status', ['success' => 1, 'msg' => 'Cash in hand updated successfully!']);
     }
 
     /**
