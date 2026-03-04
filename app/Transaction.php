@@ -141,7 +141,7 @@ class Transaction extends Model
      */
     public function getDocumentPathAttribute()
     {
-        $path = ! empty($this->document) ? asset('/uploads/documents/'.$this->document) : null;
+        $path = !empty($this->document) ? asset('/uploads/documents/' . $this->document) : null;
 
         return $path;
     }
@@ -151,7 +151,7 @@ class Transaction extends Model
      */
     public function getDocumentNameAttribute()
     {
-        $document_name = ! empty(explode('_', $this->document, 2)[1]) ? explode('_', $this->document, 2)[1] : $this->document;
+        $document_name = !empty(explode('_', $this->document, 2)[1]) ? explode('_', $this->document, 2)[1] : $this->document;
 
         return $document_name;
     }
@@ -166,33 +166,33 @@ class Transaction extends Model
      */
     public function shipping_address($array = false)
     {
-        $addresses = ! empty($this->order_addresses) ? json_decode($this->order_addresses, true) : [];
+        $addresses = !empty($this->order_addresses) ? json_decode($this->order_addresses, true) : [];
 
         $shipping_address = [];
 
-        if (! empty($addresses['shipping_address'])) {
-            if (! empty($addresses['shipping_address']['shipping_name'])) {
+        if (!empty($addresses['shipping_address'])) {
+            if (!empty($addresses['shipping_address']['shipping_name'])) {
                 $shipping_address['name'] = $addresses['shipping_address']['shipping_name'];
             }
-            if (! empty($addresses['shipping_address']['company'])) {
+            if (!empty($addresses['shipping_address']['company'])) {
                 $shipping_address['company'] = $addresses['shipping_address']['company'];
             }
-            if (! empty($addresses['shipping_address']['shipping_address_line_1'])) {
+            if (!empty($addresses['shipping_address']['shipping_address_line_1'])) {
                 $shipping_address['address_line_1'] = $addresses['shipping_address']['shipping_address_line_1'];
             }
-            if (! empty($addresses['shipping_address']['shipping_address_line_2'])) {
+            if (!empty($addresses['shipping_address']['shipping_address_line_2'])) {
                 $shipping_address['address_line_2'] = $addresses['shipping_address']['shipping_address_line_2'];
             }
-            if (! empty($addresses['shipping_address']['shipping_city'])) {
+            if (!empty($addresses['shipping_address']['shipping_city'])) {
                 $shipping_address['city'] = $addresses['shipping_address']['shipping_city'];
             }
-            if (! empty($addresses['shipping_address']['shipping_state'])) {
+            if (!empty($addresses['shipping_address']['shipping_state'])) {
                 $shipping_address['state'] = $addresses['shipping_address']['shipping_state'];
             }
-            if (! empty($addresses['shipping_address']['shipping_country'])) {
+            if (!empty($addresses['shipping_address']['shipping_country'])) {
                 $shipping_address['country'] = $addresses['shipping_address']['shipping_country'];
             }
-            if (! empty($addresses['shipping_address']['shipping_zip_code'])) {
+            if (!empty($addresses['shipping_address']['shipping_zip_code'])) {
                 $shipping_address['zipcode'] = $addresses['shipping_address']['shipping_zip_code'];
             }
         }
@@ -209,33 +209,33 @@ class Transaction extends Model
      */
     public function billing_address($array = false)
     {
-        $addresses = ! empty($this->order_addresses) ? json_decode($this->order_addresses, true) : [];
+        $addresses = !empty($this->order_addresses) ? json_decode($this->order_addresses, true) : [];
 
         $billing_address = [];
 
-        if (! empty($addresses['billing_address'])) {
-            if (! empty($addresses['billing_address']['billing_name'])) {
+        if (!empty($addresses['billing_address'])) {
+            if (!empty($addresses['billing_address']['billing_name'])) {
                 $billing_address['name'] = $addresses['billing_address']['billing_name'];
             }
-            if (! empty($addresses['billing_address']['company'])) {
+            if (!empty($addresses['billing_address']['company'])) {
                 $billing_address['company'] = $addresses['billing_address']['company'];
             }
-            if (! empty($addresses['billing_address']['billing_address_line_1'])) {
+            if (!empty($addresses['billing_address']['billing_address_line_1'])) {
                 $billing_address['address_line_1'] = $addresses['billing_address']['billing_address_line_1'];
             }
-            if (! empty($addresses['billing_address']['billing_address_line_2'])) {
+            if (!empty($addresses['billing_address']['billing_address_line_2'])) {
                 $billing_address['address_line_2'] = $addresses['billing_address']['billing_address_line_2'];
             }
-            if (! empty($addresses['billing_address']['billing_city'])) {
+            if (!empty($addresses['billing_address']['billing_city'])) {
                 $billing_address['city'] = $addresses['billing_address']['billing_city'];
             }
-            if (! empty($addresses['billing_address']['billing_state'])) {
+            if (!empty($addresses['billing_address']['billing_state'])) {
                 $billing_address['state'] = $addresses['billing_address']['billing_state'];
             }
-            if (! empty($addresses['billing_address']['billing_country'])) {
+            if (!empty($addresses['billing_address']['billing_country'])) {
                 $billing_address['country'] = $addresses['billing_address']['billing_country'];
             }
-            if (! empty($addresses['billing_address']['billing_zip_code'])) {
+            if (!empty($addresses['billing_address']['billing_zip_code'])) {
                 $billing_address['zipcode'] = $addresses['billing_address']['billing_zip_code'];
             }
         }
@@ -284,7 +284,7 @@ class Transaction extends Model
 
     public static function transactionTypes()
     {
-        return  [
+        return [
             'sell' => __('sale.sale'),
             'purchase' => __('lang_v1.purchase'),
             'sell_return' => __('lang_v1.sell_return'),
@@ -306,13 +306,13 @@ class Transaction extends Model
             $stored_due_date = method_exists($transaction, 'getOriginal') ? $transaction->getOriginal('due_date') : null;
             if (!empty($stored_due_date)) {
                 $due_date = \Carbon::parse($stored_due_date);
-            } elseif (! empty($transaction->pay_term_number) && ! empty($transaction->pay_term_type)) {
+            } elseif (!empty($transaction->pay_term_number) && !empty($transaction->pay_term_type)) {
                 $transaction_date = \Carbon::parse($transaction->transaction_date);
                 $due_date = $transaction->pay_term_type == 'days' ? $transaction_date->addDays($transaction->pay_term_number) : $transaction_date->addMonths($transaction->pay_term_number);
             }
 
             $now = \Carbon::now();
-            if (!empty($due_date) && $now->gt($due_date)) {
+            if (!empty($due_date) && $now->gt($due_date->copy()->endOfDay())) {
                 $payment_status = $payment_status == 'due' ? 'overdue' : 'partial-overdue';
             }
         }
@@ -330,7 +330,7 @@ class Transaction extends Model
         }
 
         $transaction_date = \Carbon::parse($this->transaction_date);
-        if (! empty($this->pay_term_type) && ! empty($this->pay_term_number)) {
+        if (!empty($this->pay_term_type) && !empty($this->pay_term_number)) {
             $due_date = $this->pay_term_type == 'days' ? $transaction_date->addDays($this->pay_term_number) : $transaction_date->addMonths($this->pay_term_number);
         } else {
             $due_date = $transaction_date->addDays(0);
@@ -371,9 +371,9 @@ class Transaction extends Model
     public function scopeOverDue($query)
     {
         return $query->whereIn('transactions.payment_status', ['due', 'partial'])
-                    ->whereNotNull('transactions.pay_term_number')
-                    ->whereNotNull('transactions.pay_term_type')
-                    ->whereRaw("IF(transactions.pay_term_type='days', DATE_ADD(transactions.transaction_date, INTERVAL transactions.pay_term_number DAY) < CURDATE(), DATE_ADD(transactions.transaction_date, INTERVAL transactions.pay_term_number MONTH) < CURDATE())");
+            ->whereNotNull('transactions.pay_term_number')
+            ->whereNotNull('transactions.pay_term_type')
+            ->whereRaw("IF(transactions.pay_term_type='days', DATE_ADD(transactions.transaction_date, INTERVAL transactions.pay_term_number DAY) <= CURDATE(), DATE_ADD(transactions.transaction_date, INTERVAL transactions.pay_term_number MONTH) <= CURDATE())");
     }
 
     public static function sell_statuses()
@@ -415,15 +415,15 @@ class Transaction extends Model
     public function salesOrders()
     {
         $sales_orders = null;
-        if (! empty($this->sales_order_ids)) {
+        if (!empty($this->sales_order_ids)) {
             $sales_orders = Transaction::where('business_id', $this->business_id)
-                                ->where('type', 'sales_order')
-                                ->whereIn('id', $this->sales_order_ids)
-                                ->get();
+                ->where('type', 'sales_order')
+                ->whereIn('id', $this->sales_order_ids)
+                ->get();
         }
 
         return $sales_orders;
     }
 
-   
+
 }

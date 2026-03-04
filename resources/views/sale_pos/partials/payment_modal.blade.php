@@ -16,7 +16,7 @@
                         ]) !!}
                     </div>
 
-                    <div class="col-md-12 mb-12" style="margin-top:6px;">
+                    <div class="col-md-12 mb-12 apply_to_old_dues_wrapper" style="margin-top:6px;">
                         {!! Form::hidden('apply_payment_to_old_dues', 0) !!}
                         <label style="font-weight: 600; cursor: pointer;">
                             {!! Form::checkbox('apply_payment_to_old_dues', 1, false, ['id' => 'apply_payment_to_old_dues']) !!}
@@ -171,7 +171,7 @@
                                     <input type="hidden" id="total_paying_input">
                                 </div>
 
-                                <div class="col-md-12">
+                                <div class="col-md-12 change_return_row">
                                     <hr style="border-color: rgba(22,17,96,0.1);">
                                     <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
                                         <span style="font-weight:600; color:#111827;">@lang('lang_v1.change_return'):</span>
@@ -189,7 +189,7 @@
                                     @endif
                                 </div>
 
-                                <div class="col-md-12">
+                                <div class="col-md-12 balance_due_row">
                                     <hr style="border-color: rgba(22,17,96,0.1);">
                                     <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
                                         <span style="font-weight:700; color:#dc2626;">@lang('lang_v1.balance'):</span>

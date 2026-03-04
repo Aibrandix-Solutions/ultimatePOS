@@ -149,6 +149,10 @@
       </div>
     </div>
   </div>
+
+  {{-- Invoice Design Preview --}}
+  @include('invoice_layout.partials.invoice_layout_preview')
+
   <div class="box box-solid">
   <div class="box-body">
     <div class="row">
@@ -949,6 +953,29 @@
               'placeholder' => __('invoice.footer_text'), 'rows' => 3]) !!}
           </div>
         </div>
+
+        {{-- DigiPartner Footer Options --}}
+        <div class="col-sm-12">
+          <h4 style="margin-top:5px; margin-bottom:10px;"><i class="fa fa-globe"></i> DigiPartner Branding</h4>
+        </div>
+        <div class="col-sm-4">
+          <div class="form-group">
+            <div class="checkbox">
+              <label>
+                {!! Form::checkbox('common_settings[show_digipartner_website]', 1, true, ['class' => 'input-icheck']) !!} Show Website (digipartner.lk)</label>
+            </div>
+          </div>
+        </div>
+        <div class="col-sm-4">
+          <div class="form-group">
+            <div class="checkbox">
+              <label>
+                {!! Form::checkbox('common_settings[show_digipartner_phone]', 1, true, ['class' => 'input-icheck']) !!} Show Phone (074 410 3531)</label>
+            </div>
+          </div>
+        </div>
+        <div class="clearfix"></div>
+
         <div class="col-sm-6">
           <div class="form-group">
             <br>
@@ -1208,10 +1235,15 @@
 
       $('#design_select').on('change', function () {
         toggleEnglishArabicMessage();
+        // Load preview for the newly selected design
+        loadInvoicePreview($(this).val());
       });
 
       // Check on page load
       toggleEnglishArabicMessage();
+
+      // Load initial preview
+      loadInvoicePreview($('#design_select').val());
   });
 </script>
 @endsection

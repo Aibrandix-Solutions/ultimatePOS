@@ -1180,14 +1180,20 @@ class TransactionUtil extends Util
             $output['code_2'] = $business_details->code_2;
         }
 
+        // Resolve upload path for split-docroot vs standard
+        $is_split = (bool) env('APP_SPLIT_DOCROOT', false);
+        $invoice_logos_path = $is_split
+            ? dirname(base_path()) . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'invoice_logos' . DIRECTORY_SEPARATOR
+            : public_path('uploads/invoice_logos/');
+
         if ($il->show_letter_head == 1) {
             $output['letter_head'] = !empty($il->letter_head) &&
-                file_exists(public_path('uploads/invoice_logos/' . $il->letter_head)) ?
-                asset('uploads/invoice_logos/' . $il->letter_head) : null;
+                file_exists($invoice_logos_path . $il->letter_head) ?
+                $is_split ? url('uploads/invoice_logos/' . $il->letter_head) : asset('uploads/invoice_logos/' . $il->letter_head) : null;
         }
 
         //Logo
-        $output['logo'] = $il->show_logo != 0 && !empty($il->logo) && file_exists(public_path('uploads/invoice_logos/' . $il->logo)) ? asset('uploads/invoice_logos/' . $il->logo) : false;
+        $output['logo'] = $il->show_logo != 0 && !empty($il->logo) && file_exists($invoice_logos_path . $il->logo) ? ($is_split ? url('uploads/invoice_logos/' . $il->logo) : asset('uploads/invoice_logos/' . $il->logo)) : false;
 
         //Address
         $output['address'] = '';
@@ -1790,6 +1796,9 @@ class TransactionUtil extends Util
         //Additional notes
         $output['additional_notes'] = $transaction->additional_notes;
         $output['footer_text'] = $invoice_layout->footer_text;
+
+        // Pass common_settings for template-level toggles (e.g. DigiPartner branding)
+        $output['common_settings'] = !empty($il->common_settings) ? $il->common_settings : [];
 
         //Barcode related information.
         $output['show_barcode'] = !empty($il->show_barcode) ? true : false;
@@ -3524,7 +3533,7 @@ class TransactionUtil extends Util
             ->whereIn('type', ['sell', 'opening_balance'])
             ->where(function ($q) {
                 $q->where('type', 'opening_balance')
-                  ->orWhere('status', 'final');
+                    ->orWhere('status', 'final');
             })
             ->where('payment_status', '!=', 'paid');
 
@@ -5383,8 +5392,15 @@ class TransactionUtil extends Util
             $log_type = $transaction->type == 'sales_order' ? 'so_deleted' : 'sell_deleted';
             $this->activityLog($transaction, $log_type, null, $log_properities);
 
-            //If status is draft direct delete transaction
+            //If status is draft (suspended), restore stock before deleting
             if ($transaction->status == 'draft') {
+                // Restore stock for all sell lines
+                $deleted_sell_lines = $transaction->sell_lines;
+                $deleted_sell_lines_ids = $deleted_sell_lines->pluck('id')->toArray();
+                $this->deleteSellLines(
+                    $deleted_sell_lines_ids,
+                    $transaction->location_id
+                );
                 foreach ($transaction->sell_lines as $sell_line) {
                     $this->updateSalesOrderLine($sell_line->so_line_id, 0, $sell_line->quantity);
                 }
@@ -5392,7 +5408,6 @@ class TransactionUtil extends Util
                 if (!empty($sales_order_ids)) {
                     $this->updateSalesOrderStatus($sales_order_ids);
                 }
-
                 $transaction->delete();
             } else {
                 $business = Business::findOrFail($business_id);
@@ -5665,7 +5680,7 @@ class TransactionUtil extends Util
         if ($sale_type == 'sell') {
             $sells->where(function ($q) use ($include_suspended) {
                 $q->where('transactions.type', 'opening_balance')
-                  ->orWhere('transactions.status', 'final');
+                    ->orWhere('transactions.status', 'final');
 
                 if ($include_suspended) {
                     $q->orWhere('transactions.is_suspend', 1);
@@ -6974,8 +6989,12 @@ class TransactionUtil extends Util
         $businessUtil = new BusinessUtil();
         $invoice_layout = $businessUtil->invoiceLayout($business_id, $location_details->invoice_layout_id);
 
-        //Logo
-        $logo = $invoice_layout->show_logo != 0 && !empty($invoice_layout->logo) && file_exists(public_path('uploads/invoice_logos/' . $invoice_layout->logo)) ? asset('uploads/invoice_logos/' . $invoice_layout->logo) : false;
+        //Logo (split-docroot aware)
+        $is_split = (bool) env('APP_SPLIT_DOCROOT', false);
+        $invoice_logos_path = $is_split
+            ? dirname(base_path()) . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'invoice_logos' . DIRECTORY_SEPARATOR
+            : public_path('uploads/invoice_logos/');
+        $logo = $invoice_layout->show_logo != 0 && !empty($invoice_layout->logo) && file_exists($invoice_logos_path . $invoice_layout->logo) ? ($is_split ? url('uploads/invoice_logos/' . $invoice_layout->logo) : asset('uploads/invoice_logos/' . $invoice_layout->logo)) : false;
 
         $word_format = $invoice_layout->common_settings['num_to_word_format'] ? $invoice_layout->common_settings['num_to_word_format'] : 'international';
         $total_in_words = $this->numToWord($purchase->final_total, null, $word_format);

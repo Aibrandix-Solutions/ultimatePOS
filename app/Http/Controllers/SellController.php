@@ -99,6 +99,14 @@ class SellController extends Controller
             $include_suspended = !empty(request()->suspended);
             $sells = $this->transactionUtil->getListSells($business_id, $sale_type, $include_opening_balance, $include_suspended);
 
+            // Exclude suspended sales from main sales list
+            if (!$include_suspended) {
+                $sells->where(function ($q) {
+                    $q->whereNull('transactions.is_suspend')
+                      ->orWhere('transactions.is_suspend', 0);
+                });
+            }
+
             // only display sell invoice we add it because project invoive show in sell list
             if($sale_type == 'sell'){
                 $sells->where(function ($query) {
