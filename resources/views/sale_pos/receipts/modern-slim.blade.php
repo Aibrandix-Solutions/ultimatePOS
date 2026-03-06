@@ -123,9 +123,10 @@
     .ptable th {
         font-weight: 700;
         padding: 1px 1px;
-        font-size: 10px;
+        font-size: 9px;
         text-align: left;
         overflow: hidden;
+        white-space: nowrap;
         text-overflow: ellipsis;
     }
     .ptable th.r { text-align: right; }
@@ -143,15 +144,15 @@
         border-bottom: none;
     }
 
-    .c-sno  { width: 5%;  text-align: center; }
-    .c-item { width: auto; }
-    .c-qty  { width: 14%; text-align: right; }
-    .c-uprc { width: 18%; text-align: right; }
-    .c-disc { width: 14%; text-align: right; }
-    .c-tot  { width: 19%; text-align: right; }
+    .c-sno  { width: 5%;  text-align: left; vertical-align: top; }
+    .c-type { width: 18%; text-align: left; }
+    .c-qty  { width: 10%; text-align: right; }
+    .c-uprc { width: 28%; text-align: right; }
+    .c-disc { width: 15%; text-align: right; }
+    .c-tot  { width: 24%; text-align: right; }
 
     .item-name {
-        font-weight: 600;
+        font-weight: normal;
         font-size: 10px;
         word-wrap: break-word;
     }
@@ -159,6 +160,11 @@
         font-size: 9px;
         color: #555 !important;
         margin-top: 0;
+    }
+    .detail-row td {
+        font-size: 9px;
+        padding: 1px 1px;
+        border-bottom: 1px dashed #ccc;
     }
     .modifier-row td {
         font-size: 9px;
@@ -499,30 +505,46 @@
         {{-- ========== PRODUCT TABLE ========== --}}
         <div class="sep-thick"></div>
 
+        @php
+            $hasDisc = !empty($receipt_details->item_discount_label) || !empty($receipt_details->discounted_unit_price_label);
+            $hidePrice = !empty($receipt_details->hide_price);
+            // 5-col normal: #, type, qty, price, total
+            // 6-col with disc: #, type, qty, price, disc, total
+            // 2-col hide price: #, type
+            $nameColspan = $hidePrice ? 1 : ($hasDisc ? 5 : 4);
+        @endphp
+
         <table class="ptable">
             <thead>
+                {{-- Header row 1: # | Item (full span) --}}
                 <tr>
                     <th class="c-sno">#</th>
-                    <th class="c-item">Item</th>
-                    <th class="c-qty r">Qty</th>
-                    @if(empty($receipt_details->hide_price))
-                        <th class="c-uprc r">Price</th>
-                        @if(!empty($receipt_details->discounted_unit_price_label))
-                            <th class="c-disc r">Disc</th>
-                        @endif
-                        @if(!empty($receipt_details->item_discount_label))
-                            <th class="c-disc r">Disc</th>
-                        @endif
-                        <th class="c-tot r">Total</th>
-                    @endif
+                    <th style="text-align:left;" colspan="{{$nameColspan}}">{{$receipt_details->table_product_label}}</th>
                 </tr>
+                {{-- Header row 2: blank | Type | Qty | Price | [Disc] | Total --}}
+                @if(empty($receipt_details->hide_price))
+                <tr style="font-size:9px; border-bottom: 1px solid #000;">
+                    <th class="c-sno"></th>
+                    <th class="c-type" style="text-align:left;">Type</th>
+                    <th class="c-qty r">Qty</th>
+                    <th class="c-uprc r">Price</th>
+                    @if(!empty($receipt_details->item_discount_label))
+                        <th class="c-disc r">Disc</th>
+                    @endif
+                    @if(!empty($receipt_details->discounted_unit_price_label))
+                        <th class="c-disc r">Disc</th>
+                    @endif
+                    <th class="c-tot r">Subtotal</th>
+                </tr>
+                @endif
             </thead>
             <tbody>
                 @forelse($receipt_details->lines as $line)
+                    {{-- Row 1: # + Item name spanning all columns --}}
                     <tr>
-                        <td class="c-sno v-top">{{$loop->iteration}}</td>
-                        <td class="c-item">
-                            <div class="item-name">{{$line['name']}} {{$line['product_variation']}} {{$line['variation']}}</div>
+                        <td class="c-sno">{{$loop->iteration}}</td>
+                        <td colspan="{{$nameColspan}}" style="padding-bottom:0;">
+                            {{$line['name']}} {{$line['product_variation']}} {{$line['variation']}}
                             @if(!empty($line['sub_sku']))
                                 <div class="item-sub">{{$line['sub_sku']}}</div>
                             @endif
@@ -547,53 +569,56 @@
                                 </div>
                             @endif
                             @if(!empty($line['warranty_name']))
-                                <div class="item-sub">
-                                    {{$line['warranty_name']}}
+                                <div class="item-sub">{{$line['warranty_name']}}
                                     @if(!empty($line['warranty_exp_date'])) - {{@format_date($line['warranty_exp_date'])}}@endif
                                     @if(!empty($line['warranty_description'])) {{$line['warranty_description']}}@endif
                                 </div>
                             @endif
-                            @if($receipt_details->show_base_unit_details && $line['quantity'] && $line['base_unit_multiplier'] !== 1)
-                                <div class="item-sub">
-                                    1 {{$line['units']}} = {{$line['base_unit_multiplier']}} {{$line['base_unit_name']}}
-                                </div>
-                            @endif
                         </td>
-                        <td class="c-qty" style="text-align:right;">{{$line['quantity']}} {{$line['units']}}</td>
-                        @if(empty($receipt_details->hide_price))
-                            <td class="c-uprc" style="text-align:right;">{{$line['unit_price_before_discount']}}</td>
-                            @if(!empty($receipt_details->discounted_unit_price_label))
-                                <td class="c-disc" style="text-align:right;">{{$line['unit_price_inc_tax']}}</td>
-                            @endif
-                            @if(!empty($receipt_details->item_discount_label))
-                                <td class="c-disc" style="text-align:right;">{{$line['line_discount'] ?? '0.00'}}</td>
-                            @endif
-                            <td class="c-tot" style="text-align:right;">{{$line['line_total']}}</td>
-                        @endif
                     </tr>
+                    {{-- Row 2: blank | Type | Qty | Price | [Disc] | Total --}}
+                    @if(empty($receipt_details->hide_price))
+                    <tr class="detail-row">
+                        <td class="c-sno"></td>
+                        <td class="c-type">{{$line['units']}}</td>
+                        <td class="c-qty" style="text-align:right;">{{$line['quantity']}}</td>
+                        <td class="c-uprc" style="text-align:right;">{{$line['unit_price_before_discount']}}</td>
+                        @if(!empty($receipt_details->item_discount_label))
+                            <td class="c-disc" style="text-align:right;">{{$line['line_discount'] ?? '0.00'}}</td>
+                        @endif
+                        @if(!empty($receipt_details->discounted_unit_price_label))
+                            <td class="c-disc" style="text-align:right;">{{$line['unit_price_inc_tax']}}</td>
+                        @endif
+                        <td class="c-tot" style="text-align:right; font-weight:700;">{{$line['line_total']}}</td>
+                    </tr>
+                    @endif
 
                     {{-- Modifiers --}}
                     @if(!empty($line['modifiers']))
                         @foreach($line['modifiers'] as $modifier)
                             <tr class="modifier-row">
                                 <td></td>
-                                <td class="item-sub">
+                                <td colspan="{{$nameColspan}}" class="item-sub">
                                     {{$modifier['name']}} {{$modifier['variation']}}
                                     @if(!empty($modifier['sub_sku'])) ({{$modifier['sub_sku']}})@endif
                                     @if(!empty($modifier['sell_line_note'])) ({!!$modifier['sell_line_note']!!})@endif
                                 </td>
-                                <td style="text-align:right;">{{$modifier['quantity']}} {{$modifier['units']}}</td>
-                                @if(empty($receipt_details->hide_price))
-                                    <td style="text-align:right;">{{$modifier['unit_price_inc_tax']}}</td>
-                                    @if(!empty($receipt_details->discounted_unit_price_label))
-                                        <td style="text-align:right;">{{$modifier['unit_price_exc_tax']}}</td>
-                                    @endif
-                                    @if(!empty($receipt_details->item_discount_label))
-                                        <td style="text-align:right;">0.00</td>
-                                    @endif
-                                    <td style="text-align:right;">{{$modifier['line_total']}}</td>
-                                @endif
                             </tr>
+                            @if(empty($receipt_details->hide_price))
+                            <tr class="modifier-row">
+                                <td></td>
+                                <td class="c-type">{{$modifier['units']}}</td>
+                                <td style="text-align:right;">{{$modifier['quantity']}}</td>
+                                <td style="text-align:right;">{{$modifier['unit_price_inc_tax']}}</td>
+                                @if(!empty($receipt_details->discounted_unit_price_label))
+                                    <td style="text-align:right;">{{$modifier['unit_price_exc_tax']}}</td>
+                                @endif
+                                @if(!empty($receipt_details->item_discount_label))
+                                    <td style="text-align:right;">0.00</td>
+                                @endif
+                                <td style="text-align:right;">{{$modifier['line_total']}}</td>
+                            </tr>
+                            @endif
                         @endforeach
                     @endif
                 @endforeach

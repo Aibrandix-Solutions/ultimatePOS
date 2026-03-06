@@ -31,6 +31,9 @@
         @if($sell->type != 'sales_order')
           <b>{{ __('sale.payment_status') }}:</b> @if(!empty($sell->payment_status)){{ __('lang_v1.' . $sell->payment_status) }}
           @endif
+          @if(!empty($sell->due_date) && $sell->payment_status != 'paid')
+            <br><b>@lang('lang_v1.due_date'):</b> {{ @format_date($sell->due_date) }}
+          @endif
         @endif
         @if(!empty($custom_labels['sell']['custom_field_1']))
           <br><strong>{{$custom_labels['sell']['custom_field_1'] ?? ''}}: </strong> {{$sell->custom_field_1}}

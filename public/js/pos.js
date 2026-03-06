@@ -2716,10 +2716,8 @@ function calculate_balance_due() {
         payment_for_current = total_paying - payment_for_old_dues;
     }
 
-    // Visual calculation for Balance Due and Change Return
-    // User requested that Change Return *always* equals Amount Given - Current Bill,
-    // even if the backend silently uses the excess to pay down past dues.
-    var bal_due = total_payable - total_paying;
+    // Calculate balance due and change return based on the amount remaining for the current invoice
+    var bal_due = total_payable - payment_for_current;
     var change_return = 0;
 
     if (bal_due < 0 || Math.abs(bal_due) < 0.05) {
@@ -2766,7 +2764,10 @@ function calculate_balance_due() {
                 if ($('#transaction_date').length && $('#transaction_date').data('DateTimePicker')) {
                     txDate = $('#transaction_date').data('DateTimePicker').date();
                 }
-                var dueMoment = (txDate ? txDate.clone() : moment()).add(30, 'days');
+                var dueDays = $('#pos_due_date_dropdown').length && $('#pos_due_date_dropdown').val() !== 'custom'
+                    ? parseInt($('#pos_due_date_dropdown').val(), 10)
+                    : 60;
+                var dueMoment = (txDate ? txDate.clone() : moment()).add(dueDays, 'days');
                 if (typeof $dueInput.datepicker === 'function') {
                     $dueInput.datepicker('update', dueMoment.toDate());
                 }
@@ -2812,7 +2813,10 @@ function toggle_installment_plan_fields() {
                 if ($('#transaction_date').length && $('#transaction_date').data('DateTimePicker')) {
                     txDate = $('#transaction_date').data('DateTimePicker').date();
                 }
-                var dueMoment = (txDate ? txDate.clone() : moment()).add(30, 'days');
+                var dueDays = $('#pos_due_date_dropdown').length && $('#pos_due_date_dropdown').val() !== 'custom'
+                    ? parseInt($('#pos_due_date_dropdown').val(), 10)
+                    : 60;
+                var dueMoment = (txDate ? txDate.clone() : moment()).add(dueDays, 'days');
                 if (typeof $dueInput.datepicker === 'function') {
                     $dueInput.datepicker('update', dueMoment.toDate());
                 }
@@ -4696,4 +4700,48 @@ function addModernStyling() {
             }, 200);
         }
     });
+}
+
+// POS Due Date Dropdown Logic
+$(document).on('change', '#pos_due_date_dropdown', function () {
+    var val = $(this).val();
+    if (val === 'custom') {
+        $('#custom_due_days_wrapper').removeClass('hide');
+        $('#custom_due_days').focus();
+    } else {
+        $('#custom_due_days_wrapper').addClass('hide');
+        $('#custom_due_days').val('');
+        updatePosDueDate(parseInt(val, 10));
+    }
+});
+
+$(document).on('input', '#custom_due_days', function () {
+    var val = $(this).val();
+    if (val && !isNaN(val)) {
+        updatePosDueDate(parseInt(val, 10));
+    }
+});
+
+function updatePosDueDate(days) {
+    if (isNaN(days)) return;
+
+    var baseDate = moment();
+    if ($('#transaction_date').length && $('#transaction_date').data('DateTimePicker')) {
+        var dpDate = $('#transaction_date').data('DateTimePicker').date();
+        if (dpDate) {
+            baseDate = dpDate.clone();
+        }
+    }
+
+    var calculatedDate = baseDate.add(days, 'days');
+
+    var $dueInput = $('#pos_due_date');
+    if ($dueInput.length) {
+        if (typeof $dueInput.datepicker === 'function') {
+            $dueInput.datepicker('update', calculatedDate.toDate());
+        } else {
+            // fallback if datepicker isn't initialized
+            $dueInput.val(calculatedDate.format('MM/DD/YYYY'));
+        }
+    }
 }

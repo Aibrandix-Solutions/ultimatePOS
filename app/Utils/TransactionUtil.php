@@ -3508,6 +3508,10 @@ class TransactionUtil extends Util
             return $payments_by_transaction;
         }
 
+        // Walk-in customers should never accumulate advance balance.
+        // Excess payment is already returned as cash change at the POS.
+        $is_walk_in_customer = Contact::where('id', $contact_id)->value('is_default');
+
         //Prepare remaining amounts per payment line (skip change return lines)
         $normalized_payment_lines = [];
         foreach ($payment_lines as $pl) {
@@ -3582,7 +3586,7 @@ class TransactionUtil extends Util
                 }
             }
 
-            //Any remaining becomes advance balance
+            //Any remaining becomes advance balance (skip for walk-in customers)
             $remaining_total = 0;
             foreach ($normalized_payment_lines as $pl) {
                 if (!empty($pl['_remaining']) && $pl['_remaining'] > 0) {
@@ -3590,7 +3594,7 @@ class TransactionUtil extends Util
                 }
             }
 
-            if ($remaining_total > 0) {
+            if ($remaining_total > 0 && !$is_walk_in_customer) {
                 $this->updateContactBalance($contact_id, $remaining_total, 'add');
             }
 
@@ -3697,16 +3701,7 @@ class TransactionUtil extends Util
             }
         }
 
-        //Any leftover becomes advance balance
-        $remaining_total = 0;
-        foreach ($normalized_payment_lines as $pl) {
-            if (!empty($pl['_remaining']) && $pl['_remaining'] > 0) {
-                $remaining_total += $pl['_remaining'];
-            }
-        }
-        if ($remaining_total > 0) {
-            $this->updateContactBalance($contact_id, $remaining_total, 'add');
-        }
+
 
         return $payments_by_transaction;
     }
@@ -5674,7 +5669,8 @@ class TransactionUtil extends Util
                 'tables.name as table_name',
                 DB::raw('SUM(tsl.quantity - tsl.so_quantity_invoiced) as so_qty_remaining'),
                 'transactions.is_export',
-                DB::raw("CONCAT(COALESCE(dp.surname, ''),' ',COALESCE(dp.first_name, ''),' ',COALESCE(dp.last_name,'')) as delivery_person")
+                DB::raw("CONCAT(COALESCE(dp.surname, ''),' ',COALESCE(dp.first_name, ''),' ',COALESCE(dp.last_name,'')) as delivery_person"),
+                'transactions.due_date'
             );
 
         if ($sale_type == 'sell') {
