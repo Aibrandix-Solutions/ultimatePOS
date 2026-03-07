@@ -715,9 +715,23 @@ class ProductUtil extends Util
     public function generateProductSku($string)
     {
         $business_id = request()->session()->get('user.business_id');
-        $sku_prefix = Business::where('id', $business_id)->value('sku_prefix');
+        $business = Business::where('id', $business_id)->first(['sku_prefix', 'sku_starting_number', 'last_auto_generated_sku']);
+        $sku_prefix = $business->sku_prefix ?? '';
+        $starting_number = $business->sku_starting_number ?? 1;
+        
+        // Get the last auto-generated SKU number (ignoring manually entered SKUs)
+        if (!empty($business->last_auto_generated_sku)) {
+            // Continue from the last auto-generated SKU
+            $sku_number = $business->last_auto_generated_sku + 1;
+        } else {
+            // First time generating, start from the configured starting number
+            $sku_number = $starting_number;
+        }
+        
+        // Update the last auto-generated SKU number for next time
+        Business::where('id', $business_id)->update(['last_auto_generated_sku' => $sku_number]);
 
-        return $sku_prefix . str_pad($string, 4, '0', STR_PAD_LEFT);
+        return $sku_prefix . str_pad($sku_number, 4, '0', STR_PAD_LEFT);
     }
 
     /**

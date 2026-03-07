@@ -12,6 +12,14 @@
         </div>
         
         <div class="col-sm-4">
+            <div class="form-group">
+                {!! Form::label('sku_starting_number', __('business.sku_starting_number') . ':') !!}
+                @show_tooltip(__('business.sku_starting_number_help'))
+                 {!! Form::number('sku_starting_number', $business->sku_starting_number ?? 1, ['class' => 'form-control', 'min' => '1', 'step' => '1']) !!}
+            </div>
+        </div>
+        
+        <div class="col-sm-4">
             {!! Form::label('enable_product_expiry', __( 'product.enable_product_expiry' ) . ':') !!}
             @show_tooltip(__('lang_v1.tooltip_enable_expiry'))
 
