@@ -763,7 +763,10 @@ class SellPosController extends Controller
                         'location_id' => $input['location_id'],
                         'pos_settings' => $pos_settings,
                     ];
-                    $this->transactionUtil->mapPurchaseSell($business, $transaction->sell_lines, 'purchase');
+
+                    if (!$transaction->is_suspend) {
+                        $this->transactionUtil->mapPurchaseSell($business, $transaction->sell_lines, 'purchase');
+                    }
 
                     //Auto send notification
                     $whatsapp_link = $this->notificationUtil->autoSendNotification($business_id, 'new_sale', $transaction, $transaction->contact);
@@ -1605,8 +1608,13 @@ class SellPosController extends Controller
                     }
                 }
 
+                $stock_status_before = $status_before;
+                if ($transaction_before->is_suspend == 1 && $status_before == 'draft') {
+                    $stock_status_before = 'final';
+                }
+
                 //Update Sell lines
-                $deleted_lines = $this->transactionUtil->createOrUpdateSellLines($transaction, $input['products'], $input['location_id'], true, $status_before);
+                $deleted_lines = $this->transactionUtil->createOrUpdateSellLines($transaction, $input['products'], $input['location_id'], true, $stock_status_before);
 
                 //Update update lines
                 $is_credit_sale = isset($input['is_credit_sale']) && $input['is_credit_sale'] == 1 ? true : false;
@@ -1649,8 +1657,22 @@ class SellPosController extends Controller
                     $payment_status = $this->transactionUtil->updatePaymentStatus($transaction->id, $transaction->final_total);
                     $transaction->payment_status = $payment_status;
 
+                    $stock_status_before = $status_before;
+                    $original_status = $transaction->status;
+
+                    if ($transaction_before->is_suspend == 1 && $status_before == 'draft') {
+                        $stock_status_before = 'final';
+                    }
+                    if ($transaction->status == 'draft' && $transaction->is_suspend == 1) {
+                        $transaction->status = 'final';
+                    }
+
                     //Update product stock
-                    $this->productUtil->adjustProductStockForInvoice($status_before, $transaction, $input);
+                    $this->productUtil->adjustProductStockForInvoice($stock_status_before, $transaction, $input);
+
+                    if ($original_status == 'draft' && $transaction->is_suspend == 1) {
+                        $transaction->status = $original_status;
+                    }
 
                     //Allocate the quantity from purchase and add mapping of
                     //purchase & sell lines in
@@ -1664,7 +1686,7 @@ class SellPosController extends Controller
                         'location_id' => $input['location_id'],
                         'pos_settings' => $pos_settings,
                     ];
-                    $this->transactionUtil->adjustMappingPurchaseSell($status_before, $transaction, $business, $deleted_lines);
+                    $this->transactionUtil->adjustMappingPurchaseSell($stock_status_before, $transaction, $business, $deleted_lines);
 
                     //Auto send notification
                     $whatsapp_link = $this->notificationUtil->autoSendNotification($business_id, 'new_sale', $transaction, $transaction->contact);
@@ -1905,6 +1927,10 @@ class SellPosController extends Controller
         }
 
         $product = $this->productUtil->getDetailsFromVariation($variation_id, $business_id, $location_id, $check_qty);
+
+        if (empty($product)) {
+            return [];
+        }
 
         if (!isset($product->quantity_ordered)) {
             $product->quantity_ordered = $quantity;

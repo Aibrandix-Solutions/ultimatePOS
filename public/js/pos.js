@@ -1193,6 +1193,16 @@ $(document).ready(function () {
 
                             reset_pos_form();
 
+                            // Reload products grid to reflect correct database stock
+                            if (typeof get_product_suggestion_list === 'function') {
+                                get_product_suggestion_list(
+                                    $('select#product_category').val(),
+                                    $('select#product_brand').val(),
+                                    $('input#location_id').val(),
+                                    null
+                                );
+                            }
+
                             //Check if enabled or not
                             if (result.receipt.is_enabled) {
                                 pos_print(result.receipt);

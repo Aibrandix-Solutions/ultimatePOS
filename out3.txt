@@ -1,0 +1,7 @@
+Found Txn 73: status=draft, is_suspend=1
+Calling deleteSale...
+Array
+(
+    [success] => 1
+    [msg] => Sale deleted successfully
+)

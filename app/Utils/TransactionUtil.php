@@ -3947,7 +3947,12 @@ class TransactionUtil extends Util
         $business,
         $deleted_line_ids = []
     ) {
-        if ($status_before == 'final' && $transaction->status == 'draft') {
+        $current_status = $transaction->status;
+        if ($current_status == 'draft' && $transaction->is_suspend == 1) {
+            $current_status = 'final';
+        }
+
+        if ($status_before == 'final' && $current_status == 'draft') {
             //Get sell lines used for the transaction.
             $sell_purchases = Transaction::join('transaction_sell_lines AS SL', 'transactions.id', '=', 'SL.transaction_id')
                 ->join('transaction_sell_lines_purchase_lines as TSP', 'SL.id', '=', 'TSP.sell_line_id')
@@ -3981,9 +3986,9 @@ class TransactionUtil extends Util
                 TransactionSellLinesPurchaseLines::whereIn('id', $sell_purchase_ids)
                     ->delete();
             }
-        } elseif ($status_before == 'draft' && $transaction->status == 'final') {
+        } elseif ($status_before == 'draft' && $current_status == 'final') {
             $this->mapPurchaseSell($business, $transaction->sell_lines, 'purchase');
-        } elseif ($status_before == 'final' && $transaction->status == 'final') {
+        } elseif ($status_before == 'final' && $current_status == 'final') {
             //Handle deleted line
             if (!empty($deleted_line_ids)) {
                 $deleted_sell_purchases = TransactionSellLinesPurchaseLines::whereIn('sell_line_id', $deleted_line_ids)
@@ -5392,9 +5397,25 @@ class TransactionUtil extends Util
                 // Restore stock for all sell lines
                 $deleted_sell_lines = $transaction->sell_lines;
                 $deleted_sell_lines_ids = $deleted_sell_lines->pluck('id')->toArray();
+
+                // Reverse purchase mapping for suspended sales before deleting lines
+                if ($transaction->is_suspend == 1) {
+                    $business_data = [
+                        'id' => $business_id,
+                        'accounting_method' => request()->session()->get('business.accounting_method'),
+                        'location_id' => $transaction->location_id
+                    ];
+                    // Temporarily unset is_suspend to force adjustMappingPurchaseSell to treat this as final->draft 
+                    // which cleanly deletes mappings rather than immediately re-mapping them.
+                    $transaction->is_suspend = 0;
+                    $this->adjustMappingPurchaseSell('final', $transaction, $business_data, $deleted_sell_lines_ids);
+                    $transaction->is_suspend = 1;
+                }
+
                 $this->deleteSellLines(
                     $deleted_sell_lines_ids,
-                    $transaction->location_id
+                    $transaction->location_id,
+                    $transaction->is_suspend == 1 ? true : false
                 );
                 foreach ($transaction->sell_lines as $sell_line) {
                     $this->updateSalesOrderLine($sell_line->so_line_id, 0, $sell_line->quantity);

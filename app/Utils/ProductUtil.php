@@ -464,7 +464,11 @@ class ProductUtil extends Util
      */
     public function getDetailsFromVariation($variation_id, $business_id, $location_id = null, $check_qty = true)
     {
-        $variation = Variation::with('media')->findOrFail($variation_id);
+        $variation = Variation::with('media')->find($variation_id);
+
+        if (empty($variation)) {
+            return null;
+        }
 
         $query = Variation::join('products AS p', 'variations.product_id', '=', 'p.id')
             ->join('product_variations AS pv', 'variations.product_variation_id', '=', 'pv.id')

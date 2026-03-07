@@ -1,0 +1,4 @@
+Total Purchase Lines: 
+ID: 7, Transaction: 7, Qty: 4, Qty Sold: 4.0000
+Total VLDs: 
+Location: 1, Qty Available: 0.0000

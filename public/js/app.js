@@ -1965,6 +1965,16 @@ $(document).ready(function () {
                             if (is_suspended) {
                                 $('.view_modal').modal('hide');
                             }
+
+                            // Reload products grid if in POS to reflect restored stock
+                            if (typeof get_product_suggestion_list === 'function') {
+                                get_product_suggestion_list(
+                                    $('select#product_category').val(),
+                                    $('select#product_brand').val(),
+                                    $('input#location_id').val(),
+                                    null
+                                );
+                            }
                         } else {
                             toastr.error(result.msg);
                         }
