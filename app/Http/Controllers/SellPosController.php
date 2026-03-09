@@ -2938,7 +2938,10 @@ class SellPosController extends Controller
                 }
             }
 
-            $this->transactionUtil->mapPurchaseSell($business_data, $transaction->sell_lines, 'purchase');
+            // Skip purchase-sell mapping for exchange transactions
+            if (!$transaction->is_exchange) {
+                $this->transactionUtil->mapPurchaseSell($business_data, $transaction->sell_lines, 'purchase');
+            }
             //Auto send notification
             $this->notificationUtil->autoSendNotification($business_id, 'new_sale', $transaction, $transaction->contact);
 
@@ -3207,7 +3210,10 @@ class SellPosController extends Controller
             ];
 
             try {
-                $this->transactionUtil->mapPurchaseSell($business, $transaction->sell_lines, 'purchase');
+                // Skip purchase-sell mapping for exchange transactions
+                if (!$transaction->is_exchange) {
+                    $this->transactionUtil->mapPurchaseSell($business, $transaction->sell_lines, 'purchase');
+                }
             } catch (\Exception $e) {
                 \Log::emergency('File:' . $e->getFile() . 'Line:' . $e->getLine() . 'Message:' . $e->getMessage());
                 $msg = trans('messages.something_went_wrong');
