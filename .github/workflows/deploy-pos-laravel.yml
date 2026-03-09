@@ -209,6 +209,9 @@ jobs:
             # Run migrations
             php artisan migrate --force
 
+            # Seed the database (includes currencies)
+            php artisan db:seed --force
+
             # Storage link
             php artisan storage:link || true
 
