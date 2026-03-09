@@ -112,6 +112,22 @@ jobs:
           $kernel->terminate($request, $response);
           PHP
 
+      # --- Create remote directories first ---
+      - name: Create remote directory structure
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.ULTIMPOS_SSH_HOST }}
+          port: ${{ secrets.ULTIMPOS_SSH_PORT }}
+          username: ${{ secrets.ULTIMPOS_SSH_USER }}
+          key: ${{ secrets.ULTIMPOS_SSH_KEY }}
+          script: |
+            set -e
+            # Create directory structure for homeneeds subdomain
+            mkdir -p ~/domains/genxpos360.com/public_html/homeneeds/laravel
+            mkdir -p ~/domains/genxpos360.com/public_html/homeneeds/laravel/storage/framework/{cache,sessions,views}
+            mkdir -p ~/domains/genxpos360.com/public_html/homeneeds/laravel/bootstrap/cache
+            echo "✅ Directory structure created"
+
       # --- SFTP uploads ---
       - name: Upload app via SFTP (to /laravel)
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
