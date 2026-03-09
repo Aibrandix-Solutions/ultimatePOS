@@ -188,10 +188,21 @@ jobs:
 
             # Publish module assets and migrations
             php artisan module:publish || true
-            php artisan module:publish-migration Inventory || true
 
             # Run migrations
             php artisan migrate --force
+
+            # Seed database (only if tables are empty - won't duplicate data)
+            echo "ℹ️ Checking if database needs seeding..."
+            CURRENCY_COUNT=$(php artisan tinker --execute="echo \App\Currency::count();")
+            if [ "$CURRENCY_COUNT" = "0" ] || [ -z "$CURRENCY_COUNT" ]; then
+              echo "⚠️ Database is empty, running seeders..."
+              php artisan db:seed --class=CurrenciesTableSeeder --force || echo "⚠️ Seeding failed or already seeded"
+              php artisan db:seed --class=BarcodesTableSeeder --force || true
+              php artisan db:seed --class=PermissionsTableSeeder --force || true
+            else
+              echo "✅ Database already seeded (found $CURRENCY_COUNT currencies)"
+            fi
 
             # Storage link
             php artisan storage:link || true
