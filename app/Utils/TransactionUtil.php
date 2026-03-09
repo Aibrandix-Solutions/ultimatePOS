@@ -1472,6 +1472,7 @@ class TransactionUtil extends Util
 
         $output['lines'] = [];
         $total_exempt = 0;
+        $total_line_discount = 0; // Initialize to avoid undefined variable errors
         if (in_array($transaction_type, ['sell', 'sales_order'])) {
             $sell_line_relations = ['modifiers', 'sub_unit', 'warranties'];
 
@@ -1584,10 +1585,12 @@ class TransactionUtil extends Util
         $output['show_cat_code'] = $il->show_cat_code;
         $output['cat_code_label'] = $il->cat_code_label;
 
-        //Subtotal
+        //Subtotal (before any discounts)
         $output['subtotal_label'] = $il->sub_total_label . ':';
-        $output['subtotal'] = ($transaction->total_before_tax != 0) ? $this->num_f($transaction->total_before_tax, $show_currency, $business_details) : 0;
-        $output['subtotal_unformatted'] = ($transaction->total_before_tax != 0) ? $transaction->total_before_tax : 0;
+        // Calculate subtotal before discounts by adding line discounts back to total_before_tax
+        $subtotal_before_discounts = $transaction->total_before_tax + $total_line_discount;
+        $output['subtotal'] = ($subtotal_before_discounts != 0) ? $this->num_f($subtotal_before_discounts, $show_currency, $business_details) : 0;
+        $output['subtotal_unformatted'] = ($subtotal_before_discounts != 0) ? $subtotal_before_discounts : 0;
 
         //round off
         $output['round_off_label'] = !empty($il->round_off_label) ? $il->round_off_label . ':' : __('lang_v1.round_off') . ':';
@@ -1599,20 +1602,24 @@ class TransactionUtil extends Util
         $taxed_subtotal = $output['subtotal_unformatted'] - $total_exempt;
         $output['taxed_subtotal'] = $this->num_f($taxed_subtotal, $show_currency, $business_details);
 
-        //Discount
+        //Discount (includes both line-level and order-level discounts)
         $discount_amount = $this->num_f($transaction->discount_amount, $show_currency, $business_details);
         $output['line_discount_label'] = $invoice_layout->discount_label;
         $output['discount_label'] = $invoice_layout->discount_label;
         $output['discount_label'] .= ($transaction->discount_type == 'percentage') ? ' <small>(' . $this->num_f($transaction->discount_amount, false, $business_details) . '%)</small> :' : '';
 
+        // Calculate order-level discount
         if ($transaction->discount_type == 'percentage') {
-            $discount = ($transaction->discount_amount / 100) * $transaction->total_before_tax;
+            $order_discount = ($transaction->discount_amount / 100) * $transaction->total_before_tax;
         } else {
-            $discount = $transaction->discount_amount;
+            $order_discount = $transaction->discount_amount;
         }
-        $output['discount'] = ($discount != 0) ? $this->num_f($discount, $show_currency, $business_details) : 0;
+        
+        // Total discount = line-level discounts + order-level discount
+        $total_discount = $total_line_discount + $order_discount;
+        $output['discount'] = ($total_discount != 0) ? $this->num_f($total_discount, $show_currency, $business_details) : 0;
 
-        $output['discount_amount_unformatted'] = $discount;
+        $output['discount_amount_unformatted'] = $total_discount;
 
         //reward points
         if ($business_details->enable_rp == 1 && !empty($transaction->rp_redeemed)) {
@@ -1870,6 +1877,7 @@ class TransactionUtil extends Util
 
             $output['show_qr_code'] = !empty($il->show_qr_code) ? true : false;
             $zatca_qr = !empty($il->common_settings['zatca_qr']) ? true : false;
+            $qr_code_text = '';
             if ($zatca_qr) {
                 $total_order_tax = $transaction->tax_amount + $total_line_taxes;
                 $zatca_phase = !empty($il->common_settings['zatca_phase']) ? $il->common_settings['zatca_phase'] : '';
