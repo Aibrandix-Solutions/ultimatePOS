@@ -460,7 +460,7 @@ class SellReturnController extends Controller
             );
 
         if (!auth()->user()->can('access_sell_return') && auth()->user()->can('access_own_sell_return')) {
-            $sells->where('created_by', request()->session()->get('user.id'));
+            $query->where('created_by', request()->session()->get('user.id'));
         }
         $sell = $query->first();
 
@@ -527,7 +527,7 @@ class SellReturnController extends Controller
                     ->with(['sell_lines', 'payment_lines']);
 
                 if (!auth()->user()->can('access_sell_return') && auth()->user()->can('access_own_sell_return')) {
-                    $sells->where('created_by', request()->session()->get('user.id'));
+                    $query->where('created_by', request()->session()->get('user.id'));
                 }
                 $sell_return = $query->first();
 
