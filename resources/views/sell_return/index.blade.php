@@ -161,6 +161,42 @@
             }
         });
     });
+
+    // Handle Exchange button click
+    $(document).on('click', 'a.btn-exchange', function(e) {
+        e.preventDefault();
+        
+        // Prevent action if link is disabled
+        if ($(this).hasClass('disabled')) {
+            return false;
+        }
+        
+        var returnId = $(this).data('return-id');
+        var parentSaleId = $(this).data('parent-sale-id');
+        var returnTotal = $(this).data('return-total');
+        
+        swal({
+            title: 'Start Exchange?',
+            text: 'This will open POS with exchange mode for return credit: ' + returnTotal,
+            icon: 'info',
+            buttons: {
+                cancel: 'Cancel',
+                confirm: {
+                    text: 'Start Exchange',
+                    value: true,
+                }
+            },
+        }).then(confirmed => {
+            if (confirmed) {
+                // Redirect to POS with exchange parameters
+                var url = "{{ action([\App\Http\Controllers\SellPosController::class, 'create']) }}" + 
+                         '?exchange_mode=1&return_id=' + returnId + 
+                         '&parent_sale_id=' + parentSaleId + 
+                         '&return_credit=' + returnTotal;
+                window.location.href = url;
+            }
+        });
+    });
 </script>
 	
 @endsection

@@ -277,6 +277,30 @@ class SellPosController extends Controller
         //Added check because $users is of no use if enable_contact_assign if false
         $users = config('constants.enable_contact_assign') ? User::forDropdown($business_id, false, false, false, true) : [];
 
+        // Handle Exchange Mode
+        $exchange_data = null;
+        if (request()->has('exchange_mode') && request()->get('exchange_mode') == 1) {
+            $return_id = request()->get('return_id');
+            $parent_sale_id = request()->get('parent_sale_id');
+            $return_credit = request()->get('return_credit');
+            
+            if (!empty($return_id) && !empty($return_credit)) {
+                // Get return transaction details
+                $return_transaction = Transaction::with(['contact', 'sell_lines'])->find($return_id);
+                
+                if ($return_transaction) {
+                    $exchange_data = [
+                        'return_id' => $return_id,
+                        'parent_sale_id' => $parent_sale_id,
+                        'return_credit' => $return_credit,
+                        'return_invoice_no' => $return_transaction->invoice_no,
+                        'customer' => $return_transaction->contact,
+                        'customer_id' => $return_transaction->contact_id,
+                    ];
+                }
+            }
+        }
+
         return view('sale_pos.create')
             ->with(compact(
                 'edit_discount',
@@ -311,6 +335,7 @@ class SellPosController extends Controller
                 'default_invoice_schemes',
                 'invoice_layouts',
                 'users',
+                'exchange_data',
             ));
     }
 
@@ -479,6 +504,7 @@ class SellPosController extends Controller
 
                 //Customer group details
                 $contact_id = $request->get('contact_id', null);
+                $input['contact_id'] = $contact_id;
                 $cg = $this->contactUtil->getCustomerGroup($business_id, $contact_id);
                 $input['customer_group_id'] = (empty($cg) || empty($cg->id)) ? null : $cg->id;
 
@@ -565,6 +591,24 @@ class SellPosController extends Controller
 
                 //upload document
                 $input['document'] = $this->transactionUtil->uploadFile($request, 'sell_document', 'documents');
+
+                // Handle exchange mode
+                $is_exchange = false;
+                if (!empty($request->input('exchange_return_id'))) {
+                    $is_exchange = true;
+                    $input['exchange_return_id'] = $request->input('exchange_return_id');
+                    $input['exchange_parent_sale_id'] = $request->input('exchange_parent_sale_id');
+                    $input['is_exchange'] = 1;
+                    
+                    // Add note about exchange
+                    $return_transaction = Transaction::find($request->input('exchange_return_id'));
+                    if (!empty($return_transaction)) {
+                        $exchange_note = "Exchange for return: " . $return_transaction->invoice_no;
+                        $input['additional_notes'] = !empty($input['additional_notes']) 
+                            ? $input['additional_notes'] . "\n" . $exchange_note 
+                            : $exchange_note;
+                    }
+                }
 
                 $transaction = $this->transactionUtil->createSellTransaction($business_id, $input, $invoice_total, $user_id);
 
@@ -764,7 +808,9 @@ class SellPosController extends Controller
                         'pos_settings' => $pos_settings,
                     ];
 
-                    if (!$transaction->is_suspend) {
+                    // Skip purchase-sell mapping for exchange transactions
+                    // Exchange accounting is handled through the return credit linkage
+                    if (!$transaction->is_suspend && !$transaction->is_exchange) {
                         $this->transactionUtil->mapPurchaseSell($business, $transaction->sell_lines, 'purchase');
                     }
 
@@ -788,7 +834,23 @@ class SellPosController extends Controller
 
                 $this->transactionUtil->activityLog($transaction, 'added');
 
-
+                // Link exchange sale back to return transaction
+                if ($is_exchange && !empty($request->input('exchange_return_id'))) {
+                    $return_transaction = Transaction::find($request->input('exchange_return_id'));
+                    if (!empty($return_transaction)) {
+                        $return_transaction->exchange_sale_id = $transaction->id;
+                        $return_transaction->save();
+                        
+                        // Add note to return transaction
+                        $exchange_note = "Exchanged with sale: " . $transaction->invoice_no;
+                        if (!empty($return_transaction->additional_notes)) {
+                            $return_transaction->additional_notes .= "\n" . $exchange_note;
+                        } else {
+                            $return_transaction->additional_notes = $exchange_note;
+                        }
+                        $return_transaction->save();
+                    }
+                }
 
                 DB::commit();
 
@@ -1461,6 +1523,7 @@ class SellPosController extends Controller
 
                 //Customer group details
                 $contact_id = $request->get('contact_id', null);
+                $input['contact_id'] = $contact_id;
                 $cg = $this->contactUtil->getCustomerGroup($business_id, $contact_id);
                 $input['customer_group_id'] = (empty($cg) || empty($cg->id)) ? null : $cg->id;
 

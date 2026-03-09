@@ -98,6 +98,19 @@
 				</td>
 				@endif
 			</tr>
+			@if(!empty($exchange_data))
+			<tr style="background: rgba(23, 162, 184, 0.1);">
+				<td colspan="4" style="padding:12px 16px; vertical-align:middle; border-top:2px solid #17a2b8;">
+					<b class="tw-text-base md:tw-text-lg tw-font-bold" style="color:#17a2b8; letter-spacing:0.2px;">
+						@lang('lang_v1.exchange') @lang('lang_v1.return_credit')(-):
+					</b>
+					<span class="tw-text-base md:tw-text-lg tw-font-semibold" id="exchange_credit_display" style="color:#17a2b8;">
+						{{ @num_format($exchange_data['return_credit']) }}
+					</span>
+					<input type="hidden" name="exchange_credit" id="exchange_credit" value="{{ $exchange_data['return_credit'] }}">
+				</td>
+			</tr>
+			@endif
 		</table>
 	</div>
 </div>

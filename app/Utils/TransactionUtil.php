@@ -53,10 +53,12 @@ class TransactionUtil extends Util
         $pay_term_type = isset($input['pay_term_type']) ? $input['pay_term_type'] : null;
 
         //if pay term empty set contact pay term
-        if (empty($pay_term_number) || empty($pay_term_type)) {
+        if ((empty($pay_term_number) || empty($pay_term_type)) && !empty($input['contact_id'])) {
             $contact = Contact::find($input['contact_id']);
-            $pay_term_number = $contact->pay_term_number;
-            $pay_term_type = $contact->pay_term_type;
+            if ($contact) {
+                $pay_term_number = $contact->pay_term_number;
+                $pay_term_type = $contact->pay_term_type;
+            }
         }
         $transaction = Transaction::create([
             'business_id' => $business_id,
@@ -64,7 +66,7 @@ class TransactionUtil extends Util
             'type' => $sale_type,
             'status' => $input['status'],
             'sub_status' => !empty($input['sub_status']) ? $input['sub_status'] : null,
-            'contact_id' => $input['contact_id'],
+            'contact_id' => !empty($input['contact_id']) ? $input['contact_id'] : null,
             'customer_group_id' => !empty($input['customer_group_id']) ? $input['customer_group_id'] : null,
             'invoice_no' => $invoice_no,
             'ref_no' => '',
@@ -104,6 +106,9 @@ class TransactionUtil extends Util
             'pay_term_number' => $pay_term_number,
             'pay_term_type' => $pay_term_type,
             'is_suspend' => !empty($input['is_suspend']) ? 1 : 0,
+            'is_exchange' => !empty($input['is_exchange']) ? 1 : 0,
+            'exchange_return_id' => !empty($input['exchange_return_id']) ? $input['exchange_return_id'] : null,
+            'exchange_parent_sale_id' => !empty($input['exchange_parent_sale_id']) ? $input['exchange_parent_sale_id'] : null,
             'is_recurring' => !empty($input['is_recurring']) ? $input['is_recurring'] : 0,
             'recur_interval' => !empty($input['recur_interval']) ? $input['recur_interval'] : 1,
             'recur_interval_type' => !empty($input['recur_interval_type']) ? $input['recur_interval_type'] : null,
@@ -227,6 +232,9 @@ class TransactionUtil extends Util
             'pay_term_number' => $pay_term_number,
             'pay_term_type' => $pay_term_type,
             'is_suspend' => !empty($input['is_suspend']) ? 1 : 0,
+            'is_exchange' => !empty($input['is_exchange']) ? 1 : 0,
+            'exchange_return_id' => !empty($input['exchange_return_id']) ? $input['exchange_return_id'] : null,
+            'exchange_parent_sale_id' => !empty($input['exchange_parent_sale_id']) ? $input['exchange_parent_sale_id'] : null,
             'is_recurring' => !empty($input['is_recurring']) ? $input['is_recurring'] : 0,
             'recur_interval' => !empty($input['recur_interval']) ? $input['recur_interval'] : 1,
             'recur_interval_type' => !empty($input['recur_interval_type']) ? $input['recur_interval_type'] : null,
@@ -1275,13 +1283,13 @@ class TransactionUtil extends Util
         //Customer show_customer
         $customer = Contact::find($transaction->contact_id);
 
-        $output['contact_id'] = $customer->contact_id;
-        $output['contact_name'] = $customer->name;
+        $output['contact_id'] = !empty($customer) ? $customer->contact_id : '';
+        $output['contact_name'] = !empty($customer) ? $customer->name : '';
         $output['customer_info'] = '';
         $output['customer_tax_number'] = '';
         $output['customer_tax_label'] = '';
         $output['customer_custom_fields'] = '';
-        if ($il->show_customer == 1) {
+        if ($il->show_customer == 1 && !empty($customer)) {
             $output['customer_label'] = !empty($il->customer_label) ? $il->customer_label : '';
             $output['customer_name'] = !empty($customer->name) ? $customer->name : $customer->supplier_business_name;
             $output['customer_mobile'] = $customer->mobile;

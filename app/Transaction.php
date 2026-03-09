@@ -106,6 +106,30 @@ class Transaction extends Model
         return $this->belongsTo(\App\Transaction::class, 'return_parent_id');
     }
 
+    /**
+     * Get the exchange sale transaction (for return transactions)
+     */
+    public function exchange_sale()
+    {
+        return $this->belongsTo(\App\Transaction::class, 'exchange_sale_id');
+    }
+
+    /**
+     * Get the return transaction (for exchange sales)
+     */
+    public function exchange_return()
+    {
+        return $this->belongsTo(\App\Transaction::class, 'exchange_return_id');
+    }
+
+    /**
+     * Get the original parent sale (for exchange sales)
+     */
+    public function exchange_parent_sale()
+    {
+        return $this->belongsTo(\App\Transaction::class, 'exchange_parent_sale_id');
+    }
+
     public function table()
     {
         return $this->belongsTo(\App\Restaurant\ResTable::class, 'res_table_id');
