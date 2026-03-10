@@ -364,7 +364,10 @@ class TransactionUtil extends Util
                 }
                 $uf_quantity = $uf_data ? $this->num_uf($product['quantity']) : $product['quantity'];
                 $uf_item_tax = isset($product['item_tax']) ? ($uf_data ? $this->num_uf($product['item_tax']) : $product['item_tax']) : 0;
-                $uf_unit_price_inc_tax = $uf_data ? $this->num_uf($product['unit_price_inc_tax']) : $product['unit_price_inc_tax'];
+                
+                // Recalculate unit_price_inc_tax from unit_price (after discount) + item_tax
+                // instead of trusting the value from JavaScript form which may be incorrectly calculated
+                $uf_unit_price_inc_tax = $unit_price + ($uf_item_tax / $multiplier);
 
                 $line_discount_amount = 0;
                 if (!empty($product['line_discount_amount'])) {
@@ -602,6 +605,10 @@ class TransactionUtil extends Util
             $item_tax = $uf_data ? $this->num_uf($product['item_tax']) : $product['item_tax'];
         }
 
+        // Recalculate unit_price_inc_tax from unit_price (after discount) + item_tax
+        // instead of trusting the value from JavaScript form which may be incorrectly calculated
+        $unit_price_inc_tax = $unit_price + ($item_tax / $multiplier);
+
         //Update sell lines.
         $tax_id = $sell_line->tax_id;
         if (array_key_exists('tax_id', $product)) {
@@ -618,7 +625,7 @@ class TransactionUtil extends Util
             'line_discount_amount' => $line_discount_amount,
             'item_tax' => $item_tax / $multiplier,
             'tax_id' => $tax_id,
-            'unit_price_inc_tax' => $uf_data ? $this->num_uf($product['unit_price_inc_tax']) / $multiplier : $product['unit_price_inc_tax'] / $multiplier,
+            'unit_price_inc_tax' => $unit_price_inc_tax,
             'sell_line_note' => !empty($product['sell_line_note']) ? $product['sell_line_note'] : '',
             'sub_unit_id' => !empty($product['sub_unit_id']) ? $product['sub_unit_id'] : null,
             'res_service_staff_id' => !empty($product['res_service_staff_id']) ? $product['res_service_staff_id'] : null,
@@ -1558,7 +1565,8 @@ class TransactionUtil extends Util
             }
 
             $output['subtotal_exc_tax'] = $this->num_f($subtotal_exc_tax, true, $business_details);
-            $output['total_line_discount'] = !empty($total_line_discount) ? $this->num_f($total_line_discount, true, $business_details) : 0;
+            // Don't display separate line discount total since discounts are shown per product
+            $output['total_line_discount'] = 0; // Set to 0 to hide from receipt
         } elseif ($transaction_type == 'sell_return') {
             $parent_sell = Transaction::find($transaction->return_parent_id);
             $lines = $parent_sell->sell_lines;
@@ -1593,13 +1601,12 @@ class TransactionUtil extends Util
         $output['show_cat_code'] = $il->show_cat_code;
         $output['cat_code_label'] = $il->cat_code_label;
 
-        //Subtotal (before any discounts)
+        //Subtotal (after line discounts, excluding tax)
         $output['subtotal_label'] = $il->sub_total_label . ':';
-        // Calculate subtotal before discounts from line items (excluding tax)
-        // Subtotal = line totals (without tax) + line discounts (to get original price)
-        $subtotal_before_discounts = $subtotal_exc_tax + $total_line_discount;
-        $output['subtotal'] = ($subtotal_before_discounts != 0) ? $this->num_f($subtotal_before_discounts, $show_currency, $business_details) : 0;
-        $output['subtotal_unformatted'] = ($subtotal_before_discounts != 0) ? $subtotal_before_discounts : 0;
+        // Calculate subtotal as sum of discounted line totals (excluding tax)
+        // This already includes line-level discounts applied to each product
+        $output['subtotal'] = ($subtotal_exc_tax != 0) ? $this->num_f($subtotal_exc_tax, $show_currency, $business_details) : 0;
+        $output['subtotal_unformatted'] = ($subtotal_exc_tax != 0) ? $subtotal_exc_tax : 0;
 
         //round off
         $output['round_off_label'] = !empty($il->round_off_label) ? $il->round_off_label . ':' : __('lang_v1.round_off') . ':';
@@ -1617,18 +1624,29 @@ class TransactionUtil extends Util
         $output['discount_label'] = $invoice_layout->discount_label;
         $output['discount_label'] .= ($transaction->discount_type == 'percentage') ? ' <small>(' . $this->num_f($transaction->discount_amount, false, $business_details) . '%)</small> :' : '';
 
-        // Calculate order-level discount
+        // Calculate order-level discount on the DISCOUNTED subtotal (after line discounts)
         if ($transaction->discount_type == 'percentage') {
-            $order_discount = ($transaction->discount_amount / 100) * $transaction->total_before_tax;
+            $order_discount = ($transaction->discount_amount / 100) * $subtotal_exc_tax;
         } else {
             $order_discount = $transaction->discount_amount;
         }
         
         // Total discount = line-level discounts + order-level discount
         $total_discount = $total_line_discount + $order_discount;
-        $output['discount'] = ($total_discount != 0) ? $this->num_f($total_discount, $show_currency, $business_details) : 0;
+        // Hide the combined discount line (show order discount separately instead)
+        $output['discount'] = 0; // Set to 0 to hide combined discount from receipt
 
         $output['discount_amount_unformatted'] = $total_discount;
+
+        // Show order-level discount separately (only if user applied discount to whole bill)
+        // Line-level discounts are already shown per product, so only order discount appears here
+        $output['order_discount'] = ($order_discount != 0) ? $this->num_f($order_discount, $show_currency, $business_details) : 0;
+        $output['order_discount_unformatted'] = $order_discount;
+        $output['order_discount_label'] = $invoice_layout->discount_label;
+        if ($transaction->discount_type == 'percentage' && $order_discount != 0) {
+            $output['order_discount_label'] .= ' <small>(' . $this->num_f($transaction->discount_amount, false, $business_details) . '%)</small>';
+        }
+        $output['order_discount_label'] .= ':';
 
         //reward points
         if ($business_details->enable_rp == 1 && !empty($transaction->rp_redeemed)) {

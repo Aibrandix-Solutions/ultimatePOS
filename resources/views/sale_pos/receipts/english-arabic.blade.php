@@ -263,17 +263,27 @@
                                     <td style="font-weight: bold; direction: rtl; text-align: right; width: 45%;">المبلغ الكلي:</td>
                                 </tr>
                                 
+<!-- Line-level Discount -->
+                            @if(!empty($receipt_details->total_line_discount))
                                 <tr>
-                                    <td style="font-weight: bold; text-align: right;">Discount:</td>
+                                    <td style="font-weight: bold; text-align: right;">Item Discounts:</td>
                                     <td class="print-red" style="text-align: center;">
-                                        @if(!empty($receipt_details->discount) && empty($receipt_details->total_line_discount))
-                                            {{$receipt_details->discount}}
-                                        @else
-                                            @format_currency(0)
-                                        @endif
+                                        {{$receipt_details->total_line_discount}}
                                     </td>
-                                    <td style="font-weight: bold; direction: rtl; text-align: right;">الخصم:</td>
+                                    <td style="font-weight: bold; direction: rtl; text-align: right;">خصومات السلع:</td>
                                 </tr>
+                            @endif
+                            
+                            <!-- Order-level Discount -->
+                            @if(!empty($receipt_details->order_discount_unformatted) && $receipt_details->order_discount_unformatted != 0)
+                                <tr>
+                                    <td style="font-weight: bold; text-align: right;">Order Discount:</td>
+                                    <td class="print-red" style="text-align: center;">
+                                        {{$receipt_details->order_discount}}
+                                    </td>
+                                    <td style="font-weight: bold; direction: rtl; text-align: right;">خصم الطلب:</td>
+                                </tr>
+                            @endif
                                 
                                 <tr>
                                     <td style="font-weight: bold; text-align: right;">After Discount:</td>

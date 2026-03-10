@@ -665,18 +665,19 @@
                 </div>
             @endif
 
-            {{-- Discount --}}
-            @if(!empty($receipt_details->discount) && empty($receipt_details->total_line_discount))
-                <div class="tot-row">
-                    <span class="lbl">{!! $receipt_details->discount_label !!}</span>
-                    <span class="val">(-) {{$receipt_details->discount}}</span>
-                </div>
-            @endif
-
+            {{-- Line-level discounts --}}
             @if(!empty($receipt_details->total_line_discount))
                 <div class="tot-row">
                     <span class="lbl">{!! $receipt_details->line_discount_label !!}</span>
                     <span class="val">(-) {{$receipt_details->total_line_discount}}</span>
+                </div>
+            @endif
+
+            {{-- Order-level discount (from POS Discount field) --}}
+            @if(!empty($receipt_details->order_discount_unformatted) && $receipt_details->order_discount_unformatted != 0)
+                <div class="tot-row">
+                    <span class="lbl">{!! $receipt_details->order_discount_label !!}</span>
+                    <span class="val">(-) {{$receipt_details->order_discount}}</span>
                 </div>
             @endif
 
