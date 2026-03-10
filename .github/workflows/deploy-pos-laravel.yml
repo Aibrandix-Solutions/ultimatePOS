@@ -204,13 +204,16 @@ jobs:
 
             # Publish module assets and migrations
             php artisan module:publish || true
-            php artisan module:publish-migration Inventory || true
+            # Note: Inventory module may not exist in all installations
+            php artisan module:publish-migration Inventory || echo "⚠️ Inventory module not found, skipping..."
 
             # Run migrations
             php artisan migrate --force
 
             # Seed the database (includes currencies)
-            php artisan db:seed --force
+            # ⚠️ COMMENTED OUT: Only run on first-time setup, not on every deployment
+            # Uncomment ONLY if this is a fresh/empty database
+            # php artisan db:seed --force
 
             # Storage link
             php artisan storage:link || true
