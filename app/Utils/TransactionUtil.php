@@ -1595,8 +1595,9 @@ class TransactionUtil extends Util
 
         //Subtotal (before any discounts)
         $output['subtotal_label'] = $il->sub_total_label . ':';
-        // Calculate subtotal before discounts by adding line discounts back to total_before_tax
-        $subtotal_before_discounts = $transaction->total_before_tax + $total_line_discount;
+        // Calculate subtotal before discounts from line items (excluding tax)
+        // Subtotal = line totals (without tax) + line discounts (to get original price)
+        $subtotal_before_discounts = $subtotal_exc_tax + $total_line_discount;
         $output['subtotal'] = ($subtotal_before_discounts != 0) ? $this->num_f($subtotal_before_discounts, $show_currency, $business_details) : 0;
         $output['subtotal_unformatted'] = ($subtotal_before_discounts != 0) ? $subtotal_before_discounts : 0;
 
