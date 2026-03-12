@@ -1292,6 +1292,7 @@ class TransactionUtil extends Util
 
         $output['contact_id'] = !empty($customer) ? $customer->contact_id : '';
         $output['contact_name'] = !empty($customer) ? $customer->name : '';
+        $output['is_walk_in_customer'] = !empty($customer) ? (bool) $customer->is_default : false;
         $output['customer_info'] = '';
         $output['customer_tax_number'] = '';
         $output['customer_tax_label'] = '';
