@@ -283,11 +283,11 @@ class SellPosController extends Controller
             $return_id = request()->get('return_id');
             $parent_sale_id = request()->get('parent_sale_id');
             $return_credit = request()->get('return_credit');
-            
+
             if (!empty($return_id) && !empty($return_credit)) {
                 // Get return transaction details
                 $return_transaction = Transaction::with(['contact', 'sell_lines'])->find($return_id);
-                
+
                 if ($return_transaction) {
                     $exchange_data = [
                         'return_id' => $return_id,
@@ -599,13 +599,13 @@ class SellPosController extends Controller
                     $input['exchange_return_id'] = $request->input('exchange_return_id');
                     $input['exchange_parent_sale_id'] = $request->input('exchange_parent_sale_id');
                     $input['is_exchange'] = 1;
-                    
+
                     // Add note about exchange
                     $return_transaction = Transaction::find($request->input('exchange_return_id'));
                     if (!empty($return_transaction)) {
                         $exchange_note = "Exchange for return: " . $return_transaction->invoice_no;
-                        $input['additional_notes'] = !empty($input['additional_notes']) 
-                            ? $input['additional_notes'] . "\n" . $exchange_note 
+                        $input['additional_notes'] = !empty($input['additional_notes'])
+                            ? $input['additional_notes'] . "\n" . $exchange_note
                             : $exchange_note;
                     }
                 }
@@ -746,17 +746,17 @@ class SellPosController extends Controller
                         if ($payment_status != 'paid') {
                             $due_date_input = $request->input('due_date');
                             $due_date_mysql = null;
+                            $invoice_date = \Carbon::parse($transaction->transaction_date)->startOfDay();
 
                             if (!empty($due_date_input)) {
                                 $due_date_mysql = $this->productUtil->uf_date($due_date_input);
                             }
 
                             if (empty($due_date_mysql)) {
-                                $due_date_mysql = \Carbon::parse($transaction->transaction_date)->addDays(30)->format('Y-m-d');
+                                $due_date_mysql = $invoice_date->copy()->addDays(30)->format('Y-m-d');
                             }
 
                             // Validate due date is not before invoice date
-                            $invoice_date = \Carbon::parse($transaction->transaction_date)->startOfDay();
                             $due_date_obj = \Carbon::parse($due_date_mysql)->startOfDay();
                             if ($due_date_obj->lt($invoice_date)) {
                                 throw new \Exception('Due date cannot be before invoice date.');
@@ -840,7 +840,7 @@ class SellPosController extends Controller
                     if (!empty($return_transaction)) {
                         $return_transaction->exchange_sale_id = $transaction->id;
                         $return_transaction->save();
-                        
+
                         // Add note to return transaction
                         $exchange_note = "Exchanged with sale: " . $transaction->invoice_no;
                         if (!empty($return_transaction->additional_notes)) {

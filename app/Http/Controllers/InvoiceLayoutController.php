@@ -453,7 +453,7 @@ class InvoiceLayoutController extends Controller
         $receipt_details->lines = [
             [
                 'image' => null,
-                'name' => 'Sample Product A',
+                'name' => '16 Medium Global Baby Diapers',
                 'product_variation' => '',
                 'variation' => '',
                 'sub_sku' => 'SKU001',
@@ -469,44 +469,13 @@ class InvoiceLayoutController extends Controller
                 'warranty_name' => '',
                 'warranty_exp_date' => '',
                 'warranty_description' => '',
-                'quantity' => '2',
-                'units' => 'Pc(s)',
-                'unit_price_before_discount' => '500.00',
-                'unit_price_inc_tax' => '500.00',
-                'unit_price_exc_tax' => '500.00',
-                'line_discount' => '0.00',
-                'line_total' => '1,000.00',
-                'base_unit_multiplier' => 1,
-                'base_unit_name' => '',
-                'base_unit_price' => '',
-                'orig_quantity' => '2',
-                'modifiers' => [],
-            ],
-            [
-                'image' => null,
-                'name' => 'Sample Product B',
-                'product_variation' => '',
-                'variation' => '',
-                'sub_sku' => 'SKU002',
-                'brand' => '',
-                'cat_code' => '',
-                'product_custom_fields' => '',
-                'product_description' => '',
-                'sell_line_note' => '',
-                'lot_number' => '',
-                'lot_number_label' => '',
-                'product_expiry' => '',
-                'product_expiry_label' => '',
-                'warranty_name' => '',
-                'warranty_exp_date' => '',
-                'warranty_description' => '',
                 'quantity' => '1',
                 'units' => 'Pc(s)',
-                'unit_price_before_discount' => '750.00',
-                'unit_price_inc_tax' => '750.00',
-                'unit_price_exc_tax' => '750.00',
+                'unit_price_before_discount' => '900.00',
+                'unit_price_inc_tax' => '900.00',
+                'unit_price_exc_tax' => '900.00',
                 'line_discount' => '0.00',
-                'line_total' => '750.00',
+                'line_total' => '900.00',
                 'base_unit_multiplier' => 1,
                 'base_unit_name' => '',
                 'base_unit_price' => '',
@@ -520,16 +489,16 @@ class InvoiceLayoutController extends Controller
 
         // Totals
         $receipt_details->subtotal_label = '<b>Subtotal:</b>';
-        $receipt_details->subtotal = '1,750.00';
+        $receipt_details->subtotal = '900.00';
         $receipt_details->discount_label = '<b>Discount:</b>';
-        $receipt_details->discount = '50.00';
+        $receipt_details->discount = '';
         $receipt_details->total_line_discount = '';
         $receipt_details->line_discount_label = '';
         $receipt_details->tax_label = '<b>Tax:</b>';
-        $receipt_details->tax = '85.00';
+        $receipt_details->tax = '';
         $receipt_details->total_label = '<b>Total:</b>';
-        $receipt_details->total = '1,785.00';
-        $receipt_details->total_in_words = 'One Thousand Seven Hundred Eighty Five Only';
+        $receipt_details->total = '900.00';
+        $receipt_details->total_in_words = 'Nine Hundred Only';
         $receipt_details->round_off_label = '';
         $receipt_details->round_off = '';
         $receipt_details->round_off_amount = 0;
@@ -538,9 +507,9 @@ class InvoiceLayoutController extends Controller
 
         // Quantity/items summary
         $receipt_details->total_quantity_label = '<b>Total Qty:</b>';
-        $receipt_details->total_quantity = '3';
+        $receipt_details->total_quantity = '1';
         $receipt_details->total_items_label = '<b>Total Items:</b>';
-        $receipt_details->total_items = '2';
+        $receipt_details->total_items = '1';
 
         // Shipping / Packing
         $receipt_details->shipping_charges = '';
@@ -552,16 +521,27 @@ class InvoiceLayoutController extends Controller
         $receipt_details->payments = [
             [
                 'method' => 'Cash',
-                'amount' => '1,785.00',
+                'amount' => '1,000.00',
                 'date' => date('d/m/Y'),
             ],
         ];
         $receipt_details->total_paid_label = '<b>Total Paid:</b>';
-        $receipt_details->total_paid = '1,785.00';
+        $receipt_details->total_paid = '1,000.00';
         $receipt_details->total_due_label = '';
         $receipt_details->total_due = '';
         $receipt_details->all_bal_label = '';
         $receipt_details->all_due = '';
+        $receipt_details->receipt_show_due_breakdown = true;
+        $receipt_details->receipt_current_bill_label = 'SUB TOTAL';
+        $receipt_details->receipt_previous_due_label = 'Previous Due';
+        $receipt_details->receipt_amount_payable_label = 'Amount Payable';
+        $receipt_details->receipt_amount_paid_label = 'Amount Paid';
+        $receipt_details->receipt_total_due_label = 'Total Due';
+        $receipt_details->receipt_current_bill = '900.00';
+        $receipt_details->receipt_previous_due = '7,650.00';
+        $receipt_details->receipt_amount_payable = '8,550.00';
+        $receipt_details->receipt_amount_paid = '1,000.00';
+        $receipt_details->receipt_total_due = '7,550.00';
         $receipt_details->change_return_label = '<b>Change Return:</b>';
         $receipt_details->change_return = '0.00';
 

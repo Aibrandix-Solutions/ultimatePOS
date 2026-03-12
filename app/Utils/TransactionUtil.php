@@ -364,7 +364,7 @@ class TransactionUtil extends Util
                 }
                 $uf_quantity = $uf_data ? $this->num_uf($product['quantity']) : $product['quantity'];
                 $uf_item_tax = isset($product['item_tax']) ? ($uf_data ? $this->num_uf($product['item_tax']) : $product['item_tax']) : 0;
-                
+
                 // Recalculate unit_price_inc_tax from unit_price (after discount) + item_tax
                 // instead of trusting the value from JavaScript form which may be incorrectly calculated
                 $uf_unit_price_inc_tax = $unit_price + ($uf_item_tax / $multiplier);
@@ -1488,6 +1488,7 @@ class TransactionUtil extends Util
         $output['lines'] = [];
         $total_exempt = 0;
         $total_line_discount = 0; // Initialize to avoid undefined variable errors
+        $subtotal_exc_tax = 0;
         if (in_array($transaction_type, ['sell', 'sales_order'])) {
             $sell_line_relations = ['modifiers', 'sub_unit', 'warranties'];
 
@@ -1570,6 +1571,7 @@ class TransactionUtil extends Util
         } elseif ($transaction_type == 'sell_return') {
             $parent_sell = Transaction::find($transaction->return_parent_id);
             $lines = $parent_sell->sell_lines;
+            $total_line_discount = 0;
             $total_line_taxes = 0;
             foreach ($lines as $key => $value) {
                 if (!empty($value->sub_unit_id)) {
@@ -1593,8 +1595,17 @@ class TransactionUtil extends Util
                     }
                 }
 
-                $total_line_taxes += ($line['tax_unformatted'] * $line['quantity']);
+                if (!empty($line['tax_id']) && $line['tax_percent'] == 0) {
+                    $total_exempt += $line['line_total_uf'];
+                }
+
+                $subtotal_exc_tax += $line['line_total_exc_tax_uf'];
+                $total_line_discount += ($line['line_discount_uf'] * $line['quantity_uf']);
+                $total_line_taxes += ($line['tax_unformatted'] * $line['quantity_uf']);
             }
+
+            $output['subtotal_exc_tax'] = $this->num_f($subtotal_exc_tax, true, $business_details);
+            $output['total_line_discount'] = 0;
         }
 
         //show cat code
@@ -1630,7 +1641,7 @@ class TransactionUtil extends Util
         } else {
             $order_discount = $transaction->discount_amount;
         }
-        
+
         // Total discount = line-level discounts + order-level discount
         $total_discount = $total_line_discount + $order_discount;
         // Hide the combined discount line (show order discount separately instead)
@@ -1713,6 +1724,7 @@ class TransactionUtil extends Util
         if ($transaction_type == 'sell' && $transaction->status == 'final') {
             $paid_amount = $this->getTotalPaid($transaction->id);
             $due = $transaction->final_total - $paid_amount;
+            $customer_overall_due = null;
 
             $output['total_paid'] = ($paid_amount == 0) ? 0 : $this->num_f($paid_amount, $show_currency, $business_details);
             $output['total_paid_label'] = $il->paid_label;
@@ -1730,15 +1742,37 @@ class TransactionUtil extends Util
 
                 if (!empty($contact) && (int) $contact->is_default !== 1 && in_array($contact->type, ['customer', 'both'])) {
                     $all_due = $this->getContactDue($contact->id, $business_id_for_due);
+                    $customer_overall_due = (float) $all_due;
                     $output['all_bal_label'] = __('account.customer_due') . ':';
-                    $output['all_due'] = $this->num_f((float) $all_due, $show_currency, $business_details);
+                    $output['all_due'] = $this->num_f($customer_overall_due, $show_currency, $business_details);
                 } elseif ($il->show_previous_bal == 1) {
                     //Keep old behaviour (if enabled) for cases where contact type isn't customer/both.
                     $all_due = $this->getContactDue($transaction->contact_id, $business_id_for_due);
+                    $customer_overall_due = (float) $all_due;
                     $output['all_bal_label'] = $il->prev_bal_label;
-                    $output['all_due'] = $this->num_f((float) $all_due, $show_currency, $business_details);
+                    $output['all_due'] = $this->num_f($customer_overall_due, $show_currency, $business_details);
                 }
             }
+
+            $old_due_paid_amount = $this->getOldDuePaidFromPosInvoice($transaction);
+            $receipt_paid_amount = (float) $paid_amount + (float) $old_due_paid_amount;
+            $previous_due_amount = !is_null($customer_overall_due)
+                ? max(0, $customer_overall_due + $receipt_paid_amount - (float) $transaction->final_total)
+                : 0;
+            $amount_payable = $previous_due_amount + (float) $transaction->final_total;
+            $receipt_total_due = max(0, $amount_payable - $receipt_paid_amount);
+
+            $output['receipt_show_due_breakdown'] = true;
+            $output['receipt_current_bill_label'] = 'SUB TOTAL';
+            $output['receipt_previous_due_label'] = 'Previous Due';
+            $output['receipt_amount_payable_label'] = 'Amount Payable';
+            $output['receipt_amount_paid_label'] = 'Amount Paid';
+            $output['receipt_total_due_label'] = 'Total Due';
+            $output['receipt_current_bill'] = $this->num_f((float) $transaction->final_total, $show_currency, $business_details);
+            $output['receipt_previous_due'] = $this->num_f($previous_due_amount, $show_currency, $business_details);
+            $output['receipt_amount_payable'] = $this->num_f($amount_payable, $show_currency, $business_details);
+            $output['receipt_amount_paid'] = $this->num_f($receipt_paid_amount, $show_currency, $business_details);
+            $output['receipt_total_due'] = $this->num_f($receipt_total_due, $show_currency, $business_details);
 
             //Get payment details
             $output['payments'] = [];
@@ -2525,6 +2559,7 @@ class TransactionUtil extends Util
                 // field for zatca pdf
                 'unit_price_before_discount_uf' => $line->unit_price_before_discount,
                 'line_total_uf' => $line->unit_price_inc_tax * $line->quantity_returned,
+                'line_total_exc_tax_uf' => $line->unit_price * $line->quantity_returned,
 
                 'tax_name' => !empty($tax_details) ? $tax_details->name : null,
                 'tax_percent' => !empty($tax_details) ? $tax_details->amount : null,
@@ -2533,7 +2568,8 @@ class TransactionUtil extends Util
                 'line_discount_amount_uf' => $line->line_discount_amount,
                 'line_discount_type_uf' => $line->line_discount_type,
             ];
-            $line_array['line_discount'] = 0;
+            $line_array['line_discount'] = method_exists($line, 'get_discount_amount') ? $this->num_f($line->get_discount_amount(), false, $business_details) : 0;
+            $line_array['line_discount_uf'] = method_exists($line, 'get_discount_amount') ? $line->get_discount_amount() : 0;
 
             //Group product taxes by name.
             if (!empty($tax_details)) {
@@ -2742,6 +2778,28 @@ class TransactionUtil extends Util
         $output['total_additional_expense'] = $purchase_details->total_expense;
 
         return $output;
+    }
+
+    /**
+     * Get the portion of POS-entered payment that was allocated to older dues.
+     */
+    protected function getOldDuePaidFromPosInvoice($transaction)
+    {
+        if (empty($transaction->id) || empty($transaction->contact_id) || empty($transaction->business_id)) {
+            return 0;
+        }
+
+        $reference = !empty($transaction->invoice_no) ? $transaction->invoice_no : $transaction->id;
+        $note = 'Adjusted to previous dues from POS invoice: ' . $reference;
+
+        return (float) TransactionPayment::join('transactions as t', 't.id', '=', 'transaction_payments.transaction_id')
+            ->where('t.business_id', $transaction->business_id)
+            ->where('t.contact_id', $transaction->contact_id)
+            ->where('t.id', '!=', $transaction->id)
+            ->whereIn('t.type', ['sell', 'opening_balance'])
+            ->where('transaction_payments.note', 'like', '%' . $note . '%')
+            ->where('transaction_payments.is_return', 0)
+            ->sum('transaction_payments.amount');
     }
 
     public function getTotalPurchaseReturnPaid($business_id, $start_date = null, $end_date = null, $location_id = null, $created_by = null)

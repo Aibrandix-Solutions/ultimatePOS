@@ -53,7 +53,7 @@ $(document).ready(function() {
             { data: 'balance_due', name: 'balance_due', searchable: false, orderable: false },
             { data: 'installment_count', name: 'installment_count' },
             { data: 'interval_label', name: 'interval_label', searchable: false, orderable: false },
-            { data: 'first_due_date', name: 'first_due_date' },
+            { data: 'next_due_date', name: 'next_due_date' },
             { data: 'status', name: 'status' },
             { data: 'action', name: 'action' },
         ]
