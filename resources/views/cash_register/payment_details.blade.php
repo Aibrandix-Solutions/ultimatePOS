@@ -12,6 +12,9 @@
         </td>
         <td>
           <span class="display_currency" data-currency_symbol="true">{{ $register_details->cash_in_hand }}</span>
+            <button type="button" class="btn btn-xs btn-warning edit-cash-in-hand-btn" style="margin-left:8px;" data-toggle="modal" data-target="#editCashInHandModal">
+              <i class="fa fa-edit"></i> Edit
+            </button>
         </td>
         <td>--</td>
       </tr>
@@ -261,5 +264,7 @@
     </span>
   </div>
 </div>
+
+
 
 @include('cash_register.register_product_details')

@@ -88,6 +88,7 @@ sell_table = $('#sell_table').DataTable({
             { data: 'total_paid', name: 'total_paid', "searchable": false},
             { data: 'total_remaining', name: 'total_remaining'},
             { data: 'return_due', orderable: false, "searchable": false},
+            { data: 'due_date', name: 'transactions.due_date'},
             { data: 'shipping_status', name: 'shipping_status'},
             { data: 'total_items', name: 'total_items', "searchable": false},
             { data: 'types_of_service_name', name: 'tos.name', @if(empty($is_types_service_enabled)) visible: false @endif},

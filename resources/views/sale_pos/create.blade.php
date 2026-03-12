@@ -41,6 +41,35 @@
                                     {!! Form::hidden('sub_type', isset($sub_type) ? $sub_type : null) !!}
                                     <input type="hidden" id="item_addition_method"
                                         value="{{ $business_details->item_addition_method }}">
+                                    
+                                    @if(!empty($exchange_data))
+                                        <!-- Exchange Mode Banner -->
+                                        <div class="alert alert-info" style="background: linear-gradient(135deg, #17a2b8 0%, #138496 100%); border: none; color: white; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-radius: 8px;">
+                                            <div class="row">
+                                                <div class="col-md-12">
+                                                    <h4 style="margin-top: 0; margin-bottom: 10px;">
+                                                        <i class="fa fa-exchange-alt"></i> @lang('lang_v1.exchange') @lang('sale.mode')
+                                                    </h4>
+                                                    <p style="margin-bottom: 5px; font-size: 16px;">
+                                                        <strong>@lang('lang_v1.return_credit'):</strong> 
+                                                        <span class="text-white" style="font-size: 20px; font-weight: bold;">{{ @num_format($exchange_data['return_credit']) }}</span>
+                                                    </p>
+                                                    <p style="margin-bottom: 5px;">
+                                                        <strong>@lang('sale.invoice_no'):</strong> {{ $exchange_data['return_invoice_no'] }}
+                                                    </p>
+                                                    <p style="margin-bottom: 0;">
+                                                        <strong>@lang('contact.customer'):</strong> {{ $exchange_data['customer']['name'] ?? '' }}
+                                                        @if(!empty($exchange_data['customer']['mobile']))
+                                                            - {{ $exchange_data['customer']['mobile'] }}
+                                                        @endif
+                                                    </p>
+                                                    <input type="hidden" name="exchange_return_id" value="{{ $exchange_data['return_id'] }}">
+                                                    <input type="hidden" name="exchange_parent_sale_id" value="{{ $exchange_data['parent_sale_id'] }}">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endif
+                                    
                                     @include('sale_pos.partials.pos_form')
 
                                     @include('sale_pos.partials.pos_form_totals')
@@ -132,5 +161,24 @@
                 @includeIf($value['module_js_path'], ['view_data' => $value['view_data']])
             @endif
         @endforeach
+    @endif
+    
+    @if(!empty($exchange_data))
+    <script>
+        $(document).ready(function() {
+            // Disable customer field in exchange mode to prevent changes
+            $('#customer_id').prop('disabled', true);
+            $('.add_new_customer').prop('disabled', true);
+            
+            // Add visual indicator that customer is locked
+            $('#customer_id').closest('.input-group').css({
+                'opacity': '0.7',
+                'cursor': 'not-allowed'
+            });
+            
+            // Add tooltip to inform user
+            $('#customer_id').attr('title', 'Customer cannot be changed in exchange mode');
+        });
+    </script>
     @endif
 @endsection
