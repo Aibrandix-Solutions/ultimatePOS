@@ -112,6 +112,22 @@ jobs:
           $kernel->terminate($request, $response);
           PHP
 
+      # --- Create remote directories first ---
+      - name: Create remote directory structure
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.ULTIMPOS_SSH_HOST }}
+          port: ${{ secrets.ULTIMPOS_SSH_PORT }}
+          username: ${{ secrets.ULTIMPOS_SSH_USER }}
+          key: ${{ secrets.ULTIMPOS_SSH_KEY }}
+          script: |
+            set -e
+            # Create directory structure for nammabrand subdomain
+            mkdir -p ~/domains/digipartner.lk/public_html/nammabrand/laravel
+            mkdir -p ~/domains/digipartner.lk/public_html/nammabrand/laravel/storage/framework/{cache,sessions,views}
+            mkdir -p ~/domains/digipartner.lk/public_html/nammabrand/laravel/bootstrap/cache
+            echo "Directory structure created"
+
       # --- SFTP uploads ---
       - name: Upload app via SFTP (to /laravel)
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
@@ -188,10 +204,16 @@ jobs:
 
             # Publish module assets and migrations
             php artisan module:publish || true
-            php artisan module:publish-migration Inventory || true
+            # Note: Inventory module may not exist in all installations
+            php artisan module:publish-migration Inventory || echo "Inventory module not found, skipping..."
 
             # Run migrations
             php artisan migrate --force
+
+            # Seed the database (includes currencies)
+            # COMMENTED OUT: Only run on first-time setup, not on every deployment
+            # Uncomment only if this is a fresh or empty database
+            # php artisan db:seed --force
 
             # Storage link
             php artisan storage:link || true
