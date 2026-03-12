@@ -208,7 +208,7 @@
                                             <span class="input-group-addon">
                                                 <i class="fa fa-calendar"></i>
                                             </span>
-                                            {!! Form::select('due_date_dropdown', ['30' => '30 Days', '60' => '60 Days', '90' => '90 Days', 'custom' => 'Customize'], '60', ['class' => 'form-control', 'id' => 'pos_due_date_dropdown']) !!}
+                                            {!! Form::select('due_date_dropdown', ['0' => __('home.today'), '30' => '30 Days', '60' => '60 Days', '90' => '90 Days', 'custom' => 'Customize'], '60', ['class' => 'form-control', 'id' => 'pos_due_date_dropdown']) !!}
                                         </div>
                                         
                                         <div id="custom_due_days_wrapper" class="input-group hide" style="margin-top: 5px;">
@@ -256,6 +256,19 @@
                                             <div class="form-group" style="margin-bottom: 8px;">
                                                 {!! Form::label('installment_interval_type', __('lang_v1.installment_interval_type') . ':*') !!}
                                                 {!! Form::select('installment_interval_type', ['days' => __('lang_v1.days'), 'weeks' => __('lang_v1.weeks'), 'months' => __('lang_v1.months')], 'months', ['class' => 'form-control', 'id' => 'installment_interval_type']) !!}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="form-group" style="margin-bottom: 8px;">
+                                                {!! Form::label('installment_first_due_date', __('lang_v1.first_installment_due_date') . ':*') !!}
+                                                <div class="input-group">
+                                                    <span class="input-group-addon">
+                                                        <i class="fa fa-calendar"></i>
+                                                    </span>
+                                                    {!! Form::text('installment_first_due_date', null, ['class' => 'form-control', 'id' => 'installment_first_due_date', 'autocomplete' => 'off']) !!}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>

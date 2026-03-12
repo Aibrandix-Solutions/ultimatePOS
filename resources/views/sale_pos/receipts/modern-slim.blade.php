@@ -215,6 +215,49 @@
         margin: 2px 0;
     }
 
+    .receipt-balance {
+        margin: 2px 0;
+    }
+    .receipt-balance .headline {
+        font-size: 13px;
+        font-weight: 900;
+        text-transform: uppercase;
+        border-top: 2px solid #000;
+        border-bottom: 1px solid #000;
+        padding: 2px 0 1px 0;
+        margin-bottom: 2px;
+    }
+    .receipt-balance .headline .val {
+        font-size: 14px;
+    }
+    .receipt-balance .balance-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        font-size: 11px;
+        line-height: 1.4;
+        padding: 0;
+    }
+    .receipt-balance .balance-row .lbl {
+        font-weight: 600;
+    }
+    .receipt-balance .balance-row .val {
+        font-weight: 600;
+        text-align: right;
+        white-space: nowrap;
+    }
+    .receipt-balance .final-due {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        font-size: 15px;
+        font-weight: 900;
+        border-top: 2px solid #000;
+        border-bottom: 1px solid #000;
+        padding: 2px 0;
+        margin-top: 3px;
+    }
+
     .total-words {
         font-size: 9px;
         color: #555 !important;
@@ -715,48 +758,34 @@
                 </div>
             @endif
 
-            {{-- ===== GRAND TOTAL ===== --}}
-            <div class="grand-total">
-                <span>{!! $receipt_details->total_label !!}</span>
-                <span>{{$receipt_details->total}}</span>
-            </div>
-
-            @if(!empty($receipt_details->total_in_words))
-                <div class="text-center total-words">
-                    ({{$receipt_details->total_in_words}})
-                </div>
-            @endif
-
-            <div class="sep"></div>
-
-            {{-- Previous Due / Balance --}}
-            @if(!empty($receipt_details->all_due))
-                <div class="tot-row">
-                    <span class="lbl">{!! $receipt_details->all_bal_label !!}</span>
-                    <span class="val">{{$receipt_details->all_due}}</span>
-                </div>
-            @endif
-
-            {{-- Payments --}}
-            @if(!empty($receipt_details->payments))
-                @foreach($receipt_details->payments as $payment)
-                    <div class="tot-row">
-                        <span class="lbl">{{$payment['method']}} ({{$payment['date']}})</span>
-                        <span class="val">{{$payment['amount']}}</span>
+            @if(!empty($receipt_details->receipt_show_due_breakdown))
+                <div class="receipt-balance">
+                    <div class="headline">
+                        <span>{!! $receipt_details->receipt_current_bill_label !!}</span>
+                        <span class="val">{{$receipt_details->receipt_current_bill}}</span>
                     </div>
-                @endforeach
-            @endif
 
-            {{-- Total Paid --}}
-            @if(!empty($receipt_details->total_paid))
-                <div class="tot-row">
-                    <span class="lbl"><strong>{!! $receipt_details->total_paid_label !!}</strong></span>
-                    <span class="val"><strong>{{$receipt_details->total_paid}}</strong></span>
+                    <div class="balance-row">
+                        <span class="lbl">{!! $receipt_details->receipt_previous_due_label !!}</span>
+                        <span class="val">{{$receipt_details->receipt_previous_due}}</span>
+                    </div>
+
+                    <div class="balance-row">
+                        <span class="lbl">{!! $receipt_details->receipt_amount_payable_label !!}</span>
+                        <span class="val">{{$receipt_details->receipt_amount_payable}}</span>
+                    </div>
+
+                    <div class="balance-row">
+                        <span class="lbl">{!! $receipt_details->receipt_amount_paid_label !!}</span>
+                        <span class="val">-{{$receipt_details->receipt_amount_paid}}</span>
+                    </div>
+
+                    <div class="final-due">
+                        <span>{!! $receipt_details->receipt_total_due_label !!}</span>
+                        <span>{{$receipt_details->receipt_total_due}}</span>
+                    </div>
                 </div>
-            @endif
-
-            {{-- Total Due --}}
-            @if(!empty($receipt_details->total_due) && !empty($receipt_details->total_due_label))
+            @elseif(!empty($receipt_details->total_due) && !empty($receipt_details->total_due_label))
                 <div class="total-due-box">
                     <span>{!! $receipt_details->total_due_label !!}</span>
                     <span>{{$receipt_details->total_due}}</span>

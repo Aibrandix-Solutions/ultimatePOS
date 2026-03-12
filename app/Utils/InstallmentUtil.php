@@ -36,9 +36,20 @@ class InstallmentUtil
             throw new \Exception('Invalid installment interval type.');
         }
 
-        $first_due_date = $transaction->due_date;
+        $first_due_date_input = $request->input('installment_first_due_date');
+        $first_due_date = null;
+
+        if (! empty($first_due_date_input)) {
+            $first_due_date = app(\App\Utils\ProductUtil::class)->uf_date($first_due_date_input);
+        }
+
         if (empty($first_due_date)) {
-            throw new \Exception('First due date is required for installment plan.');
+            $first_due_date = Carbon::parse($transaction->transaction_date)->format('Y-m-d');
+        }
+
+        $invoice_date = Carbon::parse($transaction->transaction_date)->startOfDay();
+        if (Carbon::parse($first_due_date)->startOfDay()->lt($invoice_date)) {
+            throw new \Exception('First installment due date cannot be before invoice date.');
         }
 
         // If already exists, don't recreate.

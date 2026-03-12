@@ -4,14 +4,15 @@
         $is_customer = ($contact->type == 'customer' || $contact->type == 'both');
 
         $opening_balance_due = ($contact->opening_balance ?? 0) - ($contact->opening_balance_paid ?? 0);
+        $ledger_discount = $contact->total_ledger_discount ?? 0;
 
         if ($is_supplier) {
-            $total_due = (($contact->total_purchase ?? 0) - ($contact->purchase_paid ?? 0)) + $opening_balance_due;
+            $total_due = (($contact->total_purchase ?? 0) - ($contact->purchase_paid ?? 0) - $ledger_discount - ($contact->total_purchase_return ?? 0) + ($contact->purchase_return_paid ?? 0)) + $opening_balance_due;
             $pending_cheques = $contact->purchase_pending_cheques ?? 0;
             $due_label = 'Total Supplier Due';
             $payable_label = 'Due Payable';
         } else {
-            $total_due = (($contact->total_invoice ?? 0) - ($contact->invoice_received ?? 0)) + $opening_balance_due;
+            $total_due = (($contact->total_invoice ?? 0) - ($contact->invoice_received ?? 0) - $ledger_discount - ($contact->total_sell_return ?? 0) + ($contact->sell_return_paid ?? 0)) + $opening_balance_due;
             $pending_cheques = $contact->invoice_pending_cheques ?? 0;
             $due_label = 'Total Customer Due';
             $payable_label = 'Due Receivable';
