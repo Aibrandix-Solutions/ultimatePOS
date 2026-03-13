@@ -220,11 +220,11 @@ class SellReturnController extends Controller
                                 $exchange_sale = \App\Transaction::find($row->exchange_sale_id);
                                 $exchange_invoice = $exchange_sale ? $exchange_sale->invoice_no : '';
                                 $returnString .= '<a href="#" class="disabled" style="opacity: 0.5; cursor: not-allowed;" title="' . __('lang_v1.already_exchanged') . ': ' . $exchange_invoice . '">
-                                            <i class="fas fa-exchange-alt" aria-hidden="true"></i> ' . __('lang_v1.exchange') . ' <small>(✓)</small>
+                                            <i class="fas fa-exchange-alt" aria-hidden="true"></i> Exchange <small>(✓)</small>
                                         </a>';
                             } else {
                                 $returnString .= '<a href="#" class="btn-exchange" data-return-id="' . $row->id . '" data-parent-sale-id="' . $row->parent_sale_id . '" data-return-total="' . $row->final_total . '">
-                                            <i class="fas fa-exchange-alt" aria-hidden="true"></i> ' . __('lang_v1.exchange') . '
+                                            <i class="fas fa-exchange-alt" aria-hidden="true"></i> Exchange
                                         </a>';
                             }
 

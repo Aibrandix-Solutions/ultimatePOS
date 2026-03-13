@@ -756,8 +756,15 @@ class Util
                         $uploaded_file_name = $new_file_name;
                     }
                 } else {
-                    // Local/standard docroot: keep using Laravel disk
-                    if ($file->storeAs($dir_name, $new_file_name, 'local')) {
+                    // Local/standard docroot: store directly in public/uploads so files are web-accessible.
+                    $base_upload_path = public_path('uploads');
+                    $upload_dir = $base_upload_path . DIRECTORY_SEPARATOR . $dir_name;
+
+                    if (!is_dir($upload_dir)) {
+                        mkdir($upload_dir, 0755, true);
+                    }
+
+                    if ($file->move($upload_dir, $new_file_name)) {
                         $uploaded_file_name = $new_file_name;
                     }
                 }
