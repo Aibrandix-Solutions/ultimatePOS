@@ -389,34 +389,48 @@ function __print_receipt(section_id = null) {
         var imgs = document.images;
     }
 
-    img_len = imgs.length;
-    if (img_len) {
-        img_counter = 0;
-
-        [].forEach.call(imgs, function (img) {
-            img.addEventListener('load', incrementImageCounter, false);
-        });
-    } else {
+    var img_len = imgs.length;
+    if (!img_len) {
         setTimeout(function () {
             window.print();
-
-            // setTimeout(function() {
-            //     $('#receipt_section').html('');
-            // }, 5000);
-
         }, 1000);
-    }
-}
 
-function incrementImageCounter() {
-    img_counter++;
-    if (img_counter === img_len) {
-        window.print();
-
-        // setTimeout(function() {
-        //     $('#receipt_section').html('');
-        // }, 5000);
+        return;
     }
+
+    var img_counter = 0;
+    var printed = false;
+
+    function triggerPrint() {
+        if (!printed) {
+            printed = true;
+            window.print();
+        }
+    }
+
+    function incrementImageCounter() {
+        img_counter++;
+        if (img_counter >= img_len) {
+            triggerPrint();
+        }
+    }
+
+    [].forEach.call(imgs, function (img) {
+        // Already loaded (or failed but complete) before listeners were attached.
+        if (img.complete) {
+            incrementImageCounter();
+
+            return;
+        }
+
+        img.addEventListener('load', incrementImageCounter, { once: true });
+        img.addEventListener('error', incrementImageCounter, { once: true });
+    });
+
+    // Fallback: do not block printing forever when image events are missed.
+    setTimeout(function () {
+        triggerPrint();
+    }, 3000);
 }
 
 function __getUnitMultiplier(row) {
