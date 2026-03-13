@@ -212,7 +212,23 @@ class SellReturnController extends Controller
                                         <a href="#" class="print-invoice" data-href="' . action('App\Http\Controllers\SellReturnController@printInvoice', [$row->id]) . '">
                                             <i class="fa fa-print" aria-hidden="true"></i> ' . __('messages.print') . '
                                         </a>
-                                    </li>';
+                                    </li>
+                                    <li>';
+
+                            // Check if already exchanged
+                            if (!empty($row->exchange_sale_id)) {
+                                $exchange_sale = \App\Transaction::find($row->exchange_sale_id);
+                                $exchange_invoice = $exchange_sale ? $exchange_sale->invoice_no : '';
+                                $returnString .= '<a href="#" class="disabled" style="opacity: 0.5; cursor: not-allowed;" title="' . __('lang_v1.already_exchanged') . ': ' . $exchange_invoice . '">
+                                            <i class="fas fa-exchange-alt" aria-hidden="true"></i> ' . __('lang_v1.exchange') . ' <small>(✓)</small>
+                                        </a>';
+                            } else {
+                                $returnString .= '<a href="#" class="btn-exchange" data-return-id="' . $row->id . '" data-parent-sale-id="' . $row->parent_sale_id . '" data-return-total="' . $row->final_total . '">
+                                            <i class="fas fa-exchange-alt" aria-hidden="true"></i> ' . __('lang_v1.exchange') . '
+                                        </a>';
+                            }
+
+                            $returnString .= '</li>';
                             if ($row->payment_status != "paid") {
                     $returnString .= '<li>
                                         <a href="' . action('App\Http\Controllers\TransactionPaymentController@addPayment', [$row->id]) . '" class="add_payment_modal">
