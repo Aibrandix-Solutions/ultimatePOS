@@ -801,6 +801,7 @@ class SellPosController extends Controller
                 $receipt = '';
                 $invoice_layout_id = $request->input('invoice_layout_id');
                 $print_invoice = false;
+                $print_skip_reason = null;
                 if (!$is_direct_sale) {
                     if ($input['status'] == 'draft') {
                         $msg = trans('sale.draft_added');
@@ -828,13 +829,30 @@ class SellPosController extends Controller
 
                 if (!auth()->user()->can('print_invoice')) {
                     $print_invoice = false;
+                    $print_skip_reason = 'missing_print_invoice_permission';
                 }
 
                 if ($print_invoice) {
                     $receipt = $this->receiptContent($business_id, $input['location_id'], $transaction->id, null, false, true, $invoice_layout_id);
+                    if (empty($receipt['is_enabled'])) {
+                        $print_skip_reason = 'location_print_receipt_on_invoice_disabled';
+                    }
                 }
 
-                $output = ['success' => 1, 'msg' => $msg, 'receipt' => $receipt];
+                $print_skip_debug = null;
+                if ($print_skip_reason === 'missing_print_invoice_permission') {
+                    $print_skip_debug = 'Print skipped: user role is missing print invoice permission.';
+                } elseif ($print_skip_reason === 'location_print_receipt_on_invoice_disabled') {
+                    $print_skip_debug = 'Print skipped: location setting "Print receipt on invoice" is disabled.';
+                }
+
+                $output = [
+                    'success' => 1,
+                    'msg' => $msg,
+                    'receipt' => $receipt,
+                    'print_skip_reason' => $print_skip_reason,
+                    'print_skip_debug' => $print_skip_debug,
+                ];
 
                 if (!empty($whatsapp_link)) {
                     $output['whatsapp_link'] = $whatsapp_link;
@@ -1705,6 +1723,10 @@ class SellPosController extends Controller
                 $receipt = '';
                 $can_print_invoice = auth()->user()->can('print_invoice');
                 $invoice_layout_id = $request->input('invoice_layout_id');
+                $print_skip_reason = null;
+                if (!$can_print_invoice) {
+                    $print_skip_reason = 'missing_print_invoice_permission';
+                }
 
                 if ($input['status'] == 'draft' && $input['is_quotation'] == 0) {
                     $msg = trans('sale.draft_added');
@@ -1712,6 +1734,9 @@ class SellPosController extends Controller
                     $msg = trans('lang_v1.quotation_updated');
                     if (!$is_direct_sale && $can_print_invoice) {
                         $receipt = $this->receiptContent($business_id, $input['location_id'], $transaction->id, null, false, true, $invoice_layout_id);
+                        if (empty($receipt['is_enabled'])) {
+                            $print_skip_reason = 'location_print_receipt_on_invoice_disabled';
+                        }
                     } else {
                         $receipt = '';
                     }
@@ -1719,6 +1744,9 @@ class SellPosController extends Controller
                     $msg = trans('sale.pos_sale_updated');
                     if (!$is_direct_sale && $can_print_invoice) {
                         $receipt = $this->receiptContent($business_id, $input['location_id'], $transaction->id, null, false, true, $invoice_layout_id);
+                        if (empty($receipt['is_enabled'])) {
+                            $print_skip_reason = 'location_print_receipt_on_invoice_disabled';
+                        }
                     } else {
                         $receipt = '';
                     }
@@ -1729,7 +1757,20 @@ class SellPosController extends Controller
                     $receipt = '';
                 }
 
-                $output = ['success' => 1, 'msg' => $msg, 'receipt' => $receipt];
+                $print_skip_debug = null;
+                if ($print_skip_reason === 'missing_print_invoice_permission') {
+                    $print_skip_debug = 'Print skipped: user role is missing print invoice permission.';
+                } elseif ($print_skip_reason === 'location_print_receipt_on_invoice_disabled') {
+                    $print_skip_debug = 'Print skipped: location setting "Print receipt on invoice" is disabled.';
+                }
+
+                $output = [
+                    'success' => 1,
+                    'msg' => $msg,
+                    'receipt' => $receipt,
+                    'print_skip_reason' => $print_skip_reason,
+                    'print_skip_debug' => $print_skip_debug,
+                ];
 
                 if (!empty($whatsapp_link)) {
                     $output['whatsapp_link'] = $whatsapp_link;

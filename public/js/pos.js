@@ -702,6 +702,8 @@ $(document).ready(function () {
                     //Check if enabled or not
                     if (result.receipt.is_enabled) {
                         pos_print(result.receipt);
+                    } else if (result.print_skip_debug) {
+                        toastr.warning(result.print_skip_debug);
                     }
                 } else {
                     toastr.error(result.msg);
@@ -1196,6 +1198,8 @@ $(document).ready(function () {
                             //Check if enabled or not
                             if (result.receipt.is_enabled) {
                                 pos_print(result.receipt);
+                            } else if (result.print_skip_debug) {
+                                toastr.warning(result.print_skip_debug);
                             }
                         } else {
                             toastr.error(result.msg);
@@ -3265,6 +3269,8 @@ $(document).on('click', '.print-invoice-link', function (e) {
                 //Check if enabled or not
                 if (result.receipt.is_enabled) {
                     pos_print(result.receipt);
+                } else if (result.print_skip_debug) {
+                    toastr.warning(result.print_skip_debug);
                 }
             } else {
                 toastr.error(result.msg);
