@@ -702,6 +702,12 @@
 body {
 	color: #000000;
 	font-family: 'Times New Roman', Times, serif;
+	margin: 0;
+	padding: 5px;
+}
+
+@page {
+	margin: 5px;
 }
 
 @media print {
@@ -755,8 +761,11 @@ body {
 	}
 
 	.ticket {
-	    width: 100%;
-	    max-width: 100%;
+	    width: calc(100% - 12px);
+	    max-width: calc(100% - 12px);
+		margin: 0 auto;
+		padding: 0;
+		box-sizing: border-box;
 	}
 
 	img {
@@ -801,6 +810,14 @@ body {
 .text-box {
 	width: 100%;
 	height: auto;
+}
+
+.ticket {
+	width: calc(100% - 12px);
+	max-width: calc(100% - 12px);
+	margin: 0 auto;
+	padding: 0;
+	box-sizing: border-box;
 }
 
 .textbox-info {

@@ -1402,9 +1402,19 @@ class TransactionUtil extends Util
             $output['client_id'] = !empty($customer->contact_id) ? $customer->contact_id : '';
         }
 
-        // added by 
+        // Added by (cashier)
         $user = \App\User::find($transaction->created_by);
-        $output['added_by'] = $user ? trim("{$user->surname} {$user->first_name} {$user->last_name}") : '';
+        $cashier_name = '';
+        if (!empty($user)) {
+            $cashier_name = trim("{$user->surname} {$user->first_name} {$user->last_name}");
+            if ($cashier_name === '' && !empty($user->username)) {
+                $cashier_name = $user->username;
+            }
+            if ($cashier_name === '' && !empty($user->first_name)) {
+                $cashier_name = $user->first_name;
+            }
+        }
+        $output['added_by'] = $cashier_name;
 
         //Sales person info
         $output['sales_person'] = '';
@@ -1477,9 +1487,42 @@ class TransactionUtil extends Util
             }
         }
 
+        // Optional due date line to print under total due section.
+        $output['receipt_due_date_label'] = '';
+        $output['receipt_due_date'] = '';
+        $transaction_due_date = $transaction->due_date;
+        if (!empty($transaction_due_date)) {
+            $output['receipt_due_date_label'] = !empty($output['due_date_label']) ? $output['due_date_label'] : __('lang_v1.due_date') . ':';
+            if (blank($il->date_time_format)) {
+                $output['receipt_due_date'] = $this->format_date($transaction_due_date->toDateTimeString(), false, $business_details);
+            } else {
+                $output['receipt_due_date'] = \Carbon::createFromFormat('Y-m-d H:i:s', $transaction_due_date->toDateTimeString())->format($business_details->date_format);
+            }
+        }
+
         $show_currency = true;
         if ($receipt_printer_type == 'printer' && trim($business_details->currency_symbol) != '$') {
             $show_currency = false;
+        }
+
+        // Installment schedule due dates for receipts with installment plans.
+        $output['installment_due_dates_label'] = '';
+        $output['installment_due_dates'] = [];
+        $installment_plan = \App\InstallmentPlan::with(['lines' => function ($query) {
+            $query->orderBy('sequence', 'asc');
+        }])->where('transaction_id', $transaction->id)->first();
+        if (!empty($installment_plan) && !empty($installment_plan->lines)) {
+            $output['installment_due_dates_label'] = __('lang_v1.installment_plan') . ' ' . __('lang_v1.due_date') . ':';
+            foreach ($installment_plan->lines as $plan_line) {
+                $line_due_date = '';
+                if (!empty($plan_line->due_date)) {
+                    $line_due_date = $this->format_date($plan_line->due_date->toDateTimeString(), false, $business_details);
+                }
+                $output['installment_due_dates'][] = [
+                    'title' => __('lang_v1.installment') . ' ' . $plan_line->sequence . ' (' . ucfirst((string) $plan_line->status) . ')',
+                    'value' => trim($line_due_date . ' - ' . $this->num_f((float) $plan_line->amount, $show_currency, $business_details), ' -'),
+                ];
+            }
         }
 
         //Invoice product lines
@@ -3845,7 +3888,7 @@ class TransactionUtil extends Util
             $qty_sum_query = $this->get_pl_quantity_sum_string('PL');
 
             //Get purchase lines, only for products with enable stock.
-            $query = Transaction::join('purchase_lines AS PL', 'transactions.id', '=', 'PL.transaction_id')
+            $base_query = Transaction::join('purchase_lines AS PL', 'transactions.id', '=', 'PL.transaction_id')
                 ->where('transactions.business_id', $business['id'])
                 ->where('transactions.location_id', $business['location_id'])
                 ->whereIn('transactions.type', [
@@ -3863,20 +3906,23 @@ class TransactionUtil extends Util
             if ($stop_selling_expired && empty($purchase_line_id)) {
                 $stop_before = request()->session()->get('business')['stop_selling_before'];
                 $expiry_date = \Carbon::today()->addDays($stop_before)->toDateString();
-                $query->where(function ($q) use ($expiry_date) {
+                $base_query->where(function ($q) use ($expiry_date) {
                     $q->whereNull('PL.exp_date')
                         ->orWhereRaw('PL.exp_date > ?', [$expiry_date]);
                 });
             }
 
+            //If purchase_line_id is given consider only that purchase line
+            if (!empty($purchase_line_id)) {
+                $base_query->where('PL.id', $purchase_line_id);
+            }
+
+            //Build query with lot filter first; if it yields no rows, fallback to base query.
+            $query = clone $base_query;
+
             //If lot number present consider only lot number purchase line
             if (!empty($line->lot_no_line_id)) {
                 $query->where('PL.id', $line->lot_no_line_id);
-            }
-
-            //If purchase_line_id is given consider only that purchase line
-            if (!empty($purchase_line_id)) {
-                $query->where('PL.id', $purchase_line_id);
             }
 
             //Sort according to LIFO or FIFO
@@ -3895,6 +3941,27 @@ class TransactionUtil extends Util
                 'PL.mfg_quantity_used as mfg_quantity_used',
                 'transactions.invoice_no'
             )->get();
+
+            // Sometimes stale/invalid lot_no_line_id can be submitted from POS rows.
+            // Retry allocation without lot restriction before raising mismatch.
+            if ($rows->isEmpty() && !empty($line->lot_no_line_id) && empty($purchase_line_id)) {
+                $fallback_query = clone $base_query;
+                if ($business['accounting_method'] == 'lifo') {
+                    $fallback_query = $fallback_query->orderBy('transaction_date', 'desc');
+                } else {
+                    $fallback_query = $fallback_query->orderBy('transaction_date', 'asc');
+                }
+
+                $rows = $fallback_query->select(
+                    'PL.id as purchase_lines_id',
+                    DB::raw("(PL.quantity - ( $qty_sum_query )) AS quantity_available"),
+                    'PL.quantity_sold as quantity_sold',
+                    'PL.quantity_adjusted as quantity_adjusted',
+                    'PL.quantity_returned as quantity_returned',
+                    'PL.mfg_quantity_used as mfg_quantity_used',
+                    'transactions.invoice_no'
+                )->get();
+            }
 
             $purchase_sell_map = [];
 
@@ -3965,9 +4032,27 @@ class TransactionUtil extends Util
                 }
             }
 
+            // Avoid false mismatch due to floating-point precision leftovers.
+            if (!is_null($qty_selling) && abs((float) $qty_selling) < 0.000001) {
+                $qty_selling = 0;
+            }
+
             if (!($qty_selling == 0 || is_null($qty_selling))) {
+                $mismatch_bypass = false;
+                if (!$allow_overselling && $mapping_type == 'purchase') {
+                    $current_vld = VariationLocationDetails::where('variation_id', $line->variation_id)
+                        ->where('location_id', $business['location_id'])
+                        ->first();
+                    // Product quantity has already been decremented by this point in checkout.
+                    // So if qty_available >= 0, it means we had enough stock originally.
+                    if ($current_vld && round($current_vld->qty_available, 4) >= 0) {
+                        $mismatch_bypass = true;
+                        \Log::warning("Purchase mapping bypassed for Product: " . optional($product)->name . " Variation: {$line->variation_id} due to VLD stock difference.");
+                    }
+                }
+
                 //If overselling not allowed through exception else create mapping with blank purchase_line_id
-                if (!$allow_overselling) {
+                if (!$allow_overselling && !$mismatch_bypass) {
                     $variation = Variation::find($line->variation_id);
                     $mismatch_name = $product->name;
                     if (!empty($variation->sub_sku)) {
