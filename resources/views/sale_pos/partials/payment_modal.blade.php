@@ -248,6 +248,19 @@
                                             </div>
                                         </div>
                                     </div>
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <div class="form-group" style="margin-bottom: 8px;">
+                                                {!! Form::label('installment_first_due_date', __('lang_v1.first_installment_due_date') . ':*') !!}
+                                                <div class="input-group">
+                                                    <span class="input-group-addon">
+                                                        <i class="fa fa-calendar"></i>
+                                                    </span>
+                                                    {!! Form::text('installment_first_due_date', null, ['class' => 'form-control', 'id' => 'installment_first_due_date', 'autocomplete' => 'off']) !!}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                     <small class="help-block" style="margin: 0;">
                                         @lang('lang_v1.installment_first_due_help')
                                     </small>

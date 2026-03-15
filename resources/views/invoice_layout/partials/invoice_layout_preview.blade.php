@@ -182,7 +182,7 @@
         max-width: 290px;
     }
     #invoice_preview_wrapper.slim-preview #invoice_preview_content {
-        padding: 8px 10px;
+        padding: 6px 8px;
         font-size: 11px;
     }
 
@@ -192,7 +192,7 @@
         max-width: 225px;
     }
     #invoice_preview_wrapper.slim2-preview #invoice_preview_content {
-        padding: 5px 6px;
+        padding: 4px 6px;
         font-size: 9px;
     }
 </style>

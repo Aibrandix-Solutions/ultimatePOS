@@ -727,6 +727,13 @@
 }
 body {
 	color: #000000;
+	font-family: 'Times New Roman', Times, serif;
+	margin: 0;
+	padding: 5px;
+}
+
+@page {
+	margin: 5px;
 }
 @media print {
 	* {
@@ -791,6 +798,14 @@ th.price {
     word-break: break-all;
 }
 
+	.ticket {
+	    width: calc(100% - 12px);
+	    max-width: calc(100% - 12px);
+		margin: 0 auto;
+		padding: 0;
+		box-sizing: border-box;
+	}
+
 .centered {
     text-align: center;
     align-content: center;
@@ -836,6 +851,14 @@ img {
 .text-box {
 	width: 100%;
 	height: auto;
+}
+
+.ticket {
+	width: calc(100% - 12px);
+	max-width: calc(100% - 12px);
+	margin: 0 auto;
+	padding: 0;
+	box-sizing: border-box;
 }
 
 .textbox-info {
