@@ -11,7 +11,7 @@
 <!-- Main content -->
 <section class="content no-print">
 
-	{!! Form::hidden('location_id', $sell->location->id, ['id' => 'location_id', 'data-receipt_printer_type' => $sell->location->receipt_printer_type ]) !!}
+	{!! Form::hidden('location_id', optional($sell->location)->id, ['id' => 'location_id', 'data-receipt_printer_type' => optional($sell->location)->receipt_printer_type ]) !!}
 
 	{!! Form::open(['url' => action([\App\Http\Controllers\SellReturnController::class, 'store']), 'method' => 'post', 'id' => 'sell_return_form' ]) !!}
 	{!! Form::hidden('transaction_id', $sell->id) !!}
@@ -26,8 +26,8 @@
 					<strong>@lang('messages.date'):</strong> {{@format_date($sell->transaction_date)}}
 				</div>
 				<div class="col-sm-4">
-					<strong>@lang('contact.customer'):</strong> {{ $sell->contact->name }} <br>
-					<strong>@lang('purchase.business_location'):</strong> {{ $sell->location->name }}
+					<strong>@lang('contact.customer'):</strong> {{ optional($sell->contact)->name }} <br>
+					<strong>@lang('purchase.business_location'):</strong> {{ optional($sell->location)->name }}
 				</div>
 			</div>
 		</div>
@@ -71,11 +71,11 @@
 							@foreach($sell->sell_lines as $sell_line)
 							@php
 							$check_decimal = 'false';
-							if($sell_line->product->unit->allow_decimal == 0){
+							if(optional($sell_line->product->unit)->allow_decimal == 0){
 							$check_decimal = 'true';
 							}
 
-							$unit_name = $sell_line->product->unit->short_name;
+							$unit_name = optional($sell_line->product->unit)->short_name;
 
 							if(!empty($sell_line->sub_unit)) {
 							$unit_name = $sell_line->sub_unit->short_name;
@@ -93,11 +93,11 @@
 								<td>
 									{{ $sell_line->product->name }}
 									@if( $sell_line->product->type == 'variable')
-									- {{ $sell_line->variations->product_variation->name}}
-									- {{ $sell_line->variations->name}}
+									- {{ optional(optional($sell_line->variations)->product_variation)->name}}
+									- {{ optional($sell_line->variations)->name}}
 									@endif
 									<br>
-									{{ $sell_line->variations->sub_sku }}
+									{{ optional($sell_line->variations)->sub_sku }}
 								</td>
 								<td><span class="display_currency" data-currency_symbol="true">{{ $sell_line->unit_price_inc_tax }}</span></td>
 								<td>{{ $sell_line->formatted_qty }} {{$unit_name}}</td>
