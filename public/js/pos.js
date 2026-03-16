@@ -2579,6 +2579,12 @@ function calculate_billing_details(price_total) {
 
     var total_payable = price_total + order_tax - discount + shipping_charges + packing_charge + additional_expense;
 
+    // Subtract return credit when in exchange mode.
+    if ($('#exchange_credit').length > 0) {
+        var exchange_credit = __read_number($('#exchange_credit'));
+        total_payable = total_payable - exchange_credit;
+    }
+
     var rounding_multiple = $('#amount_rounding_method').val() ? parseFloat($('#amount_rounding_method').val()) : 0;
     var round_off_data = __round(total_payable, rounding_multiple);
     var total_payable_rounded = round_off_data.number;
