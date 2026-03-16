@@ -11,11 +11,11 @@
 				<input type="hidden" id="default_customer_id" 
 				value="{{ !empty($exchange_data) ? $exchange_data['customer_id'] : ($walk_in_customer['id'] ?? '') }}" >
 				<input type="hidden" id="default_customer_name" 
-				value="{{ !empty($exchange_data) ? $exchange_data['customer']['name'] : ($walk_in_customer['name'] ?? '') }}" >
+				value="{{ !empty($exchange_data) ? data_get($exchange_data, 'customer.name', '') : data_get($walk_in_customer, 'name', '') }}" >
 				<input type="hidden" id="default_customer_balance" 
-				value="{{ !empty($exchange_data) ? ($exchange_data['customer']['balance'] ?? '') : ($walk_in_customer['balance'] ?? '') }}" >
+				value="{{ !empty($exchange_data) ? data_get($exchange_data, 'customer.balance', '') : data_get($walk_in_customer, 'balance', '') }}" >
 				<input type="hidden" id="default_customer_address" 
-				value="{{ !empty($exchange_data) ? ($exchange_data['customer']['shipping_address'] ?? '') : ($walk_in_customer['shipping_address'] ?? '') }}" >
+				value="{{ !empty($exchange_data) ? data_get($exchange_data, 'customer.shipping_address', '') : data_get($walk_in_customer, 'shipping_address', '') }}" >
 				@if(!empty($walk_in_customer['price_calculation_type']) && $walk_in_customer['price_calculation_type'] == 'selling_price_group')
 					<input type="hidden" id="default_selling_price_group" 
 				value="{{ $walk_in_customer['selling_price_group_id'] ?? ''}}" >

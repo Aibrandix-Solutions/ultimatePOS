@@ -36,7 +36,7 @@ class SellReturnController extends Controller
     /**
      * Constructor
      *
-     * @param  ProductUtils  $product
+      * @param  ProductUtil  $productUtil
      * @return void
      */
     public function __construct(ProductUtil $productUtil, TransactionUtil $transactionUtil, ContactUtil $contactUtil, BusinessUtil $businessUtil, ModuleUtil $moduleUtil)
@@ -156,10 +156,13 @@ class SellReturnController extends Controller
             }
 
 
-            return Datatables::of($sells, $is_zatca)
+            $zatcaInvoiceController = '\\Modules\\ZatcaIntegrationKsa\\Http\\Controllers\\ZatcaInvoiceController';
+            $zatcaDocumentClass = '\\Modules\\ZatcaIntegrationKsa\\Entities\\ZatcaDocument';
+
+            return Datatables::of($sells)
                 ->addColumn(
                     'action',
-                    function ($row) use ($is_zatca) {
+                    function ($row) use ($is_zatca, $zatcaInvoiceController) {
                         if ($is_zatca) {
                             if ($row->zatca_status == 'success') {
                                 return '<div class="btn-group">
@@ -170,18 +173,18 @@ class SellReturnController extends Controller
                                 </button>
                                 <ul class="dropdown-menu dropdown-menu-left" role="menu">
                                     <li>
-                                        <a class="download-xml" href="'.action([\Modules\ZatcaIntegrationKsa\Http\Controllers\ZatcaInvoiceController::class, 'downloadXml'], [$row->id]).'">
+                                        <a class="download-xml" href="'.action([$zatcaInvoiceController, 'downloadXml'], [$row->id]).'">
                                             <i class="fas fa-file-download"></i> '.__('zatcaintegrationksa::lang.download_xml').'
                                         </a>
                                     </li>
                                     <li>
-                                        <a class="download-a3-pdf" target="_blank"  href="'.action([\Modules\ZatcaIntegrationKsa\Http\Controllers\ZatcaInvoiceController::class, 'return_print_pdf'], [$row->id]).'">
+                                        <a class="download-a3-pdf" target="_blank"  href="'.action([$zatcaInvoiceController, 'return_print_pdf'], [$row->id]).'">
                                             <i class="fas fa-file-download"></i> '.__('zatcaintegrationksa::lang.download_a3_pdf').'
                                         </a>
                                     </li>
                                 </ul></div>';                            
                             } else {
-                                return '<a href="' . action([\Modules\ZatcaIntegrationKsa\Http\Controllers\ZatcaInvoiceController::class, 'sync_sale_return'], [$row->id]) . '" class="tw-dw-btn tw-dw-btn-xs tw-dw-btn-outline tw-dw-btn-info tw-w-max return_sale_sycs">' . __('zatcaintegrationksa::lang.sync') . '</a>';
+                                return '<a href="' . action([$zatcaInvoiceController, 'sync_sale_return'], [$row->id]) . '" class="tw-dw-btn tw-dw-btn-xs tw-dw-btn-outline tw-dw-btn-info tw-w-max return_sale_sycs">' . __('zatcaintegrationksa::lang.sync') . '</a>';
                             }
                         }
             $returnString = '<div class="btn-group">
@@ -268,7 +271,7 @@ class SellReturnController extends Controller
 
                     return '<span class="display_currency payment_due" data-currency_symbol="true" data-orig-value="' . $due . '">' . $due . '</sapn>';
                 })
-                ->editColumn('zatca_status', function ($row) use ($is_zatca) {
+                ->editColumn('zatca_status', function ($row) use ($is_zatca, $zatcaInvoiceController, $zatcaDocumentClass) {
                     $status = '';
                     if($is_zatca){
                         if (empty($row->zatca_status) || is_null($row->zatca_status)) {
@@ -276,18 +279,20 @@ class SellReturnController extends Controller
                         } elseif ($row->zatca_status == 'success') {
                             $status = '<small class="label bg-light-green tw-dw-btn-xs no-print">' . ucfirst($row->zatca_status) . '</small>';
                         } elseif ($row->zatca_status == 'failed') {
-                                $lastDoc = \Modules\ZatcaIntegrationKsa\Entities\ZatcaDocument::where('transaction_id', $row->id)
+                                $lastDoc = class_exists($zatcaDocumentClass)
+                                    ? $zatcaDocumentClass::where('transaction_id', $row->id)
                                     ->where('sent_to_zatca_status', 'failed')
                                     ->orderBy('created_at', 'desc')
                                     ->latest()
-                                    ->first();
+                                    ->first()
+                                    : null;
 
                                 if ($lastDoc && $lastDoc->response_source == 'self' && !empty($lastDoc->response)) {
                                     $safeMsg = htmlspecialchars($lastDoc->response, ENT_QUOTES, 'UTF-8');
                                     $status = '<small class="label bg-red tw-dw-btn-xs no-print mb-1">' . ucfirst($row->zatca_status) . '</small><br><span class="text-danger">' . $safeMsg . '</span>';
                                 } else if ($lastDoc) {
                                     $label = '<small class="label bg-red tw-dw-btn-xs no-print mb-1">' . ucfirst($row->zatca_status) . '</small>';
-                                    $button = '<a href="' . action([\Modules\ZatcaIntegrationKsa\Http\Controllers\ZatcaInvoiceController::class, 'showInvoiceError'], ['id' => $row->id]) . '" class="btn btn-xs btn-danger no-print mt-2 status_fail" style="margin-top: 10px;">' . e(__('zatcaintegrationksa::lang.view_error')) . '</a>';
+                                    $button = '<a href="' . action([$zatcaInvoiceController, 'showInvoiceError'], ['id' => $row->id]) . '" class="btn btn-xs btn-danger no-print mt-2 status_fail" style="margin-top: 10px;">' . e(__('zatcaintegrationksa::lang.view_error')) . '</a>';
                                     $status = $label . '<br>' . $button;
                                 }
                         }
@@ -356,7 +361,7 @@ class SellReturnController extends Controller
         }
 
         $sell = Transaction::where('business_id', $business_id)
-            ->with(['sell_lines', 'location', 'return_parent', 'contact', 'tax', 'sell_lines.sub_unit', 'sell_lines.product', 'sell_lines.product.unit'])
+            ->with(['sell_lines', 'location', 'return_parent', 'contact', 'tax', 'sell_lines.sub_unit', 'sell_lines.product', 'sell_lines.product.unit', 'sell_lines.variations', 'sell_lines.variations.product_variation'])
             ->find($id);
 
         foreach ($sell->sell_lines as $key => $value) {
@@ -460,7 +465,7 @@ class SellReturnController extends Controller
             );
 
         if (!auth()->user()->can('access_sell_return') && auth()->user()->can('access_own_sell_return')) {
-            $sells->where('created_by', request()->session()->get('user.id'));
+            $query->where('created_by', request()->session()->get('user.id'));
         }
         $sell = $query->first();
 
@@ -527,7 +532,7 @@ class SellReturnController extends Controller
                     ->with(['sell_lines', 'payment_lines']);
 
                 if (!auth()->user()->can('access_sell_return') && auth()->user()->can('access_own_sell_return')) {
-                    $sells->where('created_by', request()->session()->get('user.id'));
+                    $query->where('created_by', request()->session()->get('user.id'));
                 }
                 $sell_return = $query->first();
 

@@ -57,9 +57,9 @@
                                                         <strong>@lang('sale.invoice_no'):</strong> {{ $exchange_data['return_invoice_no'] }}
                                                     </p>
                                                     <p style="margin-bottom: 0;">
-                                                        <strong>@lang('contact.customer'):</strong> {{ $exchange_data['customer']['name'] ?? '' }}
-                                                        @if(!empty($exchange_data['customer']['mobile']))
-                                                            - {{ $exchange_data['customer']['mobile'] }}
+														<strong>@lang('contact.customer'):</strong> {{ data_get($exchange_data, 'customer.name', '') }}
+														@if(!empty(data_get($exchange_data, 'customer.mobile')))
+															- {{ data_get($exchange_data, 'customer.mobile') }}
                                                         @endif
                                                     </p>
                                                     <input type="hidden" name="exchange_return_id" value="{{ $exchange_data['return_id'] }}">
