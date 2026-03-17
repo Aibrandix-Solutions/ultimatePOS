@@ -225,6 +225,9 @@
         margin: 2px 0;
     }
     .receipt-balance .headline {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
         font-size: 13px;
         font-weight: 900;
         text-transform: uppercase;
@@ -235,6 +238,8 @@
     }
     .receipt-balance .headline .val {
         font-size: 14px;
+        text-align: right;
+        white-space: nowrap;
     }
     .receipt-balance .balance-row {
         display: flex;
@@ -448,9 +453,6 @@
 
         <div class="info-row">
             <span>{{$receipt_details->invoice_date}}</span>
-            @if(!$isWalkInCustomer && !empty($receipt_details->customer_mobile))
-                <span class="r">Cx Mobile: {{$receipt_details->customer_mobile}}</span>
-            @endif
         </div>
 
         @if(!$isWalkInCustomer && !empty($receipt_details->due_date_label))
