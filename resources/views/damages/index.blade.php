@@ -79,6 +79,17 @@
                                     <textarea name="reason" class="form-control" rows="3"
                                         placeholder="{{ __('lang_v1.reason') }}"></textarea>
                                 </div>
+
+                                <div class="form-group">
+                                    <label><i class="fa fa-money text-primary"></i> Payment Action <span class="text-danger">*</span></label>
+                                    <select name="payment_method" id="damage_payment_method" class="form-control input-lg" required>
+                                        <option value="due">Due</option>
+                                        @foreach($payment_types as $payment_type_key => $payment_type_label)
+                                            <option value="{{ $payment_type_key }}">{{ $payment_type_label }}</option>
+                                        @endforeach
+                                    </select>
+                                    <p class="help-block">Choose <strong>Due</strong> to record only the damage expense. Choose a payment method to affect register immediately.</p>
+                                </div>
                             </div>
                         </div>
 

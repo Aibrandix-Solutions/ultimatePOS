@@ -4,6 +4,7 @@ namespace App\Utils;
 
 use App\CashRegister;
 use App\CashRegisterTransaction;
+use App\Contact;
 use App\Transaction;
 use DB;
 
@@ -38,6 +39,11 @@ class CashRegisterUtil extends Util
         $register = CashRegister::where('user_id', $user_id)
             ->where('status', 'open')
             ->first();
+
+        if (empty($register)) {
+            return false;
+        }
+
         $payments_formatted = [];
         foreach ($payments as $payment) {
             $payment_amount = (isset($payment['is_return']) && $payment['is_return'] == 1) ? (-1 * $this->num_uf($payment['amount'])) : $this->num_uf($payment['amount']);
@@ -77,6 +83,11 @@ class CashRegisterUtil extends Util
         $register = CashRegister::where('user_id', $user_id)
             ->where('status', 'open')
             ->first();
+
+        if (empty($register)) {
+            return false;
+        }
+
         //If draft -> final then add all
         //If final -> draft then refund all
         //If final -> final then update payments
@@ -167,6 +178,10 @@ class CashRegisterUtil extends Util
             ->where('status', 'open')
             ->first();
 
+        if (empty($register)) {
+            return false;
+        }
+
         $total_payment = CashRegisterTransaction::where('transaction_id', $transaction->id)
             ->select(
                 DB::raw("SUM(IF(pay_method='cash', IF(type='credit', amount, -1 * amount), 0)) as total_cash"),
@@ -214,6 +229,103 @@ class CashRegisterUtil extends Util
         }
 
         return true;
+    }
+
+    /**
+     * Add a single transaction payment into currently open register for a user.
+     * This is used for due/installment/expense style payments created outside POS save flow.
+     *
+     * @param object $transaction
+     * @param object $payment
+     * @param int|null $user_id
+     * @return bool
+     */
+    public function addTransactionPaymentToRegister($transaction, $payment, $user_id = null)
+    {
+        if (empty($transaction) || empty($payment) || empty($payment->method)) {
+            return false;
+        }
+
+        //Keep register aligned with payment-status logic: pending cheque is not realized cash yet.
+        if ($payment->method === 'cheque' && $payment->cheque_status !== 'cleared') {
+            return false;
+        }
+
+        $user_id = !empty($user_id) ? $user_id : $payment->created_by;
+        if (empty($user_id)) {
+            return false;
+        }
+
+        $register = CashRegister::where('user_id', $user_id)
+            ->where('status', 'open')
+            ->first();
+
+        if (empty($register)) {
+            return false;
+        }
+
+        $amount = (float) $payment->amount;
+        if ($amount <= 0) {
+            return false;
+        }
+
+        $entry = $this->mapPaymentToRegisterEntry($transaction, $payment);
+
+        $register->cash_register_transactions()->create([
+            'amount' => $amount,
+            'pay_method' => $payment->method,
+            'type' => $entry['type'],
+            'transaction_type' => $entry['transaction_type'],
+            'transaction_id' => $transaction->id,
+        ]);
+
+        return true;
+    }
+
+    /**
+     * Map transaction payment to existing register buckets used by current UI math.
+     */
+    protected function mapPaymentToRegisterEntry($transaction, $payment)
+    {
+        $transaction_type = 'sell';
+        $type = 'credit';
+
+        //Change return while receiving sell payment should reduce cash-in-hand.
+        if ($transaction->type === 'sell' && !empty($payment->is_return)) {
+            return [
+                'transaction_type' => 'refund',
+                'type' => 'debit',
+            ];
+        }
+
+        if (in_array($transaction->type, ['purchase', 'expense'], true)) {
+            $transaction_type = 'expense';
+            $type = 'debit';
+        } elseif ($transaction->type === 'sell_return') {
+            $transaction_type = 'refund';
+            $type = 'debit';
+        } elseif (in_array($transaction->type, ['expense_refund', 'purchase_return', 'sell'], true)) {
+            $transaction_type = 'sell';
+            $type = 'credit';
+        } elseif ($transaction->type === 'opening_balance') {
+            $contact = null;
+            if (!empty($transaction->contact_id)) {
+                $contact = Contact::find($transaction->contact_id);
+            }
+
+            if (!empty($contact) && $contact->type === 'supplier') {
+                $transaction_type = 'expense';
+                $type = 'debit';
+            } else {
+                $transaction_type = 'sell';
+                $type = 'credit';
+            }
+        }
+
+        return [
+            'transaction_type' => $transaction_type,
+            'type' => $type,
+        ];
     }
 
     /**

@@ -407,10 +407,8 @@ class ExpenseController extends Controller
 
             $expense = $this->transactionUtil->createExpense($request, $business_id, $user_id);
 
-            if (request()->ajax()) {
-                $payments = !empty($request->input('payment')) ? $request->input('payment') : [];
-                $this->cashRegisterUtil->addSellPayments($expense, $payments);
-            }
+            $payments = !empty($request->input('payment')) ? $request->input('payment') : [];
+            $this->cashRegisterUtil->addSellPayments($expense, $payments);
 
             $this->transactionUtil->activityLog($expense, 'added');
 
