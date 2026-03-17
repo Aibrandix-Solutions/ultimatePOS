@@ -188,10 +188,15 @@ class DamageController extends Controller
         $data['created_by'] = Auth::id() ?: null;
         $data['business_id'] = $request->session()->get('user.business_id');
 
-        $damage = Damage::create($data);
+        $damage_expense_category_name = 'Damaged Goods Expense';
+        $damage_expense_category_code = 'AUTO_DAMAGE_EXPENSE';
 
-        // Decrement stock in variation_location_details if product has enable_stock
         try {
+            DB::beginTransaction();
+
+            $damage = Damage::create($data);
+
+            // Decrement stock in variation_location_details if product has enable_stock.
             $product = Product::find($data['product_id']);
             if ($product && $product->enable_stock == 1) {
                 $vld = VariationLocationDetails::where('product_id', $data['product_id'])
@@ -204,30 +209,33 @@ class DamageController extends Controller
                     $vld->save();
                 }
             }
-        } catch (\Exception $e) {
-            // don't stop on stock update failure; log if needed
-        }
 
-        // Create expense transaction for damage
-        try {
-            // Find or create "Damaged Goods Expense" category
+            // Find or create a stable expense category used for damage losses.
             $expense_category = ExpenseCategory::where('business_id', $data['business_id'])
-                ->whereRaw('LOWER(name) = ?', [strtolower('Damaged Goods Expense')])
+                ->where('code', $damage_expense_category_code)
                 ->first();
+
+            if (!$expense_category) {
+                $expense_category = ExpenseCategory::where('business_id', $data['business_id'])
+                    ->whereRaw('LOWER(name) = ?', [strtolower($damage_expense_category_name)])
+                    ->first();
+            }
 
             if (!$expense_category) {
                 $expense_category = ExpenseCategory::create([
                     'business_id' => $data['business_id'],
-                    'name' => 'Damaged Goods Expense',
+                    'name' => $damage_expense_category_name,
+                    'code' => $damage_expense_category_code,
                     'created_by' => $data['created_by'],
                 ]);
+            } elseif (empty($expense_category->code)) {
+                $expense_category->code = $damage_expense_category_code;
+                $expense_category->save();
             }
 
-            // Instantiate TransactionUtil to generate reference number
             $ref_count = $this->transactionUtil->setAndGetReferenceCount('expense', $data['business_id']);
             $ref_no = $this->transactionUtil->generateReferenceNumber('expense', $ref_count, $data['business_id']);
 
-            // Create expense transaction
             $expense_transaction = Transaction::create([
                 'business_id' => $data['business_id'],
                 'location_id' => $data['location_id'],
@@ -269,15 +277,32 @@ class DamageController extends Controller
                 }
             }
 
+            DB::commit();
+
             \Log::info('Expense transaction created for damage', [
                 'damage_id' => $damage->id,
                 'transaction_id' => $expense_transaction->id,
                 'amount' => $data['total_cost'],
                 'payment_method' => $data['payment_method'],
             ]);
-
         } catch (\Exception $e) {
-            \Log::warning('Failed to create expense transaction for damage: ' . $e->getMessage());
+            DB::rollBack();
+
+            \Log::error('Failed to store damage with expense transaction', [
+                'message' => $e->getMessage(),
+                'business_id' => $data['business_id'] ?? null,
+                'product_id' => $data['product_id'] ?? null,
+                'payment_method' => $data['payment_method'] ?? null,
+            ]);
+
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'msg' => __('messages.something_went_wrong'),
+                ], 500);
+            }
+
+            return redirect()->back()->withErrors(['damage' => __('messages.something_went_wrong')])->withInput();
         }
 
 
