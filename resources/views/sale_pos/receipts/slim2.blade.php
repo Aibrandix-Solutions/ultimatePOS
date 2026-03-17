@@ -652,8 +652,13 @@
 .f-8 {
 	font-size: 8px !important;
 }
+@page {
+	margin: 5px;
+}
 body {
 	color: #000000;
+	margin: 5px;
+	padding: 5px;
 }
 @media print {
 	* {
@@ -723,8 +728,11 @@ th.price {
 }
 
 .ticket {
-    width: 100%;
-    max-width: 100%;
+    width: calc(100% - 12px);
+    max-width: calc(100% - 12px);
+	margin: 0 auto;
+	padding: 0;
+	box-sizing: border-box;
 }
 
 img {

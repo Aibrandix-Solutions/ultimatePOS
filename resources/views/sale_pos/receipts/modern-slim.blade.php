@@ -12,12 +12,17 @@
         padding: 0;
         box-sizing: border-box;
     }
+    @page {
+        margin: 5px;
+    }
     body {
         font-family: Arial, Helvetica, sans-serif;
         font-size: 11px;
         color: #000 !important;
         line-height: 1.2;
         background: #fff;
+        margin: 5px;
+        padding: 5px;
     }
     a, a:visited, a:hover, a:active {
         color: #000 !important;
@@ -26,9 +31,10 @@
 
     /* ===== Receipt Container ===== */
     .receipt {
-        width: 100%;
-        max-width: 100%;
-        padding: 5px;
+        width: calc(100% - 12px);
+        max-width: calc(100% - 12px);
+        margin: 0 auto;
+        padding: 2px 0;
         color: #000 !important;
     }
     .receipt * {
@@ -265,6 +271,33 @@
         font-style: italic;
     }
 
+    .due-note-block {
+        margin: 2px 0;
+        padding-top: 2px;
+        border-top: 1px solid #000;
+    }
+    .due-note-title {
+        font-size: 10px;
+        font-weight: 700;
+        margin-bottom: 1px;
+    }
+    .due-note-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        font-size: 10px;
+        line-height: 1.3;
+        gap: 6px;
+    }
+    .due-note-row .lbl {
+        font-weight: 600;
+    }
+    .due-note-row .val {
+        text-align: right;
+        white-space: nowrap;
+        font-weight: 600;
+    }
+
     /* ===== Notes ===== */
     .notes-section {
         font-size: 10px;
@@ -295,8 +328,10 @@
             font-family: Arial, Helvetica, sans-serif;
         }
         .receipt {
-            width: 100%;
-            padding: 0 10px;
+            width: calc(100% - 12px);
+            max-width: calc(100% - 12px);
+            margin: 0 auto;
+            padding: 0;
         }
         .receipt-logo {
             max-height: 100px;
@@ -404,7 +439,9 @@
         {{-- ========== INVOICE DETAILS ========== --}}
         <div class="info-row">
             <span>{!! $receipt_details->invoice_no_prefix !!} {{$receipt_details->invoice_no}}</span>
-            @if(!$isWalkInCustomer && !empty($receipt_details->sales_person_label))
+            @if(!empty($receipt_details->added_by))
+                <span class="r">Cashier: {{$receipt_details->added_by}}</span>
+            @elseif(!$isWalkInCustomer && !empty($receipt_details->sales_person_label))
                 <span class="r">{{$receipt_details->sales_person_label}} {{$receipt_details->sales_person}}</span>
             @endif
         </div>
@@ -812,6 +849,27 @@
                 <div class="grand-total">
                     <span>{!! $receipt_details->total_label !!}</span>
                     <span>{{$receipt_details->total}}</span>
+                </div>
+            @endif
+
+            @if(!empty($receipt_details->receipt_due_date) || !empty($receipt_details->installment_due_dates))
+                <div class="due-note-block">
+                    @if(!empty($receipt_details->receipt_due_date))
+                        <div class="due-note-row">
+                            <span class="lbl">{{$receipt_details->receipt_due_date_label}}</span>
+                            <span class="val">{{$receipt_details->receipt_due_date}}</span>
+                        </div>
+                    @endif
+
+                    @if(!empty($receipt_details->installment_due_dates))
+                        <div class="due-note-title">{{$receipt_details->installment_due_dates_label}}</div>
+                        @foreach($receipt_details->installment_due_dates as $installment_due)
+                            <div class="due-note-row">
+                                <span class="lbl">{{$installment_due['title']}}</span>
+                                <span class="val">{{$installment_due['value']}}</span>
+                            </div>
+                        @endforeach
+                    @endif
                 </div>
             @endif
         @endif

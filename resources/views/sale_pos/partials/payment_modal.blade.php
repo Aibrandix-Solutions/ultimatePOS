@@ -260,7 +260,7 @@
                                         </div>
                                     </div>
                                     <div class="row">
-                                        <div class="col-md-4">
+                                        <div class="col-md-12">
                                             <div class="form-group" style="margin-bottom: 8px;">
                                                 {!! Form::label('installment_first_due_date', __('lang_v1.first_installment_due_date') . ':*') !!}
                                                 <div class="input-group">

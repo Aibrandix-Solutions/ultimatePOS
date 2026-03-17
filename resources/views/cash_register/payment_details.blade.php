@@ -233,7 +233,21 @@
           @lang('lang_v1.credit_sales'):
         </th>
         <td>
-          <b><span class="display_currency" data-currency_symbol="true">{{ $details['transaction_details']->total_sales - $register_details->total_sale }}</span></b>
+          @php
+            $in_period_sales = (float) ($details['transaction_details']->total_sales ?? 0);
+            $collected_sales_payments = (float) ($register_details->total_sale ?? 0);
+            $credit_sales = max(0, $in_period_sales - $collected_sales_payments);
+            $old_due_collection = max(0, $collected_sales_payments - $in_period_sales);
+          @endphp
+          <b><span class="display_currency" data-currency_symbol="true">{{ $credit_sales }}</span></b>
+        </td>
+      </tr>
+      <tr class="success">
+        <th>
+          Old Due Collection:
+        </th>
+        <td>
+          <b><span class="display_currency" data-currency_symbol="true">{{ $old_due_collection }}</span></b>
         </td>
       </tr>
       <tr class="success">
