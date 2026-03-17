@@ -718,16 +718,15 @@ class ProductUtil extends Util
         $business = Business::where('id', $business_id)->first(['sku_prefix', 'sku_starting_number', 'last_auto_generated_sku']);
         $sku_prefix = $business->sku_prefix ?? '';
         $starting_number = $business->sku_starting_number ?? 1;
-        
-        // Get the last auto-generated SKU number (ignoring manually entered SKUs)
-        if (!empty($business->last_auto_generated_sku)) {
-            // Continue from the last auto-generated SKU
-            $sku_number = $business->last_auto_generated_sku + 1;
+
+        // If the configured starting number is increased, honor it immediately.
+        if (! empty($business->last_auto_generated_sku)) {
+            $next_auto_sku = $business->last_auto_generated_sku + 1;
+            $sku_number = max($starting_number, $next_auto_sku);
         } else {
-            // First time generating, start from the configured starting number
             $sku_number = $starting_number;
         }
-        
+
         // Update the last auto-generated SKU number for next time
         Business::where('id', $business_id)->update(['last_auto_generated_sku' => $sku_number]);
 

@@ -712,7 +712,7 @@ body {
 
 @media print {
 	* {
-    	font-size: 12px;
+	    	font-size: 15px;
     	font-family: 'Times New Roman';
     	word-break: break-all;
 	}
@@ -722,14 +722,14 @@ body {
 	}
 	
 	.headings{
-		font-size: 16px;
+		font-size: 17px;
 		font-weight: 700;
 		text-transform: uppercase;
 		white-space: nowrap;
 	}
 
 	.sub-headings{
-		font-size: 14px !important;
+		font-size: 15px !important;
 		font-weight: 700 !important;
 	}
 

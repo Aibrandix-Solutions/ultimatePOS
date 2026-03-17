@@ -662,7 +662,7 @@ body {
 }
 @media print {
 	* {
-    	font-size: 12px;
+	    	font-size: 15px;
     	font-family: 'Times New Roman';
     	word-break: break-all;
 	}
@@ -671,13 +671,13 @@ body {
 	}
 
 .headings{
-	font-size: 16px;
+	font-size: 17px;
 	font-weight: 700;
 	text-transform: uppercase;
 }
 
 .sub-headings{
-	font-size: 15px;
+	font-size: 16px;
 	font-weight: 700;
 }
 

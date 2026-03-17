@@ -324,8 +324,8 @@
     /* ===== Print Styles ===== */
     @media print {
         body {
-            font-size: 14px;
-            font-family: Arial, Helvetica, sans-serif;
+            font-size: 17px;
+            font-family: 'Times New Roman', Times, serif;
         }
         .receipt {
             width: calc(100% - 12px);

@@ -977,6 +977,20 @@ tr.details td.details-control {
     display: inline !important;
   }
 
+  #receipt_section {
+    font-family: 'Times New Roman', Times, serif !important;
+    font-size: 16px;
+    line-height: 1.35;
+  }
+
+  #receipt_section * {
+    font-family: 'Times New Roman', Times, serif !important;
+  }
+
+  #receipt_section small {
+    font-size: 14px;
+  }
+
   .modal-xl {
     width: 100% !important;
   }
