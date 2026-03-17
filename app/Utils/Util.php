@@ -34,7 +34,7 @@ class Util
         $thousand_separator = '';
         $decimal_separator = '';
 
-        if (! empty($currency_details)) {
+        if (!empty($currency_details)) {
             $thousand_separator = $currency_details->thousand_separator;
             $decimal_separator = $currency_details->decimal_separator;
         } else {
@@ -59,25 +59,25 @@ class Util
      */
     public function num_f($input_number, $add_symbol = false, $business_details = null, $is_quantity = false)
     {
-        $thousand_separator = ! empty($business_details) ? $business_details->thousand_separator : session('currency')['thousand_separator'];
-        $decimal_separator = ! empty($business_details) ? $business_details->decimal_separator : session('currency')['decimal_separator'];
+        $thousand_separator = !empty($business_details) ? $business_details->thousand_separator : session('currency')['thousand_separator'];
+        $decimal_separator = !empty($business_details) ? $business_details->decimal_separator : session('currency')['decimal_separator'];
 
-        $currency_precision = ! empty($business_details) ? $business_details->currency_precision : session('business.currency_precision', 2);
+        $currency_precision = !empty($business_details) ? $business_details->currency_precision : session('business.currency_precision', 2);
 
         if ($is_quantity) {
-            $currency_precision = ! empty($business_details) ? $business_details->quantity_precision : session('business.quantity_precision', 2);
+            $currency_precision = !empty($business_details) ? $business_details->quantity_precision : session('business.quantity_precision', 2);
         }
 
         $formatted = number_format($input_number, $currency_precision, $decimal_separator, $thousand_separator);
 
         if ($add_symbol) {
-            $currency_symbol_placement = ! empty($business_details) ? $business_details->currency_symbol_placement : session('business.currency_symbol_placement');
-            $symbol = ! empty($business_details) ? $business_details->currency_symbol : session('currency')['symbol'];
+            $currency_symbol_placement = !empty($business_details) ? $business_details->currency_symbol_placement : session('business.currency_symbol_placement');
+            $symbol = !empty($business_details) ? $business_details->currency_symbol : session('currency')['symbol'];
 
             if ($currency_symbol_placement == 'after') {
-                $formatted = $formatted.' '.$symbol;
+                $formatted = $formatted . ' ' . $symbol;
             } else {
-                $formatted = $symbol.' '.$formatted;
+                $formatted = $symbol . ' ' . $formatted;
             }
         }
 
@@ -140,14 +140,14 @@ class Util
      */
     public function payment_types($location = null, $show_advance = false, $business_id = null)
     {
-        if (! empty($location)) {
+        if (!empty($location)) {
             $location = is_object($location) ? $location : BusinessLocation::find($location);
 
             //Get custom label from business settings
             $custom_labels = Business::find($location->business_id)->custom_labels;
             $custom_labels = json_decode($custom_labels, true);
         } else {
-            if (! empty($business_id)) {
+            if (!empty($business_id)) {
                 $custom_labels = Business::find($business_id)->custom_labels;
                 $custom_labels = json_decode($custom_labels, true);
             } else {
@@ -157,25 +157,25 @@ class Util
 
         $payment_types = ['cash' => __('lang_v1.cash'), 'card' => __('lang_v1.card'), 'cheque' => __('lang_v1.cheque'), 'bank_transfer' => __('lang_v1.bank_transfer'), 'other' => __('lang_v1.other')];
 
-        $payment_types['custom_pay_1'] = ! empty($custom_labels['payments']['custom_pay_1']) ? $custom_labels['payments']['custom_pay_1'] : __('lang_v1.custom_payment', ['number' => 1]);
-        $payment_types['custom_pay_2'] = ! empty($custom_labels['payments']['custom_pay_2']) ? $custom_labels['payments']['custom_pay_2'] : __('lang_v1.custom_payment', ['number' => 2]);
-        $payment_types['custom_pay_3'] = ! empty($custom_labels['payments']['custom_pay_3']) ? $custom_labels['payments']['custom_pay_3'] : __('lang_v1.custom_payment', ['number' => 3]);
-        $payment_types['custom_pay_4'] = ! empty($custom_labels['payments']['custom_pay_4']) ? $custom_labels['payments']['custom_pay_4'] : __('lang_v1.custom_payment', ['number' => 4]);
-        $payment_types['custom_pay_5'] = ! empty($custom_labels['payments']['custom_pay_5']) ? $custom_labels['payments']['custom_pay_5'] : __('lang_v1.custom_payment', ['number' => 5]);
-        $payment_types['custom_pay_6'] = ! empty($custom_labels['payments']['custom_pay_6']) ? $custom_labels['payments']['custom_pay_6'] : __('lang_v1.custom_payment', ['number' => 6]);
-        $payment_types['custom_pay_7'] = ! empty($custom_labels['payments']['custom_pay_7']) ? $custom_labels['payments']['custom_pay_7'] : __('lang_v1.custom_payment', ['number' => 7]);
+        $payment_types['custom_pay_1'] = !empty($custom_labels['payments']['custom_pay_1']) ? $custom_labels['payments']['custom_pay_1'] : __('lang_v1.custom_payment', ['number' => 1]);
+        $payment_types['custom_pay_2'] = !empty($custom_labels['payments']['custom_pay_2']) ? $custom_labels['payments']['custom_pay_2'] : __('lang_v1.custom_payment', ['number' => 2]);
+        $payment_types['custom_pay_3'] = !empty($custom_labels['payments']['custom_pay_3']) ? $custom_labels['payments']['custom_pay_3'] : __('lang_v1.custom_payment', ['number' => 3]);
+        $payment_types['custom_pay_4'] = !empty($custom_labels['payments']['custom_pay_4']) ? $custom_labels['payments']['custom_pay_4'] : __('lang_v1.custom_payment', ['number' => 4]);
+        $payment_types['custom_pay_5'] = !empty($custom_labels['payments']['custom_pay_5']) ? $custom_labels['payments']['custom_pay_5'] : __('lang_v1.custom_payment', ['number' => 5]);
+        $payment_types['custom_pay_6'] = !empty($custom_labels['payments']['custom_pay_6']) ? $custom_labels['payments']['custom_pay_6'] : __('lang_v1.custom_payment', ['number' => 6]);
+        $payment_types['custom_pay_7'] = !empty($custom_labels['payments']['custom_pay_7']) ? $custom_labels['payments']['custom_pay_7'] : __('lang_v1.custom_payment', ['number' => 7]);
 
         //Unset payment types if not enabled in business location
-        if (! empty($location)) {
-            $location_account_settings = ! empty($location->default_payment_accounts) ? json_decode($location->default_payment_accounts, true) : [];
+        if (!empty($location)) {
+            $location_account_settings = !empty($location->default_payment_accounts) ? json_decode($location->default_payment_accounts, true) : [];
             $enabled_accounts = [];
             foreach ($location_account_settings as $key => $value) {
-                if (! empty($value['is_enabled'])) {
+                if (!empty($value['is_enabled'])) {
                     $enabled_accounts[] = $key;
                 }
             }
             foreach ($payment_types as $key => $value) {
-                if (! in_array($key, $enabled_accounts)) {
+                if (!in_array($key, $enabled_accounts)) {
                     unset($payment_types[$key]);
                 }
             }
@@ -197,10 +197,10 @@ class Util
     {
         $enabled_modules = session()->has('business') ? session('business')['enabled_modules'] : null;
 
-        if (! session()->has('business') && ! empty($business_id)) {
+        if (!session()->has('business') && !empty($business_id)) {
             $enabled_modules = Business::find($business_id)->enabled_modules;
         }
-        $enabled_modules = (! empty($enabled_modules) && $enabled_modules != 'null') ? $enabled_modules : [];
+        $enabled_modules = (!empty($enabled_modules) && $enabled_modules != 'null') ? $enabled_modules : [];
 
         return $enabled_modules;
         //Module::has('Restaurant');
@@ -234,14 +234,14 @@ class Util
         $mysql_format = 'Y-m-d';
         if ($time) {
             if (session('business.time_format') == 12) {
-                $date_format = $date_format.' h:i A';
+                $date_format = $date_format . ' h:i A';
             } else {
-                $date_format = $date_format.' H:i';
+                $date_format = $date_format . ' H:i';
             }
             $mysql_format = 'Y-m-d H:i:s';
         }
 
-        return ! empty($date_format) ? \Carbon::createFromFormat($date_format, $date)->format($mysql_format) : null;
+        return !empty($date_format) ? \Carbon::createFromFormat($date_format, $date)->format($mysql_format) : null;
     }
 
     /**
@@ -257,7 +257,7 @@ class Util
             $time_format = 'h:i A';
         }
 
-        return ! empty($time_format) ? \Carbon::createFromFormat($time_format, $time)->format('H:i') : null;
+        return !empty($time_format) ? \Carbon::createFromFormat($time_format, $time)->format('H:i') : null;
     }
 
     /**
@@ -273,7 +273,7 @@ class Util
             $time_format = 'h:i A';
         }
 
-        return ! empty($time) ? \Carbon::createFromFormat('H:i:s', $time)->format($time_format) : null;
+        return !empty($time) ? \Carbon::createFromFormat('H:i:s', $time)->format($time_format) : null;
     }
 
     /**
@@ -285,9 +285,9 @@ class Util
      */
     public function format_date($date, $show_time = false, $business_details = null)
     {
-        $format = ! empty($business_details) ? $business_details->date_format : session('business.date_format');
-        if (! empty($show_time)) {
-            $time_format = ! empty($business_details) ? $business_details->time_format : session('business.time_format');
+        $format = !empty($business_details) ? $business_details->date_format : session('business.date_format');
+        if (!empty($show_time)) {
+            $time_format = !empty($business_details) ? $business_details->time_format : session('business.time_format');
             if ($time_format == 12) {
                 $format .= ' h:i A';
             } else {
@@ -295,7 +295,7 @@ class Util
             }
         }
 
-        return ! empty($date) ? \Carbon::createFromTimestamp(strtotime($date))->format($format) : null;
+        return !empty($date) ? \Carbon::createFromTimestamp(strtotime($date))->format($format) : null;
     }
 
     /**
@@ -315,7 +315,7 @@ class Util
         $ref = ReferenceCount::where('ref_type', $type)
             ->where('business_id', $business_id)
             ->first();
-        if (! empty($ref)) {
+        if (!empty($ref)) {
             $ref->ref_count += 1;
             $ref->save();
 
@@ -342,26 +342,26 @@ class Util
     {
         $prefix = '';
 
-        if (session()->has('business') && ! empty(request()->session()->get('business.ref_no_prefixes')[$type])) {
+        if (session()->has('business') && !empty(request()->session()->get('business.ref_no_prefixes')[$type])) {
             $prefix = request()->session()->get('business.ref_no_prefixes')[$type];
         }
-        if (! empty($business_id)) {
+        if (!empty($business_id)) {
             $business = Business::find($business_id);
             $prefixes = $business->ref_no_prefixes;
-            $prefix = ! empty($prefixes[$type]) ? $prefixes[$type] : '';
+            $prefix = !empty($prefixes[$type]) ? $prefixes[$type] : '';
         }
 
-        if (! empty($default_prefix)) {
+        if (!empty($default_prefix)) {
             $prefix = $default_prefix;
         }
 
         $ref_digits = str_pad($ref_count, 4, 0, STR_PAD_LEFT);
 
-        if (! in_array($type, ['contacts', 'business_location', 'username'])) {
+        if (!in_array($type, ['contacts', 'business_location', 'username'])) {
             $ref_year = \Carbon::now()->year;
-            $ref_number = $prefix.$ref_year.'/'.$ref_digits;
+            $ref_number = $prefix . $ref_year . '/' . $ref_digits;
         } else {
-            $ref_number = $prefix.$ref_digits;
+            $ref_number = $prefix . $ref_digits;
         }
 
         return $ref_number;
@@ -378,7 +378,7 @@ class Util
     {
         $business_id = empty($business_id) ? $user->business_id : $business_id;
 
-        return $user->hasRole('Admin#'.$business_id) ? true : false;
+        return $user->hasRole('Admin#' . $business_id) ? true : false;
     }
 
     /**
@@ -432,7 +432,7 @@ class Util
             ]);
 
             $request = new \GuzzleHttp\Psr7\Request('POST', 'https://rest.nexmo.com/sms/json', $headers, $body);
-            
+
             $response = $client->sendAsync($request)->wait();
         }
     }
@@ -478,52 +478,52 @@ class Util
             $sms_settings['msg_param_name'] => $data['sms_body'],
         ];
 
-        if (! empty($sms_settings['param_1'])) {
+        if (!empty($sms_settings['param_1'])) {
             $request_data[$sms_settings['param_1']] = $sms_settings['param_val_1'];
         }
-        if (! empty($sms_settings['param_2'])) {
+        if (!empty($sms_settings['param_2'])) {
             $request_data[$sms_settings['param_2']] = $sms_settings['param_val_2'];
         }
-        if (! empty($sms_settings['param_3'])) {
+        if (!empty($sms_settings['param_3'])) {
             $request_data[$sms_settings['param_3']] = $sms_settings['param_val_3'];
         }
-        if (! empty($sms_settings['param_4'])) {
+        if (!empty($sms_settings['param_4'])) {
             $request_data[$sms_settings['param_4']] = $sms_settings['param_val_4'];
         }
-        if (! empty($sms_settings['param_5'])) {
+        if (!empty($sms_settings['param_5'])) {
             $request_data[$sms_settings['param_5']] = $sms_settings['param_val_5'];
         }
-        if (! empty($sms_settings['param_6'])) {
+        if (!empty($sms_settings['param_6'])) {
             $request_data[$sms_settings['param_6']] = $sms_settings['param_val_6'];
         }
-        if (! empty($sms_settings['param_7'])) {
+        if (!empty($sms_settings['param_7'])) {
             $request_data[$sms_settings['param_7']] = $sms_settings['param_val_7'];
         }
-        if (! empty($sms_settings['param_8'])) {
+        if (!empty($sms_settings['param_8'])) {
             $request_data[$sms_settings['param_8']] = $sms_settings['param_val_8'];
         }
-        if (! empty($sms_settings['param_9'])) {
+        if (!empty($sms_settings['param_9'])) {
             $request_data[$sms_settings['param_9']] = $sms_settings['param_val_9'];
         }
-        if (! empty($sms_settings['param_10'])) {
+        if (!empty($sms_settings['param_10'])) {
             $request_data[$sms_settings['param_10']] = $sms_settings['param_val_10'];
         }
 
         $client = new Client();
 
         $headers = [];
-        if (! empty($sms_settings['header_1'])) {
+        if (!empty($sms_settings['header_1'])) {
             $headers[$sms_settings['header_1']] = $sms_settings['header_val_1'];
         }
-        if (! empty($sms_settings['header_2'])) {
+        if (!empty($sms_settings['header_2'])) {
             $headers[$sms_settings['header_2']] = $sms_settings['header_val_2'];
         }
-        if (! empty($sms_settings['header_3'])) {
+        if (!empty($sms_settings['header_3'])) {
             $headers[$sms_settings['header_3']] = $sms_settings['header_val_3'];
         }
 
         $options = [];
-        if (! empty($headers)) {
+        if (!empty($headers)) {
             $options['headers'] = $headers;
         }
 
@@ -532,10 +532,10 @@ class Util
         }
 
         if ($sms_settings['request_method'] == 'get') {
-            $response = $client->get($sms_settings['url'].'?'.http_build_query($request_data), $options);
-        } else { 
+            $response = $client->get($sms_settings['url'] . '?' . http_build_query($request_data), $options);
+        } else {
             // Check if the parameter type is set to 'json' and process accordingly
-            if($parameter_type == 'json'){
+            if ($parameter_type == 'json') {
 
                 $request_data[$sms_settings['send_to_param_name']] = $data['mobile_number'];
 
@@ -568,9 +568,9 @@ class Util
         $whatsapp_number = abs((int) filter_var($data['mobile_number'], FILTER_SANITIZE_NUMBER_INT));
         $text = $data['whatsapp_text'];
 
-        $base_url = config('constants.whatsapp_base_url').'/'.$whatsapp_number;
+        $base_url = config('constants.whatsapp_base_url') . '/' . $whatsapp_number;
 
-        return $base_url.'?text='.urlencode($text);
+        return $base_url . '?text=' . urlencode($text);
     }
 
     /**
@@ -590,7 +590,7 @@ class Util
 
         //Find related subunits for the product.
         $related_sub_units = [];
-        if (! empty($product_id)) {
+        if (!empty($product_id)) {
             $product = Product::where('business_id', $business_id)->findOrFail($product_id);
             $related_sub_units = $product->sub_unit_ids;
         }
@@ -652,7 +652,7 @@ class Util
      */
     public function generateToken()
     {
-        return md5(rand(1, 10).microtime());
+        return md5(rand(1, 10) . microtime());
     }
 
     /**
@@ -782,12 +782,12 @@ class Util
             ->toArray();
 
         //Get all users of service staff roles
-        if (! empty($service_staff_roles)) {
+        if (!empty($service_staff_roles)) {
             $waiters = User::where('business_id', $business_id)
                 ->role($service_staff_roles);
 
-            if (! empty($location_id)) {
-                $waiters->permission(['location.'.$location_id, 'access_all_locations']);
+            if (!empty($location_id)) {
+                $waiters->permission(['location.' . $location_id, 'access_all_locations']);
             }
 
             if ($for_dropdown) {
@@ -809,13 +809,13 @@ class Util
      */
     public function replaceTags($business_id, $data, $transaction, $contact = null)
     {
-        if (! empty($transaction) && ! is_object($transaction)) {
+        if (!empty($transaction) && !is_object($transaction)) {
             $transaction = Transaction::where('business_id', $business_id)
                 ->with(['contact', 'payment_lines'])
                 ->findOrFail($transaction);
         }
 
-        $business = ! is_object($business_id) ? Business::with(['currency'])->findOrFail($business_id) : $business_id;
+        $business = !is_object($business_id) ? Business::with(['currency'])->findOrFail($business_id) : $business_id;
 
         $contact = empty($transaction->contact) ? $contact : $transaction->contact;
 
@@ -849,7 +849,7 @@ class Util
 
             $total_paid = 0;
             $payment_ref_number = [];
-            if (! empty($transaction)) {
+            if (!empty($transaction)) {
                 foreach ($transaction->payment_lines as $payment) {
                     if ($payment->is_return != 1) {
                         $total_paid += $payment->amount;
@@ -892,18 +892,18 @@ class Util
             //Replace business_logo
             if (strpos($value, '{business_logo}') !== false) {
                 $logo_name = $business->logo;
-                $business_logo = ! empty($logo_name) ? '<img src="'.url('uploads/business_logos/'.$logo_name).'" alt="Business Logo" >' : '';
+                $business_logo = !empty($logo_name) ? '<img src="' . url('uploads/business_logos/' . $logo_name) . '" alt="Business Logo" >' : '';
 
                 $data[$key] = str_replace('{business_logo}', $business_logo, $data[$key]);
             }
 
             //Replace invoice_url
-            if (! empty($transaction) && strpos($value, '{invoice_url}') !== false && $transaction->type == 'sell') {
+            if (!empty($transaction) && strpos($value, '{invoice_url}') !== false && $transaction->type == 'sell') {
                 $invoice_url = $this->getInvoiceUrl($transaction->id, $transaction->business_id);
                 $data[$key] = str_replace('{invoice_url}', $invoice_url, $data[$key]);
             }
 
-            if (! empty($transaction) && strpos($value, '{quote_url}') !== false && $transaction->type == 'sell') {
+            if (!empty($transaction) && strpos($value, '{quote_url}') !== false && $transaction->type == 'sell') {
                 $invoice_url = $this->getInvoiceUrl($transaction->id, $transaction->business_id);
                 $data[$key] = str_replace('{quote_url}', $invoice_url, $data[$key]);
             }
@@ -915,17 +915,17 @@ class Util
 
             if (strpos($value, '{due_date}') !== false) {
                 $due_date = $transaction->due_date;
-                if (! empty($due_date)) {
+                if (!empty($due_date)) {
                     $due_date = $this->format_date($due_date->toDateTimeString(), true);
                 }
                 $data[$key] = str_replace('{due_date}', $due_date, $data[$key]);
             }
 
             if (strpos($value, '{contact_business_name}') !== false) {
-                $contact_business_name = ! empty($transaction->contact->supplier_business_name) ? $transaction->contact->supplier_business_name : '';
+                $contact_business_name = !empty($transaction->contact->supplier_business_name) ? $transaction->contact->supplier_business_name : '';
                 $data[$key] = str_replace('{contact_business_name}', $contact_business_name, $data[$key]);
             }
-            if (! empty($transaction->location)) {
+            if (!empty($transaction->location)) {
                 if (strpos($value, '{location_name}') !== false) {
                     $location = $transaction->location->name;
 
@@ -1098,7 +1098,7 @@ class Util
             $php_binary_path = 'php';
         }
 
-        $command = '* * * * * '.$php_binary_path.' '.base_path('artisan').' schedule:run >> /dev/null 2>&1';
+        $command = '* * * * * ' . $php_binary_path . ' ' . base_path('artisan') . ' schedule:run >> /dev/null 2>&1';
 
         if (config('app.env') == 'demo') {
             $command = '';
@@ -1117,12 +1117,12 @@ class Util
         $is_mail_configured = false;
 
         if (
-            ! empty(env('MAIL_MAILER')) &&
-            ! empty(env('MAIL_HOST')) &&
-            ! empty(env('MAIL_PORT')) &&
-            ! empty(env('MAIL_USERNAME')) &&
-            ! empty(env('MAIL_PASSWORD')) &&
-            ! empty(env('MAIL_FROM_ADDRESS'))
+            !empty(env('MAIL_MAILER')) &&
+            !empty(env('MAIL_HOST')) &&
+            !empty(env('MAIL_PORT')) &&
+            !empty(env('MAIL_USERNAME')) &&
+            !empty(env('MAIL_PASSWORD')) &&
+            !empty(env('MAIL_FROM_ADDRESS'))
         ) {
             $is_mail_configured = true;
         }
@@ -1165,9 +1165,9 @@ class Util
 
         $role_name = '';
 
-        if (! empty($roles[0])) {
+        if (!empty($roles[0])) {
             $array = explode('#', $roles[0], 2);
-            $role_name = ! empty($array[0]) ? $array[0] : '';
+            $role_name = !empty($array[0]) ? $array[0] : '';
         }
 
         return $role_name;
@@ -1181,7 +1181,7 @@ class Util
      */
     public function get_admins($business_id)
     {
-        $admins = User::role('Admin#'.$business_id)->get();
+        $admins = User::role('Admin#' . $business_id)->get();
 
         return $admins;
     }
@@ -1193,10 +1193,10 @@ class Util
      */
     public function getUserIpAddr()
     {
-        if (! empty($_SERVER['HTTP_CLIENT_IP'])) {
+        if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
             //ip from share internet
             $ip = $_SERVER['HTTP_CLIENT_IP'];
-        } elseif (! empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+        } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
             //ip pass from proxy
             $ip = $_SERVER['HTTP_X_FORWARDED_FOR'];
         } else {
@@ -1266,8 +1266,8 @@ class Util
      */
     public function get_pl_quantity_sum_string($table_name = '')
     {
-        $table_name = ! empty($table_name) ? $table_name.'.' : '';
-        $string = $table_name.'quantity_sold + '.$table_name.'quantity_adjusted + '.$table_name.'quantity_returned + '.$table_name.'mfg_quantity_used';
+        $table_name = !empty($table_name) ? $table_name . '.' : '';
+        $string = $table_name . 'quantity_sold + ' . $table_name . 'quantity_adjusted + ' . $table_name . 'quantity_returned + ' . $table_name . 'mfg_quantity_used';
 
         return $string;
     }
@@ -1307,7 +1307,7 @@ class Util
                 DB::raw("SUM(IF(t.type = 'sell_return', final_total, 0)) as total_sell_return"),
                 DB::raw("SUM(IF(t.type = 'opening_balance', (SELECT COALESCE(SUM(amount), 0) FROM transaction_payments WHERE transaction_payments.transaction_id=t.id AND (transaction_payments.method != 'cheque' OR transaction_payments.cheque_status = 'cleared')), 0)) as opening_balance_paid")
             );
-        if (! empty($business_id)) {
+        if (!empty($business_id)) {
             $query->where('contacts.business_id', $business_id);
         }
 
@@ -1346,16 +1346,16 @@ class Util
                     $notification->type ==
                     \App\Notifications\RecurringInvoiceNotification::class
                 ) {
-                    $msg = ! empty($data['invoice_status']) && $data['invoice_status'] == 'draft' ?
+                    $msg = !empty($data['invoice_status']) && $data['invoice_status'] == 'draft' ?
                         __(
                             'lang_v1.recurring_invoice_error_message',
-                            ['product_name' => $data['out_of_stock_product'], 'subscription_no' => ! empty($data['subscription_no']) ? $data['subscription_no'] : '']
+                            ['product_name' => $data['out_of_stock_product'], 'subscription_no' => !empty($data['subscription_no']) ? $data['subscription_no'] : '']
                         ) :
                         __(
                             'lang_v1.recurring_invoice_message',
-                            ['invoice_no' => ! empty($data['invoice_no']) ? $data['invoice_no'] : '', 'subscription_no' => ! empty($data['subscription_no']) ? $data['subscription_no'] : '']
+                            ['invoice_no' => !empty($data['invoice_no']) ? $data['invoice_no'] : '', 'subscription_no' => !empty($data['subscription_no']) ? $data['subscription_no'] : '']
                         );
-                    $icon_class = ! empty($data['invoice_status']) && $data['invoice_status'] == 'draft' ? 'fas fa-exclamation-triangle bg-yellow' : 'fas fa-recycle bg-green';
+                    $icon_class = !empty($data['invoice_status']) && $data['invoice_status'] == 'draft' ? 'fas fa-exclamation-triangle bg-yellow' : 'fas fa-recycle bg-green';
                     $link = action([\App\Http\Controllers\SellPosController::class, 'listSubscriptions']);
                 } elseif (
                     $notification->type ==
@@ -1379,9 +1379,9 @@ class Util
             } else {
                 $moduleUtil = new \App\Utils\ModuleUtil;
                 $module_notification_data = $moduleUtil->getModuleData('parse_notification', $notification);
-                if (! empty($module_notification_data)) {
+                if (!empty($module_notification_data)) {
                     foreach ($module_notification_data as $module_data) {
-                        if (! empty($module_data)) {
+                        if (!empty($module_data)) {
                             $notifications_data[] = $module_data;
                         }
                     }
@@ -1404,12 +1404,12 @@ class Util
             return $this->numToIndianFormat($number);
         }
 
-        if (! extension_loaded('intl')) {
+        if (!extension_loaded('intl')) {
             return '';
         }
 
         if (empty($lang)) {
-            $lang = ! empty(auth()->user()) ? auth()->user()->language : 'en';
+            $lang = !empty(auth()->user()) ? auth()->user()->language : 'en';
         }
 
         $f = new \NumberFormatter($lang, \NumberFormatter::SPELLOUT);
@@ -1430,15 +1430,34 @@ class Util
         $i = 0;
         $str = [];
         $words = [
-            0 => '', 1 => 'one', 2 => 'two',
-            3 => 'three', 4 => 'four', 5 => 'five', 6 => 'six',
-            7 => 'seven', 8 => 'eight', 9 => 'nine',
-            10 => 'ten', 11 => 'eleven', 12 => 'twelve',
-            13 => 'thirteen', 14 => 'fourteen', 15 => 'fifteen',
-            16 => 'sixteen', 17 => 'seventeen', 18 => 'eighteen',
-            19 => 'nineteen', 20 => 'twenty', 30 => 'thirty',
-            40 => 'forty', 50 => 'fifty', 60 => 'sixty',
-            70 => 'seventy', 80 => 'eighty', 90 => 'ninety',
+            0 => '',
+            1 => 'one',
+            2 => 'two',
+            3 => 'three',
+            4 => 'four',
+            5 => 'five',
+            6 => 'six',
+            7 => 'seven',
+            8 => 'eight',
+            9 => 'nine',
+            10 => 'ten',
+            11 => 'eleven',
+            12 => 'twelve',
+            13 => 'thirteen',
+            14 => 'fourteen',
+            15 => 'fifteen',
+            16 => 'sixteen',
+            17 => 'seventeen',
+            18 => 'eighteen',
+            19 => 'nineteen',
+            20 => 'twenty',
+            30 => 'thirty',
+            40 => 'forty',
+            50 => 'fifty',
+            60 => 'sixty',
+            70 => 'seventy',
+            80 => 'eighty',
+            90 => 'ninety',
         ];
         $digits = ['', 'hundred', 'thousand', 'lakh', 'crore'];
         while ($i < $digits_length) {
@@ -1449,15 +1468,15 @@ class Util
             if ($number) {
                 $plural = (($counter = count($str)) && $number > 9) ? 's' : null;
                 $hundred = ($counter == 1 && $str[0]) ? ' and ' : null;
-                $str[] = ($number < 21) ? $words[$number].' '.$digits[$counter].$plural.' '.$hundred : $words[floor($number / 10) * 10].' '.$words[$number % 10].' '.$digits[$counter].$plural.' '.$hundred;
+                $str[] = ($number < 21) ? $words[$number] . ' ' . $digits[$counter] . $plural . ' ' . $hundred : $words[floor($number / 10) * 10] . ' ' . $words[$number % 10] . ' ' . $digits[$counter] . $plural . ' ' . $hundred;
             } else {
                 $str[] = null;
             }
         }
         $whole_number_part = implode('', array_reverse($str));
-        $decimal_part = ($decimal > 0) ? ' point '.($words[$decimal / 10].' '.$words[$decimal % 10]) : '';
+        $decimal_part = ($decimal > 0) ? ' point ' . ($words[$decimal / 10] . ' ' . $words[$decimal % 10]) : '';
 
-        return ($whole_number_part ? $whole_number_part : '').$decimal_part;
+        return ($whole_number_part ? $whole_number_part : '') . $decimal_part;
     }
 
     public function getCustomLabels($business, $type = null)
@@ -1467,7 +1486,7 @@ class Util
         $custom_labels = $business->custom_labels;
         $custom_labels = json_decode($custom_labels, true);
 
-        if (! empty($type) && isset($custom_labels[$type])) {
+        if (!empty($type) && isset($custom_labels[$type])) {
             return $custom_labels[$type];
         }
 
@@ -1495,7 +1514,7 @@ class Util
                     $properties['attributes'][$property] = $on->$property;
                 }
 
-                if (! empty($before) && isset($before->$property)) {
+                if (!empty($before) && isset($before->$property)) {
                     $properties['old'][$property] = $before->$property;
                 }
             }
@@ -1505,7 +1524,7 @@ class Util
         $business_id = session()->has('business') ? session('business.id') : $business_id;
 
         //Check if subject has business id
-        if (empty($business_id) && ! empty($on->business_id)) {
+        if (empty($business_id) && !empty($on->business_id)) {
             $business_id = $on->business_id;
         }
 
@@ -1526,7 +1545,7 @@ class Util
     {
         $php_binary_path = empty(PHP_BINARY) ? 'php' : PHP_BINARY;
 
-        $command = '* * * * * '.$php_binary_path.' '.base_path('artisan').' backup:clean >> /dev/null 2>&1';
+        $command = '* * * * * ' . $php_binary_path . ' ' . base_path('artisan') . ' backup:clean >> /dev/null 2>&1';
 
         if (config('app.env') == 'demo') {
             $command = '';
@@ -1549,7 +1568,7 @@ class Util
             $access_token = env('GOOGLE_MAP_API_KEY');
             $full_address = null;
             $address = [];
-            if (! empty($access_token)) {
+            if (!empty($access_token)) {
                 $client = new Client();
                 $url = "https://maps.googleapis.com/maps/api/geocode/json?latlng={$lat},{$long}&key={$access_token}";
 
@@ -1580,7 +1599,7 @@ class Util
 
                     if ($request->getStatusCode() == 200) {
                         $result = json_decode($request->getBody()->getContents());
-                        if (! empty($result->display_name)) {
+                        if (!empty($result->display_name)) {
                             $address = ['formatted_address' => $result->display_name];
                         }
                     }
@@ -1589,9 +1608,9 @@ class Util
                 }
             }
 
-            if (! empty($address['results'][0]['formatted_address'])) {
+            if (!empty($address['results'][0]['formatted_address'])) {
                 $full_address = $address['results'][0]['formatted_address'];
-            } elseif (! empty($address['formatted_address'])) {
+            } elseif (!empty($address['formatted_address'])) {
                 $full_address = $address['formatted_address'];
             }
 
@@ -1615,7 +1634,7 @@ class Util
 
         $roles = [];
         foreach ($app_roles as $key => $value) {
-            $roles[$key] = str_replace('#'.$business_id, '', $value);
+            $roles[$key] = str_replace('#' . $business_id, '', $value);
         }
 
         return $roles;
@@ -1627,17 +1646,47 @@ class Util
     public function createUser($request)
     {
         $user_details = $request->only([
-            'surname', 'first_name', 'last_name', 'email',
-            'user_type', 'crm_contact_id', 'allow_login', 'username', 'password',
-            'cmmsn_percent', 'max_sales_discount_percent', 'dob', 'gender', 'marital_status', 'blood_group', 'contact_number', 'alt_number', 'family_number', 'fb_link',
-            'twitter_link', 'social_media_1', 'social_media_2', 'custom_field_1',
-            'custom_field_2', 'custom_field_3', 'custom_field_4', 'guardian_name', 'id_proof_name', 'id_proof_number', 'permanent_address', 'current_address', 'bank_details', 'selected_contacts', 'is_enable_service_staff_pin', 'service_staff_pin',
+            'surname',
+            'first_name',
+            'last_name',
+            'email',
+            'user_type',
+            'crm_contact_id',
+            'allow_login',
+            'username',
+            'password',
+            'cmmsn_percent',
+            'max_sales_discount_percent',
+            'dob',
+            'gender',
+            'marital_status',
+            'blood_group',
+            'contact_number',
+            'alt_number',
+            'family_number',
+            'fb_link',
+            'twitter_link',
+            'social_media_1',
+            'social_media_2',
+            'custom_field_1',
+            'custom_field_2',
+            'custom_field_3',
+            'custom_field_4',
+            'guardian_name',
+            'id_proof_name',
+            'id_proof_number',
+            'permanent_address',
+            'current_address',
+            'bank_details',
+            'selected_contacts',
+            'is_enable_service_staff_pin',
+            'service_staff_pin',
         ]);
 
-        $user_details['status'] = ! empty($request->input('is_active')) ? $request->input('is_active') : 'inactive';
-        $user_details['user_type'] = ! empty($user_details['user_type']) ? $user_details['user_type'] : 'user';
+        $user_details['status'] = !empty($request->input('is_active')) ? $request->input('is_active') : 'inactive';
+        $user_details['user_type'] = !empty($user_details['user_type']) ? $user_details['user_type'] : 'user';
 
-        $user_details['is_enable_service_staff_pin'] = ! empty($request->input('is_enable_service_staff_pin')) ? true : false;
+        $user_details['is_enable_service_staff_pin'] = !empty($request->input('is_enable_service_staff_pin')) ? true : false;
 
         $business_id = Auth::user()->business_id;
         $user_details['business_id'] = $business_id;
@@ -1645,14 +1694,14 @@ class Util
         //Check if subscribed or not, then check for users quota
         if ($user_details['user_type'] == 'user') {
             $moduleUtil = new \App\Utils\ModuleUtil;
-            if (! $moduleUtil->isSubscribed($business_id)) {
+            if (!$moduleUtil->isSubscribed($business_id)) {
                 return $moduleUtil->expiredResponse();
-            } elseif (! $moduleUtil->isQuotaAvailable('users', $business_id)) {
+            } elseif (!$moduleUtil->isQuotaAvailable('users', $business_id)) {
                 return $moduleUtil->quotaExpiredResponse('users', $business_id, action([\App\Http\Controllers\ManageUserController::class, 'index']));
             }
         }
 
-        if (empty($user_details['allow_login']) || ! $user_details['allow_login']) {
+        if (empty($user_details['allow_login']) || !$user_details['allow_login']) {
             unset($user_details['username']);
             unset($user_details['password']);
             $user_details['allow_login'] = 0;
@@ -1662,7 +1711,7 @@ class Util
 
         $user_details['selected_contacts'] = isset($user_details['selected_contacts']) ? $user_details['selected_contacts'] : 0;
 
-        $user_details['bank_details'] = ! empty($user_details['bank_details']) ? json_encode($user_details['bank_details']) : null;
+        $user_details['bank_details'] = !empty($user_details['bank_details']) ? json_encode($user_details['bank_details']) : null;
 
         $user_details['password'] = $user_details['allow_login'] ? Hash::make($user_details['password']) : null;
 
@@ -1674,7 +1723,7 @@ class Util
 
             if ($user_details['user_type'] == 'user') {
                 $username_ext = $this->getUsernameExtension();
-                if (! empty($username_ext)) {
+                if (!empty($username_ext)) {
                     $user_details['username'] .= $username_ext;
                 }
             }
@@ -1716,7 +1765,7 @@ class Util
     {
         $business_id = Auth::user()->business_id;
 
-        $extension = ! empty(System::getProperty('enable_business_based_username')) ? '-'.str_pad($business_id, 2, 0, STR_PAD_LEFT) : null;
+        $extension = !empty(System::getProperty('enable_business_based_username')) ? '-' . str_pad($business_id, 2, 0, STR_PAD_LEFT) : null;
 
         return $extension;
     }
@@ -1734,8 +1783,8 @@ class Util
 
         $all_locations = BusinessLocation::where('business_id', $business_id)->get();
         foreach ($all_locations as $location) {
-            if ($role->hasPermissionTo('location.'.$location->id)) {
-                $role->revokePermissionTo('location.'.$location->id);
+            if ($role->hasPermissionTo('location.' . $location->id)) {
+                $role->revokePermissionTo('location.' . $location->id);
             }
         }
     }
@@ -1755,9 +1804,9 @@ class Util
             $permissions = 'access_all_locations';
             $location_ids = $request->input('location_permissions');
             $location_permissions = [];
-            if (! empty($location_ids)) {
+            if (!empty($location_ids)) {
                 foreach ($location_ids as $location_id) {
-                    $location_permissions[] = 'location.'.$location_id;
+                    $location_permissions[] = 'location.' . $location_id;
                 }
             }
         }
@@ -1768,7 +1817,7 @@ class Util
         }
 
         //Include location permissions
-        if (empty($permissions) && ! empty($location_permissions)) {
+        if (empty($permissions) && !empty($location_permissions)) {
             $permissions = [];
             foreach ($location_permissions as $location_permission) {
                 $permissions[] = $location_permission;
@@ -1776,25 +1825,25 @@ class Util
 
             if (is_array($permitted_locations)) {
                 foreach ($permitted_locations as $key => $value) {
-                    if (! in_array('location.'.$value, $permissions)) {
-                        $revoked_permissions[] = 'location.'.$value;
+                    if (!in_array('location.' . $value, $permissions)) {
+                        $revoked_permissions[] = 'location.' . $value;
                     }
                 }
             }
         }
 
-        if (! empty($revoked_permissions)) {
+        if (!empty($revoked_permissions)) {
             $user->revokePermissionTo($revoked_permissions);
         }
 
-        if (! empty($permissions)) {
+        if (!empty($permissions)) {
             $user->givePermissionTo($permissions);
         } else {
             //if no location permission given revoke previous permissions
-            if (! empty($permitted_locations)) {
+            if (!empty($permitted_locations)) {
                 $revoked_permissions = [];
                 foreach ($permitted_locations as $key => $value) {
-                    $revoke_permissions[] = 'location.'.$value;
+                    $revoke_permissions[] = 'location.' . $value;
                 }
 
                 $user->revokePermissionTo($revoke_permissions);
@@ -1851,19 +1900,19 @@ class Util
                 $end = \Carbon::now()->subYear()->endOfYear();
                 break;
 
-                case 'current_financial_year':
-                    // Assuming financial year starts in April
-                    $start = \Carbon\Carbon::now()->month >= 4 ? \Carbon\Carbon::now()->startOfYear()->month(4)->startOfMonth() : \Carbon\Carbon::now()->subYear()->startOfYear()->month(4)->startOfMonth();
-                    $end = \Carbon\Carbon::now()->month >= 4 ? \Carbon\Carbon::now()->startOfYear()->month(4)->startOfMonth()->addYear()->subDay() : \Carbon\Carbon::now()->startOfYear()->subDay();
-                    break;
-        
-                case 'last_financial_year':
-                    // Assuming financial year starts in April
-                    $start = \Carbon\Carbon::now()->subYear()->month >= 4 ? \Carbon\Carbon::now()->subYear()->startOfYear()->month(4)->startOfMonth() : \Carbon\Carbon::now()->subYears(2)->startOfYear()->month(4)->startOfMonth();
-                    $end = \Carbon\Carbon::now()->subYear()->month >= 4 ? \Carbon\Carbon::now()->subYear()->startOfYear()->month(4)->startOfMonth()->addYear()->subDay() : \Carbon\Carbon::now()->subYear()->startOfYear()->subDay();
-                    break;
-        
-                default:
+            case 'current_financial_year':
+                // Assuming financial year starts in April
+                $start = \Carbon\Carbon::now()->month >= 4 ? \Carbon\Carbon::now()->startOfYear()->month(4)->startOfMonth() : \Carbon\Carbon::now()->subYear()->startOfYear()->month(4)->startOfMonth();
+                $end = \Carbon\Carbon::now()->month >= 4 ? \Carbon\Carbon::now()->startOfYear()->month(4)->startOfMonth()->addYear()->subDay() : \Carbon\Carbon::now()->startOfYear()->subDay();
+                break;
+
+            case 'last_financial_year':
+                // Assuming financial year starts in April
+                $start = \Carbon\Carbon::now()->subYear()->month >= 4 ? \Carbon\Carbon::now()->subYear()->startOfYear()->month(4)->startOfMonth() : \Carbon\Carbon::now()->subYears(2)->startOfYear()->month(4)->startOfMonth();
+                $end = \Carbon\Carbon::now()->subYear()->month >= 4 ? \Carbon\Carbon::now()->subYear()->startOfYear()->month(4)->startOfMonth()->addYear()->subDay() : \Carbon\Carbon::now()->subYear()->startOfYear()->subDay();
+                break;
+
+            default:
                 $start = null;
                 $end = null;
                 break;
@@ -1873,16 +1922,17 @@ class Util
     }
 
 
-    function numberToCurrencyWords($amount, $currencyMain = 'dollar', $currencySub = 'cent', $locale = 'en') {
+    function numberToCurrencyWords($amount, $currencyMain = 'dollar', $currencySub = 'cent', $locale = 'en')
+    {
         $formatter = new \NumberFormatter($locale, \NumberFormatter::SPELLOUT);
-    
+
         $mainUnit = floor($amount);
         $subUnit = round(($amount - $mainUnit) * 100);
-    
+
         $mainWord = $formatter->format($mainUnit);
         $subWord = $formatter->format($subUnit);
-    
-       // Determine if we should add 's' for plurals based on locale
+
+        // Determine if we should add 's' for plurals based on locale
         $disablePluralS = in_array($locale, ['hi', 'hi_IN', 'ar', 'ar_SA', 'ar_EG']);
 
         if ($disablePluralS) {
@@ -1893,11 +1943,11 @@ class Util
             $subLabel = ($subUnit == 1) ? $currencySub : $currencySub . 's';
         }
         $result = ucfirst($mainWord) . " " . $mainLabel;
-    
+
         if ($subUnit > 0) {
             $result .= " " . $subWord . " " . $subLabel;
         }
-    
+
         return $result;
     }
 

@@ -53,10 +53,12 @@ class TransactionUtil extends Util
         $pay_term_type = isset($input['pay_term_type']) ? $input['pay_term_type'] : null;
 
         //if pay term empty set contact pay term
-        if (empty($pay_term_number) || empty($pay_term_type)) {
+        if ((empty($pay_term_number) || empty($pay_term_type)) && !empty($input['contact_id'])) {
             $contact = Contact::find($input['contact_id']);
-            $pay_term_number = $contact->pay_term_number;
-            $pay_term_type = $contact->pay_term_type;
+            if ($contact) {
+                $pay_term_number = $contact->pay_term_number;
+                $pay_term_type = $contact->pay_term_type;
+            }
         }
         $transaction = Transaction::create([
             'business_id' => $business_id,
@@ -64,7 +66,7 @@ class TransactionUtil extends Util
             'type' => $sale_type,
             'status' => $input['status'],
             'sub_status' => !empty($input['sub_status']) ? $input['sub_status'] : null,
-            'contact_id' => $input['contact_id'],
+            'contact_id' => !empty($input['contact_id']) ? $input['contact_id'] : null,
             'customer_group_id' => !empty($input['customer_group_id']) ? $input['customer_group_id'] : null,
             'invoice_no' => $invoice_no,
             'ref_no' => '',
@@ -104,6 +106,9 @@ class TransactionUtil extends Util
             'pay_term_number' => $pay_term_number,
             'pay_term_type' => $pay_term_type,
             'is_suspend' => !empty($input['is_suspend']) ? 1 : 0,
+            'is_exchange' => !empty($input['is_exchange']) ? 1 : 0,
+            'exchange_return_id' => !empty($input['exchange_return_id']) ? $input['exchange_return_id'] : null,
+            'exchange_parent_sale_id' => !empty($input['exchange_parent_sale_id']) ? $input['exchange_parent_sale_id'] : null,
             'is_recurring' => !empty($input['is_recurring']) ? $input['is_recurring'] : 0,
             'recur_interval' => !empty($input['recur_interval']) ? $input['recur_interval'] : 1,
             'recur_interval_type' => !empty($input['recur_interval_type']) ? $input['recur_interval_type'] : null,
@@ -227,6 +232,9 @@ class TransactionUtil extends Util
             'pay_term_number' => $pay_term_number,
             'pay_term_type' => $pay_term_type,
             'is_suspend' => !empty($input['is_suspend']) ? 1 : 0,
+            'is_exchange' => !empty($input['is_exchange']) ? 1 : 0,
+            'exchange_return_id' => !empty($input['exchange_return_id']) ? $input['exchange_return_id'] : null,
+            'exchange_parent_sale_id' => !empty($input['exchange_parent_sale_id']) ? $input['exchange_parent_sale_id'] : null,
             'is_recurring' => !empty($input['is_recurring']) ? $input['is_recurring'] : 0,
             'recur_interval' => !empty($input['recur_interval']) ? $input['recur_interval'] : 1,
             'recur_interval_type' => !empty($input['recur_interval_type']) ? $input['recur_interval_type'] : null,
@@ -356,7 +364,10 @@ class TransactionUtil extends Util
                 }
                 $uf_quantity = $uf_data ? $this->num_uf($product['quantity']) : $product['quantity'];
                 $uf_item_tax = isset($product['item_tax']) ? ($uf_data ? $this->num_uf($product['item_tax']) : $product['item_tax']) : 0;
-                $uf_unit_price_inc_tax = $uf_data ? $this->num_uf($product['unit_price_inc_tax']) : $product['unit_price_inc_tax'];
+
+                // Recalculate unit_price_inc_tax from unit_price (after discount) + item_tax
+                // instead of trusting the value from JavaScript form which may be incorrectly calculated
+                $uf_unit_price_inc_tax = $unit_price + ($uf_item_tax / $multiplier);
 
                 $line_discount_amount = 0;
                 if (!empty($product['line_discount_amount'])) {
@@ -594,6 +605,10 @@ class TransactionUtil extends Util
             $item_tax = $uf_data ? $this->num_uf($product['item_tax']) : $product['item_tax'];
         }
 
+        // Recalculate unit_price_inc_tax from unit_price (after discount) + item_tax
+        // instead of trusting the value from JavaScript form which may be incorrectly calculated
+        $unit_price_inc_tax = $unit_price + ($item_tax / $multiplier);
+
         //Update sell lines.
         $tax_id = $sell_line->tax_id;
         if (array_key_exists('tax_id', $product)) {
@@ -610,7 +625,7 @@ class TransactionUtil extends Util
             'line_discount_amount' => $line_discount_amount,
             'item_tax' => $item_tax / $multiplier,
             'tax_id' => $tax_id,
-            'unit_price_inc_tax' => $uf_data ? $this->num_uf($product['unit_price_inc_tax']) / $multiplier : $product['unit_price_inc_tax'] / $multiplier,
+            'unit_price_inc_tax' => $unit_price_inc_tax,
             'sell_line_note' => !empty($product['sell_line_note']) ? $product['sell_line_note'] : '',
             'sub_unit_id' => !empty($product['sub_unit_id']) ? $product['sub_unit_id'] : null,
             'res_service_staff_id' => !empty($product['res_service_staff_id']) ? $product['res_service_staff_id'] : null,
@@ -1180,14 +1195,20 @@ class TransactionUtil extends Util
             $output['code_2'] = $business_details->code_2;
         }
 
+        // Resolve upload path for split-docroot vs standard
+        $is_split = (bool) env('APP_SPLIT_DOCROOT', false);
+        $invoice_logos_path = $is_split
+            ? dirname(base_path()) . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'invoice_logos' . DIRECTORY_SEPARATOR
+            : public_path('uploads/invoice_logos/');
+
         if ($il->show_letter_head == 1) {
             $output['letter_head'] = !empty($il->letter_head) &&
-                file_exists(public_path('uploads/invoice_logos/' . $il->letter_head)) ?
-                asset('uploads/invoice_logos/' . $il->letter_head) : null;
+                file_exists($invoice_logos_path . $il->letter_head) ?
+                $is_split ? url('uploads/invoice_logos/' . $il->letter_head) : asset('uploads/invoice_logos/' . $il->letter_head) : null;
         }
 
         //Logo
-        $output['logo'] = $il->show_logo != 0 && !empty($il->logo) && file_exists(public_path('uploads/invoice_logos/' . $il->logo)) ? asset('uploads/invoice_logos/' . $il->logo) : false;
+        $output['logo'] = $il->show_logo != 0 && !empty($il->logo) && file_exists($invoice_logos_path . $il->logo) ? ($is_split ? url('uploads/invoice_logos/' . $il->logo) : asset('uploads/invoice_logos/' . $il->logo)) : false;
 
         //Address
         $output['address'] = '';
@@ -1269,13 +1290,14 @@ class TransactionUtil extends Util
         //Customer show_customer
         $customer = Contact::find($transaction->contact_id);
 
-        $output['contact_id'] = $customer->contact_id;
-        $output['contact_name'] = $customer->name;
+        $output['contact_id'] = !empty($customer) ? $customer->contact_id : '';
+        $output['contact_name'] = !empty($customer) ? $customer->name : '';
+        $output['is_walk_in_customer'] = !empty($customer) ? (bool) $customer->is_default : false;
         $output['customer_info'] = '';
         $output['customer_tax_number'] = '';
         $output['customer_tax_label'] = '';
         $output['customer_custom_fields'] = '';
-        if ($il->show_customer == 1) {
+        if ($il->show_customer == 1 && !empty($customer)) {
             $output['customer_label'] = !empty($il->customer_label) ? $il->customer_label : '';
             $output['customer_name'] = !empty($customer->name) ? $customer->name : $customer->supplier_business_name;
             $output['customer_mobile'] = $customer->mobile;
@@ -1380,9 +1402,19 @@ class TransactionUtil extends Util
             $output['client_id'] = !empty($customer->contact_id) ? $customer->contact_id : '';
         }
 
-        // added by 
+        // Added by (cashier)
         $user = \App\User::find($transaction->created_by);
-        $output['added_by'] = $user ? trim("{$user->surname} {$user->first_name} {$user->last_name}") : '';
+        $cashier_name = '';
+        if (!empty($user)) {
+            $cashier_name = trim("{$user->surname} {$user->first_name} {$user->last_name}");
+            if ($cashier_name === '' && !empty($user->username)) {
+                $cashier_name = $user->username;
+            }
+            if ($cashier_name === '' && !empty($user->first_name)) {
+                $cashier_name = $user->first_name;
+            }
+        }
+        $output['added_by'] = $cashier_name;
 
         //Sales person info
         $output['sales_person'] = '';
@@ -1455,9 +1487,42 @@ class TransactionUtil extends Util
             }
         }
 
+        // Optional due date line to print under total due section.
+        $output['receipt_due_date_label'] = '';
+        $output['receipt_due_date'] = '';
+        $transaction_due_date = $transaction->due_date;
+        if (!empty($transaction_due_date)) {
+            $output['receipt_due_date_label'] = !empty($output['due_date_label']) ? $output['due_date_label'] : __('lang_v1.due_date') . ':';
+            if (blank($il->date_time_format)) {
+                $output['receipt_due_date'] = $this->format_date($transaction_due_date->toDateTimeString(), false, $business_details);
+            } else {
+                $output['receipt_due_date'] = \Carbon::createFromFormat('Y-m-d H:i:s', $transaction_due_date->toDateTimeString())->format($business_details->date_format);
+            }
+        }
+
         $show_currency = true;
         if ($receipt_printer_type == 'printer' && trim($business_details->currency_symbol) != '$') {
             $show_currency = false;
+        }
+
+        // Installment schedule due dates for receipts with installment plans.
+        $output['installment_due_dates_label'] = '';
+        $output['installment_due_dates'] = [];
+        $installment_plan = \App\InstallmentPlan::with(['lines' => function ($query) {
+            $query->orderBy('sequence', 'asc');
+        }])->where('transaction_id', $transaction->id)->first();
+        if (!empty($installment_plan) && !empty($installment_plan->lines)) {
+            $output['installment_due_dates_label'] = __('lang_v1.installment_plan') . ' ' . __('lang_v1.due_date') . ':';
+            foreach ($installment_plan->lines as $plan_line) {
+                $line_due_date = '';
+                if (!empty($plan_line->due_date)) {
+                    $line_due_date = $this->format_date($plan_line->due_date->toDateTimeString(), false, $business_details);
+                }
+                $output['installment_due_dates'][] = [
+                    'title' => __('lang_v1.installment') . ' ' . $plan_line->sequence . ' (' . ucfirst((string) $plan_line->status) . ')',
+                    'value' => trim($line_due_date . ' - ' . $this->num_f((float) $plan_line->amount, $show_currency, $business_details), ' -'),
+                ];
+            }
         }
 
         //Invoice product lines
@@ -1466,6 +1531,8 @@ class TransactionUtil extends Util
 
         $output['lines'] = [];
         $total_exempt = 0;
+        $total_line_discount = 0; // Initialize to avoid undefined variable errors
+        $subtotal_exc_tax = 0;
         if (in_array($transaction_type, ['sell', 'sales_order'])) {
             $sell_line_relations = ['modifiers', 'sub_unit', 'warranties'];
 
@@ -1543,10 +1610,12 @@ class TransactionUtil extends Util
             }
 
             $output['subtotal_exc_tax'] = $this->num_f($subtotal_exc_tax, true, $business_details);
-            $output['total_line_discount'] = !empty($total_line_discount) ? $this->num_f($total_line_discount, true, $business_details) : 0;
+            // Don't display separate line discount total since discounts are shown per product
+            $output['total_line_discount'] = 0; // Set to 0 to hide from receipt
         } elseif ($transaction_type == 'sell_return') {
             $parent_sell = Transaction::find($transaction->return_parent_id);
             $lines = $parent_sell->sell_lines;
+            $total_line_discount = 0;
             $total_line_taxes = 0;
             foreach ($lines as $key => $value) {
                 if (!empty($value->sub_unit_id)) {
@@ -1570,18 +1639,29 @@ class TransactionUtil extends Util
                     }
                 }
 
-                $total_line_taxes += ($line['tax_unformatted'] * $line['quantity']);
+                if (!empty($line['tax_id']) && $line['tax_percent'] == 0) {
+                    $total_exempt += $line['line_total_uf'];
+                }
+
+                $subtotal_exc_tax += $line['line_total_exc_tax_uf'];
+                $total_line_discount += ($line['line_discount_uf'] * $line['quantity_uf']);
+                $total_line_taxes += ($line['tax_unformatted'] * $line['quantity_uf']);
             }
+
+            $output['subtotal_exc_tax'] = $this->num_f($subtotal_exc_tax, true, $business_details);
+            $output['total_line_discount'] = 0;
         }
 
         //show cat code
         $output['show_cat_code'] = $il->show_cat_code;
         $output['cat_code_label'] = $il->cat_code_label;
 
-        //Subtotal
+        //Subtotal (after line discounts, excluding tax)
         $output['subtotal_label'] = $il->sub_total_label . ':';
-        $output['subtotal'] = ($transaction->total_before_tax != 0) ? $this->num_f($transaction->total_before_tax, $show_currency, $business_details) : 0;
-        $output['subtotal_unformatted'] = ($transaction->total_before_tax != 0) ? $transaction->total_before_tax : 0;
+        // Calculate subtotal as sum of discounted line totals (excluding tax)
+        // This already includes line-level discounts applied to each product
+        $output['subtotal'] = ($subtotal_exc_tax != 0) ? $this->num_f($subtotal_exc_tax, $show_currency, $business_details) : 0;
+        $output['subtotal_unformatted'] = ($subtotal_exc_tax != 0) ? $subtotal_exc_tax : 0;
 
         //round off
         $output['round_off_label'] = !empty($il->round_off_label) ? $il->round_off_label . ':' : __('lang_v1.round_off') . ':';
@@ -1593,20 +1673,35 @@ class TransactionUtil extends Util
         $taxed_subtotal = $output['subtotal_unformatted'] - $total_exempt;
         $output['taxed_subtotal'] = $this->num_f($taxed_subtotal, $show_currency, $business_details);
 
-        //Discount
+        //Discount (includes both line-level and order-level discounts)
         $discount_amount = $this->num_f($transaction->discount_amount, $show_currency, $business_details);
         $output['line_discount_label'] = $invoice_layout->discount_label;
         $output['discount_label'] = $invoice_layout->discount_label;
         $output['discount_label'] .= ($transaction->discount_type == 'percentage') ? ' <small>(' . $this->num_f($transaction->discount_amount, false, $business_details) . '%)</small> :' : '';
 
+        // Calculate order-level discount on the DISCOUNTED subtotal (after line discounts)
         if ($transaction->discount_type == 'percentage') {
-            $discount = ($transaction->discount_amount / 100) * $transaction->total_before_tax;
+            $order_discount = ($transaction->discount_amount / 100) * $subtotal_exc_tax;
         } else {
-            $discount = $transaction->discount_amount;
+            $order_discount = $transaction->discount_amount;
         }
-        $output['discount'] = ($discount != 0) ? $this->num_f($discount, $show_currency, $business_details) : 0;
 
-        $output['discount_amount_unformatted'] = $discount;
+        // Total discount = line-level discounts + order-level discount
+        $total_discount = $total_line_discount + $order_discount;
+        // Hide the combined discount line (show order discount separately instead)
+        $output['discount'] = 0; // Set to 0 to hide combined discount from receipt
+
+        $output['discount_amount_unformatted'] = $total_discount;
+
+        // Show order-level discount separately (only if user applied discount to whole bill)
+        // Line-level discounts are already shown per product, so only order discount appears here
+        $output['order_discount'] = ($order_discount != 0) ? $this->num_f($order_discount, $show_currency, $business_details) : 0;
+        $output['order_discount_unformatted'] = $order_discount;
+        $output['order_discount_label'] = $invoice_layout->discount_label;
+        if ($transaction->discount_type == 'percentage' && $order_discount != 0) {
+            $output['order_discount_label'] .= ' <small>(' . $this->num_f($transaction->discount_amount, false, $business_details) . '%)</small>';
+        }
+        $output['order_discount_label'] .= ':';
 
         //reward points
         if ($business_details->enable_rp == 1 && !empty($transaction->rp_redeemed)) {
@@ -1673,6 +1768,7 @@ class TransactionUtil extends Util
         if ($transaction_type == 'sell' && $transaction->status == 'final') {
             $paid_amount = $this->getTotalPaid($transaction->id);
             $due = $transaction->final_total - $paid_amount;
+            $customer_overall_due = null;
 
             $output['total_paid'] = ($paid_amount == 0) ? 0 : $this->num_f($paid_amount, $show_currency, $business_details);
             $output['total_paid_label'] = $il->paid_label;
@@ -1690,15 +1786,37 @@ class TransactionUtil extends Util
 
                 if (!empty($contact) && (int) $contact->is_default !== 1 && in_array($contact->type, ['customer', 'both'])) {
                     $all_due = $this->getContactDue($contact->id, $business_id_for_due);
+                    $customer_overall_due = (float) $all_due;
                     $output['all_bal_label'] = __('account.customer_due') . ':';
-                    $output['all_due'] = $this->num_f((float) $all_due, $show_currency, $business_details);
+                    $output['all_due'] = $this->num_f($customer_overall_due, $show_currency, $business_details);
                 } elseif ($il->show_previous_bal == 1) {
                     //Keep old behaviour (if enabled) for cases where contact type isn't customer/both.
                     $all_due = $this->getContactDue($transaction->contact_id, $business_id_for_due);
+                    $customer_overall_due = (float) $all_due;
                     $output['all_bal_label'] = $il->prev_bal_label;
-                    $output['all_due'] = $this->num_f((float) $all_due, $show_currency, $business_details);
+                    $output['all_due'] = $this->num_f($customer_overall_due, $show_currency, $business_details);
                 }
             }
+
+            $old_due_paid_amount = $this->getOldDuePaidFromPosInvoice($transaction);
+            $receipt_paid_amount = (float) $paid_amount + (float) $old_due_paid_amount;
+            $previous_due_amount = !is_null($customer_overall_due)
+                ? max(0, $customer_overall_due + $receipt_paid_amount - (float) $transaction->final_total)
+                : 0;
+            $amount_payable = $previous_due_amount + (float) $transaction->final_total;
+            $receipt_total_due = max(0, $amount_payable - $receipt_paid_amount);
+
+            $output['receipt_show_due_breakdown'] = true;
+            $output['receipt_current_bill_label'] = 'SUB TOTAL';
+            $output['receipt_previous_due_label'] = 'Previous Due';
+            $output['receipt_amount_payable_label'] = 'Amount Payable';
+            $output['receipt_amount_paid_label'] = 'Amount Paid';
+            $output['receipt_total_due_label'] = 'Total Due';
+            $output['receipt_current_bill'] = $this->num_f((float) $transaction->final_total, $show_currency, $business_details);
+            $output['receipt_previous_due'] = $this->num_f($previous_due_amount, $show_currency, $business_details);
+            $output['receipt_amount_payable'] = $this->num_f($amount_payable, $show_currency, $business_details);
+            $output['receipt_amount_paid'] = $this->num_f($receipt_paid_amount, $show_currency, $business_details);
+            $output['receipt_total_due'] = $this->num_f($receipt_total_due, $show_currency, $business_details);
 
             //Get payment details
             $output['payments'] = [];
@@ -1791,6 +1909,9 @@ class TransactionUtil extends Util
         $output['additional_notes'] = $transaction->additional_notes;
         $output['footer_text'] = $invoice_layout->footer_text;
 
+        // Pass common_settings for template-level toggles (e.g. DigiPartner branding)
+        $output['common_settings'] = !empty($il->common_settings) ? $il->common_settings : [];
+
         //Barcode related information.
         $output['show_barcode'] = !empty($il->show_barcode) ? true : false;
 
@@ -1861,6 +1982,7 @@ class TransactionUtil extends Util
 
             $output['show_qr_code'] = !empty($il->show_qr_code) ? true : false;
             $zatca_qr = !empty($il->common_settings['zatca_qr']) ? true : false;
+            $qr_code_text = '';
             if ($zatca_qr) {
                 $total_order_tax = $transaction->tax_amount + $total_line_taxes;
                 $zatca_phase = !empty($il->common_settings['zatca_phase']) ? $il->common_settings['zatca_phase'] : '';
@@ -2481,6 +2603,7 @@ class TransactionUtil extends Util
                 // field for zatca pdf
                 'unit_price_before_discount_uf' => $line->unit_price_before_discount,
                 'line_total_uf' => $line->unit_price_inc_tax * $line->quantity_returned,
+                'line_total_exc_tax_uf' => $line->unit_price * $line->quantity_returned,
 
                 'tax_name' => !empty($tax_details) ? $tax_details->name : null,
                 'tax_percent' => !empty($tax_details) ? $tax_details->amount : null,
@@ -2489,7 +2612,8 @@ class TransactionUtil extends Util
                 'line_discount_amount_uf' => $line->line_discount_amount,
                 'line_discount_type_uf' => $line->line_discount_type,
             ];
-            $line_array['line_discount'] = 0;
+            $line_array['line_discount'] = method_exists($line, 'get_discount_amount') ? $this->num_f($line->get_discount_amount(), false, $business_details) : 0;
+            $line_array['line_discount_uf'] = method_exists($line, 'get_discount_amount') ? $line->get_discount_amount() : 0;
 
             //Group product taxes by name.
             if (!empty($tax_details)) {
@@ -2698,6 +2822,28 @@ class TransactionUtil extends Util
         $output['total_additional_expense'] = $purchase_details->total_expense;
 
         return $output;
+    }
+
+    /**
+     * Get the portion of POS-entered payment that was allocated to older dues.
+     */
+    protected function getOldDuePaidFromPosInvoice($transaction)
+    {
+        if (empty($transaction->id) || empty($transaction->contact_id) || empty($transaction->business_id)) {
+            return 0;
+        }
+
+        $reference = !empty($transaction->invoice_no) ? $transaction->invoice_no : $transaction->id;
+        $note = 'Adjusted to previous dues from POS invoice: ' . $reference;
+
+        return (float) TransactionPayment::join('transactions as t', 't.id', '=', 'transaction_payments.transaction_id')
+            ->where('t.business_id', $transaction->business_id)
+            ->where('t.contact_id', $transaction->contact_id)
+            ->where('t.id', '!=', $transaction->id)
+            ->whereIn('t.type', ['sell', 'opening_balance'])
+            ->where('transaction_payments.note', 'like', '%' . $note . '%')
+            ->where('transaction_payments.is_return', 0)
+            ->sum('transaction_payments.amount');
     }
 
     public function getTotalPurchaseReturnPaid($business_id, $start_date = null, $end_date = null, $location_id = null, $created_by = null)
@@ -3499,6 +3645,10 @@ class TransactionUtil extends Util
             return $payments_by_transaction;
         }
 
+        // Walk-in customers should never accumulate advance balance.
+        // Excess payment is already returned as cash change at the POS.
+        $is_walk_in_customer = Contact::where('id', $contact_id)->value('is_default');
+
         //Prepare remaining amounts per payment line (skip change return lines)
         $normalized_payment_lines = [];
         foreach ($payment_lines as $pl) {
@@ -3524,7 +3674,7 @@ class TransactionUtil extends Util
             ->whereIn('type', ['sell', 'opening_balance'])
             ->where(function ($q) {
                 $q->where('type', 'opening_balance')
-                  ->orWhere('status', 'final');
+                    ->orWhere('status', 'final');
             })
             ->where('payment_status', '!=', 'paid');
 
@@ -3573,7 +3723,7 @@ class TransactionUtil extends Util
                 }
             }
 
-            //Any remaining becomes advance balance
+            //Any remaining becomes advance balance (skip for walk-in customers)
             $remaining_total = 0;
             foreach ($normalized_payment_lines as $pl) {
                 if (!empty($pl['_remaining']) && $pl['_remaining'] > 0) {
@@ -3581,7 +3731,7 @@ class TransactionUtil extends Util
                 }
             }
 
-            if ($remaining_total > 0) {
+            if ($remaining_total > 0 && !$is_walk_in_customer) {
                 $this->updateContactBalance($contact_id, $remaining_total, 'add');
             }
 
@@ -3688,16 +3838,7 @@ class TransactionUtil extends Util
             }
         }
 
-        //Any leftover becomes advance balance
-        $remaining_total = 0;
-        foreach ($normalized_payment_lines as $pl) {
-            if (!empty($pl['_remaining']) && $pl['_remaining'] > 0) {
-                $remaining_total += $pl['_remaining'];
-            }
-        }
-        if ($remaining_total > 0) {
-            $this->updateContactBalance($contact_id, $remaining_total, 'add');
-        }
+
 
         return $payments_by_transaction;
     }
@@ -3747,7 +3888,7 @@ class TransactionUtil extends Util
             $qty_sum_query = $this->get_pl_quantity_sum_string('PL');
 
             //Get purchase lines, only for products with enable stock.
-            $query = Transaction::join('purchase_lines AS PL', 'transactions.id', '=', 'PL.transaction_id')
+            $base_query = Transaction::join('purchase_lines AS PL', 'transactions.id', '=', 'PL.transaction_id')
                 ->where('transactions.business_id', $business['id'])
                 ->where('transactions.location_id', $business['location_id'])
                 ->whereIn('transactions.type', [
@@ -3765,20 +3906,23 @@ class TransactionUtil extends Util
             if ($stop_selling_expired && empty($purchase_line_id)) {
                 $stop_before = request()->session()->get('business')['stop_selling_before'];
                 $expiry_date = \Carbon::today()->addDays($stop_before)->toDateString();
-                $query->where(function ($q) use ($expiry_date) {
+                $base_query->where(function ($q) use ($expiry_date) {
                     $q->whereNull('PL.exp_date')
                         ->orWhereRaw('PL.exp_date > ?', [$expiry_date]);
                 });
             }
 
+            //If purchase_line_id is given consider only that purchase line
+            if (!empty($purchase_line_id)) {
+                $base_query->where('PL.id', $purchase_line_id);
+            }
+
+            //Build query with lot filter first; if it yields no rows, fallback to base query.
+            $query = clone $base_query;
+
             //If lot number present consider only lot number purchase line
             if (!empty($line->lot_no_line_id)) {
                 $query->where('PL.id', $line->lot_no_line_id);
-            }
-
-            //If purchase_line_id is given consider only that purchase line
-            if (!empty($purchase_line_id)) {
-                $query->where('PL.id', $purchase_line_id);
             }
 
             //Sort according to LIFO or FIFO
@@ -3797,6 +3941,27 @@ class TransactionUtil extends Util
                 'PL.mfg_quantity_used as mfg_quantity_used',
                 'transactions.invoice_no'
             )->get();
+
+            // Sometimes stale/invalid lot_no_line_id can be submitted from POS rows.
+            // Retry allocation without lot restriction before raising mismatch.
+            if ($rows->isEmpty() && !empty($line->lot_no_line_id) && empty($purchase_line_id)) {
+                $fallback_query = clone $base_query;
+                if ($business['accounting_method'] == 'lifo') {
+                    $fallback_query = $fallback_query->orderBy('transaction_date', 'desc');
+                } else {
+                    $fallback_query = $fallback_query->orderBy('transaction_date', 'asc');
+                }
+
+                $rows = $fallback_query->select(
+                    'PL.id as purchase_lines_id',
+                    DB::raw("(PL.quantity - ( $qty_sum_query )) AS quantity_available"),
+                    'PL.quantity_sold as quantity_sold',
+                    'PL.quantity_adjusted as quantity_adjusted',
+                    'PL.quantity_returned as quantity_returned',
+                    'PL.mfg_quantity_used as mfg_quantity_used',
+                    'transactions.invoice_no'
+                )->get();
+            }
 
             $purchase_sell_map = [];
 
@@ -3867,9 +4032,27 @@ class TransactionUtil extends Util
                 }
             }
 
+            // Avoid false mismatch due to floating-point precision leftovers.
+            if (!is_null($qty_selling) && abs((float) $qty_selling) < 0.000001) {
+                $qty_selling = 0;
+            }
+
             if (!($qty_selling == 0 || is_null($qty_selling))) {
+                $mismatch_bypass = false;
+                if (!$allow_overselling && $mapping_type == 'purchase') {
+                    $current_vld = VariationLocationDetails::where('variation_id', $line->variation_id)
+                        ->where('location_id', $business['location_id'])
+                        ->first();
+                    // Product quantity has already been decremented by this point in checkout.
+                    // So if qty_available >= 0, it means we had enough stock originally.
+                    if ($current_vld && round($current_vld->qty_available, 4) >= 0) {
+                        $mismatch_bypass = true;
+                        \Log::warning("Purchase mapping bypassed for Product: " . optional($product)->name . " Variation: {$line->variation_id} due to VLD stock difference.");
+                    }
+                }
+
                 //If overselling not allowed through exception else create mapping with blank purchase_line_id
-                if (!$allow_overselling) {
+                if (!$allow_overselling && !$mismatch_bypass) {
                     $variation = Variation::find($line->variation_id);
                     $mismatch_name = $product->name;
                     if (!empty($variation->sub_sku)) {
@@ -3943,7 +4126,12 @@ class TransactionUtil extends Util
         $business,
         $deleted_line_ids = []
     ) {
-        if ($status_before == 'final' && $transaction->status == 'draft') {
+        $current_status = $transaction->status;
+        if ($current_status == 'draft' && $transaction->is_suspend == 1) {
+            $current_status = 'final';
+        }
+
+        if ($status_before == 'final' && $current_status == 'draft') {
             //Get sell lines used for the transaction.
             $sell_purchases = Transaction::join('transaction_sell_lines AS SL', 'transactions.id', '=', 'SL.transaction_id')
                 ->join('transaction_sell_lines_purchase_lines as TSP', 'SL.id', '=', 'TSP.sell_line_id')
@@ -3977,9 +4165,9 @@ class TransactionUtil extends Util
                 TransactionSellLinesPurchaseLines::whereIn('id', $sell_purchase_ids)
                     ->delete();
             }
-        } elseif ($status_before == 'draft' && $transaction->status == 'final') {
+        } elseif ($status_before == 'draft' && $current_status == 'final') {
             $this->mapPurchaseSell($business, $transaction->sell_lines, 'purchase');
-        } elseif ($status_before == 'final' && $transaction->status == 'final') {
+        } elseif ($status_before == 'final' && $current_status == 'final') {
             //Handle deleted line
             if (!empty($deleted_line_ids)) {
                 $deleted_sell_purchases = TransactionSellLinesPurchaseLines::whereIn('sell_line_id', $deleted_line_ids)
@@ -5383,8 +5571,31 @@ class TransactionUtil extends Util
             $log_type = $transaction->type == 'sales_order' ? 'so_deleted' : 'sell_deleted';
             $this->activityLog($transaction, $log_type, null, $log_properities);
 
-            //If status is draft direct delete transaction
+            //If status is draft (suspended), restore stock before deleting
             if ($transaction->status == 'draft') {
+                // Restore stock for all sell lines
+                $deleted_sell_lines = $transaction->sell_lines;
+                $deleted_sell_lines_ids = $deleted_sell_lines->pluck('id')->toArray();
+
+                // Reverse purchase mapping for suspended sales before deleting lines
+                if ($transaction->is_suspend == 1) {
+                    $business_data = [
+                        'id' => $business_id,
+                        'accounting_method' => request()->session()->get('business.accounting_method'),
+                        'location_id' => $transaction->location_id
+                    ];
+                    // Temporarily unset is_suspend to force adjustMappingPurchaseSell to treat this as final->draft 
+                    // which cleanly deletes mappings rather than immediately re-mapping them.
+                    $transaction->is_suspend = 0;
+                    $this->adjustMappingPurchaseSell('final', $transaction, $business_data, $deleted_sell_lines_ids);
+                    $transaction->is_suspend = 1;
+                }
+
+                $this->deleteSellLines(
+                    $deleted_sell_lines_ids,
+                    $transaction->location_id,
+                    $transaction->is_suspend == 1 ? true : false
+                );
                 foreach ($transaction->sell_lines as $sell_line) {
                     $this->updateSalesOrderLine($sell_line->so_line_id, 0, $sell_line->quantity);
                 }
@@ -5392,7 +5603,6 @@ class TransactionUtil extends Util
                 if (!empty($sales_order_ids)) {
                     $this->updateSalesOrderStatus($sales_order_ids);
                 }
-
                 $transaction->delete();
             } else {
                 $business = Business::findOrFail($business_id);
@@ -5659,13 +5869,14 @@ class TransactionUtil extends Util
                 'tables.name as table_name',
                 DB::raw('SUM(tsl.quantity - tsl.so_quantity_invoiced) as so_qty_remaining'),
                 'transactions.is_export',
-                DB::raw("CONCAT(COALESCE(dp.surname, ''),' ',COALESCE(dp.first_name, ''),' ',COALESCE(dp.last_name,'')) as delivery_person")
+                DB::raw("CONCAT(COALESCE(dp.surname, ''),' ',COALESCE(dp.first_name, ''),' ',COALESCE(dp.last_name,'')) as delivery_person"),
+                'transactions.due_date'
             );
 
         if ($sale_type == 'sell') {
             $sells->where(function ($q) use ($include_suspended) {
                 $q->where('transactions.type', 'opening_balance')
-                  ->orWhere('transactions.status', 'final');
+                    ->orWhere('transactions.status', 'final');
 
                 if ($include_suspended) {
                     $q->orWhere('transactions.is_suspend', 1);
@@ -6974,8 +7185,12 @@ class TransactionUtil extends Util
         $businessUtil = new BusinessUtil();
         $invoice_layout = $businessUtil->invoiceLayout($business_id, $location_details->invoice_layout_id);
 
-        //Logo
-        $logo = $invoice_layout->show_logo != 0 && !empty($invoice_layout->logo) && file_exists(public_path('uploads/invoice_logos/' . $invoice_layout->logo)) ? asset('uploads/invoice_logos/' . $invoice_layout->logo) : false;
+        //Logo (split-docroot aware)
+        $is_split = (bool) env('APP_SPLIT_DOCROOT', false);
+        $invoice_logos_path = $is_split
+            ? dirname(base_path()) . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'invoice_logos' . DIRECTORY_SEPARATOR
+            : public_path('uploads/invoice_logos/');
+        $logo = $invoice_layout->show_logo != 0 && !empty($invoice_layout->logo) && file_exists($invoice_logos_path . $invoice_layout->logo) ? ($is_split ? url('uploads/invoice_logos/' . $invoice_layout->logo) : asset('uploads/invoice_logos/' . $invoice_layout->logo)) : false;
 
         $word_format = $invoice_layout->common_settings['num_to_word_format'] ? $invoice_layout->common_settings['num_to_word_format'] : 'international';
         $total_in_words = $this->numToWord($purchase->final_total, null, $word_format);

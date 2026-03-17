@@ -8,14 +8,14 @@
 				<span class="input-group-addon" style="background: linear-gradient(135deg, #161160 0%, #2a2480 100%); border: none; color: white;">
 					<i class="fa fa-user"></i>
 				</span>
-				<input type="hidden" id="default_customer_id" 
-				value="{{ $transaction->contact->id }}" >
-				<input type="hidden" id="default_customer_name" 
-				value="{{ $transaction->contact->name }}" >
-				<input type="hidden" id="default_customer_balance" 
-				value="{{$transaction->contact->balance}}" >
-				{!! Form::select('contact_id', 
-					[], null, ['class' => 'form-control mousetrap', 'id' => 'customer_id', 'placeholder' => 'Enter Customer name / phone', 'required', 'style' => 'width: 100%; border: none; padding: 12px 15px; font-size: 14px;']) !!}
+				   <input type="hidden" id="default_customer_id" 
+				   value="{{ $walk_in_customer['id'] ?? '' }}" >
+				   <input type="hidden" id="default_customer_name" 
+				   value="{{ $walk_in_customer['name'] ?? '' }}" >
+				   <input type="hidden" id="default_customer_balance" 
+				   value="{{ $walk_in_customer['balance'] ?? '' }}" >
+				   {!! Form::select('contact_id', 
+					   [$transaction->contact->id => $transaction->contact->name], $transaction->contact->id, ['class' => 'form-control mousetrap', 'id' => 'customer_id', 'placeholder' => 'Enter Customer name / phone', 'required', 'style' => 'width: 100%; border: none; padding: 12px 15px; font-size: 14px;']) !!}
 				<span class="input-group-btn">
 					<button type="button" class="btn btn-default bg-white btn-flat add_new_customer" data-name="" style="background: linear-gradient(135deg, #161160 0%, #3d3580 100%); border: none; color: white; padding: 8px 12px;" @if(!auth()->user()->can('customer.create')) disabled @endif><i class="fa fa-plus-circle fa-lg"></i></button>
 				</span>

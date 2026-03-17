@@ -4,6 +4,7 @@ namespace App\Utils;
 
 use App\CashRegister;
 use App\CashRegisterTransaction;
+use App\Contact;
 use App\Transaction;
 use DB;
 
@@ -19,8 +20,8 @@ class CashRegisterUtil extends Util
     {
         $user_id = auth()->user()->id;
         $count = CashRegister::where('user_id', $user_id)
-                                ->where('status', 'open')
-                                ->count();
+            ->where('status', 'open')
+            ->count();
 
         return $count;
     }
@@ -36,8 +37,13 @@ class CashRegisterUtil extends Util
     {
         $user_id = auth()->user()->id;
         $register = CashRegister::where('user_id', $user_id)
-                                ->where('status', 'open')
-                                ->first();
+            ->where('status', 'open')
+            ->first();
+
+        if (empty($register)) {
+            return false;
+        }
+
         $payments_formatted = [];
         foreach ($payments as $payment) {
             $payment_amount = (isset($payment['is_return']) && $payment['is_return'] == 1) ? (-1 * $this->num_uf($payment['amount'])) : $this->num_uf($payment['amount']);
@@ -57,7 +63,7 @@ class CashRegisterUtil extends Util
             }
         }
 
-        if (! empty($payments_formatted)) {
+        if (!empty($payments_formatted)) {
             $register->cash_register_transactions()->saveMany($payments_formatted);
         }
 
@@ -75,8 +81,13 @@ class CashRegisterUtil extends Util
     {
         $user_id = auth()->user()->id;
         $register = CashRegister::where('user_id', $user_id)
-                                ->where('status', 'open')
-                                ->first();
+            ->where('status', 'open')
+            ->first();
+
+        if (empty($register)) {
+            return false;
+        }
+
         //If draft -> final then add all
         //If final -> draft then refund all
         //If final -> final then update payments
@@ -86,22 +97,22 @@ class CashRegisterUtil extends Util
             $this->refundSell($transaction);
         } elseif ($status_before == 'final' && $transaction->status == 'final') {
             $prev_payments = CashRegisterTransaction::where('transaction_id', $transaction->id)
-                            ->select(
-                                DB::raw("SUM(IF(pay_method='cash', IF(type='credit', amount, -1 * amount), 0)) as total_cash"),
-                                DB::raw("SUM(IF(pay_method='card', IF(type='credit', amount, -1 * amount), 0)) as total_card"),
-                                DB::raw("SUM(IF(pay_method='cheque', IF(type='credit', amount, -1 * amount), 0)) as total_cheque"),
-                                DB::raw("SUM(IF(pay_method='bank_transfer', IF(type='credit', amount, -1 * amount), 0)) as total_bank_transfer"),
-                                DB::raw("SUM(IF(pay_method='other', IF(type='credit', amount, -1 * amount), 0)) as total_other"),
-                                DB::raw("SUM(IF(pay_method='custom_pay_1', IF(type='credit', amount, -1 * amount), 0)) as total_custom_pay_1"),
-                                DB::raw("SUM(IF(pay_method='custom_pay_2', IF(type='credit', amount, -1 * amount), 0)) as total_custom_pay_2"),
-                                DB::raw("SUM(IF(pay_method='custom_pay_3', IF(type='credit', amount, -1 * amount), 0)) as total_custom_pay_3"),
-                                DB::raw("SUM(IF(pay_method='custom_pay_4', IF(type='credit', amount, -1 * amount), 0)) as total_custom_pay_4"),
-                                DB::raw("SUM(IF(pay_method='custom_pay_5', IF(type='credit', amount, -1 * amount), 0)) as total_custom_pay_5"),
-                                DB::raw("SUM(IF(pay_method='custom_pay_6', IF(type='credit', amount, -1 * amount), 0)) as total_custom_pay_6"),
-                                DB::raw("SUM(IF(pay_method='custom_pay_7', IF(type='credit', amount, -1 * amount), 0)) as total_custom_pay_7"),
-                                DB::raw("SUM(IF(pay_method='advance', IF(type='credit', amount, -1 * amount), 0)) as total_advance")
-                            )->first();
-            if (! empty($prev_payments)) {
+                ->select(
+                    DB::raw("SUM(IF(pay_method='cash', IF(type='credit', amount, -1 * amount), 0)) as total_cash"),
+                    DB::raw("SUM(IF(pay_method='card', IF(type='credit', amount, -1 * amount), 0)) as total_card"),
+                    DB::raw("SUM(IF(pay_method='cheque', IF(type='credit', amount, -1 * amount), 0)) as total_cheque"),
+                    DB::raw("SUM(IF(pay_method='bank_transfer', IF(type='credit', amount, -1 * amount), 0)) as total_bank_transfer"),
+                    DB::raw("SUM(IF(pay_method='other', IF(type='credit', amount, -1 * amount), 0)) as total_other"),
+                    DB::raw("SUM(IF(pay_method='custom_pay_1', IF(type='credit', amount, -1 * amount), 0)) as total_custom_pay_1"),
+                    DB::raw("SUM(IF(pay_method='custom_pay_2', IF(type='credit', amount, -1 * amount), 0)) as total_custom_pay_2"),
+                    DB::raw("SUM(IF(pay_method='custom_pay_3', IF(type='credit', amount, -1 * amount), 0)) as total_custom_pay_3"),
+                    DB::raw("SUM(IF(pay_method='custom_pay_4', IF(type='credit', amount, -1 * amount), 0)) as total_custom_pay_4"),
+                    DB::raw("SUM(IF(pay_method='custom_pay_5', IF(type='credit', amount, -1 * amount), 0)) as total_custom_pay_5"),
+                    DB::raw("SUM(IF(pay_method='custom_pay_6', IF(type='credit', amount, -1 * amount), 0)) as total_custom_pay_6"),
+                    DB::raw("SUM(IF(pay_method='custom_pay_7', IF(type='credit', amount, -1 * amount), 0)) as total_custom_pay_7"),
+                    DB::raw("SUM(IF(pay_method='advance', IF(type='credit', amount, -1 * amount), 0)) as total_advance")
+                )->first();
+            if (!empty($prev_payments)) {
                 $payment_diffs = [
                     'cash' => $prev_payments->total_cash,
                     'card' => $prev_payments->total_card,
@@ -145,7 +156,7 @@ class CashRegisterUtil extends Util
                         ]);
                     }
                 }
-                if (! empty($payments_formatted)) {
+                if (!empty($payments_formatted)) {
                     $register->cash_register_transactions()->saveMany($payments_formatted);
                 }
             }
@@ -164,24 +175,28 @@ class CashRegisterUtil extends Util
     {
         $user_id = auth()->user()->id;
         $register = CashRegister::where('user_id', $user_id)
-                                ->where('status', 'open')
-                                ->first();
+            ->where('status', 'open')
+            ->first();
+
+        if (empty($register)) {
+            return false;
+        }
 
         $total_payment = CashRegisterTransaction::where('transaction_id', $transaction->id)
-                            ->select(
-                                DB::raw("SUM(IF(pay_method='cash', IF(type='credit', amount, -1 * amount), 0)) as total_cash"),
-                                DB::raw("SUM(IF(pay_method='card', IF(type='credit', amount, -1 * amount), 0)) as total_card"),
-                                DB::raw("SUM(IF(pay_method='cheque', IF(type='credit', amount, -1 * amount), 0)) as total_cheque"),
-                                DB::raw("SUM(IF(pay_method='bank_transfer', IF(type='credit', amount, -1 * amount), 0)) as total_bank_transfer"),
-                                DB::raw("SUM(IF(pay_method='other', IF(type='credit', amount, -1 * amount), 0)) as total_other"),
-                                DB::raw("SUM(IF(pay_method='custom_pay_1', IF(type='credit', amount, -1 * amount), 0)) as total_custom_pay_1"),
-                                DB::raw("SUM(IF(pay_method='custom_pay_2', IF(type='credit', amount, -1 * amount), 0)) as total_custom_pay_2"),
-                                DB::raw("SUM(IF(pay_method='custom_pay_3', IF(type='credit', amount, -1 * amount), 0)) as total_custom_pay_3"),
-                                DB::raw("SUM(IF(pay_method='custom_pay_4', IF(type='credit', amount, -1 * amount), 0)) as total_custom_pay_4"),
-                                DB::raw("SUM(IF(pay_method='custom_pay_5', IF(type='credit', amount, -1 * amount), 0)) as total_custom_pay_5"),
-                                DB::raw("SUM(IF(pay_method='custom_pay_6', IF(type='credit', amount, -1 * amount), 0)) as total_custom_pay_6"),
-                                DB::raw("SUM(IF(pay_method='custom_pay_7', IF(type='credit', amount, -1 * amount), 0)) as total_custom_pay_7")
-                            )->first();
+            ->select(
+                DB::raw("SUM(IF(pay_method='cash', IF(type='credit', amount, -1 * amount), 0)) as total_cash"),
+                DB::raw("SUM(IF(pay_method='card', IF(type='credit', amount, -1 * amount), 0)) as total_card"),
+                DB::raw("SUM(IF(pay_method='cheque', IF(type='credit', amount, -1 * amount), 0)) as total_cheque"),
+                DB::raw("SUM(IF(pay_method='bank_transfer', IF(type='credit', amount, -1 * amount), 0)) as total_bank_transfer"),
+                DB::raw("SUM(IF(pay_method='other', IF(type='credit', amount, -1 * amount), 0)) as total_other"),
+                DB::raw("SUM(IF(pay_method='custom_pay_1', IF(type='credit', amount, -1 * amount), 0)) as total_custom_pay_1"),
+                DB::raw("SUM(IF(pay_method='custom_pay_2', IF(type='credit', amount, -1 * amount), 0)) as total_custom_pay_2"),
+                DB::raw("SUM(IF(pay_method='custom_pay_3', IF(type='credit', amount, -1 * amount), 0)) as total_custom_pay_3"),
+                DB::raw("SUM(IF(pay_method='custom_pay_4', IF(type='credit', amount, -1 * amount), 0)) as total_custom_pay_4"),
+                DB::raw("SUM(IF(pay_method='custom_pay_5', IF(type='credit', amount, -1 * amount), 0)) as total_custom_pay_5"),
+                DB::raw("SUM(IF(pay_method='custom_pay_6', IF(type='credit', amount, -1 * amount), 0)) as total_custom_pay_6"),
+                DB::raw("SUM(IF(pay_method='custom_pay_7', IF(type='credit', amount, -1 * amount), 0)) as total_custom_pay_7")
+            )->first();
         $refunds = [
             'cash' => $total_payment->total_cash,
             'card' => $total_payment->total_card,
@@ -209,11 +224,108 @@ class CashRegisterUtil extends Util
             }
         }
 
-        if (! empty($refund_formatted)) {
+        if (!empty($refund_formatted)) {
             $register->cash_register_transactions()->saveMany($refund_formatted);
         }
 
         return true;
+    }
+
+    /**
+     * Add a single transaction payment into currently open register for a user.
+     * This is used for due/installment/expense style payments created outside POS save flow.
+     *
+     * @param object $transaction
+     * @param object $payment
+     * @param int|null $user_id
+     * @return bool
+     */
+    public function addTransactionPaymentToRegister($transaction, $payment, $user_id = null)
+    {
+        if (empty($transaction) || empty($payment) || empty($payment->method)) {
+            return false;
+        }
+
+        //Keep register aligned with payment-status logic: pending cheque is not realized cash yet.
+        if ($payment->method === 'cheque' && $payment->cheque_status !== 'cleared') {
+            return false;
+        }
+
+        $user_id = !empty($user_id) ? $user_id : $payment->created_by;
+        if (empty($user_id)) {
+            return false;
+        }
+
+        $register = CashRegister::where('user_id', $user_id)
+            ->where('status', 'open')
+            ->first();
+
+        if (empty($register)) {
+            return false;
+        }
+
+        $amount = (float) $payment->amount;
+        if ($amount <= 0) {
+            return false;
+        }
+
+        $entry = $this->mapPaymentToRegisterEntry($transaction, $payment);
+
+        $register->cash_register_transactions()->create([
+            'amount' => $amount,
+            'pay_method' => $payment->method,
+            'type' => $entry['type'],
+            'transaction_type' => $entry['transaction_type'],
+            'transaction_id' => $transaction->id,
+        ]);
+
+        return true;
+    }
+
+    /**
+     * Map transaction payment to existing register buckets used by current UI math.
+     */
+    protected function mapPaymentToRegisterEntry($transaction, $payment)
+    {
+        $transaction_type = 'sell';
+        $type = 'credit';
+
+        //Change return while receiving sell payment should reduce cash-in-hand.
+        if ($transaction->type === 'sell' && !empty($payment->is_return)) {
+            return [
+                'transaction_type' => 'refund',
+                'type' => 'debit',
+            ];
+        }
+
+        if (in_array($transaction->type, ['purchase', 'expense'], true)) {
+            $transaction_type = 'expense';
+            $type = 'debit';
+        } elseif ($transaction->type === 'sell_return') {
+            $transaction_type = 'refund';
+            $type = 'debit';
+        } elseif (in_array($transaction->type, ['expense_refund', 'purchase_return', 'sell'], true)) {
+            $transaction_type = 'sell';
+            $type = 'credit';
+        } elseif ($transaction->type === 'opening_balance') {
+            $contact = null;
+            if (!empty($transaction->contact_id)) {
+                $contact = Contact::find($transaction->contact_id);
+            }
+
+            if (!empty($contact) && $contact->type === 'supplier') {
+                $transaction_type = 'expense';
+                $type = 'debit';
+            } else {
+                $transaction_type = 'sell';
+                $type = 'credit';
+            }
+        }
+
+        return [
+            'transaction_type' => $transaction_type,
+            'type' => $type,
+        ];
     }
 
     /**
@@ -230,18 +342,18 @@ class CashRegisterUtil extends Util
             '=',
             'cash_registers.id'
         )
-        ->join(
-            'users as u',
-            'u.id',
-            '=',
-            'cash_registers.user_id'
-        )
-        ->leftJoin(
-            'business_locations as bl',
-            'bl.id',
-            '=',
-            'cash_registers.location_id'
-        );
+            ->join(
+                'users as u',
+                'u.id',
+                '=',
+                'cash_registers.user_id'
+            )
+            ->leftJoin(
+                'business_locations as bl',
+                'bl.id',
+                '=',
+                'cash_registers.location_id'
+            );
         if (empty($register_id)) {
             $user_id = auth()->user()->id;
             $query->where('user_id', $user_id)
@@ -251,6 +363,7 @@ class CashRegisterUtil extends Util
         }
 
         $register_details = $query->select(
+            'cash_registers.id',
             'cash_registers.created_at as open_time',
             'cash_registers.closed_at as closed_at',
             'cash_registers.user_id',
@@ -321,44 +434,44 @@ class CashRegisterUtil extends Util
     public function getRegisterTransactionDetails($user_id, $open_time, $close_time, $is_types_of_service_enabled = false)
     {
         $product_details_by_brand = Transaction::where('transactions.created_by', $user_id)
-                ->whereBetween('transactions.created_at', [$open_time, $close_time])
-                ->where('transactions.type', 'sell')
-                ->where('transactions.status', 'final')
-                ->where('transactions.is_direct_sale', 0)
-                ->join('transaction_sell_lines AS TSL', 'transactions.id', '=', 'TSL.transaction_id')
-                ->join('products AS P', 'TSL.product_id', '=', 'P.id')
-                ->where('TSL.children_type', '!=', 'combo')
-                ->leftjoin('brands AS B', 'P.brand_id', '=', 'B.id')
-                ->groupBy('B.id')
-                ->select(
-                    'B.name as brand_name',
-                    DB::raw('SUM(TSL.quantity) as total_quantity'),
-                    DB::raw('SUM(TSL.unit_price_inc_tax*TSL.quantity) as total_amount')
-                )
-                ->orderByRaw('CASE WHEN brand_name IS NULL THEN 2 ELSE 1 END, brand_name')
-                ->get();
+            ->whereBetween('transactions.created_at', [$open_time, $close_time])
+            ->where('transactions.type', 'sell')
+            ->where('transactions.status', 'final')
+            ->where('transactions.is_direct_sale', 0)
+            ->join('transaction_sell_lines AS TSL', 'transactions.id', '=', 'TSL.transaction_id')
+            ->join('products AS P', 'TSL.product_id', '=', 'P.id')
+            ->where('TSL.children_type', '!=', 'combo')
+            ->leftjoin('brands AS B', 'P.brand_id', '=', 'B.id')
+            ->groupBy('B.id')
+            ->select(
+                'B.name as brand_name',
+                DB::raw('SUM(TSL.quantity) as total_quantity'),
+                DB::raw('SUM(TSL.unit_price_inc_tax*TSL.quantity) as total_amount')
+            )
+            ->orderByRaw('CASE WHEN brand_name IS NULL THEN 2 ELSE 1 END, brand_name')
+            ->get();
 
         $product_details = Transaction::where('transactions.created_by', $user_id)
-                ->whereBetween('transactions.created_at', [$open_time, $close_time])
-                ->where('transactions.type', 'sell')
-                ->where('transactions.status', 'final')
-                ->where('transactions.is_direct_sale', 0)
-                ->join('transaction_sell_lines AS TSL', 'transactions.id', '=', 'TSL.transaction_id')
-                ->join('variations AS v', 'TSL.variation_id', '=', 'v.id')
-                ->join('product_variations AS pv', 'v.product_variation_id', '=', 'pv.id')
-                ->join('products AS p', 'v.product_id', '=', 'p.id')
-                ->where('TSL.children_type', '!=', 'combo')
-                ->groupBy('v.id')
-                ->select(
-                    'p.name as product_name',
-                    'p.type as product_type',
-                    'v.name as variation_name',
-                    'pv.name as product_variation_name',
-                    'v.sub_sku as sku',
-                    DB::raw('SUM(TSL.quantity) as total_quantity'),
-                    DB::raw('SUM(TSL.unit_price_inc_tax*TSL.quantity) as total_amount')
-                )
-                ->get();
+            ->whereBetween('transactions.created_at', [$open_time, $close_time])
+            ->where('transactions.type', 'sell')
+            ->where('transactions.status', 'final')
+            ->where('transactions.is_direct_sale', 0)
+            ->join('transaction_sell_lines AS TSL', 'transactions.id', '=', 'TSL.transaction_id')
+            ->join('variations AS v', 'TSL.variation_id', '=', 'v.id')
+            ->join('product_variations AS pv', 'v.product_variation_id', '=', 'pv.id')
+            ->join('products AS p', 'v.product_id', '=', 'p.id')
+            ->where('TSL.children_type', '!=', 'combo')
+            ->groupBy('v.id')
+            ->select(
+                'p.name as product_name',
+                'p.type as product_type',
+                'v.name as variation_name',
+                'pv.name as product_variation_name',
+                'v.sub_sku as sku',
+                DB::raw('SUM(TSL.quantity) as total_quantity'),
+                DB::raw('SUM(TSL.unit_price_inc_tax*TSL.quantity) as total_amount')
+            )
+            ->get();
 
         //If types of service
         $types_of_service_details = null;
@@ -379,19 +492,20 @@ class CashRegisterUtil extends Util
         }
 
         $transaction_details = Transaction::where('transactions.created_by', $user_id)
-                ->whereBetween('transactions.created_at', [$open_time, $close_time])
-                ->where('transactions.type', 'sell')
-                ->where('transactions.is_direct_sale', 0)
-                ->where('transactions.status', 'final')
-                ->select(
-                    DB::raw('SUM(tax_amount) as total_tax'),
-                    DB::raw('SUM(IF(discount_type = "percentage", total_before_tax*discount_amount/100, discount_amount)) as total_discount'),
-                    DB::raw('SUM(final_total) as total_sales'),
-                    DB::raw('SUM(shipping_charges) as total_shipping_charges')
-                )
-                ->first();
+            ->whereBetween('transactions.created_at', [$open_time, $close_time])
+            ->where('transactions.type', 'sell')
+            ->where('transactions.is_direct_sale', 0)
+            ->where('transactions.status', 'final')
+            ->select(
+                DB::raw('SUM(tax_amount) as total_tax'),
+                DB::raw('SUM(IF(discount_type = "percentage", total_before_tax*discount_amount/100, discount_amount)) as total_discount'),
+                DB::raw('SUM(final_total) as total_sales'),
+                DB::raw('SUM(shipping_charges) as total_shipping_charges')
+            )
+            ->first();
 
-        return ['product_details_by_brand' => $product_details_by_brand,
+        return [
+            'product_details_by_brand' => $product_details_by_brand,
             'transaction_details' => $transaction_details,
             'types_of_service_details' => $types_of_service_details,
             'product_details' => $product_details,
@@ -407,8 +521,8 @@ class CashRegisterUtil extends Util
     public function getCurrentCashRegister($user_id)
     {
         $register = CashRegister::where('user_id', $user_id)
-                                ->where('status', 'open')
-                                ->first();
+            ->where('status', 'open')
+            ->first();
 
         return $register;
     }

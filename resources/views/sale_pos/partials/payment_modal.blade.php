@@ -16,7 +16,7 @@
                         ]) !!}
                     </div>
 
-                    <div class="col-md-12 mb-12" style="margin-top:6px;">
+                    <div class="col-md-12 mb-12 apply_to_old_dues_wrapper" style="margin-top:6px;">
                         {!! Form::hidden('apply_payment_to_old_dues', 0) !!}
                         <label style="font-weight: 600; cursor: pointer;">
                             {!! Form::checkbox('apply_payment_to_old_dues', 1, false, ['id' => 'apply_payment_to_old_dues']) !!}
@@ -171,7 +171,7 @@
                                     <input type="hidden" id="total_paying_input">
                                 </div>
 
-                                <div class="col-md-12">
+                                <div class="col-md-12 change_return_row">
                                     <hr style="border-color: rgba(22,17,96,0.1);">
                                     <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
                                         <span style="font-weight:600; color:#111827;">@lang('lang_v1.change_return'):</span>
@@ -189,7 +189,7 @@
                                     @endif
                                 </div>
 
-                                <div class="col-md-12">
+                                <div class="col-md-12 balance_due_row">
                                     <hr style="border-color: rgba(22,17,96,0.1);">
                                     <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
                                         <span style="font-weight:700; color:#dc2626;">@lang('lang_v1.balance'):</span>
@@ -203,13 +203,24 @@
                                 <div class="col-md-12 hide" id="pos_due_date_wrapper">
                                     <hr style="border-color: rgba(22,17,96,0.1);">
                                     <div class="form-group" style="margin-bottom: 0;">
-                                        {!! Form::label('due_date', __('lang_v1.due_date') . ':') !!}
+                                        {!! Form::label('due_date_dropdown', __('lang_v1.due_date') . ':') !!}
                                         <div class="input-group">
                                             <span class="input-group-addon">
                                                 <i class="fa fa-calendar"></i>
                                             </span>
-                                            {!! Form::text('due_date', null, ['class' => 'form-control pos_due_date', 'id' => 'pos_due_date', 'autocomplete' => 'off', 'placeholder' => __('lang_v1.due_date')]) !!}
+                                            {!! Form::select('due_date_dropdown', ['0' => __('home.today'), '30' => '30 Days', '60' => '60 Days', '90' => '90 Days', 'custom' => 'Customize'], '60', ['class' => 'form-control', 'id' => 'pos_due_date_dropdown']) !!}
                                         </div>
+                                        
+                                        <div id="custom_due_days_wrapper" class="input-group hide" style="margin-top: 5px;">
+                                            <span class="input-group-addon">
+                                                <i class="fa fa-pencil-alt"></i>
+                                            </span>
+                                            {!! Form::number('custom_due_days', null, ['class' => 'form-control', 'id' => 'custom_due_days', 'placeholder' => 'Enter exact days']) !!}
+                                        </div>
+
+                                        <!-- Hidden original input to keep backend submission working -->
+                                        {!! Form::text('due_date', null, ['class' => 'form-control pos_due_date hide', 'id' => 'pos_due_date', 'autocomplete' => 'off', 'style' => 'display:none;']) !!}
+
                                         <small class="help-block" style="margin: 4px 0 0;">
                                             @lang('lang_v1.due_date')
                                         </small>
@@ -245,6 +256,19 @@
                                             <div class="form-group" style="margin-bottom: 8px;">
                                                 {!! Form::label('installment_interval_type', __('lang_v1.installment_interval_type') . ':*') !!}
                                                 {!! Form::select('installment_interval_type', ['days' => __('lang_v1.days'), 'weeks' => __('lang_v1.weeks'), 'months' => __('lang_v1.months')], 'months', ['class' => 'form-control', 'id' => 'installment_interval_type']) !!}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <div class="form-group" style="margin-bottom: 8px;">
+                                                {!! Form::label('installment_first_due_date', __('lang_v1.first_installment_due_date') . ':*') !!}
+                                                <div class="input-group">
+                                                    <span class="input-group-addon">
+                                                        <i class="fa fa-calendar"></i>
+                                                    </span>
+                                                    {!! Form::text('installment_first_due_date', null, ['class' => 'form-control', 'id' => 'installment_first_due_date', 'autocomplete' => 'off']) !!}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>

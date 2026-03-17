@@ -54,6 +54,8 @@ return [
     'sell_price_tax' => 'Selling price',
     'product' => 'Product',
     'sku_prefix' => 'SKU prefix',
+    'sku_starting_number' => 'SKU Starting Number',
+    'sku_starting_number_help' => 'The number from which SKU generation will start (e.g., if set to 100, SKUs will be AS0100, AS0101, etc.)',
     'language' => 'Language',
     'time_zone' => 'Time zone',
     'months' => [

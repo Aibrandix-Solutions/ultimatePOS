@@ -660,14 +660,6 @@ class PurchaseController extends Controller
             return $this->moduleUtil->expiredResponse(action([\App\Http\Controllers\PurchaseController::class, 'index']));
         }
 
-        //Check if the transaction can be edited or not.
-        $edit_days = request()->session()->get('business.transaction_edit_days');
-        if (! $this->transactionUtil->canBeEdited($id, $edit_days)) {
-            return back()
-                ->with('status', ['success' => 0,
-                    'msg' => __('messages.transaction_edit_not_allowed', ['days' => $edit_days]), ]);
-        }
-
         //Check if return exist then not allowed
         if ($this->transactionUtil->isReturnExist($id)) {
             return back()->with('status', ['success' => 0,
@@ -1513,13 +1505,6 @@ class PurchaseController extends Controller
         if (! auth()->user()->can('purchase.update') && ! auth()->user()->can('purchase.update_status')) {
             abort(403, 'Unauthorized action.');
         }
-        //Check if the transaction can be edited or not.
-        $edit_days = request()->session()->get('business.transaction_edit_days');
-        if (! $this->transactionUtil->canBeEdited($request->input('purchase_id'), $edit_days)) {
-            return ['success' => 0,
-                'msg' => __('messages.transaction_edit_not_allowed', ['days' => $edit_days]), ];
-        }
-
         try {
             $business_id = request()->session()->get('user.business_id');
 

@@ -78,6 +78,7 @@
                             <th>@lang('sale.total_paid')</th>
                             <th>@lang('lang_v1.sell_due')</th>
                             <th>@lang('lang_v1.sell_return_due')</th>
+                            <th>@lang('lang_v1.due_date')</th>
                             <th>@lang('lang_v1.shipping_status')</th>
                             <th>@lang('lang_v1.total_items')</th>
                             <th>@lang('lang_v1.types_of_service')</th>
@@ -326,6 +327,10 @@
                         data: 'return_due',
                         orderable: false,
                         "searchable": false
+                    },
+                    {
+                        data: 'due_date',
+                        name: 'transactions.due_date'
                     },
                     {
                         data: 'shipping_status',

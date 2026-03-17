@@ -357,6 +357,7 @@
                 tableBody.empty(); // Ensure this runs BEFORE the loop
 
                 for (let product of resultArray) {
+                    if (!product.variation_id) continue;
                     let single_product = await fetchProduct(product.variation_id, location_id);
                     // Determine product image URL
                     let imageUrl = `${base_path}/img/default.png`; // Default image

@@ -9,6 +9,8 @@ use App\ExpenseCategory;
 use App\Transaction;
 use App\Account;
 use App\AccountTransaction;
+use App\Utils\CashRegisterUtil;
+use App\Utils\TransactionUtil;
 use DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -16,10 +18,25 @@ use Illuminate\Support\Str;
 
 class DamageController extends Controller
 {
+    protected $transactionUtil;
+
+    protected $cashRegisterUtil;
+
+    public function __construct(TransactionUtil $transactionUtil, CashRegisterUtil $cashRegisterUtil)
+    {
+        $this->transactionUtil = $transactionUtil;
+        $this->cashRegisterUtil = $cashRegisterUtil;
+    }
+
     public function index(Request $request)
     {
         // This view is just the add form; damages are viewed in the list() method
-        return view('damages.index');
+        $business_id = $request->session()->get('user.business_id');
+        $payment_types = $this->transactionUtil->payment_types(null, false, $business_id);
+
+        unset($payment_types['advance']);
+
+        return view('damages.index')->with(compact('payment_types'));
     }
 
     /**
@@ -95,6 +112,7 @@ class DamageController extends Controller
             'location_id' => 'nullable|string',
             'quantity' => 'required|numeric|min:0.0001',
             'unit_cost' => 'required|numeric|min:0',
+            'payment_method' => 'required|string',
             'reason' => 'nullable|string',
         ]);
 
@@ -170,10 +188,15 @@ class DamageController extends Controller
         $data['created_by'] = Auth::id() ?: null;
         $data['business_id'] = $request->session()->get('user.business_id');
 
-        $damage = Damage::create($data);
+        $damage_expense_category_name = 'Damaged Goods Expense';
+        $damage_expense_category_code = 'AUTO_DAMAGE_EXPENSE';
 
-        // Decrement stock in variation_location_details if product has enable_stock
         try {
+            DB::beginTransaction();
+
+            $damage = Damage::create($data);
+
+            // Decrement stock in variation_location_details if product has enable_stock.
             $product = Product::find($data['product_id']);
             if ($product && $product->enable_stock == 1) {
                 $vld = VariationLocationDetails::where('product_id', $data['product_id'])
@@ -186,31 +209,33 @@ class DamageController extends Controller
                     $vld->save();
                 }
             }
-        } catch (\Exception $e) {
-            // don't stop on stock update failure; log if needed
-        }
 
-        // Create expense transaction for damage
-        try {
-            // Find or create "Damaged Goods Expense" category
+            // Find or create a stable expense category used for damage losses.
             $expense_category = ExpenseCategory::where('business_id', $data['business_id'])
-                ->whereRaw('LOWER(name) = ?', [strtolower('Damaged Goods Expense')])
+                ->where('code', $damage_expense_category_code)
                 ->first();
+
+            if (!$expense_category) {
+                $expense_category = ExpenseCategory::where('business_id', $data['business_id'])
+                    ->whereRaw('LOWER(name) = ?', [strtolower($damage_expense_category_name)])
+                    ->first();
+            }
 
             if (!$expense_category) {
                 $expense_category = ExpenseCategory::create([
                     'business_id' => $data['business_id'],
-                    'name' => 'Damaged Goods Expense',
+                    'name' => $damage_expense_category_name,
+                    'code' => $damage_expense_category_code,
                     'created_by' => $data['created_by'],
                 ]);
+            } elseif (empty($expense_category->code)) {
+                $expense_category->code = $damage_expense_category_code;
+                $expense_category->save();
             }
 
-            // Instantiate TransactionUtil to generate reference number
-            $transactionUtil = new \App\Utils\TransactionUtil();
-            $ref_count = $transactionUtil->setAndGetReferenceCount('expense', $data['business_id']);
-            $ref_no = $transactionUtil->generateReferenceNumber('expense', $ref_count, $data['business_id']);
+            $ref_count = $this->transactionUtil->setAndGetReferenceCount('expense', $data['business_id']);
+            $ref_no = $this->transactionUtil->generateReferenceNumber('expense', $ref_count, $data['business_id']);
 
-            // Create expense transaction
             $expense_transaction = Transaction::create([
                 'business_id' => $data['business_id'],
                 'location_id' => $data['location_id'],
@@ -226,14 +251,58 @@ class DamageController extends Controller
                 'created_by' => $data['created_by'],
             ]);
 
+            if ($data['payment_method'] !== 'due') {
+                $payment = [
+                    'amount' => $data['total_cost'],
+                    'method' => $data['payment_method'],
+                    'paid_on' => now()->toDateTimeString(),
+                ];
+
+                if ($data['payment_method'] === 'cheque') {
+                    $payment['cheque_status'] = 'pending';
+                }
+
+                $this->transactionUtil->createOrUpdatePaymentLines(
+                    $expense_transaction,
+                    [$payment],
+                    $data['business_id'],
+                    $data['created_by'],
+                    false
+                );
+
+                $this->transactionUtil->updatePaymentStatus($expense_transaction->id, $expense_transaction->final_total);
+
+                if ($data['payment_method'] !== 'cheque') {
+                    $this->cashRegisterUtil->addSellPayments($expense_transaction, [$payment]);
+                }
+            }
+
+            DB::commit();
+
             \Log::info('Expense transaction created for damage', [
                 'damage_id' => $damage->id,
                 'transaction_id' => $expense_transaction->id,
-                'amount' => $data['total_cost']
+                'amount' => $data['total_cost'],
+                'payment_method' => $data['payment_method'],
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            \Log::error('Failed to store damage with expense transaction', [
+                'message' => $e->getMessage(),
+                'business_id' => $data['business_id'] ?? null,
+                'product_id' => $data['product_id'] ?? null,
+                'payment_method' => $data['payment_method'] ?? null,
             ]);
 
-        } catch (\Exception $e) {
-            \Log::warning('Failed to create expense transaction for damage: ' . $e->getMessage());
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'msg' => __('messages.something_went_wrong'),
+                ], 500);
+            }
+
+            return redirect()->back()->withErrors(['damage' => __('messages.something_went_wrong')])->withInput();
         }
 
 

@@ -230,6 +230,39 @@
 			if($discount_type == 'fixed') {
 				$discount_amount = $discount_amount * $multiplier;
 			}
+
+			// Calculate discounted unit price for initial subtotal display
+			$discounted_unit_price_inc_tax = $unit_price_inc_tax;
+			
+			// Get base price without tax
+			$tax_rate = 0;
+			if(!empty($tax_id) && isset($tax_dropdown['tax_rates'][$tax_id])) {
+				$tax_attributes = $tax_dropdown['attributes'][$tax_id] ?? [];
+				$tax_rate = $tax_attributes['data-rate'] ?? 0;
+			}
+			
+			// Calculate base price before discount
+			$base_price = $unit_price_inc_tax;
+			if($tax_rate > 0) {
+				$base_price = $unit_price_inc_tax / (1 + ($tax_rate / 100));
+			}
+			
+			// Apply discount to base price
+			if($discount_amount > 0) {
+				if($discount_type == 'fixed') {
+					$base_price = $base_price - $discount_amount;
+				} else {
+					// percentage discount
+					$base_price = $base_price - ($base_price * ($discount_amount / 100));
+				}
+			}
+			
+			// Add tax back to get discounted price inc tax
+			if($tax_rate > 0) {
+				$discounted_unit_price_inc_tax = $base_price * (1 + ($tax_rate / 100));
+			} else {
+				$discounted_unit_price_inc_tax = $base_price;
+			}
 		@endphp
 		<small class="text-muted p-1" style="background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%); padding: 3px 6px !important; border-radius: 6px; font-size: 11px; font-weight: 500; color: #64748b; border: 1px solid rgba(22,17,96,0.08); display: inline-block; margin-top: 2px;">
 			@if($product->enable_stock)
@@ -496,7 +529,7 @@
 			}
 		@endphp
 		<td class="@if(!auth()->user()->can('edit_product_price_from_sale_screen')) hide @endif">
-			<input type="text" name="products[{{$row_count}}][unit_price]" class="form-control pos_unit_price input_number mousetrap" value="{{@num_format($pos_unit_price)}}" @if(!empty($pos_settings['enable_msp'])) data-rule-min-value="{{$pos_unit_price}}" data-msg-min-value="{{__('lang_v1.minimum_selling_price_error_msg', ['price' => @num_format($pos_unit_price)])}}" @endif> 
+			<input type="text" name="products[{{$row_count}}][unit_price]" class="form-control pos_unit_price input_number mousetrap" value="{{@num_format($pos_unit_price)}}" @if(!empty($pos_settings['enable_msp']) && empty($bypass_msp)) data-rule-min-value="{{$pos_unit_price}}" data-msg-min-value="{{__('lang_v1.minimum_selling_price_error_msg', ['price' => @num_format($pos_unit_price)])}}" @endif> 
 
 			@if(!empty($last_sell_line))
 				<br>
@@ -538,20 +571,27 @@
 				</div>
 			</td>
 		@endif
+
 	@endif
 	<td class="{{$hide_tax}}">
+			<!-- Hidden fields for discount so auto-discounts apply in POS JS calculator -->
+			@if(empty($is_direct_sell))
+				<input type="hidden" name="products[{{$row_count}}][line_discount_amount]" class="row_discount_amount" value="{{@num_format($discount_amount)}}">
+				<input type="hidden" name="products[{{$row_count}}][line_discount_type]" class="row_discount_type" value="{{$discount_type}}">
+			@endif
+
 			@php
-				$msp_unit_price_inc_tax = !empty($product->min_sell_price_inc_tax) ? $product->min_sell_price_inc_tax : $unit_price_inc_tax;
+				$msp_unit_price_inc_tax = !empty($product->min_sell_price_inc_tax) ? $product->min_sell_price_inc_tax : $discounted_unit_price_inc_tax;
 			@endphp
-			<input type="text" style="width: auto" name="products[{{$row_count}}][unit_price_inc_tax]" class="form-control pos_unit_price_inc_tax input_number" value="{{@num_format($unit_price_inc_tax)}}" @if(!$edit_price) readonly @endif @if(!empty($pos_settings['enable_msp'])) data-rule-min-value="{{$msp_unit_price_inc_tax}}" data-msg-min-value="{{__('lang_v1.minimum_selling_price_error')}}" @endif>
+			<input type="text" style="width: auto" name="products[{{$row_count}}][unit_price_inc_tax]" class="form-control pos_unit_price_inc_tax input_number" value="{{@num_format($discounted_unit_price_inc_tax)}}" @if(!$edit_price) readonly @endif @if(!empty($pos_settings['enable_msp']) && empty($bypass_msp)) data-rule-min-value="{{$msp_unit_price_inc_tax}}" data-msg-min-value="{{__('lang_v1.minimum_selling_price_error')}}" @endif>
 	</td>
 	<td class="text-center" style="vertical-align: middle;">
 		@php
 			$subtotal_type = !empty($pos_settings['is_pos_subtotal_editable']) ? 'text' : 'hidden';
 
 		@endphp
-		<input style="width: auto; border: none; background: transparent; font-size: 16px; font-weight: 700; color: #1e293b; text-align: center; letter-spacing: 0.5px;" type="{{$subtotal_type}}" class="form-control pos_line_total @if(!empty($pos_settings['is_pos_subtotal_editable'])) input_number @endif" value="{{@num_format($product->quantity_ordered*$unit_price_inc_tax )}}">
-		<span class="display_currency pos_line_total_text @if(!empty($pos_settings['is_pos_subtotal_editable'])) hide @endif" data-currency_symbol="true" style="font-size: 16px; font-weight: 700; color: #1e293b; letter-spacing: 0.5px; text-shadow: 0 1px 2px rgba(0,0,0,0.1);">{{$product->quantity_ordered*$unit_price_inc_tax}}</span>
+		<input style="width: auto; border: none; background: transparent; font-size: 16px; font-weight: 700; color: #1e293b; text-align: center; letter-spacing: 0.5px;" type="{{$subtotal_type}}" class="form-control pos_line_total @if(!empty($pos_settings['is_pos_subtotal_editable'])) input_number @endif" value="{{@num_format($product->quantity_ordered*$discounted_unit_price_inc_tax )}}">
+		<span class="display_currency pos_line_total_text @if(!empty($pos_settings['is_pos_subtotal_editable'])) hide @endif" data-currency_symbol="true" style="font-size: 16px; font-weight: 700; color: #1e293b; letter-spacing: 0.5px; text-shadow: 0 1px 2px rgba(0,0,0,0.1);">{{$product->quantity_ordered*$discounted_unit_price_inc_tax}}</span>
 	</td>
 	<td class="text-center v-center" style="vertical-align: middle;">
 		<i class="fa fa-times text-danger pos_remove_row cursor-pointer" aria-hidden="true" style="font-size: 18px; padding: 8px; border-radius: 50%; background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); color: #dc2626; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 2px 4px rgba(220,38,38,0.2);"></i>

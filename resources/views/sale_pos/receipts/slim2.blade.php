@@ -471,27 +471,28 @@
 				</div>
 			@endif
 
-			<!-- Discount: show only order-level when no line discounts -->
-			@if( !empty($receipt_details->discount) && empty($receipt_details->total_line_discount) )
-				<div class="flex-box">
-					<p class="width-50 text-left">
-						{!! $receipt_details->discount_label !!}
-					</p>
+<!-- Line-level discounts -->
+		@if( !empty($receipt_details->total_line_discount) )
+			<div class="flex-box">
+				<p class="width-50 text-right">
+					{!! $receipt_details->line_discount_label !!}
+				</p>
 
-					<p class="width-50 text-right">
-						(-) {{$receipt_details->discount}}
-					</p>
-				</div>
-			@endif
-			
-			@if( !empty($receipt_details->total_line_discount) )
-				<div class="flex-box">
-					<p class="width-50 text-right">
-						{!! $receipt_details->line_discount_label !!}
-					</p>
+				<p class="width-50 text-right">
+					(-) {{$receipt_details->total_line_discount}}
+				</p>
+			</div>
+		@endif
 
-					<p class="width-50 text-right">
-						(-) {{$receipt_details->total_line_discount}}
+		<!-- Order-level discount (from POS Discount field) -->
+		@if( !empty($receipt_details->order_discount_unformatted) && $receipt_details->order_discount_unformatted != 0 )
+			<div class="flex-box">
+				<p class="width-50 text-left">
+					{!! $receipt_details->order_discount_label !!}
+				</p>
+
+				<p class="width-50 text-right">
+					(-) {{$receipt_details->order_discount}}
 					</p>
 				</div>
 			@endif
@@ -651,12 +652,17 @@
 .f-8 {
 	font-size: 8px !important;
 }
+@page {
+	margin: 5px;
+}
 body {
 	color: #000000;
+	margin: 5px;
+	padding: 5px;
 }
 @media print {
 	* {
-    	font-size: 12px;
+	    	font-size: 15px;
     	font-family: 'Times New Roman';
     	word-break: break-all;
 	}
@@ -665,13 +671,13 @@ body {
 	}
 
 .headings{
-	font-size: 16px;
+	font-size: 17px;
 	font-weight: 700;
 	text-transform: uppercase;
 }
 
 .sub-headings{
-	font-size: 15px;
+	font-size: 16px;
 	font-weight: 700;
 }
 
@@ -722,8 +728,11 @@ th.price {
 }
 
 .ticket {
-    width: 100%;
-    max-width: 100%;
+    width: calc(100% - 12px);
+    max-width: calc(100% - 12px);
+	margin: 0 auto;
+	padding: 0;
+	box-sizing: border-box;
 }
 
 img {

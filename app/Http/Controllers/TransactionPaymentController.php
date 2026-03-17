@@ -10,6 +10,7 @@ use App\Exceptions\AdvanceBalanceNotAvailable;
 use App\Exceptions\ChequePaymentNotAllowedForWalkInCustomer;
 use App\Transaction;
 use App\TransactionPayment;
+use App\Utils\CashRegisterUtil;
 use App\Utils\ModuleUtil;
 use App\Utils\TransactionUtil;
 use Datatables;
@@ -22,16 +23,19 @@ class TransactionPaymentController extends Controller
 
     protected $moduleUtil;
 
+    protected $cashRegisterUtil;
+
     /**
      * Constructor
      *
      * @param  TransactionUtil  $transactionUtil
      * @return void
      */
-    public function __construct(TransactionUtil $transactionUtil, ModuleUtil $moduleUtil)
+    public function __construct(TransactionUtil $transactionUtil, ModuleUtil $moduleUtil, CashRegisterUtil $cashRegisterUtil)
     {
         $this->transactionUtil = $transactionUtil;
         $this->moduleUtil = $moduleUtil;
+        $this->cashRegisterUtil = $cashRegisterUtil;
     }
 
     /**
@@ -153,6 +157,9 @@ class TransactionPaymentController extends Controller
 
                     $inputs['transaction_type'] = $transaction->type;
                     event(new TransactionPaymentAdded($tp, $inputs));
+
+                    //Add payment movement to currently open register for the payer user.
+                    $this->cashRegisterUtil->addTransactionPaymentToRegister($transaction, $tp, $tp->created_by);
                 }
 
                 //update payment status
@@ -721,6 +728,23 @@ class TransactionPaymentController extends Controller
 
             DB::beginTransaction();
             $tp = $this->transactionUtil->payContact($request);
+
+            //payContact creates child payments allocated to actual due transactions.
+            //Push each allocated child payment to register movement.
+            $allocated_payments = TransactionPayment::where('parent_id', $tp->id)
+                ->whereNotNull('transaction_id')
+                ->with('transaction')
+                ->get();
+
+            foreach ($allocated_payments as $allocated_payment) {
+                if (!empty($allocated_payment->transaction)) {
+                    $this->cashRegisterUtil->addTransactionPaymentToRegister(
+                        $allocated_payment->transaction,
+                        $allocated_payment,
+                        $allocated_payment->created_by
+                    );
+                }
+            }
 
             $pos_settings = ! empty(session()->get('business.pos_settings')) ? json_decode(session()->get('business.pos_settings'), true) : [];
             $enable_cash_denomination_for_payment_methods = ! empty($pos_settings['enable_cash_denomination_for_payment_methods']) ? $pos_settings['enable_cash_denomination_for_payment_methods'] : [];

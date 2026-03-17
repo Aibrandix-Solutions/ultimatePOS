@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\InstallmentPlan;
 use App\Transaction;
 use App\Utils\TransactionUtil;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
 
@@ -43,14 +44,22 @@ class InstallmentPlanController extends Controller
                     't.transaction_date',
                     't.final_total',
                     'c.name as customer_name',
-                ]);
+                ])
+                ->selectSub(function ($subquery) {
+                    $subquery->from('installment_plan_lines')
+                        ->select('due_date')
+                        ->whereColumn('installment_plan_lines.installment_plan_id', 'installment_plans.id')
+                        ->where('status', 'pending')
+                        ->orderBy('sequence')
+                        ->limit(1);
+                }, 'next_due_date');
 
             return DataTables::of($query)
                 ->editColumn('transaction_date', function ($row) {
                     return ! empty($row->transaction_date) ? $this->transactionUtil->format_date($row->transaction_date, true) : '';
                 })
-                ->editColumn('first_due_date', function ($row) {
-                    return ! empty($row->first_due_date) ? $this->transactionUtil->format_date($row->first_due_date) : '';
+                ->editColumn('next_due_date', function ($row) {
+                    return ! empty($row->next_due_date) ? $this->transactionUtil->format_date($row->next_due_date) : '';
                 })
                 ->editColumn('final_total', function ($row) {
                     return '<span class="display_currency" data-currency_symbol="true">' . $row->final_total . '</span>';

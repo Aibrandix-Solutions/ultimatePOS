@@ -513,19 +513,7 @@
 						</tr>
 					@endif
 
-					<!-- Discount: show only order-level when no line discounts -->
-					@if( !empty($receipt_details->discount) && empty($receipt_details->total_line_discount) )
-						<tr>
-							<th>
-								{!! $receipt_details->discount_label !!}
-							</th>
-
-							<td class="text-right">
-								(-) {{$receipt_details->discount}}
-							</td>
-						</tr>
-					@endif
-
+					<!-- Line-level discounts -->
 					@if( !empty($receipt_details->total_line_discount) )
 						<tr>
 							<th>
@@ -534,6 +522,19 @@
 
 							<td class="text-right">
 								(-) {{$receipt_details->total_line_discount}}
+							</td>
+						</tr>
+					@endif
+
+					<!-- Order-level discount (from POS Discount field) -->
+					@if( !empty($receipt_details->order_discount_unformatted) && $receipt_details->order_discount_unformatted != 0 )
+						<tr>
+							<th>
+								{!! $receipt_details->order_discount_label !!}
+							</th>
+
+							<td class="text-right">
+								(-) {{$receipt_details->order_discount}}
 							</td>
 						</tr>
 					@endif
