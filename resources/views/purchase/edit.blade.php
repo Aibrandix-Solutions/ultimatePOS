@@ -316,9 +316,9 @@
                       <div class="form-group">
                       {!! Form::label('tax_id', __( 'purchase.purchase_tax' ) . ':') !!}
                       <select name="tax_id" id="tax_id" class="form-control select2" placeholder="'Please Select'">
-                        <option value="" data-tax_amount="0" selected>@lang('lang_v1.none')</option>
+                        <option value="" data-tax_amount="0" data-tax_type="percentage" selected>@lang('lang_v1.none')</option>
                         @foreach($taxes as $tax)
-                          <option value="{{ $tax->id }}" @if($purchase->tax_id == $tax->id) {{'selected'}} @endif data-tax_amount="{{ $tax->amount }}"
+                          <option value="{{ $tax->id }}" @if($purchase->tax_id == $tax->id) {{'selected'}} @endif data-tax_amount="{{ $tax->amount }}" data-tax_type="{{ $tax->calculation_type ?? 'percentage' }}"
                           >
                             {{ $tax->name }}
                           </option>

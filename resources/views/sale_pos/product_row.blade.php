@@ -132,14 +132,18 @@
 			
 			// Get base price without tax
 			$tax_rate = 0;
+			$tax_type = 'percentage';
 			if(!empty($tax_id) && isset($tax_dropdown['tax_rates'][$tax_id])) {
 				$tax_attributes = $tax_dropdown['attributes'][$tax_id] ?? [];
 				$tax_rate = $tax_attributes['data-rate'] ?? 0;
+				$tax_type = $tax_attributes['data-type'] ?? 'percentage';
 			}
 			
 			// Calculate base price before discount
 			$base_price = $unit_price_inc_tax;
-			if($tax_rate > 0) {
+			if($tax_type == 'fixed') {
+				$base_price = $unit_price_inc_tax - $tax_rate;
+			} elseif($tax_rate > 0) {
 				$base_price = $unit_price_inc_tax / (1 + ($tax_rate / 100));
 			}
 			
@@ -154,7 +158,9 @@
 			}
 			
 			// Add tax back to get discounted price inc tax
-			if($tax_rate > 0) {
+			if($tax_type == 'fixed') {
+				$discounted_unit_price_inc_tax = $base_price + $tax_rate;
+			} elseif($tax_rate > 0) {
 				$discounted_unit_price_inc_tax = $base_price * (1 + ($tax_rate / 100));
 			} else {
 				$discounted_unit_price_inc_tax = $base_price;

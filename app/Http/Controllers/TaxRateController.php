@@ -42,7 +42,7 @@ class TaxRateController extends Controller
 
             $tax_rates = TaxRate::where('business_id', $business_id)
                         ->where('is_tax_group', '0')
-                        ->select(['name', 'amount', 'id', 'for_tax_group']);
+                        ->select(['name', 'amount', 'calculation_type', 'id', 'for_tax_group']);
 
             return Datatables::of($tax_rates)
                 ->addColumn(
@@ -56,7 +56,7 @@ class TaxRateController extends Controller
                     @endcan'
                 )
                 ->editColumn('name', '@if($for_tax_group == 1) {{$name}} <small>(@lang("lang_v1.for_tax_group_only"))</small> @else {{$name}} @endif')
-                ->editColumn('amount', '{{@num_format($amount)}}')
+                ->editColumn('amount', '@if($calculation_type == "fixed") {{@num_format($amount)}} @lang("lang_v1.fixed") @else {{@num_format($amount)}}% @endif')
                 ->removeColumn('for_tax_group')
                 ->removeColumn('id')
                 ->rawColumns([0, 2])
@@ -93,10 +93,11 @@ class TaxRateController extends Controller
         }
 
         try {
-            $input = $request->only(['name', 'amount']);
+            $input = $request->only(['name', 'amount', 'calculation_type']);
             $input['business_id'] = $request->session()->get('user.business_id');
             $input['created_by'] = $request->session()->get('user.id');
             $input['amount'] = $this->taxUtil->num_uf($input['amount']);
+            $input['calculation_type'] = in_array($request->input('calculation_type'), ['percentage', 'fixed']) ? $request->input('calculation_type') : 'percentage';
             $input['for_tax_group'] = ! empty($request->for_tax_group) ? 1 : 0;
 
             $tax_rate = TaxRate::create($input);
@@ -162,12 +163,13 @@ class TaxRateController extends Controller
 
         if (request()->ajax()) {
             try {
-                $input = $request->only(['name', 'amount']);
+                $input = $request->only(['name', 'amount', 'calculation_type']);
                 $business_id = $request->session()->get('user.business_id');
 
                 $tax_rate = TaxRate::where('business_id', $business_id)->findOrFail($id);
                 $tax_rate->name = $input['name'];
                 $tax_rate->amount = $this->taxUtil->num_uf($input['amount']);
+                $tax_rate->calculation_type = in_array($request->input('calculation_type'), ['percentage', 'fixed']) ? $request->input('calculation_type') : 'percentage';
                 $tax_rate->for_tax_group = ! empty($request->for_tax_group) ? 1 : 0;
                 $tax_rate->save();
 

@@ -6624,8 +6624,13 @@ class TransactionUtil extends Util
         $transaction_data['total_before_tax'] = $transaction_data['final_total'];
         if (!empty($transaction_data['tax_id'])) {
             $tax_details = TaxRate::find($transaction_data['tax_id']);
-            $transaction_data['total_before_tax'] = $this->calc_percentage_base($transaction_data['final_total'], $tax_details->amount);
-            $transaction_data['tax_amount'] = $transaction_data['final_total'] - $transaction_data['total_before_tax'];
+            if (($tax_details->calculation_type ?? 'percentage') == 'fixed') {
+                $transaction_data['tax_amount'] = min($tax_details->amount, $transaction_data['final_total']);
+                $transaction_data['total_before_tax'] = $transaction_data['final_total'] - $transaction_data['tax_amount'];
+            } else {
+                $transaction_data['total_before_tax'] = $this->calc_percentage_base($transaction_data['final_total'], $tax_details->amount);
+                $transaction_data['tax_amount'] = $transaction_data['final_total'] - $transaction_data['total_before_tax'];
+            }
         }
 
         if ($request->has('is_recurring')) {
@@ -6705,8 +6710,13 @@ class TransactionUtil extends Util
         if (!empty($tax_id)) {
             $transaction_data['tax_id'] = $tax_id;
             $tax_details = TaxRate::find($tax_id);
-            $transaction_data['total_before_tax'] = $this->calc_percentage_base($final_total, $tax_details->amount);
-            $transaction_data['tax_amount'] = $final_total - $transaction_data['total_before_tax'];
+            if (($tax_details->calculation_type ?? 'percentage') == 'fixed') {
+                $transaction_data['tax_amount'] = min($tax_details->amount, $final_total);
+                $transaction_data['total_before_tax'] = $final_total - $transaction_data['tax_amount'];
+            } else {
+                $transaction_data['total_before_tax'] = $this->calc_percentage_base($final_total, $tax_details->amount);
+                $transaction_data['tax_amount'] = $final_total - $transaction_data['total_before_tax'];
+            }
         } else {
             $transaction_data['tax_id'] = null;
             $transaction_data['tax_amount'] = 0;

@@ -377,7 +377,7 @@
 						<div class="form-group">
 						{!! Form::label('tax_id', __('purchase.purchase_tax') . ':') !!}
 						<select name="tax_id" id="tax_id" class="form-control select2" placeholder="'Please Select'">
-							<option value="" data-tax_amount="0" data-tax_type="fixed" selected>@lang('lang_v1.none')</option>
+							<option value="" data-tax_amount="0" data-tax_type="percentage" selected>@lang('lang_v1.none')</option>
 							@foreach($taxes as $tax)
 								<option value="{{ $tax->id }}" data-tax_amount="{{ $tax->amount }}" data-tax_type="{{ $tax->calculation_type }}">{{ $tax->name }}</option>
 							@endforeach

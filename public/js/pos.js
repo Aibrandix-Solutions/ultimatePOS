@@ -48,6 +48,31 @@ function addRowWithAnimation(htmlContent) {
 
     return $newRow;
 }
+
+function getPosTaxDetails($selectOrOption) {
+    var $option = $selectOrOption.is('option') ? $selectOrOption : $selectOrOption.find(':selected');
+    var tax_rate = parseFloat($option.data('rate'));
+
+    return {
+        amount: isNaN(tax_rate) ? 0 : tax_rate,
+        type: $option.data('type') || 'percentage',
+    };
+}
+
+function posAddTax(amount, tax_details) {
+    return amount + __calculate_amount(tax_details.type, tax_details.amount, amount);
+}
+
+function posRemoveTax(amount_inc_tax, tax_details) {
+    if (tax_details.type == 'fixed') {
+        var value = amount_inc_tax - tax_details.amount;
+
+        return value < 0 ? 0 : value;
+    }
+
+    return __get_principle(amount_inc_tax, tax_details.amount);
+}
+
 $(document).ready(function () {
     customer_set = false;
 
@@ -426,13 +451,10 @@ $(document).ready(function () {
         //calculate discounted unit price
         var discounted_unit_price = calculate_discounted_unit_price(tr);
 
-        var tax_rate = tr
-            .find('select.tax_id')
-            .find(':selected')
-            .data('rate');
+        var tax_details = getPosTaxDetails(tr.find('select.tax_id'));
         var quantity = __read_number(tr.find('input.pos_quantity'));
 
-        var unit_price_inc_tax = __add_percent(discounted_unit_price, tax_rate);
+        var unit_price_inc_tax = posAddTax(discounted_unit_price, tax_details);
         var line_total = quantity * unit_price_inc_tax;
 
         __write_number(tr.find('input.pos_unit_price_inc_tax'), unit_price_inc_tax);
@@ -447,13 +469,10 @@ $(document).ready(function () {
     $('table#pos_table tbody').on('change', 'select.tax_id', function () {
         var tr = $(this).parents('tr');
 
-        var tax_rate = tr
-            .find('select.tax_id')
-            .find(':selected')
-            .data('rate');
+        var tax_details = getPosTaxDetails(tr.find('select.tax_id'));
         var unit_price_inc_tax = __read_number(tr.find('input.pos_unit_price_inc_tax'));
 
-        var discounted_unit_price = __get_principle(unit_price_inc_tax, tax_rate);
+        var discounted_unit_price = posRemoveTax(unit_price_inc_tax, tax_details);
         var unit_price = get_unit_price_from_discounted_unit_price(tr, discounted_unit_price);
         __write_number(tr.find('input.pos_unit_price'), unit_price);
         pos_each_row(tr);
@@ -481,14 +500,11 @@ $(document).ready(function () {
 
         var tr = $(this).parents('tr');
 
-        var tax_rate = tr
-            .find('select.tax_id')
-            .find(':selected')
-            .data('rate');
+        var tax_details = getPosTaxDetails(tr.find('select.tax_id'));
         var quantity = __read_number(tr.find('input.pos_quantity'));
 
         var line_total = quantity * unit_price_inc_tax;
-        var discounted_unit_price = __get_principle(unit_price_inc_tax, tax_rate);
+        var discounted_unit_price = posRemoveTax(unit_price_inc_tax, tax_details);
         var unit_price = get_unit_price_from_discounted_unit_price(tr, discounted_unit_price);
 
         __write_number(tr.find('input.pos_unit_price'), unit_price);
@@ -572,13 +588,10 @@ $(document).ready(function () {
             //calculate discounted unit price
             var discounted_unit_price = calculate_discounted_unit_price(tr);
 
-            var tax_rate = tr
-                .find('select.tax_id')
-                .find(':selected')
-                .data('rate');
+            var tax_details = getPosTaxDetails(tr.find('select.tax_id'));
             var quantity = __read_number(tr.find('input.pos_quantity'));
 
-            var unit_price_inc_tax = __add_percent(discounted_unit_price, tax_rate);
+            var unit_price_inc_tax = posAddTax(discounted_unit_price, tax_details);
             var line_total = quantity * unit_price_inc_tax;
 
             __write_number(tr.find('input.pos_unit_price_inc_tax'), unit_price_inc_tax);
@@ -1311,10 +1324,12 @@ $(document).ready(function () {
         var tax_obj = $('select#order_tax_modal');
         var tax_id = tax_obj.val();
         var tax_rate = tax_obj.find(':selected').data('rate');
+        var tax_type = tax_obj.find(':selected').data('type') || 'percentage';
 
         $('input#tax_rate_id').val(tax_id);
 
         __write_number($('input#tax_calculation_amount'), tax_rate);
+        $('input#tax_calculation_type').val(tax_type);
         pos_total_row();
     });
 
@@ -1441,12 +1456,28 @@ $(document).ready(function () {
         pos_total_row();
     });
     $('select#tax_rate_id').change(function () {
-        var tax_rate = $(this)
-            .find(':selected')
-            .data('rate');
+        var selected_tax = $(this).find(':selected');
+        var tax_rate = selected_tax.data('rate');
+        var tax_type = selected_tax.data('type') || 'percentage';
         __write_number($('input#tax_calculation_amount'), tax_rate);
+        $('input#tax_calculation_type').val(tax_type);
         pos_total_row();
     });
+
+    if ($('select#tax_rate_id').length) {
+        $('select#tax_rate_id').trigger('change');
+    }
+    if ($('select#order_tax_modal').length && $('input#tax_rate_id').length) {
+        var default_tax_id = $('input#tax_rate_id').val();
+        if (default_tax_id) {
+            $('select#order_tax_modal').val(default_tax_id);
+        }
+        var selected_order_tax = $('select#order_tax_modal').find(':selected');
+        if (selected_order_tax.length) {
+            __write_number($('input#tax_calculation_amount'), selected_order_tax.data('rate') || 0);
+            $('input#tax_calculation_type').val(selected_order_tax.data('type') || 'percentage');
+        }
+    }
     //Datetime picker
     $('#transaction_date').datetimepicker({
         format: moment_date_format + ' ' + moment_time_format,
@@ -2441,13 +2472,7 @@ function pos_product_row(variation_id = null, purchase_line_id = null, weighing_
 //Update values for each row
 function pos_each_row(row_obj) {
     // Get tax rate first
-    var tax_rate = row_obj
-        .find('select.tax_id')
-        .find(':selected')
-        .data('rate');
-    if (typeof tax_rate === 'undefined' || isNaN(parseFloat(tax_rate))) {
-        tax_rate = 0;
-    }
+    var tax_details = getPosTaxDetails(row_obj.find('select.tax_id'));
 
     // Determine base unit price (pre-tax)
     var base_unit_price = row_obj.data('modal-base-unit-price');
@@ -2455,7 +2480,7 @@ function pos_each_row(row_obj) {
         base_unit_price = __read_number(row_obj.find('input.pos_unit_price'));
         if (base_unit_price === 0) {
             var inc_tax_price = __read_number(row_obj.find('input.pos_unit_price_inc_tax'));
-            base_unit_price = __get_principle(inc_tax_price, tax_rate);
+            base_unit_price = posRemoveTax(inc_tax_price, tax_details);
         }
     }
 
@@ -2479,7 +2504,7 @@ function pos_each_row(row_obj) {
     }
 
     // Recompute tax-inclusive price
-    var unit_price_inc_tax = discounted_unit_price + __calculate_amount('percentage', tax_rate, discounted_unit_price);
+    var unit_price_inc_tax = posAddTax(discounted_unit_price, tax_details);
     __write_number(row_obj.find('input.pos_unit_price_inc_tax'), unit_price_inc_tax);
 
     // Line total
@@ -2635,7 +2660,7 @@ function pos_discount(total_amount) {
 
 function pos_order_tax(price_total, discount) {
     var tax_rate_id = $('#tax_rate_id').val();
-    var calculation_type = 'percentage';
+    var calculation_type = $('#tax_calculation_type').val() || 'percentage';
     var calculation_amount = __read_number($('#tax_calculation_amount'));
     var total_amount = price_total - discount;
 
@@ -2919,6 +2944,7 @@ function reset_pos_form() {
     //Reset tax rate
     $('input#tax_rate_id').val($('input#tax_rate_id').data('default'));
     __write_number($('input#tax_calculation_amount'), $('input#tax_calculation_amount').data('default'));
+    $('input#tax_calculation_type').val($('input#tax_calculation_type').data('default') || 'percentage');
 
     $('select.payment_types_dropdown').val('cash').trigger('change');
     $('#price_group').trigger('change');
@@ -3135,17 +3161,14 @@ function pos_print(receipt) {
 
 function calculate_discounted_unit_price(row) {
     // Determine base unit price (pre-tax)
-    var tax_rate = row.find('select.tax_id').find(':selected').data('rate');
-    if (typeof tax_rate === 'undefined' || isNaN(parseFloat(tax_rate))) {
-        tax_rate = 0;
-    }
+    var tax_details = getPosTaxDetails(row.find('select.tax_id'));
 
     var base_unit_price = row.data('modal-base-unit-price');
     if (typeof base_unit_price === 'undefined' || isNaN(base_unit_price) || base_unit_price === 0) {
         base_unit_price = __read_number(row.find('input.pos_unit_price'));
         if (base_unit_price === 0) {
             var inc_tax_price = __read_number(row.find('input.pos_unit_price_inc_tax'));
-            base_unit_price = __get_principle(inc_tax_price, tax_rate);
+            base_unit_price = posRemoveTax(inc_tax_price, tax_details);
         }
     }
 
@@ -3633,8 +3656,7 @@ function syncProductRowsToInputs() {
         var $row = $(this);
 
         // Base unit price -> pos_unit_price if available, else rebuild inc tax from base and tax
-        var tax_rate = $row.find('select.tax_id').find(':selected').data('rate');
-        if (typeof tax_rate === 'undefined' || isNaN(parseFloat(tax_rate))) { tax_rate = 0; }
+        var tax_details = getPosTaxDetails($row.find('select.tax_id'));
 
         var base_price = $row.data('modal-base-unit-price');
         if (typeof base_price === 'undefined' || isNaN(base_price)) {
@@ -3642,7 +3664,7 @@ function syncProductRowsToInputs() {
             base_price = __read_number($row.find('input.pos_unit_price'));
             if (!base_price || base_price === 0) {
                 var inc_tax_existing = __read_number($row.find('input.pos_unit_price_inc_tax'));
-                base_price = __get_principle(inc_tax_existing, tax_rate);
+                base_price = posRemoveTax(inc_tax_existing, tax_details);
             }
         }
 
@@ -3668,7 +3690,7 @@ function syncProductRowsToInputs() {
         if (damount) {
             discounted_base = (dtype === 'fixed') ? (base_price - damount) : __substract_percent(base_price, damount);
         }
-        var inc_tax = discounted_base + __calculate_amount('percentage', tax_rate, discounted_base);
+        var inc_tax = posAddTax(discounted_base, tax_details);
 
         // Ensure pos_unit_price_inc_tax exists and holds discounted inc-tax
         if ($row.find('input.pos_unit_price_inc_tax').length) {
@@ -4515,10 +4537,9 @@ function addModernStyling() {
         });
 
         // Compute base (pre-discount) unit price for the modal
-        var tax_rate_open = $productRow.find('select.tax_id').find(':selected').data('rate');
-        if (typeof tax_rate_open === 'undefined' || isNaN(parseFloat(tax_rate_open))) { tax_rate_open = 0; }
+        var tax_details_open = getPosTaxDetails($productRow.find('select.tax_id'));
         var inc_tax_now = __read_number($productRow.find('input.pos_unit_price_inc_tax'));
-        var discounted_base_now = __get_principle(inc_tax_now, tax_rate_open);
+        var discounted_base_now = posRemoveTax(inc_tax_now, tax_details_open);
         var base_before_discount_now = get_unit_price_from_discounted_unit_price($productRow, discounted_base_now);
 
         // Prefer any previously saved base price
@@ -4577,10 +4598,7 @@ function addModernStyling() {
         var $rowIncTaxInput = $productRow.find('input.pos_unit_price_inc_tax');
         var minIncTax = parseFloat($rowIncTaxInput.data('rule-min-value'));
         if (!isNaN(minIncTax)) {
-            var tax_rate = $productRow.find('select.tax_id').find(':selected').data('rate');
-            if (typeof tax_rate === 'undefined' || isNaN(parseFloat(tax_rate))) {
-                tax_rate = 0;
-            }
+            var tax_details = getPosTaxDetails($productRow.find('select.tax_id'));
 
             var discounted = newUnitPrice;
             if (newDiscountType === 'percentage') {
@@ -4592,7 +4610,7 @@ function addModernStyling() {
                 discounted = 0;
             }
 
-            var expectedIncTax = __add_percent(discounted, tax_rate);
+            var expectedIncTax = posAddTax(discounted, tax_details);
             if (expectedIncTax < minIncTax) {
                 var msg = $rowIncTaxInput.attr('data-msg-min-value') || (LANG.minimum_selling_price_error || 'Price cannot be below the minimum selling price.');
 

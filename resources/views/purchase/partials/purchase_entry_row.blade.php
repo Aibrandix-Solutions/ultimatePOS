@@ -136,9 +136,9 @@
             <td class="{{$hide_tax}}">
                 <div class="input-group">
                     <select name="purchases[{{ $row_count }}][purchase_line_tax_id]" class="form-control select2 input-sm purchase_line_tax_id" placeholder="'Please Select'">
-                        <option value="" data-tax_amount="0" @if( $hide_tax == 'hide' ) selected @endif >@lang('lang_v1.none')</option>
+                        <option value="" data-tax_amount="0" data-tax_type="percentage" @if( $hide_tax == 'hide' ) selected @endif >@lang('lang_v1.none')</option>
                         @foreach($taxes as $tax)
-                            <option value="{{ $tax->id }}" data-tax_amount="{{ $tax->amount }}" @if( $tax_id == $tax->id && $hide_tax != 'hide') selected @endif >{{ $tax->name }}</option>
+                            <option value="{{ $tax->id }}" data-tax_amount="{{ $tax->amount }}" data-tax_type="{{ $tax->calculation_type ?? 'percentage' }}" @if( $tax_id == $tax->id && $hide_tax != 'hide') selected @endif >{{ $tax->name }}</option>
                         @endforeach
                     </select>
                     {!! Form::hidden('purchases[' . $row_count . '][item_tax]', 0, ['class' => 'purchase_product_unit_tax']) !!}

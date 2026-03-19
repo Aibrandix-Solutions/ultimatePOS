@@ -194,8 +194,11 @@ function update_table_total() {
             table_total += this_total;
         }
     });
-    var tax_rate = parseFloat($('option:selected', $('#tax_id')).data('tax_amount'));
-    var tax = __calculate_amount('percentage', tax_rate, table_total);
+    var selected_tax = $('option:selected', $('#tax_id'));
+    var tax_rate = parseFloat(selected_tax.data('tax_amount'));
+    tax_rate = isNaN(tax_rate) ? 0 : tax_rate;
+    var tax_type = selected_tax.data('tax_type') || 'percentage';
+    var tax = __calculate_amount(tax_type, tax_rate, table_total);
     __write_number($('input#tax_amount'), tax);
     var final_total = table_total + tax;
     $('input#total_amount').val(final_total);

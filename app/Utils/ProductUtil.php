@@ -696,7 +696,10 @@ class ProductUtil extends Util
             $tax_details = TaxRate::find($tax_id);
             if (!empty($tax_details)) {
                 $output['tax_id'] = $tax_id;
-                $output['tax'] = ($tax_details->amount / 100) * ($output['total_before_tax'] - $output['discount']);
+                $tax_base = $output['total_before_tax'] - $output['discount'];
+                $output['tax'] = ($tax_details->calculation_type ?? 'percentage') == 'fixed'
+                    ? $tax_details->amount
+                    : ($tax_details->amount / 100) * $tax_base;
             }
         }
 
@@ -1107,8 +1110,14 @@ class ProductUtil extends Util
 
         $price_exc_tax = $price_inc_tax;
         if (!empty($price_inc_tax) && !empty($tax_id)) {
-            $tax_amount = TaxRate::where('id', $tax_id)->value('amount');
-            $price_exc_tax = $this->calc_percentage_base($price_inc_tax, $tax_amount);
+            $tax = TaxRate::select('amount', 'calculation_type')->find($tax_id);
+            if (!empty($tax)) {
+                if (($tax->calculation_type ?? 'percentage') == 'fixed') {
+                    $price_exc_tax = max($price_inc_tax - $tax->amount, 0);
+                } else {
+                    $price_exc_tax = $this->calc_percentage_base($price_inc_tax, $tax->amount);
+                }
+            }
         }
 
         return [
@@ -1156,6 +1165,7 @@ class ProductUtil extends Util
         $locations = BusinessLocation::forDropdown($business_id)->toArray();
 
         $tax_percent = !empty($product->product_tax->amount) ? $product->product_tax->amount : 0;
+        $tax_type = !empty($product->product_tax->calculation_type) ? $product->product_tax->calculation_type : 'percentage';
         $tax_id = !empty($product->product_tax->id) ? $product->product_tax->id : null;
 
         foreach ($input as $key => $value) {
@@ -1166,7 +1176,7 @@ class ProductUtil extends Util
                 $purchase_lines = [];
 
                 $purchase_price = $this->num_uf(trim($value['purchase_price']));
-                $item_tax = $this->calc_percentage($purchase_price, $tax_percent);
+                $item_tax = $tax_type == 'fixed' ? $tax_percent : $this->calc_percentage($purchase_price, $tax_percent);
                 $purchase_price_inc_tax = $purchase_price + $item_tax;
                 $qty = $this->num_uf(trim($value['quantity']));
 

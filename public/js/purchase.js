@@ -1,3 +1,19 @@
+function getPurchaseTaxDetails($option) {
+    var tax_rate = parseFloat($option.data('tax_amount'));
+    tax_rate = isNaN(tax_rate) ? 0 : tax_rate;
+
+    return {
+        amount: tax_rate,
+        type: $option.data('tax_type') || 'percentage',
+    };
+}
+
+function calculatePurchaseTax($option, base_amount) {
+    var tax_details = getPurchaseTaxDetails($option);
+
+    return __calculate_amount(tax_details.type, tax_details.amount, base_amount);
+}
+
 $(document).ready(function() {
     if ($('input#iraqi_selling_price_adjustment').length > 0) {
         iraqi_selling_price_adjustment = true;
@@ -285,13 +301,10 @@ $(document).ready(function() {
         var sub_total_before_tax = quantity * purchase_before_tax;
 
         //Tax
-        var tax_rate = parseFloat(
-            row
-                .find('select.purchase_line_tax_id')
-                .find(':selected')
-                .data('tax_amount')
+        var tax = calculatePurchaseTax(
+            row.find('select.purchase_line_tax_id').find(':selected'),
+            purchase_before_tax
         );
-        var tax = __calculate_amount('percentage', tax_rate, purchase_before_tax);
 
         var purchase_after_tax = purchase_before_tax + tax;
         var sub_total_after_tax = quantity * purchase_after_tax;
@@ -342,13 +355,10 @@ $(document).ready(function() {
         var sub_total_before_tax = quantity * purchase_before_tax;
 
         //Tax
-        var tax_rate = parseFloat(
-            row
-                .find('select.purchase_line_tax_id')
-                .find(':selected')
-                .data('tax_amount')
+        var tax = calculatePurchaseTax(
+            row.find('select.purchase_line_tax_id').find(':selected'),
+            purchase_before_tax
         );
-        var tax = __calculate_amount('percentage', tax_rate, purchase_before_tax);
 
         var purchase_after_tax = purchase_before_tax + tax;
         var sub_total_after_tax = quantity * purchase_after_tax;
@@ -394,13 +404,10 @@ $(document).ready(function() {
         );
 
         //Tax
-        var tax_rate = parseFloat(
-            row
-                .find('select.purchase_line_tax_id')
-                .find(':selected')
-                .data('tax_amount')
+        var tax = calculatePurchaseTax(
+            row.find('select.purchase_line_tax_id').find(':selected'),
+            purchase_before_tax
         );
-        var tax = __calculate_amount('percentage', tax_rate, purchase_before_tax);
 
         var purchase_after_tax = purchase_before_tax + tax;
         var sub_total_after_tax = quantity * purchase_after_tax;
@@ -437,12 +444,7 @@ $(document).ready(function() {
         var quantity = __read_number(row.find('input.purchase_quantity'), true);
 
         //Tax
-        var tax_rate = parseFloat(
-            $(this)
-                .find(':selected')
-                .data('tax_amount')
-        );
-        var tax = __calculate_amount('percentage', tax_rate, purchase_before_tax);
+        var tax = calculatePurchaseTax($(this).find(':selected'), purchase_before_tax);
 
         //Purchase price
         var purchase_after_tax = purchase_before_tax + tax;
@@ -472,15 +474,16 @@ $(document).ready(function() {
         var sub_total_after_tax = purchase_after_tax * quantity;
 
         //Tax
-        var tax_rate = parseFloat(
-            row
-                .find('select.purchase_line_tax_id')
-                .find(':selected')
-                .data('tax_amount')
-        );
-        var purchase_before_tax = __get_principle(purchase_after_tax, tax_rate);
+        var selected_tax = row.find('select.purchase_line_tax_id').find(':selected');
+        var tax_details = getPurchaseTaxDetails(selected_tax);
+        var purchase_before_tax = tax_details.type == 'fixed'
+            ? purchase_after_tax - tax_details.amount
+            : __get_principle(purchase_after_tax, tax_details.amount);
+        if (purchase_before_tax < 0) {
+            purchase_before_tax = 0;
+        }
         var sub_total_before_tax = quantity * purchase_before_tax;
-        var tax = __calculate_amount('percentage', tax_rate, purchase_before_tax);
+        var tax = __calculate_amount(tax_details.type, tax_details.amount, purchase_before_tax);
 
         //Update unit cost price before discount
         var discount_percent = __read_number(row.find('input.inline_discounts'), true);
@@ -853,11 +856,10 @@ function update_purchase_entry_row_values(row) {
         var unit_cost_price = __read_number(row.find('.purchase_unit_cost'), true);
         var row_subtotal_before_tax = quantity * unit_cost_price;
 
-        var tax_rate = parseFloat(
-            $('option:selected', row.find('.purchase_line_tax_id')).attr('data-tax_amount')
+        var unit_product_tax = calculatePurchaseTax(
+            $('option:selected', row.find('.purchase_line_tax_id')),
+            unit_cost_price
         );
-
-        var unit_product_tax = __calculate_amount('percentage', tax_rate, unit_cost_price);
 
         var unit_cost_price_after_tax = unit_cost_price + unit_product_tax;
         var row_subtotal_after_tax = quantity * unit_cost_price_after_tax;
@@ -1027,8 +1029,7 @@ function update_grand_total() {
     $('#discount_calculated_amount').text(__currency_trans_from_en(discount, true, true));
 
     //Calculate Tax
-    var tax_rate = parseFloat($('option:selected', $('#tax_id')).data('tax_amount'));
-    var tax = __calculate_amount('percentage', tax_rate, total_subtotal - discount);
+    var tax = calculatePurchaseTax($('option:selected', $('#tax_id')), total_subtotal - discount);
     __write_number($('input#tax_amount'), tax);
     $('#tax_calculated_amount').text(__currency_trans_from_en(tax, true, true));
 
