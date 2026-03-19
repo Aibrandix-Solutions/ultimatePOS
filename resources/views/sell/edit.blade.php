@@ -464,6 +464,9 @@
 
 							<input type="hidden" name="tax_calculation_amount" id="tax_calculation_amount" 
 							value="{{@num_format($transaction->tax?->amount)}}" data-default="{{$business_details->tax_calculation_amount}}">
+
+							<input type="hidden" name="tax_calculation_type" id="tax_calculation_type"
+							value="{{$transaction->tax->calculation_type ?? 'percentage'}}" data-default="percentage">
 			            </div>
 			        </div>
 			    </div>

@@ -80,21 +80,42 @@
 	        }
 	    }
 	});
+
+	function get_row_tax_details(tbody) {
+		var selected_tax = tbody.find('select.row_tax').find(':selected');
+		var tax_rate = parseFloat(selected_tax.data('rate'));
+
+		return {
+			amount: isNaN(tax_rate) ? 0 : tax_rate,
+			type: selected_tax.data('type') || 'percentage',
+		};
+	}
+
+	function add_row_tax(amount, tax_details) {
+		return amount + __calculate_amount(tax_details.type, tax_details.amount, amount);
+	}
+
+	function remove_row_tax(amount_inc_tax, tax_details, round) {
+		if (tax_details.type == 'fixed') {
+			var amount = amount_inc_tax - tax_details.amount;
+			return amount < 0 ? 0 : amount;
+		}
+
+		return __get_principle(amount_inc_tax, tax_details.amount, round);
+	}
+
 	function calculateProductPrices(tr) {
 		var tbody = tr.closest('tbody.product_rows')
-		var tax_rate = tbody.find('select.row_tax')
-            .find(':selected')
-            .data('rate');
-        tax_rate = tax_rate == undefined ? 0 : tax_rate;
+		var tax_details = get_row_tax_details(tbody);
         var purchase_exc_tax = __read_number(tr.find('input.pp_exc_tax'));
-        var purchase_inc_tax = __add_percent(purchase_exc_tax, tax_rate);
+	    var purchase_inc_tax = add_row_tax(purchase_exc_tax, tax_details);
         __write_number(tr.find('input.pp_inc_tax'), purchase_inc_tax);
 
         var profit_percent = __read_number(tr.find('input.profit_percent'));
         var selling_price = __add_percent(purchase_exc_tax, profit_percent);
         __write_number(tr.find('input.sp_exc_tax'), selling_price);
 
-        var selling_price_inc_tax = __add_percent(selling_price, tax_rate);
+	    var selling_price_inc_tax = add_row_tax(selling_price, tax_details);
         __write_number(tr.find('input.sp_inc_tax'), selling_price_inc_tax);
 
 	}
@@ -113,13 +134,9 @@
 		var pp_inc_tax = __read_number($(this));
 		var tr = $(this).closest('tr');
 		var tbody = tr.closest('tbody.product_rows');
+		var tax_details = get_row_tax_details(tbody);
 
-		var tax_rate = tbody.find('select.row_tax')
-            .find(':selected')
-            .data('rate');
-        tax_rate = tax_rate == undefined ? 0 : tax_rate;
-
-        var pp_exc_tax = __get_principle(pp_inc_tax, tax_rate, true);
+	    var pp_exc_tax = remove_row_tax(pp_inc_tax, tax_details, true);
         __write_number(tr.find('input.pp_exc_tax'), pp_exc_tax);
         tr.find('input.pp_exc_tax').change();
 	});
@@ -127,29 +144,23 @@
 	$(document).on('change', 'input.sp_exc_tax', function() {
 		var tr = $(this).closest('tr');
 		var tbody = tr.closest('tbody.product_rows');
-		var tax_rate = tbody.find('select.row_tax')
-            .find(':selected')
-            .data('rate');
-        tax_rate = tax_rate == undefined ? 0 : tax_rate;
+		var tax_details = get_row_tax_details(tbody);
 
 		var sp_exc_tax = __read_number($(this));
 		var purchase_exc_tax = __read_number(tr.find('input.pp_exc_tax'));
 		var profit_percent = __get_rate(purchase_exc_tax, sp_exc_tax);
 		__write_number(tr.find('input.profit_percent'), profit_percent);
-		var selling_price_inc_tax = __add_percent(sp_exc_tax, tax_rate);
+		var selling_price_inc_tax = add_row_tax(sp_exc_tax, tax_details);
         __write_number(tr.find('input.sp_inc_tax'), selling_price_inc_tax);
 	});
 
 	$(document).on('change', 'input.sp_inc_tax', function() {
 		var tr = $(this).closest('tr');
 		var tbody = tr.closest('tbody.product_rows');
-		var tax_rate = tbody.find('select.row_tax')
-            .find(':selected')
-            .data('rate');
-        tax_rate = tax_rate == undefined ? 0 : tax_rate;
+		var tax_details = get_row_tax_details(tbody);
 
 		var sp_inc_tax = __read_number($(this));
-		var sp_exc_tax = __get_principle(sp_inc_tax, tax_rate);
+		var sp_exc_tax = remove_row_tax(sp_inc_tax, tax_details);
 		__write_number(tr.find('input.sp_exc_tax'), sp_exc_tax);
 
 		var purchase_exc_tax = __read_number(tr.find('input.pp_exc_tax'));

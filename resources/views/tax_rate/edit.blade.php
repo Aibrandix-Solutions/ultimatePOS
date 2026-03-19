@@ -15,6 +15,11 @@
       </div>
 
       <div class="form-group">
+        {!! Form::label('calculation_type', __('tax_rate.calculation_type') . ':*') !!}
+        {!! Form::select('calculation_type', ['percentage' => __('lang_v1.percentage'), 'fixed' => __('lang_v1.fixed')], $tax_rate->calculation_type ?? 'percentage', ['class' => 'form-control', 'required']) !!}
+      </div>
+
+      <div class="form-group">
         {!! Form::label('amount', __( 'tax_rate.rate' ) . ':*') !!} @show_tooltip(__('lang_v1.tax_exempt_help'))
           {!! Form::text('amount', $tax_rate->amount, ['class' => 'form-control input_number', 'required']) !!}
       </div>

@@ -159,6 +159,20 @@
 			return row;
 	    }
 
+	    function get_combo_tax_details() {
+	    	var selected_tax = $('select#tax').find(':selected');
+	    	var tax_rate = parseFloat(selected_tax.data('rate'));
+
+	    	return {
+	    		amount: isNaN(tax_rate) ? 0 : tax_rate,
+	    		type: selected_tax.data('type') || 'percentage',
+	    	};
+	    }
+
+	    function add_combo_tax(amount, tax_details) {
+	    	return amount + __calculate_amount(tax_details.type, tax_details.amount, amount);
+	    }
+
 	    function update_net_total_amount() {
 	    	
 	    	var item_level_purchase_price_total = 0;
@@ -170,8 +184,8 @@
 	    		}
 	    	});
 
-	    	var tax_rate = $('select#tax').find(':selected').data('rate');
-	    	purchase_price_inc_tax = __add_percent(item_level_purchase_price_total, tax_rate);
+	    	var tax_details = get_combo_tax_details();
+	    	purchase_price_inc_tax = add_combo_tax(item_level_purchase_price_total, tax_details);
 	    	//Set selling price.
 	    	$(".combo_product_table").find('span.item_level_purchase_price_total').text(item_level_purchase_price_total);
 	    	$(".combo_product_table").find('input#item_level_purchase_price_total').val(item_level_purchase_price_total);
@@ -182,7 +196,7 @@
 	    	//Set selling price.
 	    	var margin = __read_number($('input#margin'), false);
 	    	var selling_price = __add_percent(item_level_purchase_price_total, margin);
-	    	var selling_price_inc_tax = __add_percent(selling_price, tax_rate);
+	    	var selling_price_inc_tax = add_combo_tax(selling_price, tax_details);
 
 	    	__write_number($('input#selling_price'), selling_price);
 	    	__write_number($('input#selling_price_inc_tax'), selling_price_inc_tax);
@@ -226,8 +240,8 @@
 	    	var margin = __get_rate(principal, amount);
 	    	__write_number($('input#margin'), margin);
 
-	    	var tax_rate = $('select#tax').find(':selected').data('rate');
-	    	var selling_price_inc_tax = __add_percent(amount, tax_rate);
+	    	var tax_details = get_combo_tax_details();
+	    	var selling_price_inc_tax = add_combo_tax(amount, tax_details);
 	    	__write_number($('input#selling_price_inc_tax'), selling_price_inc_tax);
 	    });
 	});

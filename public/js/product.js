@@ -1,6 +1,29 @@
 //This file contains all functions used products tab
 
 $(document).ready(function () {
+    function get_product_tax_details() {
+        var selected_tax = $('select#tax').find(':selected');
+        var tax_rate = parseFloat(selected_tax.data('rate'));
+
+        return {
+            amount: isNaN(tax_rate) ? 0 : tax_rate,
+            type: selected_tax.data('type') || 'percentage',
+        };
+    }
+
+    function add_product_tax(amount, tax_details) {
+        return amount + __calculate_amount(tax_details.type, tax_details.amount, amount);
+    }
+
+    function remove_product_tax(amount_inc_tax, tax_details) {
+        if (tax_details.type == 'fixed') {
+            var amount = amount_inc_tax - tax_details.amount;
+            return amount < 0 ? 0 : amount;
+        }
+
+        return __get_principle(amount_inc_tax, tax_details.amount);
+    }
+
     $(document).on('ifChecked', 'input#enable_stock', function () {
         $('div#alert_quantity_div').show();
         $('div#quick_product_opening_stock_div').show();
@@ -38,19 +61,16 @@ $(document).ready(function () {
         var purchase_exc_tax = __read_number($('input#single_dpp'));
         purchase_exc_tax = purchase_exc_tax == undefined ? 0 : purchase_exc_tax;
 
-        var tax_rate = $('select#tax')
-            .find(':selected')
-            .data('rate');
-        tax_rate = tax_rate == undefined ? 0 : tax_rate;
+        var tax_details = get_product_tax_details();
 
-        var purchase_inc_tax = __add_percent(purchase_exc_tax, tax_rate);
+        var purchase_inc_tax = add_product_tax(purchase_exc_tax, tax_details);
         __write_number($('input#single_dpp_inc_tax'), purchase_inc_tax);
 
         var profit_percent = __read_number($('#profit_percent'));
         var selling_price = __add_percent(purchase_exc_tax, profit_percent);
         __write_number($('input#single_dsp'), selling_price);
 
-        var selling_price_inc_tax = __add_percent(selling_price, tax_rate);
+        var selling_price_inc_tax = add_product_tax(selling_price, tax_details);
         __write_number($('input#single_dsp_inc_tax'), selling_price_inc_tax);
     });
 
@@ -60,16 +80,13 @@ $(document).ready(function () {
             var purchase_exc_tax = __read_number($('input#single_dpp'));
             purchase_exc_tax = purchase_exc_tax == undefined ? 0 : purchase_exc_tax;
 
-            var tax_rate = $('select#tax')
-                .find(':selected')
-                .data('rate');
-            tax_rate = tax_rate == undefined ? 0 : tax_rate;
+            var tax_details = get_product_tax_details();
 
-            var purchase_inc_tax = __add_percent(purchase_exc_tax, tax_rate);
+            var purchase_inc_tax = add_product_tax(purchase_exc_tax, tax_details);
             __write_number($('input#single_dpp_inc_tax'), purchase_inc_tax);
 
             var selling_price = __read_number($('input#single_dsp'));
-            var selling_price_inc_tax = __add_percent(selling_price, tax_rate);
+            var selling_price_inc_tax = add_product_tax(selling_price, tax_details);
             __write_number($('input#single_dsp_inc_tax'), selling_price_inc_tax);
         }
     });
@@ -79,12 +96,9 @@ $(document).ready(function () {
         var purchase_inc_tax = __read_number($('input#single_dpp_inc_tax'));
         purchase_inc_tax = purchase_inc_tax == undefined ? 0 : purchase_inc_tax;
 
-        var tax_rate = $('select#tax')
-            .find(':selected')
-            .data('rate');
-        tax_rate = tax_rate == undefined ? 0 : tax_rate;
+        var tax_details = get_product_tax_details();
 
-        var purchase_exc_tax = __get_principle(purchase_inc_tax, tax_rate);
+        var purchase_exc_tax = remove_product_tax(purchase_inc_tax, tax_details);
         __write_number($('input#single_dpp'), purchase_exc_tax);
         $('input#single_dpp').change();
 
@@ -93,15 +107,12 @@ $(document).ready(function () {
         var selling_price = __add_percent(purchase_exc_tax, profit_percent);
         __write_number($('input#single_dsp'), selling_price);
 
-        var selling_price_inc_tax = __add_percent(selling_price, tax_rate);
+        var selling_price_inc_tax = add_product_tax(selling_price, tax_details);
         __write_number($('input#single_dsp_inc_tax'), selling_price_inc_tax);
     });
 
     $(document).on('change', 'input#profit_percent', function (e) {
-        var tax_rate = $('select#tax')
-            .find(':selected')
-            .data('rate');
-        tax_rate = tax_rate == undefined ? 0 : tax_rate;
+        var tax_details = get_product_tax_details();
 
         var purchase_inc_tax = __read_number($('input#single_dpp_inc_tax'));
         purchase_inc_tax = purchase_inc_tax == undefined ? 0 : purchase_inc_tax;
@@ -113,15 +124,12 @@ $(document).ready(function () {
         var selling_price = __add_percent(purchase_exc_tax, profit_percent);
         __write_number($('input#single_dsp'), selling_price);
 
-        var selling_price_inc_tax = __add_percent(selling_price, tax_rate);
+        var selling_price_inc_tax = add_product_tax(selling_price, tax_details);
         __write_number($('input#single_dsp_inc_tax'), selling_price_inc_tax);
     });
 
     $(document).on('change', 'input#single_dsp', function (e) {
-        var tax_rate = $('select#tax')
-            .find(':selected')
-            .data('rate');
-        tax_rate = tax_rate == undefined ? 0 : tax_rate;
+        var tax_details = get_product_tax_details();
 
         var selling_price = __read_number($('input#single_dsp'));
         var purchase_exc_tax = __read_number($('input#single_dpp'));
@@ -136,7 +144,7 @@ $(document).ready(function () {
 
         __write_number($('input#profit_percent'), profit_percent);
 
-        var selling_price_inc_tax = __add_percent(selling_price, tax_rate);
+        var selling_price_inc_tax = add_product_tax(selling_price, tax_details);
         __write_number($('input#single_dsp_inc_tax'), selling_price_inc_tax);
 
         var $minSellPrice = $('input#single_min_sell_price_inc_tax');
@@ -146,13 +154,10 @@ $(document).ready(function () {
     });
 
     $(document).on('change', 'input#single_dsp_inc_tax', function (e) {
-        var tax_rate = $('select#tax')
-            .find(':selected')
-            .data('rate');
-        tax_rate = tax_rate == undefined ? 0 : tax_rate;
+        var tax_details = get_product_tax_details();
         var selling_price_inc_tax = __read_number($('input#single_dsp_inc_tax'));
 
-        var selling_price = __get_principle(selling_price_inc_tax, tax_rate);
+        var selling_price = remove_product_tax(selling_price_inc_tax, tax_details);
         __write_number($('input#single_dsp'), selling_price);
         var purchase_exc_tax = __read_number($('input#single_dpp'));
         var profit_percent = __read_number($('input#profit_percent'));
@@ -289,19 +294,16 @@ $(document).ready(function () {
         var purchase_exc_tax = __read_number($(this));
         purchase_exc_tax = purchase_exc_tax == undefined ? 0 : purchase_exc_tax;
 
-        var tax_rate = $('select#tax')
-            .find(':selected')
-            .data('rate');
-        tax_rate = tax_rate == undefined ? 0 : tax_rate;
+        var tax_details = get_product_tax_details();
 
-        var purchase_inc_tax = __add_percent(purchase_exc_tax, tax_rate);
+        var purchase_inc_tax = add_product_tax(purchase_exc_tax, tax_details);
         __write_number(tr_obj.find('input.variable_dpp_inc_tax'), purchase_inc_tax);
 
         var profit_percent = __read_number(tr_obj.find('input.variable_profit_percent'));
         var selling_price = __add_percent(purchase_exc_tax, profit_percent);
         __write_number(tr_obj.find('input.variable_dsp'), selling_price);
 
-        var selling_price_inc_tax = __add_percent(selling_price, tax_rate);
+        var selling_price_inc_tax = add_product_tax(selling_price, tax_details);
         __write_number(tr_obj.find('input.variable_dsp_inc_tax'), selling_price_inc_tax);
     });
 
@@ -312,27 +314,21 @@ $(document).ready(function () {
         var purchase_inc_tax = __read_number($(this));
         purchase_inc_tax = purchase_inc_tax == undefined ? 0 : purchase_inc_tax;
 
-        var tax_rate = $('select#tax')
-            .find(':selected')
-            .data('rate');
-        tax_rate = tax_rate == undefined ? 0 : tax_rate;
+        var tax_details = get_product_tax_details();
 
-        var purchase_exc_tax = __get_principle(purchase_inc_tax, tax_rate);
+        var purchase_exc_tax = remove_product_tax(purchase_inc_tax, tax_details);
         __write_number(tr_obj.find('input.variable_dpp'), purchase_exc_tax);
 
         var profit_percent = __read_number(tr_obj.find('input.variable_profit_percent'));
         var selling_price = __add_percent(purchase_exc_tax, profit_percent);
         __write_number(tr_obj.find('input.variable_dsp'), selling_price);
 
-        var selling_price_inc_tax = __add_percent(selling_price, tax_rate);
+        var selling_price_inc_tax = add_product_tax(selling_price, tax_details);
         __write_number(tr_obj.find('input.variable_dsp_inc_tax'), selling_price_inc_tax);
     });
 
     $(document).on('change', 'input.variable_profit_percent', function (e) {
-        var tax_rate = $('select#tax')
-            .find(':selected')
-            .data('rate');
-        tax_rate = tax_rate == undefined ? 0 : tax_rate;
+        var tax_details = get_product_tax_details();
 
         var tr_obj = $(this).closest('tr');
         var profit_percent = __read_number($(this));
@@ -343,15 +339,12 @@ $(document).ready(function () {
         var selling_price = __add_percent(purchase_exc_tax, profit_percent);
         __write_number(tr_obj.find('input.variable_dsp'), selling_price);
 
-        var selling_price_inc_tax = __add_percent(selling_price, tax_rate);
+        var selling_price_inc_tax = add_product_tax(selling_price, tax_details);
         __write_number(tr_obj.find('input.variable_dsp_inc_tax'), selling_price_inc_tax);
     });
 
     $(document).on('change', 'input.variable_dsp', function (e) {
-        var tax_rate = $('select#tax')
-            .find(':selected')
-            .data('rate');
-        tax_rate = tax_rate == undefined ? 0 : tax_rate;
+        var tax_details = get_product_tax_details();
 
         var tr_obj = $(this).closest('tr');
         var selling_price = __read_number($(this));
@@ -368,19 +361,16 @@ $(document).ready(function () {
 
         __write_number(tr_obj.find('input.variable_profit_percent'), profit_percent);
 
-        var selling_price_inc_tax = __add_percent(selling_price, tax_rate);
+        var selling_price_inc_tax = add_product_tax(selling_price, tax_details);
         __write_number(tr_obj.find('input.variable_dsp_inc_tax'), selling_price_inc_tax);
     });
     $(document).on('change', 'input.variable_dsp_inc_tax', function (e) {
         var tr_obj = $(this).closest('tr');
         var selling_price_inc_tax = __read_number($(this));
 
-        var tax_rate = $('select#tax')
-            .find(':selected')
-            .data('rate');
-        tax_rate = tax_rate == undefined ? 0 : tax_rate;
+        var tax_details = get_product_tax_details();
 
-        var selling_price = __get_principle(selling_price_inc_tax, tax_rate);
+        var selling_price = remove_product_tax(selling_price_inc_tax, tax_details);
         __write_number(tr_obj.find('input.variable_dsp'), selling_price);
 
         var purchase_exc_tax = __read_number(tr_obj.find('input.variable_dpp'));
@@ -532,10 +522,7 @@ $(document).ready(function () {
     //If tax rate is changed
     $(document).on('change', 'select#tax', function () {
         if ($('select#type').val() == 'variable') {
-            var tax_rate = $('select#tax')
-                .find(':selected')
-                .data('rate');
-            tax_rate = tax_rate == undefined ? 0 : tax_rate;
+            var tax_details = get_product_tax_details();
 
             $('table.variation_value_table > tbody').each(function () {
                 $(this)
@@ -544,14 +531,14 @@ $(document).ready(function () {
                         var purchase_exc_tax = __read_number($(this).find('input.variable_dpp'));
                         purchase_exc_tax = purchase_exc_tax == undefined ? 0 : purchase_exc_tax;
 
-                        var purchase_inc_tax = __add_percent(purchase_exc_tax, tax_rate);
+                        var purchase_inc_tax = add_product_tax(purchase_exc_tax, tax_details);
                         __write_number(
                             $(this).find('input.variable_dpp_inc_tax'),
                             purchase_inc_tax
                         );
 
                         var selling_price = __read_number($(this).find('input.variable_dsp'));
-                        var selling_price_inc_tax = __add_percent(selling_price, tax_rate);
+                        var selling_price_inc_tax = add_product_tax(selling_price, tax_details);
                         __write_number(
                             $(this).find('input.variable_dsp_inc_tax'),
                             selling_price_inc_tax

@@ -391,7 +391,7 @@ class PurchaseController extends Controller
 
                 $enable_inline_tax = $request->session()->get('business.enable_inline_tax') == 1;
                 $tax_amounts = TaxRate::where('business_id', $business_id)
-                    ->select('id', 'amount')
+                    ->select('id', 'amount', 'calculation_type')
                     ->get()
                     ->keyBy('id');
 
@@ -437,7 +437,8 @@ class PurchaseController extends Controller
                         if (! empty($candidate_tax_id) && ! empty($tax_amounts[$candidate_tax_id])) {
                             $purchase_line_tax_id = $candidate_tax_id;
                             $tax_rate = (float) $tax_amounts[$purchase_line_tax_id]->amount;
-                            $item_tax = ($tax_rate / 100) * $purchase_price;
+                            $tax_type = $tax_amounts[$purchase_line_tax_id]->calculation_type ?? 'percentage';
+                            $item_tax = $tax_type == 'fixed' ? $tax_rate : ($tax_rate / 100) * $purchase_price;
                             $purchase_price_inc_tax = $purchase_price + $item_tax;
                         }
                     }

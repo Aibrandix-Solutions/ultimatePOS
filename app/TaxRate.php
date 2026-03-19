@@ -52,7 +52,7 @@ class TaxRate extends Model
         $tax_attributes = null;
         if ($include_attributes) {
             $tax_attributes = collect($result)->mapWithKeys(function ($item) {
-                return [$item->id => ['data-rate' => $item->amount]];
+                return [$item->id => ['data-rate' => $item->amount, 'data-type' => $item->calculation_type ?? 'percentage']];
             })->all();
         }
 
@@ -69,7 +69,7 @@ class TaxRate extends Model
     public static function forBusiness($business_id)
     {
         $tax_rates = TaxRate::where('business_id', $business_id)
-                        ->select(['id', 'name', 'amount'])
+                        ->select(['id', 'name', 'amount', 'calculation_type'])
                         ->get()
                         ->toArray();
 

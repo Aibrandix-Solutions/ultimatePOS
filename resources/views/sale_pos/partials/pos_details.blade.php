@@ -72,6 +72,9 @@
 								<input type="hidden" name="tax_calculation_amount" id="tax_calculation_amount" 
 									value="@if(empty($edit)) {{@num_format($business_details->tax_calculation_amount)}} @else {{@num_format($transaction->tax?->amount)}} @endif" data-default="{{$business_details->tax_calculation_amount}}">
 
+								<input type="hidden" name="tax_calculation_type" id="tax_calculation_type"
+									value="@if(empty($edit)) percentage @else {{$transaction->tax->calculation_type ?? 'percentage'}} @endif" data-default="percentage">
+
 								</span>
 							</div>
 							
