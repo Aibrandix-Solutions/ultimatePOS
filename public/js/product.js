@@ -13,9 +13,11 @@ $(document).ready(function () {
             selected_tax.data('type') ||
             selected_tax.data('tax_type') ||
             selected_tax.data('calculation_type') ||
+            selected_tax.data('calculationType') ||
             selected_tax.attr('data-type') ||
             selected_tax.attr('data-tax_type') ||
             selected_tax.attr('data-calculation_type') ||
+            selected_tax.attr('data-calculation-type') ||
             'percentage';
 
         tax_type = (tax_type + '').toLowerCase().trim();

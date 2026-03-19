@@ -52,7 +52,15 @@ class TaxRate extends Model
         $tax_attributes = null;
         if ($include_attributes) {
             $tax_attributes = collect($result)->mapWithKeys(function ($item) {
-                return [$item->id => ['data-rate' => $item->amount, 'data-type' => $item->calculation_type ?? 'percentage']];
+                $tax_type = $item->calculation_type ?? 'percentage';
+
+                return [$item->id => [
+                    'data-rate' => $item->amount,
+                    'data-type' => $tax_type,
+                    'data-tax_type' => $tax_type,
+                    'data-calculation_type' => $tax_type,
+                    'data-calculation-type' => $tax_type,
+                ]];
             })->all();
         }
 
