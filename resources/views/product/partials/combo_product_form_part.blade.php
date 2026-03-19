@@ -161,28 +161,11 @@
 
 	    function get_combo_tax_details() {
 	    	var selected_tax = $('select#tax').find(':selected');
-	    	var tax_rate = parseFloat(
-	    		selected_tax.data('rate') ||
-	    			selected_tax.data('tax_amount') ||
-	    			selected_tax.attr('data-rate') ||
-	    			selected_tax.attr('data-tax_amount')
-	    	);
-	    	var tax_type =
-	    		selected_tax.data('type') ||
-	    		selected_tax.data('tax_type') ||
-	    		selected_tax.data('calculation_type') ||
-	    			selected_tax.data('calculationType') ||
-	    		selected_tax.attr('data-type') ||
-	    		selected_tax.attr('data-tax_type') ||
-	    		selected_tax.attr('data-calculation_type') ||
-	    			selected_tax.attr('data-calculation-type') ||
-	    		'percentage';
-
-	    	tax_type = (tax_type + '').toLowerCase().trim();
+	    	var tax_rate = parseFloat(selected_tax.data('rate'));
 
 	    	return {
 	    		amount: isNaN(tax_rate) ? 0 : tax_rate,
-	    		type: tax_type == 'fixed' ? 'fixed' : 'percentage',
+	    		type: selected_tax.data('type') || 'percentage',
 	    	};
 	    }
 
