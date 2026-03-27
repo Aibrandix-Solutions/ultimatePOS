@@ -26,6 +26,19 @@
                             If unchecked, payment reduces previous dues first (oldest first) and the current invoice will remain due.
                         </small>
                     </div>
+
+                    <div class="col-md-12 mb-12 hide" id="pos_receipt_due_preview" style="margin-top:8px;">
+                        <div style="border: 1px dashed rgba(22,17,96,0.25); border-radius: 8px; background: #f8fafc; padding: 10px 12px;">
+                            <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                                <span style="font-weight:600; color:#111827;">Previous Due:</span>
+                                <span id="pos_receipt_previous_due" style="font-weight:700; color:#111827;">0</span>
+                            </div>
+                            <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:6px;">
+                                <span style="font-weight:700; color:#161160;">Amount Payable:</span>
+                                <span id="pos_receipt_amount_payable" style="font-weight:700; color:#161160;">0</span>
+                            </div>
+                        </div>
+                    </div>
                     <div class="col-md-7">
                         <div class="row">
                             <div id="payment_rows_div">

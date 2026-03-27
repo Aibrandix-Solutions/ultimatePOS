@@ -2748,6 +2748,15 @@ function calculate_balance_due() {
         $('#apply_payment_to_old_dues').data('forced_checked', true);
     }
 
+    var amount_payable_preview = total_payable + past_due;
+    if (!is_walk_in) {
+        $('#pos_receipt_previous_due').text(__currency_trans_from_en(past_due, true));
+        $('#pos_receipt_amount_payable').text(__currency_trans_from_en(amount_payable_preview, true));
+        $('#pos_receipt_due_preview').removeClass('hide');
+    } else {
+        $('#pos_receipt_due_preview').addClass('hide');
+    }
+
     var payment_for_old_dues = 0;
     var payment_for_current = total_paying;
 
@@ -4018,6 +4027,10 @@ function get_contact_due(id) {
             } else {
                 $('.contact_due_text').find('span').text('');
                 $('.contact_due_text').addClass('hide');
+            }
+
+            if (typeof calculate_balance_due === 'function') {
+                calculate_balance_due();
             }
         },
     });
