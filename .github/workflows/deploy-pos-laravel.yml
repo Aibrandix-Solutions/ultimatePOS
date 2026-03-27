@@ -1,14 +1,14 @@
-name: Deploy Laravel (pos.himan.fun via SFTP)
+name: Deploy UltimatePOS (homeneeds.genxpos360.com via SFTP)
 
 on:
   push:
-    branches: [ update ]
+    branches: [ HomeNeedNew ]
   workflow_dispatch:
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 35
 
     steps:
       - name: Checkout
@@ -18,21 +18,36 @@ jobs:
       - name: Validate SSH private key format
         run: |
           set -e
-          echo "${{ secrets.POS_SSH_KEY }}" > /tmp/pos_key
-          chmod 600 /tmp/pos_key
+          printf '%s' "${{ secrets.ULTIMPOS_SSH_KEY }}" | tr -d '\r' > /tmp/ultimpos_key
+          chmod 600 /tmp/ultimpos_key
           echo "Fingerprint (ED25519 expected):"
-          ssh-keygen -lf /tmp/pos_key
+          ssh-keygen -lf /tmp/ultimpos_key
 
       - name: SSH preflight (connect & exit)
         run: |
-          ssh -i /tmp/pos_key \
-              -p "${{ secrets.POS_SSH_PORT }}" \
+          # Note: ULTIMPOS_SSH_HOST is your server SSH/SFTP host (often an IP/hosting hostname),
+          # not the website URL (homeneeds.genxpos360.com).
+          ssh -i /tmp/ultimpos_key \
+              -p "${{ secrets.ULTIMPOS_SSH_PORT }}" \
               -o StrictHostKeyChecking=no \
               -o IdentitiesOnly=yes \
-              "${{ secrets.POS_SSH_USER }}@${{ secrets.POS_SSH_HOST }}" \
+              "${{ secrets.ULTIMPOS_SSH_USER }}@${{ secrets.ULTIMPOS_SSH_HOST }}" \
               "echo SSH OK: \$(whoami) on \$(hostname)"
 
-      # --- Build deploy artifacts (no vendor, no node build) ---
+      # --- Build assets (NPM) ---
+      - name: Install Node.js
+        if: ${{ hashFiles('package.json') != '' }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Build Assets
+        if: ${{ hashFiles('package.json') != '' }}
+        run: |
+          npm ci
+          npm run build
+
+      # --- Build deploy artifacts (no vendor) ---
       - name: Prepare deploy artifacts
         shell: bash
         run: |
@@ -41,9 +56,9 @@ jobs:
           mkdir -p deploy_app deploy_public
 
           # Core app (NO vendor, NO public)
-          cp -r app bootstrap config database routes artisan composer.json composer.lock phpunit.xml .htaccess deploy_app/ 2>/dev/null || true
+          cp -r app bootstrap config database routes artisan composer.json composer.lock phpunit.xml .htaccess Modules deploy_app/ 2>/dev/null || true
 
-          # Translations (support both layouts)
+          # Translations
           if [ -d lang ]; then cp -r lang deploy_app/; fi
           mkdir -p deploy_app/resources
           [ -d resources/lang ]  && cp -r resources/lang  deploy_app/resources/
@@ -58,87 +73,123 @@ jobs:
 
           # Public contents
           rsync -a public/ deploy_public/
+
+          # Ensure public/build is deployed and also available under deploy_app/public/build
+          mkdir -p deploy_app/public/build
+          if [ -d public/build ]; then rsync -a public/build/ deploy_public/build/; fi
+          if [ -d public/build ]; then rsync -a public/build/ deploy_app/public/build/; fi
+
           # ✅ Ensure .htaccess is included explicitly
           if [ -f public/.htaccess ]; then cp public/.htaccess deploy_public/.htaccess; fi
 
           # Write split-docroot index.php that points to /laravel
           cat > deploy_public/index.php <<'PHP'
           <?php
+
           use Illuminate\Contracts\Http\Kernel;
           use Illuminate\Http\Request;
+
           define('LARAVEL_START', microtime(true));
 
           // maintenance file relative to public docroot
-          if (file_exists($maintenance = __DIR__ . '/storage/framework/maintenance.php')) {
+          if (file_exists($maintenance = __DIR__ . '/laravel/storage/framework/maintenance.php')) {
               require $maintenance;
           }
 
+          // Point to the 'laravel' directory (relative to public_html/)
           define('LARAVEL_BASE', __DIR__ . '/laravel');
+
           require LARAVEL_BASE . '/vendor/autoload.php';
           $app = require LARAVEL_BASE . '/bootstrap/app.php';
 
           /** @var Kernel $kernel */
           $kernel = $app->make(Kernel::class);
+
           $response = tap($kernel->handle(
               $request = Request::capture()
           ))->send();
+
           $kernel->terminate($request, $response);
           PHP
 
-      # --- SFTP uploads (port 65002) ---
-      - name: Upload app via SFTP (to /pos/laravel)
+      # --- Create remote directories first ---
+      - name: Create remote directory structure
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.ULTIMPOS_SSH_HOST }}
+          port: ${{ secrets.ULTIMPOS_SSH_PORT }}
+          username: ${{ secrets.ULTIMPOS_SSH_USER }}
+          key: ${{ secrets.ULTIMPOS_SSH_KEY }}
+          script: |
+            set -e
+            # Create directory structure for homeneeds subdomain
+            mkdir -p ~/domains/genxpos360.com/public_html/homeneeds/laravel
+            mkdir -p ~/domains/genxpos360.com/public_html/homeneeds/laravel/storage/framework/{cache,sessions,views}
+            mkdir -p ~/domains/genxpos360.com/public_html/homeneeds/laravel/bootstrap/cache
+            echo "✅ Directory structure created"
+
+      # --- SFTP uploads ---
+      - name: Upload app via SFTP (to /laravel)
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
         with:
-          server: ${{ secrets.POS_SSH_HOST }}
-          port: ${{ secrets.POS_SSH_PORT }}
-          username: ${{ secrets.POS_SSH_USER }}
-          ssh_private_key: ${{ secrets.POS_SSH_KEY }}
-          local_path: 'deploy_app/*'
-          remote_path: 'domains/himan.fun/public_html/pos/laravel/'
+          server: ${{ secrets.ULTIMPOS_SSH_HOST }}
+          port: ${{ secrets.ULTIMPOS_SSH_PORT }}
+          username: ${{ secrets.ULTIMPOS_SSH_USER }}
+          ssh_private_key: ${{ secrets.ULTIMPOS_SSH_KEY }}
+          local_path: "deploy_app/*"
+          # Website: https://homeneeds.genxpos360.com
+          remote_path: "domains/genxpos360.com/public_html/homeneeds/laravel/"
           delete_remote_files: false
           sftp_only: true
 
-      - name: Upload public via SFTP (to /pos/)
+      - name: Upload public via SFTP (to /)
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
         with:
-          server: ${{ secrets.POS_SSH_HOST }}
-          port: ${{ secrets.POS_SSH_PORT }}
-          username: ${{ secrets.POS_SSH_USER }}
-          ssh_private_key: ${{ secrets.POS_SSH_KEY }}
-          local_path: 'deploy_public/*'
-          remote_path: 'domains/himan.fun/public_html/pos/'
-          delete_remote_files: false   # ⚠️ don’t wipe uploads/files
+          server: ${{ secrets.ULTIMPOS_SSH_HOST }}
+          port: ${{ secrets.ULTIMPOS_SSH_PORT }}
+          username: ${{ secrets.ULTIMPOS_SSH_USER }}
+          ssh_private_key: ${{ secrets.ULTIMPOS_SSH_KEY }}
+          local_path: "deploy_public/*"
+          # Website: https://homeneeds.genxpos360.com
+          remote_path: "domains/genxpos360.com/public_html/homeneeds/"
+          delete_remote_files: false
           sftp_only: true
 
       # --- SSH: composer install & caches on the server ---
       - name: SSH - composer install & caches
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.POS_SSH_HOST }}
-          port: ${{ secrets.POS_SSH_PORT }}
-          username: ${{ secrets.POS_SSH_USER }}
-          key: ${{ secrets.POS_SSH_KEY }}
+          host: ${{ secrets.ULTIMPOS_SSH_HOST }}
+          port: ${{ secrets.ULTIMPOS_SSH_PORT }}
+          username: ${{ secrets.ULTIMPOS_SSH_USER }}
+          key: ${{ secrets.ULTIMPOS_SSH_KEY }}
           script: |
             set -e
-            # Use absolute path (no ~ to avoid expansion issues)
-            cd /home/u972195898/domains/himan.fun/public_html/pos/laravel
+            # Target homeneeds.genxpos360.com Laravel app dir
+            cd ~/domains/genxpos360.com/public_html/homeneeds/laravel
 
-            # Ensure runtime dirs BEFORE composer
+            # Safety: do not run artisan/migrations until the subdomain has its own .env
+            if [ ! -f .env ]; then
+              echo "❌ Missing .env at $(pwd)/.env"
+              echo "Create it with separate DB credentials and correct APP_URL=https://homeneeds.genxpos360.com"
+              exit 1
+            fi
+
+            # Ensure runtime dirs
             mkdir -p storage/framework/{cache,sessions,views}
             mkdir -p bootstrap/cache
             chmod -R 755 storage bootstrap/cache || true
 
-            # Check common PHP extensions
+            # Check PHP extensions
             REQUIRED="mbstring intl bcmath curl dom fileinfo gd json openssl pdo pdo_mysql tokenizer xml sodium"
             MISSING=""
             for ext in $REQUIRED; do php -m | grep -qi "^$ext$" || MISSING="$MISSING $ext"; done
             if [ -n "$MISSING" ]; then
               echo "❌ Missing PHP extensions:$MISSING"
-              echo "Enable in hPanel → Advanced → PHP Configuration → PHP Extensions."
               exit 1
             fi
 
-            # Install composer locally if absent
+            # Install composer if missing
             if ! command -v composer >/dev/null 2>&1; then
               php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
               php composer-setup.php --install-dir=$HOME/bin --filename=composer
@@ -146,33 +197,29 @@ jobs:
               export PATH="$HOME/bin:$PATH"
             fi
 
-            php -v || true
-            composer -V || true
-
             composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction --no-progress
 
-            php artisan migrate --force
             # Clear & rebuild caches
-            php artisan config:clear || true
-            php artisan route:clear || true
-            php artisan view:clear  || true
+            php artisan optimize:clear || true
 
+            # Publish module assets and migrations
+            php artisan module:publish || true
+            # Note: Inventory module may not exist in all installations
+            php artisan module:publish-migration Inventory || echo "⚠️ Inventory module not found, skipping..."
 
-            php artisan config:cache || true
-            php artisan route:cache  || true
-            php artisan view:cache   || true
+            # Run migrations
+            php artisan migrate --force
 
-            # Remove old symlink/directory and ensure uploads directory structure
-            cd /home/u972195898/domains/himan.fun/public_html/pos
-            rm -rf uploads user-uploads 2>/dev/null || true
-            
-            # Ensure physical uploads directories exist inside laravel/public
-            mkdir -p laravel/public/uploads/{img,media,business_logos,invoice_logos,files}
-            mkdir -p laravel/public/user-uploads
-            chmod -R 755 laravel/public/uploads laravel/public/user-uploads || true
-            
-            # Create symlinks
-            ln -sf laravel/public/uploads uploads
-            ln -sf laravel/public/user-uploads user-uploads
-            
-            echo "✅ Uploads symlinks verified"
+            # Seed the database (includes currencies)
+            # ⚠️ COMMENTED OUT: Only run on first-time setup, not on every deployment
+            # Uncomment ONLY if this is a fresh/empty database
+            # php artisan db:seed --force
+
+            # Storage link
+            php artisan storage:link || true
+
+            # Symlink for user-uploads within homeneeds docroot
+            cd ~/domains/genxpos360.com/public_html/homeneeds
+            rm -rf user-uploads 2>/dev/null || true
+            ln -sf ./laravel/public/user-uploads user-uploads
+            ls -la user-uploads
