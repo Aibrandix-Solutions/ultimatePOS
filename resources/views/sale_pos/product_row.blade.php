@@ -56,14 +56,17 @@
 			</div>
 		@endif
 
-		@can('view_purchase_price')
+		@php
+			$show_eye = auth()->user()->can('view_purchase_price') || !empty($product->product_description);
+		@endphp
+		@if($show_eye)
 			<button type="button"
 				class="btn btn-xs btn-default toggle-cost-profit"
-				title="@lang('lang_v1.view_purchase_price') / @lang('lang_v1.gross_profit')"
+				title="@if(auth()->user()->can('view_purchase_price')) @lang('lang_v1.view_purchase_price') / @lang('lang_v1.gross_profit') @endif @if(!empty($product->product_description)) @lang('lang_v1.product_description') @endif"
 				style="margin-left: 6px; border-radius: 8px; border: 1px solid rgba(22,17,96,0.15); background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); color: #161160; padding: 2px 8px; font-weight: 600;">
 				<i class="fa fa-eye"></i>
 			</button>
-		@endcan
+		@endif
 		@if(empty($pos_settings['hide_selected_product_image']))
 			<img onerror="this.onerror=null;this.src='{{ asset('/img/default.png') }}';" src="{{$product_image_url}}" alt="product-img" loading="lazy" style="height: 40px; display: inline; margin-left: 6px; border: 2px solid rgba(22,17,96,0.1); border-radius: 8px; margin-top: 2px; width: 40px; object-fit: cover; box-shadow: 0 2px 6px rgba(22,17,96,0.08); transition: all 0.3s ease; cursor: pointer;">
 		@endif
@@ -179,13 +182,13 @@
 			<textarea name="products[{{$row_count}}][sell_line_note]" class="tw-hidden" rows="1" style="display:none;">{{$sell_line_note}}</textarea>
 		@endif
 
-		@can('view_purchase_price')
-			@php
-				// Default purchase price is stored per variation; keep the base-unit value and apply multiplier in JS
-				$base_purchase_price = !empty($product->default_purchase_price) ? ($product->default_purchase_price / $multiplier) : 0;
-			@endphp
+		@php
+			$base_purchase_price = (!empty($product->default_purchase_price)) ? ($product->default_purchase_price / $multiplier) : 0;
+		@endphp
+		@if($show_eye)
 			<input type="hidden" class="pos_purchase_price_base" value="{{ @num_format($base_purchase_price) }}">
 			<div class="pos_cost_profit_panel" style="display:none; margin-top: 8px; padding: 8px 10px; border-radius: 10px; border: 1px dashed rgba(22,17,96,0.20); background: rgba(22,17,96,0.03); max-width: 420px;">
+				@can('view_purchase_price')
 				<small class="text-muted" style="display:block; margin-bottom: 4px;">
 					<strong>@lang('product.default_purchase_price')</strong>
 					<span class="pos_unit_cost display_currency" data-currency_symbol="true">0</span>
@@ -196,8 +199,17 @@
 					<strong>@lang('sale.subtotal')</strong>
 					<span class="pos_total_profit display_currency" data-currency_symbol="true">0</span>
 				</small>
+				@endcan
+				@if(!empty($product->product_description))
+				@can('view_purchase_price')
+					<hr style="margin: 4px 0; border-top: 1px solid rgba(22,17,96,0.1);">
+				@endcan
+				<div style="font-size: 13px; color: #475569; margin-top: 4px;">
+					{!! $product->product_description !!}
+				</div>
+				@endif
 			</div>
-		@endcan
+		@endif
 
 		<!-- Description modal end -->
 		@if(in_array('modifiers' , $enabled_modules))

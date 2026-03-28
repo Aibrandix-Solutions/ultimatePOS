@@ -2825,6 +2825,29 @@ function calculate_balance_due() {
 
     __highlight(bal_due * -1, $('span.balance_due'));
     __highlight(change_return * -1, $('span.change_return_span'));
+
+    // Advance auto-deduction hint
+    try {
+        var advance_balance = parseFloat($('#advance_balance').val()) || 0;
+        var $hint = $('#advance_auto_deduct_hint');
+        var $hint_text = $('#advance_auto_deduct_text');
+        if ($hint.length && advance_balance > 0 && bal_due > 0 && !is_walk_in) {
+            var advance_to_use = Math.min(bal_due, advance_balance);
+            var remaining_after = bal_due - advance_to_use;
+            var msg = '\u26a1 Advance will auto-cover: ' + __currency_trans_from_en(advance_to_use, true);
+            if (remaining_after > 0.01) {
+                msg += ' — Remaining due: ' + __currency_trans_from_en(remaining_after, true);
+            } else {
+                msg += ' — Sale will be fully PAID';
+            }
+            $hint_text.text(msg);
+            $hint.removeClass('hide');
+        } else if ($hint.length) {
+            $hint.addClass('hide');
+            $hint_text.text('');
+        }
+    } catch (e) { /* ignore */ }
+
     // store payment details
     saveFormDataToLocalStorage();
 }

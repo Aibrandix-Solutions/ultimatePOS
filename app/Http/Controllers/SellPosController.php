@@ -653,6 +653,15 @@ class SellPosController extends Controller
 
                 // (enforced above by overriding apply-to-old-dues when installment plan is enabled)
 
+                // Auto-deduct from advance balance if received amount < total payable (registered customers only)
+                if (!$transaction->is_suspend && !$is_credit_sale && $input['status'] === 'final') {
+                    $sale_payment_lines = $this->injectAdvanceDeductionIfNeeded(
+                        $sale_payment_lines,
+                        (float) $transaction->final_total,
+                        $contact_id
+                    );
+                }
+
                 if (!$transaction->is_suspend && !empty($sale_payment_lines) && !$is_credit_sale) {
                     $this->transactionUtil->createOrUpdatePaymentLines($transaction, $sale_payment_lines);
                 }
@@ -1886,6 +1895,14 @@ class SellPosController extends Controller
             $change_return['payment_id'] = $input['change_return_id'];
         }
         $input['payment'][] = $change_return;
+
+        // Auto-deduct from advance balance if received amount < total payable (registered customers only)
+        $input['payment'] = $this->injectAdvanceDeductionIfNeeded(
+            $input['payment'],
+            (float) $transaction->final_total,
+            $transaction->contact_id
+        );
+
         $this->transactionUtil->createOrUpdatePaymentLines($transaction, $input['payment']);
         $this->cashRegisterUtil->updateSellPayments($transaction->status, $transaction, $input['payment']);
 
@@ -3645,5 +3662,66 @@ class SellPosController extends Controller
             return $output;
 
         }
+    }
+
+    /**
+     * Auto-inject an advance payment line when the received amount is less than the total payable.
+     * Only applies to registered (non-walk-in) customers with a positive advance balance.
+     *
+     * @param  array  $payment_lines  Current payment lines (may include change_return)
+     * @param  float  $final_total    The transaction final total
+     * @param  int|null $contact_id  The customer contact ID
+     * @return array  Payment lines, possibly with an extra advance line appended
+     */
+    private function injectAdvanceDeductionIfNeeded(array $payment_lines, float $final_total, $contact_id): array
+    {
+        // Must have a specific registered customer
+        if (empty($contact_id)) {
+            return $payment_lines;
+        }
+
+        $contact = \App\Contact::find($contact_id);
+        if (empty($contact)) {
+            return $payment_lines;
+        }
+
+        // Skip walk-in / default customers
+        if (!empty($contact->is_default)) {
+            return $payment_lines;
+        }
+
+        $advance_balance = (float) $contact->balance;
+        if ($advance_balance <= 0) {
+            return $payment_lines;
+        }
+
+        // Sum what has already been received (exclude change_return and any existing advance lines)
+        $total_received = 0.0;
+        foreach ($payment_lines as $line) {
+            if (!empty($line['is_return'])) {
+                continue; // skip change_return
+            }
+            if (!empty($line['method']) && $line['method'] === 'advance') {
+                continue; // skip any manually entered advance lines
+            }
+            $total_received += (float) ($line['amount'] ?? 0);
+        }
+
+        $shortfall = $final_total - $total_received;
+        if ($shortfall <= 0) {
+            return $payment_lines;
+        }
+
+        // Cap deduction at available advance balance
+        $advance_to_use = min($shortfall, $advance_balance);
+
+        $payment_lines[] = [
+            'method'    => 'advance',
+            'amount'    => $advance_to_use,
+            'note'      => 'Auto-deducted from advance balance',
+            'is_return' => 0,
+        ];
+
+        return $payment_lines;
     }
 }

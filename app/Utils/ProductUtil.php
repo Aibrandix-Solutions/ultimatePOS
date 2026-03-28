@@ -531,6 +531,7 @@ class ProductUtil extends Util
             'p.product_custom_field18',
             'p.product_custom_field19',
             'p.product_custom_field20',
+            'p.product_description',
             'pv.name as product_variation_name',
             'pv.is_dummy as is_dummy',
             'variations.name as variation_name',
