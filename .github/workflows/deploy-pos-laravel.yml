@@ -208,12 +208,12 @@ jobs:
             php artisan module:publish-migration Inventory || echo "⚠️ Inventory module not found, skipping..."
 
             # Run migrations
-            php artisan migrate --force
+            artisan migrate:fresh --seed
 
             # Seed the database (includes currencies)
             # ⚠️ COMMENTED OUT: Only run on first-time setup, not on every deployment
             # Uncomment ONLY if this is a fresh/empty database
-            # php artisan db:seed --force
+            php artisan db:seed --force
 
             # Storage link
             php artisan storage:link || true
