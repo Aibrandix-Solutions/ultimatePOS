@@ -8,6 +8,32 @@
 </section>
 
 <section class="content">
+    @component('components.filters', ['title' => __('report.filters')])
+        <div class="col-md-3">
+            <div class="form-group">
+                <label for="installment_filter_start_date">Start Date:</label>
+                <div class="input-group">
+                    <span class="input-group-addon">
+                        <i class="fa fa-calendar"></i>
+                    </span>
+                    <input type="text" class="form-control" id="installment_filter_start_date" placeholder="Start date" autocomplete="off">
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="form-group">
+                <label for="installment_filter_end_date">End Date:</label>
+                <div class="input-group">
+                    <span class="input-group-addon">
+                        <i class="fa fa-calendar"></i>
+                    </span>
+                    <input type="text" class="form-control" id="installment_filter_end_date" placeholder="End date" autocomplete="off">
+                </div>
+            </div>
+        </div>
+    @endcomponent
+
     @component('components.widget', ['class' => 'box-primary', 'title' => __('lang_v1.installment_plans')])
         <table class="table table-bordered table-striped" id="installment_plans_table">
             <thead>
@@ -34,11 +60,17 @@
 @section('javascript')
 <script>
 $(document).ready(function() {
-    $('#installment_plans_table').DataTable({
+    var dt_table = $('#installment_plans_table').DataTable({
         processing: true,
         serverSide: true,
         fixedHeader: false,
-        ajax: "{{ action([\App\Http\Controllers\InstallmentPlanController::class, 'index']) }}",
+        ajax: {
+            url: "{{ action([\App\Http\Controllers\InstallmentPlanController::class, 'index']) }}",
+            data: function (d) {
+                d.start_date = $('#installment_filter_start_date').val();
+                d.end_date = $('#installment_filter_end_date').val();
+            }
+        },
         columnDefs: [{
             targets: [10],
             orderable: false,
@@ -57,6 +89,23 @@ $(document).ready(function() {
             { data: 'status', name: 'status' },
             { data: 'action', name: 'action' },
         ]
+    });
+
+    // Initialize datepickers for date range filters
+    $('#installment_filter_start_date').datepicker({ autoclose: true, format: datepicker_date_format });
+    $('#installment_filter_end_date').datepicker({ autoclose: true, format: datepicker_date_format });
+
+    // Trigger filter on date change
+    $('#installment_filter_start_date, #installment_filter_end_date').on('changeDate', function() {
+        dt_table.draw();
+    });
+
+    // Optional: Allow Enter key to trigger filter
+    $('#installment_filter_start_date, #installment_filter_end_date').keypress(function(e) {
+        if (e.which == 13) {
+            dt_table.draw();
+            return false;
+        }
     });
 });
 </script>
