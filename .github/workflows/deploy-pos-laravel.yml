@@ -208,7 +208,7 @@ jobs:
             php artisan module:publish-migration Inventory || echo "⚠️ Inventory module not found, skipping..."
 
             # Run migrations
-            artisan migrate:fresh --seed
+            php artisan migrate:fresh --seed
 
             php artisan db:seed --force
 
