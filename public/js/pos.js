@@ -2031,7 +2031,7 @@ $(document).on('click', '#pos-save', function (e) {
 
         if (installmentEnabled) {
             var $installmentDueInput = $('#installment_first_due_date');
-            if ($installmentDueInput.length && ($installmentDueInput.val() === null || $installmentDueInput.val().toString().trim() === '')) {
+            if ($installmentDueInput.length && (!$installmentDueInput.val() || $installmentDueInput.val().toString().trim() === '')) {
                 updateInstallmentFirstDueDate();
             }
         }
@@ -2866,10 +2866,14 @@ function toggle_installment_plan_fields() {
         try {
             var $installmentDueInput = $('#installment_first_due_date');
             if ($installmentDueInput.length && typeof $installmentDueInput.datepicker === 'function' && !$installmentDueInput.data('datepicker')) {
-                $installmentDueInput.datepicker({ autoclose: true });
+                $installmentDueInput.datepicker({ 
+                    autoclose: true,
+                    format: (typeof datepicker_date_format !== 'undefined') ? datepicker_date_format : 'mm/dd/yyyy'
+                });
             }
 
-            if ($installmentDueInput.length && ($installmentDueInput.val() === null || $installmentDueInput.val().toString().trim() === '')) {
+            // Always update when first enabling, or if empty
+            if ($installmentDueInput.length) {
                 updateInstallmentFirstDueDate();
             }
         } catch (e) {
@@ -4818,11 +4822,10 @@ $(document).on('change', '#pos_due_date', function () {
 });
 
 function updateInstallmentFirstDueDate(days) {
+    var interval = parseInt($('#installment_interval').val()) || 1;
+    var intervalType = $('#installment_interval_type').val() || 'months';
+
     if (days === undefined || days === null) {
-        // Calculate days based on interval and interval type
-        var interval = parseInt($('#installment_interval').val()) || 1;
-        var intervalType = $('#installment_interval_type').val() || 'months';
-        
         // Convert interval to days based on type
         if (intervalType === 'days') {
             days = interval;
@@ -4837,16 +4840,15 @@ function updateInstallmentFirstDueDate(days) {
     if ($('#transaction_date').length && $('#transaction_date').data('DateTimePicker')) {
         var dpDate = $('#transaction_date').data('DateTimePicker').date();
         if (dpDate) {
-            baseDate = dpDate.clone();
+            baseDate = dpDate.clone().startOf('day');
         }
     }
 
     var calculatedDate;
     if (days !== null) {
-        calculatedDate = baseDate.add(days, 'days');
+        calculatedDate = baseDate.clone().add(days, 'days');
     } else {
-        // For months, use addMonths instead of addDays
-        var interval = parseInt($('#installment_interval').val()) || 1;
+        // For months, use addMonths
         calculatedDate = baseDate.clone().add(interval, 'months');
     }
 
@@ -4855,7 +4857,8 @@ function updateInstallmentFirstDueDate(days) {
         if (typeof $installmentDueInput.datepicker === 'function') {
             $installmentDueInput.datepicker('update', calculatedDate.toDate());
         } else {
-            $installmentDueInput.val(calculatedDate.format('MM/DD/YYYY'));
+            var format = (typeof moment_date_format !== 'undefined') ? moment_date_format : 'MM/DD/YYYY';
+            $installmentDueInput.val(calculatedDate.format(format));
         }
     }
 }
