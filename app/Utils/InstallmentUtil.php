@@ -44,7 +44,18 @@ class InstallmentUtil
         }
 
         if (empty($first_due_date)) {
-            $first_due_date = Carbon::parse($transaction->transaction_date)->format('Y-m-d');
+            $due_date = Carbon::parse($transaction->transaction_date)->startOfDay();
+            
+            // Add the interval to get the first installment due date
+            if ($interval_type === 'days') {
+                $due_date = $due_date->addDays($interval);
+            } elseif ($interval_type === 'weeks') {
+                $due_date = $due_date->addWeeks($interval);
+            } else {
+                $due_date = $due_date->addMonths($interval);
+            }
+            
+            $first_due_date = $due_date->format('Y-m-d');
         }
 
         $invoice_date = Carbon::parse($transaction->transaction_date)->startOfDay();
