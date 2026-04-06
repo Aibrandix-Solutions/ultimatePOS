@@ -391,6 +391,24 @@ $(document).ready(function () {
         recalculate_single_selling_from_margin();
     });
 
+    function update_single_dpp_from_rates() {
+        var rmb_rate = __read_number($('#rmb_rate'));
+        var exchange_rate = __read_number($('#exchange_rate'));
+
+        rmb_rate = rmb_rate == undefined ? 0 : rmb_rate;
+        exchange_rate = exchange_rate == undefined ? 0 : exchange_rate;
+
+        if (rmb_rate > 0 && exchange_rate > 0) {
+            var exc_tax = rmb_rate * exchange_rate;
+            __write_number($('input#single_dpp'), exc_tax);
+            $('input#single_dpp').trigger('change');
+        }
+    }
+
+    $(document).on('change keyup', '#rmb_rate, #exchange_rate', function () {
+        update_single_dpp_from_rates();
+    });
+
     $(document).on('change', 'input#profit_percent', function (e) {
         recalculate_single_selling_from_margin();
     });
