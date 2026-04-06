@@ -47,7 +47,7 @@
             {!! Form::text('single_dsp_inc_tax', $default, ['class' => 'form-control input-sm hide input_number', 'placeholder' => __('product.inc_of_tax'), 'id' => 'single_dsp_inc_tax', 'required']) !!}
 
             <small class="help-block text-muted min_sell_price_help_text">@lang('lang_v1.minimum_sale_price_help')</small>
-            {!! Form::text('single_min_sell_price_inc_tax', $default, ['class' => 'form-control input-sm input_number', 'placeholder' => 'Minimum selling price (inc tax)', 'id' => 'single_min_sell_price_inc_tax']) !!}
+            {!! Form::text('single_min_sell_price_inc_tax', null, ['class' => 'form-control input-sm input_number', 'placeholder' => 'Minimum selling price (inc tax)', 'id' => 'single_min_sell_price_inc_tax']) !!}
           </td>
           
         </tr>

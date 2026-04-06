@@ -9,6 +9,7 @@ use App\Category;
 use App\Exports\ProductsExport;
 use App\Media;
 use App\Product;
+use App\ProductTaxCalculation;
 use App\ProductVariation;
 use App\PurchaseLine;
 use App\SellingPriceGroup;
@@ -444,6 +445,17 @@ class ProductController extends Controller
         if (! auth()->user()->can('product.create')) {
             abort(403, 'Unauthorized action.');
         }
+
+        $is_custom_tax_calc = (int) $request->input('is_custom_tax_calc') === 1;
+        if ($is_custom_tax_calc) {
+            $request->validate([
+                'custom_tax_quantity' => 'nullable|required_without:custom_tax_per_piece|numeric|gt:0',
+                'custom_tax_amount' => 'nullable|required_without:custom_tax_per_piece|numeric|min:0',
+                'custom_tax_kilogram' => 'nullable|numeric|min:0',
+                'custom_tax_per_piece' => 'nullable|numeric|min:0',
+            ]);
+        }
+
         try {
             $business_id = $request->session()->get('user.business_id');
             $form_fields = ['name', 'brand_id', 'unit_id', 'category_id', 'tax', 'type', 'barcode_type', 'sku', 'alert_quantity', 'tax_type', 'weight', 'product_description', 'sub_unit_ids', 'preparation_time_in_minutes', 'product_custom_field1', 'product_custom_field2', 'product_custom_field3', 'product_custom_field4', 'product_custom_field5', 'product_custom_field6', 'product_custom_field7', 'product_custom_field8', 'product_custom_field9', 'product_custom_field10', 'product_custom_field11', 'product_custom_field12', 'product_custom_field13', 'product_custom_field14', 'product_custom_field15', 'product_custom_field16', 'product_custom_field17', 'product_custom_field18', 'product_custom_field19', 'product_custom_field20',];
@@ -486,6 +498,46 @@ class ProductController extends Controller
                 $product_details['enable_sr_no'] = 1;
             }
 
+            $custom_tax_data = null;
+            if ($is_custom_tax_calc) {
+                $custom_tax_quantity = $request->filled('custom_tax_quantity')
+                    ? $this->productUtil->num_uf($request->input('custom_tax_quantity'))
+                    : 1;
+                $custom_tax_amount = $request->filled('custom_tax_amount')
+                    ? $this->productUtil->num_uf($request->input('custom_tax_amount'))
+                    : null;
+                $custom_tax_kilogram = $request->filled('custom_tax_kilogram')
+                    ? $this->productUtil->num_uf($request->input('custom_tax_kilogram'))
+                    : null;
+
+                if ($request->filled('custom_tax_per_piece')) {
+                    $custom_tax_per_piece = round($this->productUtil->num_uf($request->input('custom_tax_per_piece')), 2);
+                    if ($custom_tax_amount === null) {
+                        $custom_tax_amount = $custom_tax_per_piece * $custom_tax_quantity;
+                    }
+                } else {
+                    $custom_tax_per_piece = round($custom_tax_amount / $custom_tax_quantity, 2);
+                }
+
+                $tax_rate = TaxRate::create([
+                    'business_id' => $business_id,
+                    'name' => 'Auto Product Tax '.now()->format('YmdHis'),
+                    'amount' => $custom_tax_per_piece,
+                    'calculation_type' => 'fixed',
+                    'created_by' => $request->session()->get('user.id'),
+                ]);
+
+                $product_details['tax'] = $tax_rate->id;
+
+                $custom_tax_data = [
+                    'tax_rate_id' => $tax_rate->id,
+                    'kilogram' => $custom_tax_kilogram,
+                    'quantity' => $custom_tax_quantity,
+                    'amount' => $custom_tax_amount,
+                    'tax_per_piece' => $custom_tax_per_piece,
+                ];
+            }
+
             //upload document
             $product_details['image'] = $this->productUtil->uploadFile($request, 'image', config('constants.product_img_path'), 'image');
             $common_settings = session()->get('business.common_settings');
@@ -495,6 +547,19 @@ class ProductController extends Controller
             DB::beginTransaction();
 
             $product = Product::create($product_details);
+
+            if (! empty($custom_tax_data)) {
+                ProductTaxCalculation::create([
+                    'business_id' => $business_id,
+                    'product_id' => $product->id,
+                    'tax_rate_id' => $custom_tax_data['tax_rate_id'],
+                    'kilogram' => $custom_tax_data['kilogram'],
+                    'quantity' => $custom_tax_data['quantity'],
+                    'amount' => $custom_tax_data['amount'],
+                    'tax_per_piece' => $custom_tax_data['tax_per_piece'],
+                    'created_by' => $request->session()->get('user.id'),
+                ]);
+            }
 
             event(new ProductsCreatedOrModified($product_details, 'added'));
 
@@ -686,6 +751,16 @@ class ProductController extends Controller
             abort(403, 'Unauthorized action.');
         }
 
+        $is_custom_tax_calc = (int) $request->input('is_custom_tax_calc') === 1;
+        if ($is_custom_tax_calc) {
+            $request->validate([
+                'custom_tax_quantity' => 'nullable|required_without:custom_tax_per_piece|numeric|gt:0',
+                'custom_tax_amount' => 'nullable|required_without:custom_tax_per_piece|numeric|min:0',
+                'custom_tax_kilogram' => 'nullable|numeric|min:0',
+                'custom_tax_per_piece' => 'nullable|numeric|min:0',
+            ]);
+        }
+
         try {
             $business_id = $request->session()->get('user.business_id');
             $product_details = $request->only(['name', 'brand_id', 'unit_id', 'category_id', 'tax', 'barcode_type', 'sku', 'alert_quantity', 'tax_type', 'weight', 'product_description', 'sub_unit_ids', 'preparation_time_in_minutes', 'product_custom_field1', 'product_custom_field2', 'product_custom_field3', 'product_custom_field4', 'product_custom_field5', 'product_custom_field6', 'product_custom_field7', 'product_custom_field8', 'product_custom_field9', 'product_custom_field10', 'product_custom_field11', 'product_custom_field12', 'product_custom_field13', 'product_custom_field14', 'product_custom_field15', 'product_custom_field16', 'product_custom_field17', 'product_custom_field18', 'product_custom_field19', 'product_custom_field20',]);
@@ -749,6 +824,46 @@ class ProductController extends Controller
 
             $product->not_for_selling = (! empty($request->input('not_for_selling')) && $request->input('not_for_selling') == 1) ? 1 : 0;
 
+            $custom_tax_data = null;
+            if ($is_custom_tax_calc) {
+                $custom_tax_quantity = $request->filled('custom_tax_quantity')
+                    ? $this->productUtil->num_uf($request->input('custom_tax_quantity'))
+                    : 1;
+                $custom_tax_amount = $request->filled('custom_tax_amount')
+                    ? $this->productUtil->num_uf($request->input('custom_tax_amount'))
+                    : null;
+                $custom_tax_kilogram = $request->filled('custom_tax_kilogram')
+                    ? $this->productUtil->num_uf($request->input('custom_tax_kilogram'))
+                    : null;
+
+                if ($request->filled('custom_tax_per_piece')) {
+                    $custom_tax_per_piece = round($this->productUtil->num_uf($request->input('custom_tax_per_piece')), 2);
+                    if ($custom_tax_amount === null) {
+                        $custom_tax_amount = $custom_tax_per_piece * $custom_tax_quantity;
+                    }
+                } else {
+                    $custom_tax_per_piece = round($custom_tax_amount / $custom_tax_quantity, 2);
+                }
+
+                $tax_rate = TaxRate::create([
+                    'business_id' => $business_id,
+                    'name' => 'Auto Product Tax '.now()->format('YmdHis'),
+                    'amount' => $custom_tax_per_piece,
+                    'calculation_type' => 'fixed',
+                    'created_by' => $request->session()->get('user.id'),
+                ]);
+
+                $product->tax = $tax_rate->id;
+
+                $custom_tax_data = [
+                    'tax_rate_id' => $tax_rate->id,
+                    'kilogram' => $custom_tax_kilogram,
+                    'quantity' => $custom_tax_quantity,
+                    'amount' => $custom_tax_amount,
+                    'tax_per_piece' => $custom_tax_per_piece,
+                ];
+            }
+
             if (! empty($request->input('sub_category_id'))) {
                 $product->sub_category_id = $request->input('sub_category_id');
             } else {
@@ -791,6 +906,19 @@ class ProductController extends Controller
             $product->save();
             $product->touch();
 
+            if (! empty($custom_tax_data)) {
+                ProductTaxCalculation::create([
+                    'business_id' => $business_id,
+                    'product_id' => $product->id,
+                    'tax_rate_id' => $custom_tax_data['tax_rate_id'],
+                    'kilogram' => $custom_tax_data['kilogram'],
+                    'quantity' => $custom_tax_data['quantity'],
+                    'amount' => $custom_tax_data['amount'],
+                    'tax_per_piece' => $custom_tax_data['tax_per_piece'],
+                    'created_by' => $request->session()->get('user.id'),
+                ]);
+            }
+
             event(new ProductsCreatedOrModified($product, 'updated'));
 
             //Add product locations
@@ -821,8 +949,9 @@ class ProductController extends Controller
                 $variation->profit_percent = $this->productUtil->num_uf($single_data['profit_percent']);
                 $variation->default_sell_price = $this->productUtil->num_uf($single_data['single_dsp']);
                 $variation->sell_price_inc_tax = $this->productUtil->num_uf($single_data['single_dsp_inc_tax']);
-                $min_sell_price_inc_tax = ! empty($single_data['single_min_sell_price_inc_tax']) ? $single_data['single_min_sell_price_inc_tax'] : $single_data['single_dsp_inc_tax'];
-                $variation->min_sell_price_inc_tax = $this->productUtil->num_uf($min_sell_price_inc_tax);
+                $variation->min_sell_price_inc_tax = ! empty($single_data['single_min_sell_price_inc_tax'])
+                    ? $this->productUtil->num_uf($single_data['single_min_sell_price_inc_tax'])
+                    : null;
                 $variation->save();
 
                 Media::uploadMedia($product->business_id, $variation, $request, 'variation_images');
@@ -1504,6 +1633,16 @@ class ProductController extends Controller
             abort(403, 'Unauthorized action.');
         }
 
+        $is_custom_tax_calc = (int) $request->input('is_custom_tax_calc') === 1;
+        if ($is_custom_tax_calc) {
+            $request->validate([
+                'custom_tax_quantity' => 'nullable|required_without:custom_tax_per_piece|numeric|gt:0',
+                'custom_tax_amount' => 'nullable|required_without:custom_tax_per_piece|numeric|min:0',
+                'custom_tax_kilogram' => 'nullable|numeric|min:0',
+                'custom_tax_per_piece' => 'nullable|numeric|min:0',
+            ]);
+        }
+
         $business_id = $request->session()->get('user.business_id');
 
         // check for products quota
@@ -1556,11 +1695,63 @@ class ProductController extends Controller
                 $product_details['enable_sr_no'] = 1;
             }
 
+            $custom_tax_data = null;
+            if ($is_custom_tax_calc) {
+                $custom_tax_quantity = $request->filled('custom_tax_quantity')
+                    ? $this->productUtil->num_uf($request->input('custom_tax_quantity'))
+                    : 1;
+                $custom_tax_amount = $request->filled('custom_tax_amount')
+                    ? $this->productUtil->num_uf($request->input('custom_tax_amount'))
+                    : null;
+                $custom_tax_kilogram = $request->filled('custom_tax_kilogram')
+                    ? $this->productUtil->num_uf($request->input('custom_tax_kilogram'))
+                    : null;
+
+                if ($request->filled('custom_tax_per_piece')) {
+                    $custom_tax_per_piece = round($this->productUtil->num_uf($request->input('custom_tax_per_piece')), 2);
+                    if ($custom_tax_amount === null) {
+                        $custom_tax_amount = $custom_tax_per_piece * $custom_tax_quantity;
+                    }
+                } else {
+                    $custom_tax_per_piece = round($custom_tax_amount / $custom_tax_quantity, 2);
+                }
+
+                $tax_rate = TaxRate::create([
+                    'business_id' => $business_id,
+                    'name' => 'Auto Product Tax '.now()->format('YmdHis'),
+                    'amount' => $custom_tax_per_piece,
+                    'calculation_type' => 'fixed',
+                    'created_by' => $request->session()->get('user.id'),
+                ]);
+
+                $product_details['tax'] = $tax_rate->id;
+
+                $custom_tax_data = [
+                    'tax_rate_id' => $tax_rate->id,
+                    'kilogram' => $custom_tax_kilogram,
+                    'quantity' => $custom_tax_quantity,
+                    'amount' => $custom_tax_amount,
+                    'tax_per_piece' => $custom_tax_per_piece,
+                ];
+            }
+
             $product_details['warranty_id'] = ! empty($request->input('warranty_id')) ? $request->input('warranty_id') : null;
 
             DB::beginTransaction();
 
             $product = Product::create($product_details);
+            if (! empty($custom_tax_data)) {
+                ProductTaxCalculation::create([
+                    'business_id' => $business_id,
+                    'product_id' => $product->id,
+                    'tax_rate_id' => $custom_tax_data['tax_rate_id'],
+                    'kilogram' => $custom_tax_data['kilogram'],
+                    'quantity' => $custom_tax_data['quantity'],
+                    'amount' => $custom_tax_data['amount'],
+                    'tax_per_piece' => $custom_tax_data['tax_per_piece'],
+                    'created_by' => $request->session()->get('user.id'),
+                ]);
+            }
             event(new ProductsCreatedOrModified($product_details, 'added'));
 
             if (empty(trim($request->input('sku')))) {

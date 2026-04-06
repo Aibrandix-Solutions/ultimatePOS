@@ -26,6 +26,9 @@
                 $is_image_required = !empty($common_settings['is_product_image_required']) && count($variation->media) == 0;
             @endphp
             @if($loop->first)
+              @php
+                $min_sell_price_value = !is_null($variation->min_sell_price_inc_tax) ? num_format($variation->min_sell_price_inc_tax) : null;
+              @endphp
                 <tr>
                     <td>
                         <input type="hidden" name="single_variation_id" value="{{$variation->id}}">
@@ -55,7 +58,7 @@
                         {!! Form::text('single_dsp_inc_tax', @num_format($variation->sell_price_inc_tax), ['class' => 'form-control input-sm hide input_number', 'placeholder' => __('product.inc_of_tax'), 'id' => 'single_dsp_inc_tax', 'required']) !!}
 
                       <small class="help-block text-muted min_sell_price_help_text">@lang('lang_v1.minimum_sale_price_help')</small>
-                      {!! Form::text('single_min_sell_price_inc_tax', @num_format($variation->min_sell_price_inc_tax ?? $variation->sell_price_inc_tax), ['class' => 'form-control input-sm input_number', 'placeholder' => 'Minimum selling price (inc tax)', 'id' => 'single_min_sell_price_inc_tax']) !!}
+                      {!! Form::text('single_min_sell_price_inc_tax', $min_sell_price_value, ['class' => 'form-control input-sm input_number', 'placeholder' => 'Minimum selling price (inc tax)', 'id' => 'single_min_sell_price_inc_tax']) !!}
                     </td>
                     
                 </tr>
