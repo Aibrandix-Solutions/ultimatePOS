@@ -389,6 +389,10 @@ class SellReturnController extends Controller
             abort(403, 'Unauthorized action.');
         }
 
+        $output = ['success' => 0,
+            'msg' => __('messages.something_went_wrong'),
+        ];
+
         try {
             $input = $request->except('_token');
 
@@ -406,22 +410,36 @@ class SellReturnController extends Controller
 
                 $sell_return = $this->transactionUtil->addSellReturn($input, $business_id, $user_id);
 
-                $receipt = $this->receiptContent($business_id, $sell_return->location_id, $sell_return->id);
-
                 // for zatca invoice response
                 $this->moduleUtil->getModuleData('after_sales_return', ['transaction' => $sell_return]);
 
                 DB::commit();
+
+                $receipt = ['is_enabled' => false,
+                    'print_type' => 'browser',
+                    'html_content' => null,
+                    'printer_config' => [],
+                    'data' => [],
+                ];
+
+                // Do not block return save if receipt rendering fails.
+                try {
+                    $receipt = $this->receiptContent($business_id, $sell_return->location_id, $sell_return->id);
+                } catch (\Throwable $receipt_exception) {
+                    \Log::emergency('File:' . $receipt_exception->getFile() . 'Line:' . $receipt_exception->getLine() . 'Message:' . $receipt_exception->getMessage());
+                }
 
                 $output = ['success' => 1,
                     'msg' => __('lang_v1.success'),
                     'receipt' => $receipt,
                 ];
             }
-        } catch (\Exception $e) {
-            DB::rollBack();
+        } catch (\Throwable $e) {
+            if (DB::transactionLevel() > 0) {
+                DB::rollBack();
+            }
 
-            if (get_class($e) == \App\Exceptions\PurchaseSellMismatch::class) {
+            if ($e instanceof \App\Exceptions\PurchaseSellMismatch) {
                 $msg = $e->getMessage();
             } else {
                 \Log::emergency('File:' . $e->getFile() . 'Line:' . $e->getLine() . 'Message:' . $e->getMessage());

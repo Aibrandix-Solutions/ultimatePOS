@@ -51,8 +51,6 @@ class ProductUtil extends Util
         $product_variation = $product->product_variations()->create($product_variation_data);
 
         //create variations
-        $min_sell_price_inc_tax = ($min_sell_price_inc_tax !== null && $min_sell_price_inc_tax !== '') ? $min_sell_price_inc_tax : $selling_price_inc_tax;
-
         $variation_data = [
             'name' => 'DUMMY',
             'product_id' => $product->id,
@@ -62,7 +60,9 @@ class ProductUtil extends Util
             'profit_percent' => $this->num_uf($profit_percent),
             'default_sell_price' => $this->num_uf($selling_price),
             'sell_price_inc_tax' => $this->num_uf($selling_price_inc_tax),
-            'min_sell_price_inc_tax' => $this->num_uf($min_sell_price_inc_tax),
+            'min_sell_price_inc_tax' => ($min_sell_price_inc_tax !== null && $min_sell_price_inc_tax !== '')
+                ? $this->num_uf($min_sell_price_inc_tax)
+                : null,
             'combo_variations' => $combo_variations,
         ];
         $variation = $product_variation->variations()->create($variation_data);
@@ -533,6 +533,7 @@ class ProductUtil extends Util
             'p.product_custom_field18',
             'p.product_custom_field19',
             'p.product_custom_field20',
+            'p.product_description',
             'pv.name as product_variation_name',
             'pv.is_dummy as is_dummy',
             'variations.name as variation_name',

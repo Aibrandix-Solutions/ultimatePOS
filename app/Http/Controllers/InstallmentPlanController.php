@@ -54,6 +54,18 @@ class InstallmentPlanController extends Controller
                         ->limit(1);
                 }, 'next_due_date');
 
+            // Apply date range filter if provided
+            $start_date = $request->input('start_date');
+            $end_date = $request->input('end_date');
+
+            if (! empty($start_date)) {
+                $query->whereDate('t.transaction_date', '>=', $this->transactionUtil->uf_date($start_date));
+            }
+
+            if (! empty($end_date)) {
+                $query->whereDate('t.transaction_date', '<=', $this->transactionUtil->uf_date($end_date));
+            }
+
             return DataTables::of($query)
                 ->editColumn('transaction_date', function ($row) {
                     return ! empty($row->transaction_date) ? $this->transactionUtil->format_date($row->transaction_date, true) : '';

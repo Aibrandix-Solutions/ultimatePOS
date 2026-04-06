@@ -642,6 +642,8 @@ class TransactionPaymentController extends Controller
                 $query->select(
                     DB::raw("SUM(IF(t.type = 'sell' AND t.status = 'final', final_total, 0)) as total_invoice"),
                     DB::raw("SUM(IF(t.type = 'sell' AND t.status = 'final', (SELECT COALESCE(SUM(IF(is_return = 1,-1*amount,amount)), 0) FROM transaction_payments WHERE transaction_payments.transaction_id=t.id AND (transaction_payments.method != 'cheque' OR transaction_payments.cheque_status = 'cleared')), 0)) as total_paid"),
+                    DB::raw("SUM(IF(t.type = 'sell_return', final_total, 0)) as total_sell_return"),
+                    DB::raw("SUM(IF(t.type = 'sell_return', (SELECT COALESCE(SUM(amount), 0) FROM transaction_payments WHERE transaction_payments.transaction_id=t.id AND (transaction_payments.method != 'cheque' OR transaction_payments.cheque_status = 'cleared')), 0)) as sell_return_paid"),
                     'contacts.name',
                     'contacts.supplier_business_name',
                     'contacts.id as contact_id'
@@ -673,9 +675,12 @@ class TransactionPaymentController extends Controller
                                     $contact_details->total_return_paid;
             } elseif ($due_payment_type == 'sell') {
                 $contact_details->total_invoice = empty($contact_details->total_invoice) ? 0 : $contact_details->total_invoice;
+                $contact_details->total_sell_return = empty($contact_details->total_sell_return) ? 0 : $contact_details->total_sell_return;
+                $contact_details->sell_return_paid = empty($contact_details->sell_return_paid) ? 0 : $contact_details->sell_return_paid;
 
+                $sell_return_due = $contact_details->total_sell_return - $contact_details->sell_return_paid;
                 $payment_line->amount = $contact_details->total_invoice -
-                                    $contact_details->total_paid;
+                                    $contact_details->total_paid - $sell_return_due;
             } elseif ($due_payment_type == 'sell_return') {
                 $payment_line->amount = $contact_details->total_sell_return -
                                     $contact_details->total_return_paid;

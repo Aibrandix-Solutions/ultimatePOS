@@ -1907,7 +1907,7 @@ class ContactController extends Controller
     {
         if (request()->ajax()) {
             $business_id = request()->session()->get('user.business_id');
-            $due = $this->transactionUtil->getContactDue($contact_id, $business_id);
+            $due = $this->transactionUtil->getContactDue($contact_id, $business_id, true);
 
             $output = $due != 0 ? $this->transactionUtil->num_f($due, true) : '';
 

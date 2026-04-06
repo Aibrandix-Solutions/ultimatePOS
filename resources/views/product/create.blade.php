@@ -335,7 +335,16 @@
         <div class="col-sm-4 @if(!session('business.enable_price_tax')) hide @endif">
             <div class="form-group">
                 {!! Form::label('tax', __('product.applicable_tax') . ':') !!}
-                {!! Form::select('tax', $taxes, !empty($duplicate_product->tax) ? $duplicate_product->tax : null, ['placeholder' => __('messages.please_select'), 'class' => 'form-control select2'], $tax_attributes) !!}
+                <div class="input-group">
+                    {!! Form::select('tax', $taxes, !empty($duplicate_product->tax) ? $duplicate_product->tax : null, ['placeholder' => __('messages.please_select'), 'class' => 'form-control select2', 'id' => 'tax'], $tax_attributes) !!}
+                    <span class="input-group-btn">
+                        <button type="button" class="btn btn-default" id="toggle_custom_tax_calc" title="Show tax calculator">
+                            <i class="fa fa-calculator"></i> Tax Calculator
+                        </button>
+                    </span>
+                </div>
+                <p class="help-block" style="margin-bottom: 0;">Open this dropdown and type a direct tax value.</p>
+                {!! Form::hidden('is_custom_tax_calc', 0, ['id' => 'is_custom_tax_calc']) !!}
             </div>
         </div>
 
@@ -348,6 +357,41 @@
         </div>
 
         <div class="clearfix"></div>
+
+        <div class="col-sm-12 hide" id="custom_tax_calc_fields">
+            <div class="box box-default" style="margin-bottom: 15px;">
+                <div class="box-body">
+                    <p class="help-block" style="margin-top: 0;">Applicable tax per piece = Amount / Quantity</p>
+                    <div class="row">
+                        <div class="col-sm-4">
+                            <div class="form-group">
+                                {!! Form::label('custom_tax_kilogram', 'Kilogram:') !!}
+                                {!! Form::text('custom_tax_kilogram', null, ['class' => 'form-control input_number', 'id' => 'custom_tax_kilogram', 'placeholder' => 'Kilogram (optional)']) !!}
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div class="form-group">
+                                {!! Form::label('custom_tax_quantity', 'Quantity:*') !!}
+                                {!! Form::text('custom_tax_quantity', null, ['class' => 'form-control input_number', 'id' => 'custom_tax_quantity', 'placeholder' => 'Quantity']) !!}
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div class="form-group">
+                                {!! Form::label('custom_tax_amount', 'Amount:*') !!}
+                                {!! Form::text('custom_tax_amount', null, ['class' => 'form-control input_number', 'id' => 'custom_tax_amount', 'placeholder' => 'Amount']) !!}
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div class="form-group">
+                                {!! Form::label('custom_tax_per_piece_display', 'Applicable tax per piece:') !!}
+                                {!! Form::text('custom_tax_per_piece_display', null, ['class' => 'form-control', 'id' => 'custom_tax_per_piece_display', 'readonly']) !!}
+                                {!! Form::hidden('custom_tax_per_piece', null, ['id' => 'custom_tax_per_piece']) !!}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <div class="col-sm-4">
             <div class="form-group">

@@ -1291,8 +1291,14 @@ class Util
      * @param  int  $contact_id
      * @return mixed
      */
-    public function getContactDue($contact_id, $business_id = null)
+    public function getContactDue($contact_id, $business_id = null, $include_pending_cheques_as_paid = false)
     {
+        $payment_sum_condition = "(transaction_payments.method != 'cheque' OR transaction_payments.cheque_status = 'cleared')";
+
+        if ($include_pending_cheques_as_paid) {
+            $payment_sum_condition = "(transaction_payments.method != 'cheque' OR transaction_payments.cheque_status IS NULL OR transaction_payments.cheque_status IN ('cleared', 'pending'))";
+        }
+
         // aad type sell_return for to calculate total_sell_return 
         $query = Contact::where('contacts.id', $contact_id)
             ->join('transactions AS t', 'contacts.id', '=', 't.contact_id')
@@ -1300,12 +1306,12 @@ class Util
             ->select(
                 DB::raw("SUM(IF(t.status = 'final' AND t.type = 'sell', final_total, 0)) as total_invoice"),
                 DB::raw("SUM(IF(t.type = 'purchase', final_total, 0)) as total_purchase"),
-                DB::raw("SUM(IF(t.status = 'final' AND t.type = 'sell', (SELECT COALESCE(SUM(IF(is_return = 1,-1*amount,amount)), 0) FROM transaction_payments WHERE transaction_payments.transaction_id=t.id AND (transaction_payments.method != 'cheque' OR transaction_payments.cheque_status = 'cleared')), 0)) as total_paid"),
-                DB::raw("SUM(IF(t.type = 'purchase', (SELECT COALESCE(SUM(amount), 0) FROM transaction_payments WHERE transaction_payments.transaction_id=t.id AND (transaction_payments.method != 'cheque' OR transaction_payments.cheque_status = 'cleared')), 0)) as purchase_paid"),
-                DB::raw("SUM(IF(t.type = 'sell_return', (SELECT COALESCE(SUM(amount), 0) FROM transaction_payments WHERE transaction_payments.transaction_id=t.id AND (transaction_payments.method != 'cheque' OR transaction_payments.cheque_status = 'cleared')), 0)) as sell_return_paid"),
+                DB::raw("SUM(IF(t.status = 'final' AND t.type = 'sell', (SELECT COALESCE(SUM(IF(is_return = 1,-1*amount,amount)), 0) FROM transaction_payments WHERE transaction_payments.transaction_id=t.id AND {$payment_sum_condition}), 0)) as total_paid"),
+                DB::raw("SUM(IF(t.type = 'purchase', (SELECT COALESCE(SUM(amount), 0) FROM transaction_payments WHERE transaction_payments.transaction_id=t.id AND {$payment_sum_condition}), 0)) as purchase_paid"),
+                DB::raw("SUM(IF(t.type = 'sell_return', (SELECT COALESCE(SUM(amount), 0) FROM transaction_payments WHERE transaction_payments.transaction_id=t.id AND {$payment_sum_condition}), 0)) as sell_return_paid"),
                 DB::raw("SUM(IF(t.type = 'opening_balance', final_total, 0)) as opening_balance"),
                 DB::raw("SUM(IF(t.type = 'sell_return', final_total, 0)) as total_sell_return"),
-                DB::raw("SUM(IF(t.type = 'opening_balance', (SELECT COALESCE(SUM(amount), 0) FROM transaction_payments WHERE transaction_payments.transaction_id=t.id AND (transaction_payments.method != 'cheque' OR transaction_payments.cheque_status = 'cleared')), 0)) as opening_balance_paid")
+                DB::raw("SUM(IF(t.type = 'opening_balance', (SELECT COALESCE(SUM(amount), 0) FROM transaction_payments WHERE transaction_payments.transaction_id=t.id AND {$payment_sum_condition}), 0)) as opening_balance_paid")
             );
         if (!empty($business_id)) {
             $query->where('contacts.business_id', $business_id);

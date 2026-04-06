@@ -510,7 +510,7 @@
 					</div>
 				@endif
 
-<!-- Line-level discounts -->
+			<!-- Line-level discounts -->
 			@if( !empty($receipt_details->total_line_discount) )
 				<div class="flex-box" style="padding: 2px 0;">
 					<p class="width-50 text-right">
@@ -530,9 +530,9 @@
 					</p>
 					<p class="width-50 text-right" style="color: #d9534f;">
 						(-) {{$receipt_details->order_discount}}
-						</p>
-					</div>
-				@endif
+					</p>
+				</div>
+			@endif
 
 				@if( !empty($receipt_details->additional_expenses) )
 					@foreach($receipt_details->additional_expenses as $key => $val)
@@ -837,7 +837,8 @@ body {
 }
 
 .flex-box p {
-	width: 50%;margin-bottom: 2px;
+	width: 50%;
+	margin-bottom: 2px;
 	white-space: normal;
 }
 

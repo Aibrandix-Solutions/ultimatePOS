@@ -26,6 +26,9 @@
                 $is_image_required = !empty($common_settings['is_product_image_required']) && count($variation->media) == 0;
             @endphp
             @if($loop->first)
+              @php
+                $min_sell_price_value = !is_null($variation->min_sell_price_inc_tax) ? num_format($variation->min_sell_price_inc_tax) : null;
+              @endphp
                 <tr>
                     <td>
                         <input type="hidden" name="single_variation_id" value="{{$variation->id}}">
@@ -34,6 +37,16 @@
                           {!! Form::label('single_dpp', trans('product.exc_of_tax') . ':*') !!}
 
                           {!! Form::text('single_dpp', @num_format($variation->default_purchase_price), ['class' => 'form-control input-sm dpp input_number', 'placeholder' => __('product.exc_of_tax'), 'required']) !!}
+                          <div class="row" style="margin-top: 6px;">
+                            <div class="col-xs-6">
+                              <label for="rmb_rate" class="text-muted" style="font-size: 11px; margin-bottom: 2px;">RMB Rate</label>
+                              <input type="text" id="rmb_rate" class="form-control input-sm input_number" placeholder="RMB Rate">
+                            </div>
+                            <div class="col-xs-6">
+                              <label for="exchange_rate" class="text-muted" style="font-size: 11px; margin-bottom: 2px;">Exchange Rate</label>
+                              <input type="text" id="exchange_rate" class="form-control input-sm input_number" placeholder="Exchange Rate">
+                            </div>
+                          </div>
                         </div>
 
                         <div class="col-sm-6">
@@ -55,7 +68,7 @@
                         {!! Form::text('single_dsp_inc_tax', @num_format($variation->sell_price_inc_tax), ['class' => 'form-control input-sm hide input_number', 'placeholder' => __('product.inc_of_tax'), 'id' => 'single_dsp_inc_tax', 'required']) !!}
 
                       <small class="help-block text-muted min_sell_price_help_text">@lang('lang_v1.minimum_sale_price_help')</small>
-                      {!! Form::text('single_min_sell_price_inc_tax', @num_format($variation->min_sell_price_inc_tax ?? $variation->sell_price_inc_tax), ['class' => 'form-control input-sm input_number', 'placeholder' => 'Minimum selling price (inc tax)', 'id' => 'single_min_sell_price_inc_tax']) !!}
+                      {!! Form::text('single_min_sell_price_inc_tax', $min_sell_price_value, ['class' => 'form-control input-sm input_number', 'placeholder' => 'Minimum selling price (inc tax)', 'id' => 'single_min_sell_price_inc_tax']) !!}
                     </td>
                     
                 </tr>

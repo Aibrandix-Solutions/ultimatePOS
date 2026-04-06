@@ -398,11 +398,18 @@ function __print_receipt(section_id = null) {
         });
     } else {
         setTimeout(function () {
+            // Clear receipt after print dialog closes (modern browsers)
+            window.onafterprint = function () {
+                $('#receipt_section').html('');
+                window.onafterprint = null;
+            };
+
             window.print();
 
-            // setTimeout(function() {
-            //     $('#receipt_section').html('');
-            // }, 5000);
+            // Fallback: clear after 5 seconds if onafterprint didn't fire
+            setTimeout(function () {
+                $('#receipt_section').html('');
+            }, 5000);
 
         }, 1000);
     }
@@ -411,11 +418,18 @@ function __print_receipt(section_id = null) {
 function incrementImageCounter() {
     img_counter++;
     if (img_counter === img_len) {
+        // Clear receipt after print dialog closes (modern browsers)
+        window.onafterprint = function () {
+            $('#receipt_section').html('');
+            window.onafterprint = null;
+        };
+
         window.print();
 
-        // setTimeout(function() {
-        //     $('#receipt_section').html('');
-        // }, 5000);
+        // Fallback: clear after 5 seconds if onafterprint didn't fire
+        setTimeout(function () {
+            $('#receipt_section').html('');
+        }, 5000);
     }
 }
 

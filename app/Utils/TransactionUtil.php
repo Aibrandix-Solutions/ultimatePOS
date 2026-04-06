@@ -6083,6 +6083,22 @@ class TransactionUtil extends Util
                 $note .= '<small>(' . __('lang_v1.change_return') . ')</small>';
             }
 
+            // If payment_type exists, it should determine the ledger side.
+            // Fallback to legacy rules for old records where payment_type may be empty.
+            $debit = $payment->payment_type == 'debit' ||
+                (empty($payment->payment_type) && (
+                    in_array($payment->transaction_type, ['purchase', 'sell_return']) ||
+                    ($payment->is_advance == 1 && $contact->type == 'supplier') ||
+                    (in_array($payment->transaction_type, ['sell', 'purchase_return', 'opening_balance']) && $payment->is_return == 1)
+                ));
+
+            $credit = $payment->payment_type == 'credit' ||
+                (empty($payment->payment_type) && (
+                    (in_array($payment->transaction_type, ['sell', 'purchase_return', 'opening_balance']) ||
+                    ($payment->is_advance == 1 && in_array($contact->type, ['customer', 'both']))) &&
+                    $payment->is_return == 0
+                ));
+
             $ledger[] = [
                 'date' => $payment->paid_on,
                 'ref_no' => $payment->payment_ref_no,
@@ -6092,8 +6108,8 @@ class TransactionUtil extends Util
                 'total' => '',
                 'payment_method' => !empty($paymentTypes[$payment->method]) ? $paymentTypes[$payment->method] : '',
                 'payment_method_key' => $payment->method,
-                'debit' => in_array($payment->transaction_type, ['purchase', 'sell_return']) || ($payment->is_advance == 1 && $contact->type == 'supplier') || (in_array($payment->transaction_type, ['sell', 'purchase_return', 'opening_balance']) && $payment->is_return == 1) || $payment->payment_type == 'debit' ? $payment->amount : '',
-                'credit' => (in_array($payment->transaction_type, ['sell', 'purchase_return', 'opening_balance']) || ($payment->is_advance == 1 && in_array($contact->type, ['customer', 'both']))) && $payment->is_return == 0 || $payment->payment_type == 'credit' ? $payment->amount : '',
+                'debit' => $debit ? $payment->amount : '',
+                'credit' => $credit ? $payment->amount : '',
                 'others' => $note,
             ];
         }

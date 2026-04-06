@@ -15,6 +15,11 @@
                             'data-error-msg' => __('lang_v1.required_advance_balance_not_available'),
                         ]) !!}
                     </div>
+                    <div id="advance_auto_deduct_hint" class="col-md-12 mb-12 hide" style="margin-top:2px; margin-bottom:4px;">
+                        <small style="color:#d97706; font-weight:600;">
+                            <i class="fa fa-bolt"></i> <span id="advance_auto_deduct_text"></span>
+                        </small>
+                    </div>
 
                     <div class="col-md-12 mb-12 apply_to_old_dues_wrapper" style="margin-top:6px;">
                         {!! Form::hidden('apply_payment_to_old_dues', 0) !!}
@@ -25,6 +30,19 @@
                         <small class="help-block" style="margin: 2px 0 0;">
                             If unchecked, payment reduces previous dues first (oldest first) and the current invoice will remain due.
                         </small>
+                    </div>
+
+                    <div class="col-md-12 mb-12 hide" id="pos_receipt_due_preview" style="margin-top:8px;">
+                        <div style="border: 1px dashed rgba(22,17,96,0.25); border-radius: 8px; background: #f8fafc; padding: 10px 12px;">
+                            <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                                <span style="font-weight:600; color:#111827;">Previous Due:</span>
+                                <span id="pos_receipt_previous_due" style="font-weight:700; color:#111827;">0</span>
+                            </div>
+                            <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:6px;">
+                                <span style="font-weight:700; color:#161160;">Amount Payable:</span>
+                                <span id="pos_receipt_amount_payable" style="font-weight:700; color:#161160;">0</span>
+                            </div>
+                        </div>
                     </div>
                     <div class="col-md-7">
                         <div class="row">
