@@ -2,7 +2,6 @@
 
 $(document).ready(function () {
     function init_tax_select_with_direct_input($root) {
-    function init_tax_select_with_direct_input($root) {
         var $targets = $root && $root.length ? $root.find('select#tax') : $('select#tax');
         if (!$targets.length) {
             return;
