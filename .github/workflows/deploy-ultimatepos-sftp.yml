@@ -1,4 +1,4 @@
-name: Deploy UltimatePOS (nscrystal.digipartner.lk via SFTP)
+name: Deploy UltimatePOS (nscrystal.genxpos360.com via SFTP)
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
       - name: SSH preflight (connect & exit)
         run: |
           # Note: ULTIMPOS_SSH_HOST is your server SSH/SFTP host (often an IP/hosting hostname),
-          # not the website URL (nscrystal.digipartner.lk).
+          # not the website URL (nscrystal.genxpos360.com).
           ssh -i /tmp/ultimpos_key \
               -p "${{ secrets.ULTIMPOS_SSH_PORT }}" \
               -o StrictHostKeyChecking=no \
@@ -121,8 +121,8 @@ jobs:
           username: ${{ secrets.ULTIMPOS_SSH_USER }}
           ssh_private_key: ${{ secrets.ULTIMPOS_SSH_KEY }}
           local_path: "deploy_app/*"
-          # Website: https://nscrystal.digipartner.lk
-          remote_path: "domains/digipartner.lk/public_html/nscrystal/laravel/"
+          # Website: https://nscrystal.genxpos360.com
+          remote_path: "domains/genxpos360.com/public_html/nscrystal/laravel/"
           delete_remote_files: false
           sftp_only: true
 
@@ -134,8 +134,8 @@ jobs:
           username: ${{ secrets.ULTIMPOS_SSH_USER }}
           ssh_private_key: ${{ secrets.ULTIMPOS_SSH_KEY }}
           local_path: "deploy_public/*"
-          # Website: https://nscrystal.digipartner.lk
-          remote_path: "domains/digipartner.lk/public_html/nscrystal/"
+          # Website: https://nscrystal.genxpos360.com
+          remote_path: "domains/genxpos360.com/public_html/nscrystal/"
           delete_remote_files: false
           sftp_only: true
 
@@ -149,13 +149,13 @@ jobs:
           key: ${{ secrets.ULTIMPOS_SSH_KEY }}
           script: |
             set -e
-            # Target nscrystal.digipartner.lk Laravel app dir
-            cd ~/domains/digipartner.lk/public_html/nscrystal/laravel
+            # Target nscrystal.genxpos360.com Laravel app dir
+            cd ~/domains/genxpos360.com/public_html/nscrystal/laravel
 
             # Safety: do not run artisan/migrations until the subdomain has its own .env
             if [ ! -f .env ]; then
               echo "❌ Missing .env at $(pwd)/.env"
-              echo "Create it with separate DB credentials and correct APP_URL=https://nscrystal.digipartner.lk"
+              echo "Create it with separate DB credentials and correct APP_URL=https://nscrystal.genxpos360.com"
               exit 1
             fi
 
@@ -197,7 +197,7 @@ jobs:
             php artisan storage:link || true
 
             # Symlink for user-uploads within nscrystal docroot
-            cd ~/domains/digipartner.lk/public_html/nscrystal
+            cd ~/domains/genxpos360.com/public_html/nscrystal
             rm -rf user-uploads 2>/dev/null || true
             ln -sf ./laravel/public/user-uploads user-uploads
             ls -la user-uploads
