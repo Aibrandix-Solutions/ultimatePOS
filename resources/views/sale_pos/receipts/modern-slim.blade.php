@@ -355,8 +355,7 @@
             $isWalkInCustomer = !empty($receipt_details->is_walk_in_customer);
             $showDueBreakdown = !empty($receipt_details->receipt_show_due_breakdown) && !$isWalkInCustomer;
             $showDueBox = !$isWalkInCustomer && !empty($receipt_details->total_due) && !empty($receipt_details->total_due_label);
-            $showSubtotalRow = $showDueBreakdown
-                || !empty($receipt_details->shipping_charges)
+            $showSubtotalRow = !empty($receipt_details->shipping_charges)
                 || !empty($receipt_details->packing_charge)
                 || !empty($receipt_details->total_line_discount)
                 || (!empty($receipt_details->order_discount_unformatted) && $receipt_details->order_discount_unformatted != 0)
