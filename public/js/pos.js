@@ -410,6 +410,19 @@ $(document).ready(function () {
 
         var tr = $(this).parents('tr');
 
+        // Show overselling warning if entered qty exceeds available stock
+        var allow_overselling_qty = $(this).data('allow-overselling');
+        if (allow_overselling_qty === true || allow_overselling_qty === 'true') {
+            var qty_available = parseFloat($(this).data('qty_available'));
+            if (!isNaN(qty_available) && entered_qty > qty_available) {
+                toastr.warning(
+                    '⚠️ Entered quantity (' + entered_qty + ') exceeds available stock (' + qty_available + '). Overselling is enabled — the excess will be adjusted from future stock.',
+                    'Overselling Alert',
+                    { timeOut: 6000, extendedTimeOut: 2000 }
+                );
+            }
+        }
+
         var unit_price_inc_tax = __read_number(tr.find('input.pos_unit_price_inc_tax'));
         var line_total = entered_qty * unit_price_inc_tax;
 
@@ -2404,6 +2417,22 @@ function pos_product_row(variation_id = null, purchase_line_id = null, weighing_
                     // Immediately update empty state
                     /* debug removed */
                     updateEmptyState();
+
+                    // ── Overselling alert ──────────────────────────────────────
+                    // Read attributes from the newly added row's quantity input
+                    var $qtyInput = this_row.find('input.pos_quantity');
+                    var rowAllowOverselling = $qtyInput.data('allow-overselling');
+                    if (rowAllowOverselling === true || rowAllowOverselling === 'true') {
+                        var rowQtyAvailable = parseFloat($qtyInput.data('qty_available'));
+                        if (!isNaN(rowQtyAvailable) && rowQtyAvailable <= 0) {
+                            toastr.warning(
+                                '⚠️ This product is out of stock (Available: ' + rowQtyAvailable + '). Overselling is enabled — the sold quantity will be adjusted automatically from future stock.',
+                                'Overselling Alert',
+                                { timeOut: 7000, extendedTimeOut: 3000, closeButton: true }
+                            );
+                        }
+                    }
+                    // ──────────────────────────────────────────────────────────
 
                     //For initial discount if present
                     var line_total = __read_number(this_row.find('input.pos_line_total'));
@@ -4822,7 +4851,7 @@ function updateInstallmentFirstDueDate(days) {
         // Calculate days based on interval and interval type
         var interval = parseInt($('#installment_interval').val()) || 1;
         var intervalType = $('#installment_interval_type').val() || 'months';
-        
+
         // Convert interval to days based on type
         if (intervalType === 'days') {
             days = interval;

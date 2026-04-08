@@ -339,6 +339,7 @@
 		<input type="text" data-min="1" style="width: auto; border: none; padding: 8px 10px; font-size: 13px; font-weight: 600; text-align: center; background: #ffffff; color: #1e293b; letter-spacing: 0.3px;"
 			class="form-control pos_quantity input_number mousetrap input_quantity" 
 			value="{{@format_quantity($product->quantity_ordered)}}" name="products[{{$row_count}}][quantity]" data-allow-overselling="@if(empty($pos_settings['allow_overselling'])){{'false'}}@else{{'true'}}@endif" 
+			data-qty_available="{{$product->qty_available}}" 
 			@if($allow_decimal) 
 				data-decimal=1 
 			@else 
@@ -349,7 +350,7 @@
 			data-rule-required="true" 
 			data-msg-required="@lang('validation.custom-messages.this_field_is_required')" 
 			@if($product->enable_stock && empty($pos_settings['allow_overselling']) && empty($is_sales_order) )
-				data-rule-max-value="{{$max_qty_rule}}" data-qty_available="{{$product->qty_available}}" data-msg-max-value="{{$max_qty_msg}}" 
+				data-rule-max-value="{{$max_qty_rule}}" data-msg-max-value="{{$max_qty_msg}}" 
 				data-msg_max_default="@lang('validation.custom-messages.quantity_not_available', ['qty'=> $product->formatted_qty_available, 'unit' => $product->unit  ])" 
 			@endif 
 		>
