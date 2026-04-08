@@ -393,7 +393,7 @@ class InvoiceLayoutController extends Controller
             abort(403, 'Unauthorized action.');
         }
 
-        $valid_designs = ['classic', 'elegant', 'detailed', 'columnize-taxes', 'slim', 'slim2', 'english-arabic', 'modern-slim'];
+        $valid_designs = ['classic', 'elegant', 'detailed', 'columnize-taxes', 'slim', 'slim2', 'english-arabic', 'modern-slim', 'modern-slim-a4'];
         if (!in_array($design, $valid_designs)) {
             return response()->json(['error' => 'Invalid design'], 400);
         }
@@ -645,6 +645,7 @@ class InvoiceLayoutController extends Controller
             'slim2' => __('lang_v1.slim') . ' 2 (' . __('lang_v1.recomended_for_58mm') . ')',
             'english-arabic' => 'English-Arabic (' . __('lang_v1.for_normal_printer') . ')',
             'modern-slim' => 'Modern Slim (' . __('lang_v1.recomended_for_80mm') . ')',
+            'modern-slim-a4' => 'Modern Slim A4 (PDF / A4 Printer)',
 
         ];
     }

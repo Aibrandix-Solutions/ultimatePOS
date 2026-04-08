@@ -1,4 +1,4 @@
-<!-- Modern Slim Receipt - Designed for 80mm thermal printers -->
+﻿<!-- Modern Slim Receipt - Designed for 80mm thermal printers -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -17,7 +17,7 @@
     }
     body {
         font-family: Arial, Helvetica, sans-serif;
-        font-size: 11px;
+        font-size: 13px;
         color: #000 !important;
         line-height: 1.2;
         background: #fff;
@@ -57,24 +57,24 @@
 
     /* ===== Header ===== */
     .header-tagline {
-        font-size: 10px;
+        font-size: 12px;
         font-style: italic;
         margin-bottom: 1px;
     }
     .business-name {
-        font-size: 15px;
+        font-size: 17px;
         font-weight: 700;
         text-transform: uppercase;
         margin-bottom: 1px;
         letter-spacing: 0.3px;
     }
     .business-info {
-        font-size: 10px;
+        font-size: 12px;
         line-height: 1.3;
         margin-bottom: 1px;
     }
     .sub-heading {
-        font-size: 13px;
+        font-size: 15px;
         font-weight: 700;
         text-transform: uppercase;
         margin: 2px 0;
@@ -102,7 +102,7 @@
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
-        font-size: 10px;
+        font-size: 12px;
         line-height: 1.3;
         gap: 2px;
     }
@@ -111,7 +111,7 @@
         flex-shrink: 0;
     }
     .info-line {
-        font-size: 10px;
+        font-size: 12px;
         line-height: 1.3;
         word-break: break-word;
     }
@@ -120,7 +120,7 @@
     .ptable {
         width: 100%;
         border-collapse: collapse;
-        font-size: 10px;
+        font-size: 12px;
         table-layout: fixed;
     }
     .ptable thead {
@@ -129,7 +129,7 @@
     .ptable th {
         font-weight: 700;
         padding: 1px 1px;
-        font-size: 9px;
+        font-size: 11px;
         text-align: left;
         overflow: hidden;
         white-space: nowrap;
@@ -139,12 +139,12 @@
     .ptable td {
         padding: 2px 1px;
         vertical-align: top;
-        font-size: 10px;
+        font-size: 12px;
         word-wrap: break-word;
         overflow-wrap: break-word;
     }
     .ptable tbody tr {
-        border-bottom: 1px dashed #ddd;
+        border-bottom: none;
     }
     .ptable tbody tr:last-child {
         border-bottom: none;
@@ -159,21 +159,21 @@
 
     .item-name {
         font-weight: normal;
-        font-size: 10px;
+        font-size: 12px;
         word-wrap: break-word;
     }
     .item-sub {
-        font-size: 9px;
+        font-size: 11px;
         color: #555 !important;
         margin-top: 0;
     }
     .detail-row td {
-        font-size: 9px;
+        font-size: 11px;
         padding: 1px 1px;
-        border-bottom: 1px dashed #ccc;
+        border-bottom: 1px dashed #ddd;
     }
     .modifier-row td {
-        font-size: 9px;
+        font-size: 11px;
         color: #555 !important;
         padding: 1px 1px;
     }
@@ -184,7 +184,7 @@
         justify-content: space-between;
         align-items: baseline;
         padding: 0;
-        font-size: 11px;
+        font-size: 13px;
         line-height: 1.4;
     }
     .tot-row .lbl {
@@ -202,7 +202,7 @@
         justify-content: space-between;
         align-items: baseline;
         padding: 2px 0;
-        font-size: 15px;
+        font-size: 17px;
         font-weight: 900;
         border-top: 2px solid #000;
         border-bottom: 2px solid #000;
@@ -214,7 +214,7 @@
         justify-content: space-between;
         align-items: baseline;
         padding: 2px 0;
-        font-size: 14px;
+        font-size: 16px;
         font-weight: 800;
         border-top: 1px solid #000;
         border-bottom: 1px solid #000;
@@ -228,16 +228,16 @@
         display: flex;
         justify-content: space-between;
         align-items: baseline;
-        font-size: 13px;
+        font-size: 15px;
         font-weight: 900;
         text-transform: uppercase;
-        border-top: 2px solid #000;
-        border-bottom: 1px solid #000;
+        border-top: none;
+        border-bottom: none;
         padding: 2px 0 1px 0;
         margin-bottom: 2px;
     }
     .receipt-balance .headline .val {
-        font-size: 14px;
+        font-size: 16px;
         text-align: right;
         white-space: nowrap;
     }
@@ -245,7 +245,7 @@
         display: flex;
         justify-content: space-between;
         align-items: baseline;
-        font-size: 11px;
+        font-size: 13px;
         line-height: 1.4;
         padding: 0;
     }
@@ -261,7 +261,7 @@
         display: flex;
         justify-content: space-between;
         align-items: baseline;
-        font-size: 15px;
+        font-size: 17px;
         font-weight: 900;
         border-top: 2px solid #000;
         border-bottom: 1px solid #000;
@@ -270,7 +270,7 @@
     }
 
     .total-words {
-        font-size: 9px;
+        font-size: 11px;
         color: #555 !important;
         margin: 0;
         font-style: italic;
@@ -282,7 +282,7 @@
         border-top: 1px solid #000;
     }
     .due-note-title {
-        font-size: 10px;
+        font-size: 12px;
         font-weight: 700;
         margin-bottom: 1px;
     }
@@ -290,7 +290,7 @@
         display: flex;
         justify-content: space-between;
         align-items: baseline;
-        font-size: 10px;
+        font-size: 12px;
         line-height: 1.3;
         gap: 6px;
     }
@@ -305,7 +305,7 @@
 
     /* ===== Notes ===== */
     .notes-section {
-        font-size: 10px;
+        font-size: 12px;
         line-height: 1.3;
         margin: 2px 0;
         padding: 1px 0;
@@ -314,13 +314,13 @@
     /* ===== Footer ===== */
     .footer-text {
         text-align: center;
-        font-size: 10px;
+        font-size: 12px;
         margin: 2px 0;
         line-height: 1.3;
     }
     .thank-you {
         text-align: center;
-        font-size: 10px;
+        font-size: 12px;
         color: #666 !important;
         margin-top: 3px;
         padding-top: 2px;
@@ -329,7 +329,7 @@
     /* ===== Print Styles ===== */
     @media print {
         body {
-            font-size: 17px;
+            font-size: 19px;
             font-family: 'Times New Roman', Times, serif;
         }
         .receipt {
@@ -381,7 +381,7 @@
                 </div>
             @endif
 
-            <div class="sep"></div>
+            {{-- line removed per user request --}}
 
             {{-- Address & Contact --}}
             <div class="text-center business-info">
@@ -424,12 +424,12 @@
 
         {{-- Tax Info --}}
         @if(!empty($receipt_details->tax_info1))
-            <div class="text-center" style="font-size:12px;">
+            <div class="text-center" style="font-size: 14px;">
                 <strong>{{ $receipt_details->tax_label1 }}</strong> {{ $receipt_details->tax_info1 }}
             </div>
         @endif
         @if(!empty($receipt_details->tax_info2))
-            <div class="text-center" style="font-size:12px;">
+            <div class="text-center" style="font-size: 14px;">
                 <strong>{{ $receipt_details->tax_label2 }}</strong> {{ $receipt_details->tax_info2 }}
             </div>
         @endif
@@ -439,55 +439,50 @@
             <div class="text-center sub-heading">{!! $receipt_details->invoice_heading !!}</div>
         @endif
 
-        <div class="sep"></div>
+        {{-- line removed per user request --}}
 
-        {{-- ========== INVOICE DETAILS ========== --}}
-        <div class="info-row">
-            <span>{!! $receipt_details->invoice_no_prefix !!} {{$receipt_details->invoice_no}}</span>
-            @if(!empty($receipt_details->added_by))
-                <span class="r">Cashier: {{$receipt_details->added_by}}</span>
-            @elseif(!$isWalkInCustomer && !empty($receipt_details->sales_person_label))
-                <span class="r">{{$receipt_details->sales_person_label}} {{$receipt_details->sales_person}}</span>
-            @endif
-        </div>
+        {{-- ========== INVOICE DETAILS: 2-column layout ========== --}}
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; font-size: 12px; line-height:1.4;">
 
-        <div class="info-row">
-            <span>{{$receipt_details->invoice_date}}</span>
-        </div>
-
-        @if(!$isWalkInCustomer && !empty($receipt_details->due_date_label))
-            <div class="info-line">
-                <strong>{{$receipt_details->due_date_label}}</strong> {{$receipt_details->due_date ?? ''}}
-            </div>
-        @endif
-
-        {{-- Customer --}}
-        @if(!$isWalkInCustomer && (!empty($receipt_details->customer_label) || !empty($receipt_details->customer_info)))
-            <div class="info-line">
-                @if(!empty($receipt_details->customer_label))
-                    <strong>{{$receipt_details->customer_label}}</strong>
+            {{-- LEFT: Customer details --}}
+            <div style="flex:1; padding-right:4px;">
+                @if(!$isWalkInCustomer && (!empty($receipt_details->customer_label) || !empty($receipt_details->customer_info)))
+                    <div>
+                        @if(!empty($receipt_details->customer_label))
+                            <strong>{{$receipt_details->customer_label}}</strong>
+                        @endif
+                        @if(!empty($receipt_details->customer_info))
+                            {!! $receipt_details->customer_info !!}
+                        @endif
+                    </div>
                 @endif
-                @if(!empty($receipt_details->customer_info))
-                    {!! preg_replace('/<br\s*\/?\>?\s*Mobile\s*:.*$/i', '', $receipt_details->customer_info) !!}
+                @if(!$isWalkInCustomer && !empty($receipt_details->client_id_label))
+                    <div><strong>{{ $receipt_details->client_id_label }}</strong> {{ $receipt_details->client_id }}</div>
+                @endif
+                @if(!$isWalkInCustomer && !empty($receipt_details->customer_tax_label))
+                    <div><strong>{{ $receipt_details->customer_tax_label }}</strong> {{ $receipt_details->customer_tax_number }}</div>
+                @endif
+                @if(!$isWalkInCustomer && !empty($receipt_details->customer_custom_fields))
+                    <div>{!! $receipt_details->customer_custom_fields !!}</div>
                 @endif
             </div>
-        @endif
 
-        @if(!$isWalkInCustomer && !empty($receipt_details->client_id_label))
-            <div class="info-line">
-                <strong>{{ $receipt_details->client_id_label }}</strong> {{ $receipt_details->client_id }}
+            {{-- RIGHT: Cashier + Invoice No + Date --}}
+            <div style="text-align:right; flex-shrink:0;">
+                @if(!empty($receipt_details->added_by))
+                    <div>Cashier: {{$receipt_details->added_by}}</div>
+                @elseif(!$isWalkInCustomer && !empty($receipt_details->sales_person_label))
+                    <div>{{$receipt_details->sales_person_label}} {{$receipt_details->sales_person}}</div>
+                @endif
+                <div>{!! $receipt_details->invoice_no_prefix !!} {{$receipt_details->invoice_no}}</div>
+                <div>{{$receipt_details->invoice_date}}</div>
+                @if(!$isWalkInCustomer && !empty($receipt_details->due_date_label))
+                    <div><strong>{{$receipt_details->due_date_label}}</strong> {{$receipt_details->due_date ?? ""}}</div>
+                @endif
             </div>
-        @endif
 
-        @if(!$isWalkInCustomer && !empty($receipt_details->customer_tax_label))
-            <div class="info-line">
-                <strong>{{ $receipt_details->customer_tax_label }}</strong> {{ $receipt_details->customer_tax_number }}
-            </div>
-        @endif
+        </div>
 
-        @if(!$isWalkInCustomer && !empty($receipt_details->customer_custom_fields))
-            <div class="info-line">{!! $receipt_details->customer_custom_fields !!}</div>
-        @endif
 
         @if(!$isWalkInCustomer && !empty($receipt_details->customer_rp_label))
             <div class="info-row">
@@ -621,7 +616,7 @@
                 </tr>
                 {{-- Header row 2: blank | Type | Qty | Price | [Disc] | Total --}}
                 @if(empty($receipt_details->hide_price))
-                <tr style="font-size:9px; border-bottom: 1px solid #000;">
+                <tr style="font-size: 11px; border-bottom: 1px solid #000;">
                     <th class="c-sno"></th>
                     <th class="c-type" style="text-align:left;">Type</th>
                     <th class="c-qty r">Qty</th>
@@ -742,12 +737,7 @@
 
         @if(empty($receipt_details->hide_price))
             {{-- Subtotal --}}
-            @if($showSubtotalRow)
-                <div class="tot-row">
-                    <span class="lbl">{!! $receipt_details->subtotal_label !!}</span>
-                    <span class="val">{{$receipt_details->subtotal}}</span>
-                </div>
-            @endif
+            {{-- Subtotal row removed: duplicate of SUB TOTAL headline --}}
 
             {{-- Shipping --}}
             @if(!empty($receipt_details->shipping_charges))
@@ -880,7 +870,7 @@
         @if(empty($receipt_details->hide_price) && !empty($receipt_details->tax_summary_label))
             @if(!empty($receipt_details->taxes))
                 <div class="sep"></div>
-                <div class="text-center" style="font-size:12px;font-weight:700;">{{$receipt_details->tax_summary_label}}</div>
+                <div class="text-center" style="font-size: 14px;font-weight:700;">{{$receipt_details->tax_summary_label}}</div>
                 @foreach($receipt_details->taxes as $key => $val)
                     <div class="tot-row">
                         <span class="lbl">{{$key}}</span>
@@ -890,7 +880,7 @@
             @endif
         @endif
 
-        <div class="sep"></div>
+        {{-- line removed per user request --}}
 
         {{-- ========== NOTES ========== --}}
         @if(!empty($receipt_details->additional_notes))
@@ -928,7 +918,7 @@
             $show_website = !empty($cs['show_digipartner_website']);
             $show_phone = !empty($cs['show_digipartner_phone']);
         @endphp
-        <div style="text-align:center; font-size:10px; color:#888 !important; margin-top:5px; padding-top:3px; border-top:1px dashed #ccc;">
+        <div style="text-align:center; font-size: 12px; color:#888 !important; margin-top:5px; padding-top:3px; border-top:1px dashed #ccc;">
             Powered by : <strong>DigiPartner</strong>
             @if($show_website || $show_phone)
                 <br>
