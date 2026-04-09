@@ -861,10 +861,12 @@ class TransactionPaymentController extends Controller
                 DB::raw("SUM(IF(t.type = 'purchase', (SELECT COALESCE(SUM(amount), 0) FROM transaction_payments WHERE transaction_payments.transaction_id=t.id AND (transaction_payments.method != 'cheque' OR transaction_payments.cheque_status = 'cleared')), 0)) as total_paid")
             );
         } else {
-            // default to sell
+            // default to sell – include sell_return so credit notes reduce the due
             $query->select(
                 DB::raw("SUM(IF(t.type = 'sell' AND t.status = 'final', final_total, 0)) as total_invoice"),
-                DB::raw("SUM(IF(t.type = 'sell' AND t.status = 'final', (SELECT COALESCE(SUM(IF(is_return = 1,-1*amount,amount)), 0) FROM transaction_payments WHERE transaction_payments.transaction_id=t.id AND (transaction_payments.method != 'cheque' OR transaction_payments.cheque_status = 'cleared')), 0)) as total_paid")
+                DB::raw("SUM(IF(t.type = 'sell' AND t.status = 'final', (SELECT COALESCE(SUM(IF(is_return = 1,-1*amount,amount)), 0) FROM transaction_payments WHERE transaction_payments.transaction_id=t.id AND (transaction_payments.method != 'cheque' OR transaction_payments.cheque_status = 'cleared')), 0)) as total_paid"),
+                DB::raw("SUM(IF(t.type = 'sell_return', final_total, 0)) as total_sell_return"),
+                DB::raw("SUM(IF(t.type = 'sell_return', (SELECT COALESCE(SUM(amount), 0) FROM transaction_payments WHERE transaction_payments.transaction_id=t.id AND (transaction_payments.method != 'cheque' OR transaction_payments.cheque_status = 'cleared')), 0)) as sell_return_paid")
             );
         }
 
@@ -884,7 +886,11 @@ class TransactionPaymentController extends Controller
         if ($due_payment_type === 'purchase') {
             $due = (float) (($details->total_purchase ?? 0) - ($details->total_paid ?? 0));
         } else {
-            $due = (float) (($details->total_invoice ?? 0) - ($details->total_paid ?? 0));
+            $total_sell_return = (float) ($details->total_sell_return ?? 0);
+            $sell_return_paid = (float) ($details->sell_return_paid ?? 0);
+            $sell_return_due = $total_sell_return - $sell_return_paid;
+
+            $due = (float) (($details->total_invoice ?? 0) - ($details->total_paid ?? 0) - $sell_return_due);
         }
 
         if ($ob_due > 0) {
