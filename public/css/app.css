@@ -973,6 +973,24 @@ tr.details td.details-control {
 }
 
 @media print {
+  body.is-printing-receipt > .wrapper,
+  body.is-printing-receipt main > :not(#receipt_section),
+  body.is-printing-receipt .main-header,
+  body.is-printing-receipt .main-sidebar,
+  body.is-printing-receipt .left-side,
+  body.is-printing-receipt .content-header {
+      display: none !important;
+  }
+  
+  body.is-printing-receipt #receipt_section {
+      position: absolute !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100% !important;
+      margin: 0 !important;
+      display: block !important;
+  }
+
   .print_section {
     display: inline !important;
   }
