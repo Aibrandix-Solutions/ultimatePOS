@@ -1,4 +1,4 @@
-name: Deploy UltimatePOS (acnmarketing.genxpos360.com via SFTP)
+name: Deploy UltimatePOS (asianmarketing.genxpos360.com via SFTP)
 
 on:
   push:
@@ -122,10 +122,10 @@ jobs:
           key: ${{ secrets.ULTIMPOS_SSH_KEY }}
           script: |
             set -e
-            # Create directory structure for acnmarketing subdomain
-            mkdir -p ~/domains/genxpos360.com/public_html/acnmarketing/laravel
-            mkdir -p ~/domains/genxpos360.com/public_html/acnmarketing/laravel/storage/framework/{cache,sessions,views}
-            mkdir -p ~/domains/genxpos360.com/public_html/acnmarketing/laravel/bootstrap/cache
+            # Create directory structure for asianmarketing subdomain
+            mkdir -p ~/domains/genxpos360.com/public_html/asianmarketing/laravel
+            mkdir -p ~/domains/genxpos360.com/public_html/asianmarketing/laravel/storage/framework/{cache,sessions,views}
+            mkdir -p ~/domains/genxpos360.com/public_html/asianmarketing/laravel/bootstrap/cache
             echo "✅ Directory structure created"
 
       # --- SFTP uploads ---
@@ -137,8 +137,8 @@ jobs:
           username: ${{ secrets.ULTIMPOS_SSH_USER }}
           ssh_private_key: ${{ secrets.ULTIMPOS_SSH_KEY }}
           local_path: "deploy_app/*"
-          # Website: https://acnmarketing.genxpos360.com
-          remote_path: "domains/genxpos360.com/public_html/acnmarketing/laravel/"
+          # Website: https://asianmarketing.genxpos360.com
+          remote_path: "domains/genxpos360.com/public_html/asianmarketing/laravel/"
           delete_remote_files: false
           sftp_only: true
 
@@ -150,8 +150,8 @@ jobs:
           username: ${{ secrets.ULTIMPOS_SSH_USER }}
           ssh_private_key: ${{ secrets.ULTIMPOS_SSH_KEY }}
           local_path: "deploy_public/*"
-          # Website: https://acnmarketing.genxpos360.com
-          remote_path: "domains/genxpos360.com/public_html/acnmarketing/"
+          # Website: https://asianmarketing.genxpos360.com
+          remote_path: "domains/genxpos360.com/public_html/asianmarketing/"
           delete_remote_files: false
           sftp_only: true
 
@@ -165,13 +165,13 @@ jobs:
           key: ${{ secrets.ULTIMPOS_SSH_KEY }}
           script: |
             set -e
-            # Target acnmarketing.genxpos360.com Laravel app dir
-            cd ~/domains/genxpos360.com/public_html/acnmarketing/laravel
+            # Target asianmarketing.genxpos360.com Laravel app dir
+            cd ~/domains/genxpos360.com/public_html/asianmarketing/laravel
 
             # Safety: do not run artisan/migrations until the subdomain has its own .env
             if [ ! -f .env ]; then
               echo "❌ Missing .env at $(pwd)/.env"
-              echo "Create it with separate DB credentials and correct APP_URL=https://acnmarketing.genxpos360.com"
+              echo "Create it with separate DB credentials and correct APP_URL=https://asianmarketing.genxpos360.com"
               exit 1
             fi
 
@@ -215,8 +215,8 @@ jobs:
             # Storage link
             php artisan storage:link || true
 
-            # Symlink for user-uploads within acnmarketing docroot
-            cd ~/domains/genxpos360.com/public_html/acnmarketing
+            # Symlink for user-uploads within asianmarketing docroot
+            cd ~/domains/genxpos360.com/public_html/asianmarketing
             rm -rf user-uploads 2>/dev/null || true
             ln -sf ./laravel/public/user-uploads user-uploads
             ls -la user-uploads
