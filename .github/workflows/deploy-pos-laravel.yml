@@ -112,6 +112,10 @@ jobs:
           $kernel->terminate($request, $response);
           PHP
 
+          # --- Archive artifacts for faster SFTP transfer ---
+          tar -czf deploy_app.tar.gz -C deploy_app .
+          tar -czf deploy_public.tar.gz -C deploy_public .
+
       # --- Create remote directories first ---
       - name: Create remote directory structure
         uses: appleboy/ssh-action@v1.0.3
@@ -136,7 +140,7 @@ jobs:
           port: ${{ secrets.ULTIMPOS_SSH_PORT }}
           username: ${{ secrets.ULTIMPOS_SSH_USER }}
           ssh_private_key: ${{ secrets.ULTIMPOS_SSH_KEY }}
-          local_path: "deploy_app/*"
+          local_path: "deploy_app.tar.gz"
           # Website: https://asianmarketing.genxpos360.com
           remote_path: "domains/genxpos360.com/public_html/asianmarketing/laravel/"
           delete_remote_files: false
@@ -149,7 +153,7 @@ jobs:
           port: ${{ secrets.ULTIMPOS_SSH_PORT }}
           username: ${{ secrets.ULTIMPOS_SSH_USER }}
           ssh_private_key: ${{ secrets.ULTIMPOS_SSH_KEY }}
-          local_path: "deploy_public/*"
+          local_path: "deploy_public.tar.gz"
           # Website: https://asianmarketing.genxpos360.com
           remote_path: "domains/genxpos360.com/public_html/asianmarketing/"
           delete_remote_files: false
@@ -167,6 +171,13 @@ jobs:
             set -e
             # Target asianmarketing.genxpos360.com Laravel app dir
             cd ~/domains/genxpos360.com/public_html/asianmarketing/laravel
+
+            # Extract app archive if it exists
+            if [ -f deploy_app.tar.gz ]; then
+              tar -xzf deploy_app.tar.gz
+              rm deploy_app.tar.gz
+              echo "✅ App extracted"
+            fi
 
             # Safety: do not run artisan/migrations until the subdomain has its own .env
             if [ ! -f .env ]; then
@@ -217,6 +228,14 @@ jobs:
 
             # Symlink for user-uploads within asianmarketing docroot
             cd ~/domains/genxpos360.com/public_html/asianmarketing
+            
+            # Extract public archive if it exists
+            if [ -f deploy_public.tar.gz ]; then
+              tar -xzf deploy_public.tar.gz
+              rm deploy_public.tar.gz
+              echo "✅ Public extracted"
+            fi
+
             rm -rf user-uploads 2>/dev/null || true
             ln -sf ./laravel/public/user-uploads user-uploads
             ls -la user-uploads
