@@ -41,9 +41,11 @@ $(document).ready(function () {
                 },
             };
 
-            var $dropdownParent = $tax.closest('.form-group, .modal-content, .modal').first();
-            if ($dropdownParent.length) {
-                select2_config.dropdownParent = $dropdownParent;
+            // Use modal as dropdown parent only when inside modal. For normal pages,
+            // let Select2 attach to body to avoid wrong top/offset positioning.
+            var $modalParent = $tax.closest('.modal');
+            if ($modalParent.length) {
+                select2_config.dropdownParent = $modalParent;
             }
 
             $tax.select2(select2_config);
@@ -400,13 +402,17 @@ $(document).ready(function () {
 
         if (rmb_rate > 0 && exchange_rate > 0) {
             var exc_tax = rmb_rate * exchange_rate;
-            var $dpp_input = $('#product_rmb_rate').closest('form').find('input.dpp');
+            // Always target the single-product purchase price field first.
+            var $dpp_input = $('input#single_dpp');
+            if (!$dpp_input.length) {
+                $dpp_input = $('#product_rmb_rate').closest('form').find('input.dpp').first();
+            }
             __write_number($dpp_input, exc_tax);
             $dpp_input.trigger('change');
         }
     }
 
-    $(document).on('change keyup', '#product_rmb_rate, #product_exchange_rate', function () {
+    $(document).on('change keyup input', '#product_rmb_rate, #product_exchange_rate', function () {
         update_single_dpp_from_rates();
     });
 
