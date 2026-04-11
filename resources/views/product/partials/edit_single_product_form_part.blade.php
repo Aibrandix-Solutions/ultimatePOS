@@ -39,12 +39,12 @@
                           {!! Form::text('single_dpp', @num_format($variation->default_purchase_price), ['class' => 'form-control input-sm dpp input_number', 'placeholder' => __('product.exc_of_tax'), 'required']) !!}
                           <div class="row" style="margin-top: 6px;">
                             <div class="col-xs-6">
-                              <label for="rmb_rate" class="text-muted" style="font-size: 11px; margin-bottom: 2px;">RMB Rate</label>
-                              <input type="text" id="rmb_rate" class="form-control input-sm input_number" placeholder="RMB Rate">
+                              <label for="product_rmb_rate" class="text-muted" style="font-size: 11px; margin-bottom: 2px;">RMB Rate</label>
+                              <input type="text" id="product_rmb_rate" class="form-control input-sm input_number" placeholder="RMB Rate">
                             </div>
                             <div class="col-xs-6">
-                              <label for="exchange_rate" class="text-muted" style="font-size: 11px; margin-bottom: 2px;">Exchange Rate</label>
-                              <input type="text" id="exchange_rate" class="form-control input-sm input_number" placeholder="Exchange Rate">
+                              <label for="product_exchange_rate" class="text-muted" style="font-size: 11px; margin-bottom: 2px;">Exchange Rate</label>
+                              <input type="text" id="product_exchange_rate" class="form-control input-sm input_number" placeholder="Exchange Rate">
                             </div>
                           </div>
                         </div>
