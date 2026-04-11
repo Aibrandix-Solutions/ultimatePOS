@@ -774,6 +774,21 @@ class TransactionPaymentController extends Controller
 
             DB::commit();
 
+            // After commit, safely sync all active installment plans for this customer.
+            // This ensures all child transaction_payments are readable from the DB.
+            try {
+                $installmentUtil = app(\App\Utils\InstallmentUtil::class);
+                $active_plans = \App\InstallmentPlan::whereHas('transaction', function ($q) use ($contact_id) {
+                    $q->where('contact_id', $contact_id);
+                })->where('status', 'active')->get();
+
+                foreach ($active_plans as $plan) {
+                    $installmentUtil->syncPlanPaymentStatus($plan);
+                }
+            } catch (\Exception $e) {
+                \Log::emergency('Installment sync failed: ' . $e->getMessage());
+            }
+
             $output = [
                 'success' => true,
                 'msg' => __('purchase.payment_added_success'),
