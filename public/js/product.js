@@ -41,9 +41,9 @@ $(document).ready(function () {
                 },
             };
 
-            var $modal = $tax.closest('.modal');
-            if ($modal.length) {
-                select2_config.dropdownParent = $modal;
+            var $dropdownParent = $tax.closest('.form-group, .modal-content, .modal').first();
+            if ($dropdownParent.length) {
+                select2_config.dropdownParent = $dropdownParent;
             }
 
             $tax.select2(select2_config);
@@ -392,20 +392,21 @@ $(document).ready(function () {
     });
 
     function update_single_dpp_from_rates() {
-        var rmb_rate = __read_number($('#rmb_rate'));
-        var exchange_rate = __read_number($('#exchange_rate'));
+        var rmb_rate = __read_number($('#product_rmb_rate'));
+        var exchange_rate = __read_number($('#product_exchange_rate'));
 
         rmb_rate = rmb_rate == undefined ? 0 : rmb_rate;
         exchange_rate = exchange_rate == undefined ? 0 : exchange_rate;
 
         if (rmb_rate > 0 && exchange_rate > 0) {
             var exc_tax = rmb_rate * exchange_rate;
-            __write_number($('input#single_dpp'), exc_tax);
-            $('input#single_dpp').trigger('change');
+            var $dpp_input = $('#product_rmb_rate').closest('form').find('input.dpp');
+            __write_number($dpp_input, exc_tax);
+            $dpp_input.trigger('change');
         }
     }
 
-    $(document).on('change keyup', '#rmb_rate, #exchange_rate', function () {
+    $(document).on('change keyup', '#product_rmb_rate, #product_exchange_rate', function () {
         update_single_dpp_from_rates();
     });
 

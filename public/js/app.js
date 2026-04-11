@@ -2138,7 +2138,7 @@ $(document).ready(function () {
 
 $('.quick_add_product_modal').on('shown.bs.modal', function () {
     $('.quick_add_product_modal')
-        .find('.select2')
+        .find('.select2:not(#tax)')
         .each(function () {
             var $p = $(this).parent();
             $(this).select2({ dropdownParent: $p });
