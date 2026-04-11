@@ -398,8 +398,10 @@ function __print_receipt(section_id = null) {
         });
     } else {
         setTimeout(function () {
+            $('body').addClass('is-printing-receipt');
             // Clear receipt after print dialog closes (modern browsers)
             window.onafterprint = function () {
+                $('body').removeClass('is-printing-receipt');
                 $('#receipt_section').html('');
                 window.onafterprint = null;
             };
@@ -408,6 +410,7 @@ function __print_receipt(section_id = null) {
 
             // Fallback: clear after 5 seconds if onafterprint didn't fire
             setTimeout(function () {
+                $('body').removeClass('is-printing-receipt');
                 $('#receipt_section').html('');
             }, 5000);
 
@@ -418,8 +421,10 @@ function __print_receipt(section_id = null) {
 function incrementImageCounter() {
     img_counter++;
     if (img_counter === img_len) {
+        $('body').addClass('is-printing-receipt');
         // Clear receipt after print dialog closes (modern browsers)
         window.onafterprint = function () {
+            $('body').removeClass('is-printing-receipt');
             $('#receipt_section').html('');
             window.onafterprint = null;
         };
@@ -428,6 +433,7 @@ function incrementImageCounter() {
 
         // Fallback: clear after 5 seconds if onafterprint didn't fire
         setTimeout(function () {
+            $('body').removeClass('is-printing-receipt');
             $('#receipt_section').html('');
         }, 5000);
     }
