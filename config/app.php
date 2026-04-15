@@ -55,6 +55,8 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
 
+    'split_docroot' => filter_var(env('APP_SPLIT_DOCROOT', false), FILTER_VALIDATE_BOOLEAN),
+
     /*
     |--------------------------------------------------------------------------
     | Application Timezone

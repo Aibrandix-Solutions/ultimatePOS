@@ -33,7 +33,7 @@ class Product extends Model
     public function getImageUrlAttribute()
     {
         if (! empty($this->image)) {
-            $image_url = asset('/uploads/img/'.rawurlencode($this->image));
+            $image_url = asset('/uploads/'.config('constants.product_img_path').'/'.rawurlencode($this->image));
         } else {
             $image_url = asset('/img/default.png');
         }
@@ -49,7 +49,16 @@ class Product extends Model
     public function getImagePathAttribute()
     {
         if (! empty($this->image)) {
-            $image_path = public_path('uploads').'/'.config('constants.product_img_path').'/'.$this->image;
+            $local_upload_path = public_path('uploads').'/'.config('constants.product_img_path').'/'.$this->image;
+            $split_docroot_path = dirname(base_path()).'/uploads/'.config('constants.product_img_path').'/'.$this->image;
+
+            if (file_exists($local_upload_path)) {
+                $image_path = $local_upload_path;
+            } elseif (file_exists($split_docroot_path)) {
+                $image_path = $split_docroot_path;
+            } else {
+                $image_path = $local_upload_path;
+            }
         } else {
             $image_path = null;
         }

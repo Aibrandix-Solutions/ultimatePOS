@@ -740,7 +740,7 @@ class Util
                 $sanitized_name = Str::slug($original_name);
                 $new_file_name = time() . '_' . $sanitized_name . ($extension ? '.' . $extension : '');
 
-                $is_split_docroot = (bool) env('APP_SPLIT_DOCROOT', false);
+                $is_split_docroot = (bool) config('app.split_docroot', false);
 
                 if ($is_split_docroot) {
                     // Production (split docroot): store to web-accessible uploads directory (sibling to /laravel folder)
