@@ -428,6 +428,26 @@
             </div>
         </div>
 
+        @if(!empty($receipt_details->types_of_service) || !empty($receipt_details->types_of_service_custom_fields) || !empty($receipt_details->table) || !empty($receipt_details->service_staff))
+            @if(!empty($receipt_details->types_of_service))
+                <div class="tot-row"><span class="lbl">{!! !empty($receipt_details->types_of_service_label) ? $receipt_details->types_of_service_label : 'Type of Service:' !!}</span><span class="val">{{$receipt_details->types_of_service}}</span></div>
+            @endif
+
+            @if(!empty($receipt_details->types_of_service_custom_fields))
+                @foreach($receipt_details->types_of_service_custom_fields as $key => $value)
+                    <div class="tot-row"><span class="lbl"><strong>{{$key}}:</strong></span><span class="val">{{$value}}</span></div>
+                @endforeach
+            @endif
+
+            @if(!empty($receipt_details->table_label) || !empty($receipt_details->table))
+                <div class="tot-row"><span class="lbl">{!! !empty($receipt_details->table_label) ? $receipt_details->table_label : 'Table:' !!}</span><span class="val">{{$receipt_details->table}}</span></div>
+            @endif
+
+            @if(!empty($receipt_details->service_staff_label) || !empty($receipt_details->service_staff))
+                <div class="tot-row"><span class="lbl">{!! !empty($receipt_details->service_staff_label) ? $receipt_details->service_staff_label : 'Service Staff:' !!}</span><span class="val">{{$receipt_details->service_staff}}</span></div>
+            @endif
+        @endif
+
         {{-- Extra info rows --}}
         @if(!$isWalkInCustomer && !empty($receipt_details->customer_rp_label))
             <div class="tot-row"><span class="lbl">{{ $receipt_details->customer_rp_label }}</span><span class="val">{{ $receipt_details->customer_total_rp }}</span></div>
@@ -435,13 +455,6 @@
         @if(!$isWalkInCustomer && !empty($receipt_details->commission_agent_label))
             <div class="tot-row"><span class="lbl">{{$receipt_details->commission_agent_label}}</span><span class="val">{{$receipt_details->commission_agent}}</span></div>
         @endif
-        @if(!$isWalkInCustomer && (!empty($receipt_details->service_staff_label) || !empty($receipt_details->service_staff)))
-            <div class="tot-row"><span class="lbl">{!! $receipt_details->service_staff_label !!}</span><span class="val">{{$receipt_details->service_staff}}</span></div>
-        @endif
-        @if(!$isWalkInCustomer && (!empty($receipt_details->table_label) || !empty($receipt_details->table)))
-            <div class="tot-row"><span class="lbl">{!! $receipt_details->table_label !!}</span><span class="val">{{$receipt_details->table}}</span></div>
-        @endif
-
         {{-- ========== PRODUCT TABLE ========== --}}
         <div class="sep-thick"></div>
 

@@ -483,6 +483,38 @@
 
         </div>
 
+        @if(!empty($receipt_details->types_of_service) || !empty($receipt_details->types_of_service_custom_fields) || !empty($receipt_details->table) || !empty($receipt_details->service_staff))
+            @if(!empty($receipt_details->types_of_service))
+                <div class="info-row">
+                    <span><strong>{!! !empty($receipt_details->types_of_service_label) ? $receipt_details->types_of_service_label : 'Type of Service:' !!}</strong></span>
+                    <span class="r">{{$receipt_details->types_of_service}}</span>
+                </div>
+            @endif
+
+            @if(!empty($receipt_details->types_of_service_custom_fields))
+                @foreach($receipt_details->types_of_service_custom_fields as $key => $value)
+                    <div class="info-row">
+                        <span><strong>{{$key}}:</strong></span>
+                        <span class="r">{{$value}}</span>
+                    </div>
+                @endforeach
+            @endif
+
+            @if(!empty($receipt_details->table_label) || !empty($receipt_details->table))
+                <div class="info-row">
+                    <span><strong>{!! !empty($receipt_details->table_label) ? $receipt_details->table_label : 'Table:' !!}</strong></span>
+                    <span class="r">{{$receipt_details->table}}</span>
+                </div>
+            @endif
+
+            @if(!empty($receipt_details->service_staff_label) || !empty($receipt_details->service_staff))
+                <div class="info-row">
+                    <span><strong>{!! !empty($receipt_details->service_staff_label) ? $receipt_details->service_staff_label : 'Service Staff:' !!}</strong></span>
+                    <span class="r">{{$receipt_details->service_staff}}</span>
+                </div>
+            @endif
+        @endif
+
 
         @if(!$isWalkInCustomer && !empty($receipt_details->customer_rp_label))
             <div class="info-row">
@@ -582,19 +614,6 @@
                 <span class="r">{{$receipt_details->repair_device}}</span>
             </div>
         @endif
-        @if(!$isWalkInCustomer && (!empty($receipt_details->service_staff_label) || !empty($receipt_details->service_staff)))
-            <div class="info-row">
-                <span><strong>{!! $receipt_details->service_staff_label !!}</strong></span>
-                <span class="r">{{$receipt_details->service_staff}}</span>
-            </div>
-        @endif
-        @if(!$isWalkInCustomer && (!empty($receipt_details->table_label) || !empty($receipt_details->table)))
-            <div class="info-row">
-                <span><strong>{!! $receipt_details->table_label !!}</strong></span>
-                <span class="r">{{$receipt_details->table}}</span>
-            </div>
-        @endif
-
         {{-- ========== PRODUCT TABLE ========== --}}
         <div class="sep-thick"></div>
 
