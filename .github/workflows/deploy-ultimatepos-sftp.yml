@@ -196,8 +196,18 @@ jobs:
             # Storage link
             php artisan storage:link || true
 
-            # Symlink for user-uploads within nscrystal docroot
+            # Symlinks within nscrystal docroot
             cd ~/domains/genxpos360.com/public_html/nscrystal
+
+            # uploads symlink (product images served at /uploads/img/...)
+            rm -rf uploads 2>/dev/null || true
+            mkdir -p laravel/public/uploads/img
+            ln -sf ./laravel/public/uploads uploads
+            echo "✅ uploads symlink:"
+            ls -la uploads
+
+            # user-uploads symlink
             rm -rf user-uploads 2>/dev/null || true
             ln -sf ./laravel/public/user-uploads user-uploads
+            echo "✅ user-uploads symlink:"
             ls -la user-uploads
