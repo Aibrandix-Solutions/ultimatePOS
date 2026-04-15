@@ -739,8 +739,33 @@ class ProductController extends Controller
 
         $alert_quantity = ! is_null($product->alert_quantity) ? $this->productUtil->num_f($product->alert_quantity, false, null, true) : null;
 
+        $product_deatails = null;
+        $product_variations = [];
+        $combo_variations = [];
+        $variation_id = null;
+
+        if ($product->type === 'single') {
+            $product_deatails = ProductVariation::where('product_id', $product->id)
+                ->with(['variations', 'variations.media'])
+                ->first();
+        } elseif ($product->type === 'variable') {
+            $product_variations = ProductVariation::where('product_id', $product->id)
+                ->with(['variations', 'variations.media'])
+                ->get();
+        } elseif ($product->type === 'combo') {
+            $product_deatails = ProductVariation::where('product_id', $product->id)
+                ->with(['variations', 'variations.media'])
+                ->first();
+
+            if (! empty($product_deatails) && ! empty($product_deatails['variations'][0])) {
+                $combo_variations = $this->productUtil->__getComboProductDetails($product_deatails['variations'][0]->combo_variations, $business_id);
+                $variation_id = $product_deatails['variations'][0]->id;
+                $default_profit_percent = $product_deatails['variations'][0]->profit_percent;
+            }
+        }
+
         return view('product.edit')
-                ->with(compact('categories', 'brands', 'units', 'sub_units', 'taxes', 'tax_attributes', 'barcode_types', 'product', 'sub_categories', 'default_profit_percent', 'business_locations', 'rack_details', 'selling_price_group_count', 'module_form_parts', 'product_types', 'common_settings', 'warranties', 'pos_module_data', 'alert_quantity'));
+                ->with(compact('categories', 'brands', 'units', 'sub_units', 'taxes', 'tax_attributes', 'barcode_types', 'product', 'sub_categories', 'default_profit_percent', 'business_locations', 'rack_details', 'selling_price_group_count', 'module_form_parts', 'product_types', 'common_settings', 'warranties', 'pos_module_data', 'alert_quantity', 'product_deatails', 'product_variations', 'combo_variations', 'variation_id'));
     }
 
     /**

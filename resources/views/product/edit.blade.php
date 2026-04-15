@@ -406,7 +406,15 @@
               </div>
             </div>
 
-            <div class="form-group col-sm-12" id="product_form_part"></div>
+            <div class="form-group col-sm-12" id="product_form_part">
+              @if($product->type == 'single' && !empty($product_deatails))
+                @include('product.partials.edit_single_product_form_part', ['product_deatails' => $product_deatails, 'action' => 'edit'])
+              @elseif($product->type == 'variable' && !empty($product_variations))
+                @include('product.partials.variable_product_form_part', ['product_variations' => $product_variations, 'profit_percent' => $default_profit_percent, 'action' => 'edit'])
+              @elseif($product->type == 'combo' && !empty($product_deatails))
+                @include('product.partials.combo_product_form_part', ['combo_variations' => $combo_variations, 'profit_percent' => $default_profit_percent, 'action' => 'edit', 'variation_id' => $variation_id])
+              @endif
+            </div>
             <input type="hidden" id="variation_counter" value="0">
             <input type="hidden" id="default_profit_percent" value="{{ $default_profit_percent }}">
             </div>
