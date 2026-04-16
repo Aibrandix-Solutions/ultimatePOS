@@ -1817,22 +1817,62 @@ $(document).ready(function () {
 
     $('table#pos_table').on('change', 'select.sub_unit', function () {
         var tr = $(this).closest('tr');
-        var base_unit_selling_price = tr.find('input.hidden_base_unit_sell_price').val();
-
         var selected_option = $(this).find(':selected');
-
         var multiplier = parseFloat(selected_option.data('multiplier'));
-
         var allow_decimal = parseInt(selected_option.data('allow_decimal'));
 
+        var current_multiplier = parseFloat(tr.find('input.base_unit_multiplier').val()) || 1;
         tr.find('input.base_unit_multiplier').val(multiplier);
 
-        var unit_sp = base_unit_selling_price * multiplier;
+        var multiplier_ratio = 1;
+        if (current_multiplier !== 0) {
+           multiplier_ratio = multiplier / current_multiplier;
+        }
 
         var sp_element = tr.find('input.pos_unit_price');
-        __write_number(sp_element, unit_sp);
+        var current_unit_sp = __read_number(sp_element);
+        var new_unit_sp = current_unit_sp * multiplier_ratio;
+        
+        __write_number(sp_element, new_unit_sp);
+
+        var inc_tax_element = tr.find('input.pos_unit_price_inc_tax');
+        if (inc_tax_element.length) {
+            var current_inc_tax = __read_number(inc_tax_element);
+            __write_number(inc_tax_element, current_inc_tax * multiplier_ratio);
+        }
+
+        if (typeof tr.data('modal-base-unit-price') !== 'undefined') {
+            tr.data('modal-base-unit-price', tr.data('modal-base-unit-price') * multiplier_ratio);
+        }
+
+        // Scale minimum selling price if present
+        var min_value = parseFloat(sp_element.attr('data-rule-min-value'));
+        if (!isNaN(min_value)) {
+            sp_element.attr('data-rule-min-value', min_value * multiplier_ratio);
+        }
+        if (inc_tax_element.length) {
+            var min_value_inc_tax = parseFloat(inc_tax_element.attr('data-rule-min-value'));
+            if (!isNaN(min_value_inc_tax)) {
+                inc_tax_element.attr('data-rule-min-value', min_value_inc_tax * multiplier_ratio);
+            }
+        }
+
+        // Scale fixed discount if present
+        var row_discount_type = tr.find('.row_discount_type').length ? tr.find('.row_discount_type').val() : (tr.data('modal-discount-type') || 'fixed');
+        if (row_discount_type === 'fixed') {
+            if (tr.find('.row_discount_amount').length) {
+                var current_discount = __read_number(tr.find('.row_discount_amount'));
+                if (current_discount) __write_number(tr.find('.row_discount_amount'), current_discount * multiplier_ratio);
+            }
+            if (typeof tr.data('modal-discount-amount') !== 'undefined') {
+                tr.data('modal-discount-amount', parseFloat(tr.data('modal-discount-amount')) * multiplier_ratio);
+            }
+        }
 
         sp_element.change();
+        
+        if (typeof pos_each_row !== 'undefined') pos_each_row(tr);
+        if (typeof pos_total_row !== 'undefined') pos_total_row();
 
         var qty_element = tr.find('input.pos_quantity');
         var base_max_avlbl = qty_element.data('qty_available');
