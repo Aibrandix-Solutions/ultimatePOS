@@ -134,6 +134,7 @@ $(document).ready(function () {
             return;
         }
 
+        set_custom_tax_mode(true);
         $('#is_custom_tax_calc').val(1);
         $('#custom_tax_kilogram').val('');
         $('#custom_tax_quantity').val(1);
@@ -598,6 +599,10 @@ $(document).ready(function () {
 
     $(document).on('shown.bs.modal', '.quick_add_product_modal', function () {
         init_tax_select_with_direct_input($(this));
+
+        if ($('#is_custom_tax_calc').val() === '1' || get_selected_direct_tax_rate() !== null) {
+            set_custom_tax_mode(true);
+        }
     });
 
     //End for product type single

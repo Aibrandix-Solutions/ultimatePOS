@@ -739,33 +739,52 @@ class ProductController extends Controller
 
         $alert_quantity = ! is_null($product->alert_quantity) ? $this->productUtil->num_f($product->alert_quantity, false, null, true) : null;
 
-        $product_deatails = null;
-        $product_variations = [];
-        $combo_variations = [];
-        $variation_id = null;
-
-        if ($product->type === 'single') {
+        $action = 'edit';
+        $product_form_part_html = '';
+        if ($product->type == 'single') {
             $product_deatails = ProductVariation::where('product_id', $product->id)
                 ->with(['variations', 'variations.media'])
                 ->first();
-        } elseif ($product->type === 'variable') {
+
+            if (! empty($product_deatails) && $product_deatails->variations->isNotEmpty()) {
+                $product_form_part_html = view('product.partials.edit_single_product_form_part')
+                    ->with(compact('product_deatails', 'action'))
+                    ->render();
+            } else {
+                $product_form_part_html = view('product.partials.single_product_form_part')
+                    ->with(['profit_percent' => $default_profit_percent])
+                    ->render();
+            }
+        } elseif ($product->type == 'variable') {
             $product_variations = ProductVariation::where('product_id', $product->id)
                 ->with(['variations', 'variations.media'])
                 ->get();
-        } elseif ($product->type === 'combo') {
+
+            $product_form_part_html = view('product.partials.variable_product_form_part')
+                ->with(compact('product_variations', 'default_profit_percent', 'action'))
+                ->with(['profit_percent' => $default_profit_percent])
+                ->render();
+        } elseif ($product->type == 'combo') {
             $product_deatails = ProductVariation::where('product_id', $product->id)
                 ->with(['variations', 'variations.media'])
                 ->first();
 
+            $combo_variations = [];
+            $variation_id = null;
+            $profit_percent = $default_profit_percent;
             if (! empty($product_deatails) && ! empty($product_deatails['variations'][0])) {
                 $combo_variations = $this->productUtil->__getComboProductDetails($product_deatails['variations'][0]->combo_variations, $business_id);
                 $variation_id = $product_deatails['variations'][0]->id;
-                $default_profit_percent = $product_deatails['variations'][0]->profit_percent;
+                $profit_percent = $product_deatails['variations'][0]->profit_percent;
             }
+
+            $product_form_part_html = view('product.partials.combo_product_form_part')
+                ->with(compact('combo_variations', 'profit_percent', 'action', 'variation_id'))
+                ->render();
         }
 
         return view('product.edit')
-                ->with(compact('categories', 'brands', 'units', 'sub_units', 'taxes', 'tax_attributes', 'barcode_types', 'product', 'sub_categories', 'default_profit_percent', 'business_locations', 'rack_details', 'selling_price_group_count', 'module_form_parts', 'product_types', 'common_settings', 'warranties', 'pos_module_data', 'alert_quantity', 'product_deatails', 'product_variations', 'combo_variations', 'variation_id'));
+                ->with(compact('categories', 'brands', 'units', 'sub_units', 'taxes', 'tax_attributes', 'barcode_types', 'product', 'sub_categories', 'default_profit_percent', 'business_locations', 'rack_details', 'selling_price_group_count', 'module_form_parts', 'product_types', 'common_settings', 'warranties', 'pos_module_data', 'alert_quantity', 'product_form_part_html'));
     }
 
     /**
@@ -1271,6 +1290,11 @@ class ProductController extends Controller
                     ->with(['variations', 'variations.media'])
                     ->first();
 
+                if (empty($product_deatails) || $product_deatails->variations->isEmpty()) {
+                    return view('product.partials.single_product_form_part')
+                            ->with(['profit_percent' => $profit_percent]);
+                }
+
                 return view('product.partials.edit_single_product_form_part')
                             ->with(compact('product_deatails', 'action'));
             } elseif ($request->input('type') == 'variable') {
@@ -1279,7 +1303,7 @@ class ProductController extends Controller
                         ->get();
 
                 return view('product.partials.variable_product_form_part')
-                        ->with(compact('product_variations', 'profit_percent', 'action'));
+                    ->with(compact('product_variations', 'profit_percent', 'action'));
             } elseif ($request->input('type') == 'combo') {
                 $product_deatails = ProductVariation::where('product_id', $product_id)
                     ->with(['variations', 'variations.media'])

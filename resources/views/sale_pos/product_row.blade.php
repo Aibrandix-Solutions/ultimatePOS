@@ -194,7 +194,8 @@
 
 			if($hide_tax == 'hide'){
 				$tax_id = null;
-				$unit_price_inc_tax = $product->default_sell_price;
+				// Keep POS row subtotal based on product inc-tax price from product setup.
+				$unit_price_inc_tax = $product->sell_price_inc_tax;
 			}
 
 			if(!empty($so_line) && $action !== 'edit') {
