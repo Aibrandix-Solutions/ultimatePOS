@@ -398,7 +398,7 @@
               </div>
             </div>
 
-            <div class="form-group col-sm-12" id="product_form_part"></div>
+            <div class="form-group col-sm-12" id="product_form_part">{!! $product_form_part_html ?? '' !!}</div>
             <input type="hidden" id="variation_counter" value="0">
             <input type="hidden" id="default_profit_percent" value="{{ $default_profit_percent }}">
             </div>

@@ -27,7 +27,7 @@
             @endphp
             @if($loop->first)
               @php
-                $min_sell_price_value = !is_null($variation->min_sell_price_inc_tax) ? num_format($variation->min_sell_price_inc_tax) : null;
+                $min_sell_price_value = !is_null($variation->min_sell_price_inc_tax) ? $variation->min_sell_price_inc_tax : null;
               @endphp
                 <tr>
                     <td>
