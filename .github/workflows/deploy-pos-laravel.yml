@@ -1,8 +1,8 @@
-name: Deploy UltimatePOS (homeneeds.genxpos360.com via SFTP)
+name: Deploy UltimatePOS (nscrystal.genxpos360.com via SFTP)
 
 on:
   push:
-    branches: [ HomeNeedNew ]
+    branches: [ nscrystal2 ]
   workflow_dispatch:
 
 jobs:
@@ -122,10 +122,10 @@ jobs:
           key: ${{ secrets.ULTIMPOS_SSH_KEY }}
           script: |
             set -e
-            # Create directory structure for homeneeds subdomain
-            mkdir -p ~/domains/genxpos360.com/public_html/homeneeds/laravel
-            mkdir -p ~/domains/genxpos360.com/public_html/homeneeds/laravel/storage/framework/{cache,sessions,views}
-            mkdir -p ~/domains/genxpos360.com/public_html/homeneeds/laravel/bootstrap/cache
+            # Create directory structure for nscrystal subdomain
+            mkdir -p ~/domains/genxpos360.com/public_html/nscrystal/laravel
+            mkdir -p ~/domains/genxpos360.com/public_html/nscrystal/laravel/storage/framework/{cache,sessions,views}
+            mkdir -p ~/domains/genxpos360.com/public_html/nscrystal/laravel/bootstrap/cache
             echo "✅ Directory structure created"
 
       # --- SFTP uploads ---
@@ -137,8 +137,8 @@ jobs:
           username: ${{ secrets.ULTIMPOS_SSH_USER }}
           ssh_private_key: ${{ secrets.ULTIMPOS_SSH_KEY }}
           local_path: "deploy_app/*"
-          # Website: https://homeneeds.genxpos360.com
-          remote_path: "domains/genxpos360.com/public_html/homeneeds/laravel/"
+          # Website: https://nscrystal.genxpos360.com
+          remote_path: "domains/genxpos360.com/public_html/nscrystal/laravel/"
           delete_remote_files: false
           sftp_only: true
 
@@ -150,8 +150,8 @@ jobs:
           username: ${{ secrets.ULTIMPOS_SSH_USER }}
           ssh_private_key: ${{ secrets.ULTIMPOS_SSH_KEY }}
           local_path: "deploy_public/*"
-          # Website: https://homeneeds.genxpos360.com
-          remote_path: "domains/genxpos360.com/public_html/homeneeds/"
+          # Website: https://nscrystal.genxpos360.com
+          remote_path: "domains/genxpos360.com/public_html/nscrystal/"
           delete_remote_files: false
           sftp_only: true
 
@@ -165,13 +165,13 @@ jobs:
           key: ${{ secrets.ULTIMPOS_SSH_KEY }}
           script: |
             set -e
-            # Target homeneeds.genxpos360.com Laravel app dir
-            cd ~/domains/genxpos360.com/public_html/homeneeds/laravel
+            # Target nscrystal.genxpos360.com Laravel app dir
+            cd ~/domains/genxpos360.com/public_html/nscrystal/laravel
 
             # Safety: do not run artisan/migrations until the subdomain has its own .env
             if [ ! -f .env ]; then
               echo "❌ Missing .env at $(pwd)/.env"
-              echo "Create it with separate DB credentials and correct APP_URL=https://homeneeds.genxpos360.com"
+              echo "Create it with separate DB credentials and correct APP_URL=https://nscrystal.genxpos360.com"
               exit 1
             fi
 
@@ -218,8 +218,8 @@ jobs:
             # Storage link
             php artisan storage:link || true
 
-            # Symlink for user-uploads within homeneeds docroot
-            cd ~/domains/genxpos360.com/public_html/homeneeds
+            # Symlink for user-uploads within nscrystal docroot
+            cd ~/domains/genxpos360.com/public_html/nscrystal
             rm -rf user-uploads 2>/dev/null || true
             ln -sf ./laravel/public/user-uploads user-uploads
             ls -la user-uploads
