@@ -437,7 +437,7 @@
 			</td>
 		@endif
 		@php
-			$pos_unit_price = !empty($product->unit_price_before_discount) ? $product->unit_price_before_discount : $product->default_sell_price;
+			$pos_unit_price = !empty($product->unit_price_before_discount) ? $product->unit_price_before_discount : $product->sell_price_inc_tax;
 
 			if(!empty($so_line) && $action !== 'edit') {
 				$pos_unit_price = $so_line->unit_price_before_discount;
