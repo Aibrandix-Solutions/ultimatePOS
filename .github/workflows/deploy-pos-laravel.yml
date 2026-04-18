@@ -2,7 +2,7 @@ name: Deploy UltimatePOS (homeneeds.genxpos360.com via SFTP)
 
 on:
   push:
-    branches: [ HomeNeedNew ]
+    branches: [ home ]
   workflow_dispatch:
 
 jobs:
@@ -82,7 +82,7 @@ jobs:
           # ✅ Ensure .htaccess is included explicitly
           if [ -f public/.htaccess ]; then cp public/.htaccess deploy_public/.htaccess; fi
 
-          # Write split-docroot index.php that points to /laravel
+          # Write split-docroot index.php that points to /backend
           cat > deploy_public/index.php <<'PHP'
           <?php
 
@@ -92,12 +92,12 @@ jobs:
           define('LARAVEL_START', microtime(true));
 
           // maintenance file relative to public docroot
-          if (file_exists($maintenance = __DIR__ . '/laravel/storage/framework/maintenance.php')) {
+            if (file_exists($maintenance = __DIR__ . '/backend/storage/framework/maintenance.php')) {
               require $maintenance;
           }
 
-          // Point to the 'laravel' directory (relative to public_html/)
-          define('LARAVEL_BASE', __DIR__ . '/laravel');
+            // Point to the 'backend' directory (relative to public_html/)
+            define('LARAVEL_BASE', __DIR__ . '/backend');
 
           require LARAVEL_BASE . '/vendor/autoload.php';
           $app = require LARAVEL_BASE . '/bootstrap/app.php';
@@ -123,13 +123,13 @@ jobs:
           script: |
             set -e
             # Create directory structure for homeneeds subdomain
-            mkdir -p ~/domains/genxpos360.com/public_html/homeneeds/laravel
-            mkdir -p ~/domains/genxpos360.com/public_html/homeneeds/laravel/storage/framework/{cache,sessions,views}
-            mkdir -p ~/domains/genxpos360.com/public_html/homeneeds/laravel/bootstrap/cache
+            mkdir -p ~/domains/genxpos360.com/public_html/homeneeds/backend
+            mkdir -p ~/domains/genxpos360.com/public_html/homeneeds/backend/storage/framework/{cache,sessions,views}
+            mkdir -p ~/domains/genxpos360.com/public_html/homeneeds/backend/bootstrap/cache
             echo "✅ Directory structure created"
 
       # --- SFTP uploads ---
-      - name: Upload app via SFTP (to /laravel)
+      - name: Upload app via SFTP (to /backend)
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
         with:
           server: ${{ secrets.ULTIMPOS_SSH_HOST }}
@@ -138,7 +138,7 @@ jobs:
           ssh_private_key: ${{ secrets.ULTIMPOS_SSH_KEY }}
           local_path: "deploy_app/*"
           # Website: https://homeneeds.genxpos360.com
-          remote_path: "domains/genxpos360.com/public_html/homeneeds/laravel/"
+          remote_path: "domains/genxpos360.com/public_html/homeneeds/backend/"
           delete_remote_files: false
           sftp_only: true
 
@@ -166,7 +166,7 @@ jobs:
           script: |
             set -e
             # Target homeneeds.genxpos360.com Laravel app dir
-            cd ~/domains/genxpos360.com/public_html/homeneeds/laravel
+            cd ~/domains/genxpos360.com/public_html/homeneeds/backend
 
             # Safety: do not run artisan/migrations until the subdomain has its own .env
             if [ ! -f .env ]; then
@@ -221,5 +221,5 @@ jobs:
             # Symlink for user-uploads within homeneeds docroot
             cd ~/domains/genxpos360.com/public_html/homeneeds
             rm -rf user-uploads 2>/dev/null || true
-            ln -sf ./laravel/public/user-uploads user-uploads
+            ln -sf ./backend/public/user-uploads user-uploads
             ls -la user-uploads
