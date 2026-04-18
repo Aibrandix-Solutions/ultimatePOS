@@ -321,6 +321,9 @@
                           <option value="{{ $tax->id }}" @if($purchase->tax_id == $tax->id) {{'selected'}} @endif data-tax_amount="{{ $tax->amount }}" data-tax_type="{{ $tax->calculation_type ?? 'percentage' }}"
                           >
                             {{ $tax->name }}
+                            @if(!empty($tax->amount))
+                              ({{ ($tax->calculation_type ?? 'percentage') == 'percentage' ? number_format($tax->amount, session('business.currency_precision', 2)) . '%' : $currency_details->symbol . number_format($tax->amount, session('business.currency_precision', 2)) }})
+                            @endif
                           </option>
                         @endforeach
                       </select>

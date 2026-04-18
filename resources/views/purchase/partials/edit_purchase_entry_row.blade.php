@@ -14,8 +14,8 @@
                 <th>#</th>
                 <th>@lang( 'product.product_name' )</th>
                 <th>@if(empty($is_purchase_order)) @lang( 'purchase.purchase_quantity' ) @else @lang( 'lang_v1.order_quantity' ) @endif</th>
-                <th>@lang( 'lang_v1.unit_cost_before_discount' )</th>
-                <th>@lang( 'lang_v1.discount_percent' )</th>
+                <th class="hide">@lang( 'lang_v1.unit_cost_before_discount' )</th>
+                <th class="hide">@lang( 'lang_v1.discount_percent' )</th>
                 <th>@lang( 'purchase.unit_cost_before_tax' )</th>
                 <th class="{{$hide_tax}}">@lang( 'purchase.subtotal_before_tax' )</th>
                 <th class="{{$hide_tax}}">@lang( 'purchase.product_tax' )</th>
@@ -122,10 +122,10 @@
                     required>
                 @endif
             </td>
-            <td>
+            <td class="hide">
                 {!! Form::text('purchases[' . $loop->index . '][pp_without_discount]', number_format($purchase_line->pp_without_discount/$purchase->exchange_rate, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator), ['class' => 'form-control input-sm purchase_unit_cost_without_discount input_number', 'required']) !!}
             </td>
-            <td>
+            <td class="hide">
                 {!! Form::text('purchases[' . $loop->index . '][discount_percent]', number_format($purchase_line->discount_percent, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator), ['class' => 'form-control input-sm inline_discounts input_number', 'required']) !!} <b>%</b>
             </td>
             <td>
@@ -154,7 +154,7 @@
                     {!! Form::hidden('purchases[' . $loop->index . '][item_tax]', number_format($purchase_line->item_tax/$purchase->exchange_rate, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator), ['class' => 'purchase_product_unit_tax']) !!}
                 </div>
             </td>
-            <td class="{{$hide_tax}}">
+            <td>
                 {!! Form::text('purchases[' . $loop->index . '][purchase_price_inc_tax]', number_format($purchase_line->purchase_price_inc_tax/$purchase->exchange_rate, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator), ['class' => 'form-control input-sm purchase_unit_cost_after_tax input_number', 'required']) !!}
             </td>
             <td>

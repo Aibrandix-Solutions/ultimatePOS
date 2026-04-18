@@ -277,12 +277,12 @@
 								<th>@lang( 'product.product_name' )</th>
 								<th>@lang( 'purchase.purchase_quantity' )</th>
 								@if($can_view_purchase_cost)
-									<th>@lang( 'lang_v1.unit_cost_before_discount' )</th>
-									<th>@lang( 'lang_v1.discount_percent' )</th>
+									<th class="hide">@lang( 'lang_v1.unit_cost_before_discount' )</th>
+									<th class="hide">@lang( 'lang_v1.discount_percent' )</th>
 									<th>@lang( 'purchase.unit_cost_before_tax' )</th>
 									<th class="{{$hide_tax}}">@lang( 'purchase.subtotal_before_tax' )</th>
 									<th class="{{$hide_tax}}">@lang( 'purchase.product_tax' )</th>
-									<th class="{{$hide_tax}}">@lang( 'purchase.net_cost' )</th>
+									<th>@lang( 'purchase.net_cost' )</th>
 									<th>@lang( 'purchase.line_total' )</th>
 									<th class="@if(!session('business.enable_editing_product_from_purchase')) hide @endif">
 										@lang( 'lang_v1.profit_margin' )
@@ -379,7 +379,12 @@
 						<select name="tax_id" id="tax_id" class="form-control select2" placeholder="'Please Select'">
 							<option value="" data-tax_amount="0" data-tax_type="percentage" selected>@lang('lang_v1.none')</option>
 							@foreach($taxes as $tax)
-								<option value="{{ $tax->id }}" data-tax_amount="{{ $tax->amount }}" data-tax_type="{{ $tax->calculation_type }}">{{ $tax->name }}</option>
+								<option value="{{ $tax->id }}" data-tax_amount="{{ $tax->amount }}" data-tax_type="{{ $tax->calculation_type }}">
+									{{ $tax->name }} 
+									@if(!empty($tax->amount))
+										({{ $tax->calculation_type == 'percentage' ? number_format($tax->amount, session('business.currency_precision', 2)) . '%' : $currency_details->symbol . number_format($tax->amount, session('business.currency_precision', 2)) }})
+									@endif
+								</option>
 							@endforeach
 						</select>
 						{!! Form::hidden('tax_amount', 0, ['id' => 'tax_amount']) !!}
