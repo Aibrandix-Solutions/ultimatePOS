@@ -1804,7 +1804,10 @@ $(document).ready(function () {
 
     $('table#pos_table').on('change', 'select.sub_unit', function () {
         var tr = $(this).closest('tr');
-        var base_unit_selling_price = tr.find('input.hidden_base_unit_sell_price').val();
+        var base_unit_selling_price = parseFloat(tr.find('input.hidden_base_unit_sell_price').val());
+        if (isNaN(base_unit_selling_price)) {
+            base_unit_selling_price = 0;
+        }
 
         var selected_option = $(this).find(':selected');
 
@@ -1815,11 +1818,19 @@ $(document).ready(function () {
         tr.find('input.base_unit_multiplier').val(multiplier);
 
         var unit_sp = base_unit_selling_price * multiplier;
+        // Keep row base price in sync for calculators that rely on modal data.
+        tr.data('modal-base-unit-price', unit_sp);
 
         var sp_element = tr.find('input.pos_unit_price');
-        __write_number(sp_element, unit_sp);
-
-        sp_element.change();
+        if (sp_element.length > 0) {
+            __write_number(sp_element, unit_sp);
+            sp_element.change();
+        } else {
+            // In regular POS, the editable base-price input may be absent.
+            // Recompute row totals from stored base price so unit changes are reflected.
+            pos_each_row(tr);
+            pos_total_row();
+        }
 
         var qty_element = tr.find('input.pos_quantity');
         var base_max_avlbl = qty_element.data('qty_available');
