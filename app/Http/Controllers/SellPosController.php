@@ -1046,6 +1046,9 @@ class SellPosController extends Controller
             $output['print_type'] = 'printer';
             $output['printer_config'] = $this->businessUtil->printerConfig($business_id, $location_details->printer_id);
             $output['data'] = $receipt_details;
+            // Keep HTML receipt as fallback when printer socket is unavailable.
+            $layout = !empty($receipt_details->design) ? 'sale_pos.receipts.' . $receipt_details->design : 'sale_pos.receipts.classic';
+            $output['html_content'] = view($layout, compact('receipt_details'))->render();
         } else {
             $layout = !empty($receipt_details->design) ? 'sale_pos.receipts.' . $receipt_details->design : 'sale_pos.receipts.classic';
 

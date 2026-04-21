@@ -3239,6 +3239,23 @@ function round_row_to_iraqi_dinnar(row) {
 }
 
 function pos_print(receipt) {
+    function fallback_browser_print() {
+        if (receipt.html_content != '') {
+            var title = document.title;
+            if (typeof receipt.print_title != 'undefined') {
+                document.title = receipt.print_title;
+            }
+            $('#receipt_section').html(receipt.html_content);
+            __currency_convert_recursively($('#receipt_section'));
+            __print_receipt('receipt_section');
+            setTimeout(function () {
+                document.title = title;
+            }, 1200);
+        } else {
+            toastr.error(LANG.unable_to_connect_to_qz);
+        }
+    }
+
     //If printer type then connect with websocket
     if (receipt.print_type == 'printer') {
         var content = receipt;
@@ -3250,24 +3267,16 @@ function pos_print(receipt) {
         } else {
             initializeSocket();
             setTimeout(function () {
-                socket.send(JSON.stringify(content));
+                if (socket != null && socket.readyState == 1) {
+                    socket.send(JSON.stringify(content));
+                } else {
+                    fallback_browser_print();
+                }
             }, 700);
         }
 
     } else if (receipt.html_content != '') {
-        var title = document.title;
-        if (typeof receipt.print_title != 'undefined') {
-            document.title = receipt.print_title;
-        }
-
-        //If printer type browser then print content
-        $('#receipt_section').html(receipt.html_content);
-        __currency_convert_recursively($('#receipt_section'));
-        __print_receipt('receipt_section');
-
-        setTimeout(function () {
-            document.title = title;
-        }, 1200);
+        fallback_browser_print();
     }
 }
 

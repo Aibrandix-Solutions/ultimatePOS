@@ -99,9 +99,6 @@
         {!! Form::close() !!}
     </section>
 
-    <!-- This will be printed -->
-    <section class="invoice print_section" id="receipt_section">
-    </section>
     <div class="modal fade contact_modal" tabindex="-1" role="dialog" aria-labelledby="gridSystemModalLabel">
         @include('contact.create', ['quick_add' => true])
     </div>
