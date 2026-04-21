@@ -383,11 +383,28 @@ function __sum_stock(table, class_name, label_direction = 'right') {
 }
 
 function __print_receipt(section_id = null) {
-    if (section_id) {
-        var imgs = document.getElementById(section_id).getElementsByTagName("img");
-    } else {
-        var imgs = document.images;
+    var $allReceiptSections = $('.print_section#receipt_section');
+    var $sourceSection = section_id ? $('#' + section_id).filter(function () {
+        return $.trim($(this).html() || '').length > 0;
+    }).first() : $allReceiptSections.filter(function () {
+        return $.trim($(this).html() || '').length > 0;
+    }).first();
+
+    var $targetSection = $allReceiptSections.last();
+    if (!$targetSection.length) {
+        return;
     }
+
+    if ($sourceSection.length && $sourceSection[0] !== $targetSection[0]) {
+        $targetSection.html($sourceSection.html());
+    }
+
+    $('.print_section').removeClass('print-target');
+    $targetSection.addClass('print-target');
+
+    __receipt_print_target = $targetSection;
+
+    var imgs = $targetSection[0].getElementsByTagName('img');
 
     img_len = imgs.length;
     if (img_len) {
@@ -398,21 +415,7 @@ function __print_receipt(section_id = null) {
         });
     } else {
         setTimeout(function () {
-            $('body').addClass('is-printing-receipt');
-            // Clear receipt after print dialog closes (modern browsers)
-            window.onafterprint = function () {
-                $('body').removeClass('is-printing-receipt');
-                $('#receipt_section').html('');
-                window.onafterprint = null;
-            };
-
-            window.print();
-
-            // Fallback: clear after 5 seconds if onafterprint didn't fire
-            setTimeout(function () {
-                $('body').removeClass('is-printing-receipt');
-                $('#receipt_section').html('');
-            }, 5000);
+            __execute_receipt_print();
 
         }, 1000);
     }
@@ -421,22 +424,29 @@ function __print_receipt(section_id = null) {
 function incrementImageCounter() {
     img_counter++;
     if (img_counter === img_len) {
-        $('body').addClass('is-printing-receipt');
-        // Clear receipt after print dialog closes (modern browsers)
-        window.onafterprint = function () {
-            $('body').removeClass('is-printing-receipt');
-            $('#receipt_section').html('');
-            window.onafterprint = null;
-        };
-
-        window.print();
-
-        // Fallback: clear after 5 seconds if onafterprint didn't fire
-        setTimeout(function () {
-            $('body').removeClass('is-printing-receipt');
-            $('#receipt_section').html('');
-        }, 5000);
+        __execute_receipt_print();
     }
+}
+
+var __receipt_print_target = null;
+function __execute_receipt_print() {
+    if (!__receipt_print_target || !__receipt_print_target.length) {
+        return;
+    }
+
+    __receipt_print_target.printThis({
+        importCSS: true,
+        importStyle: true,
+        copyTagClasses: true,
+        printDelay: 1000
+    });
+
+    // Cleanup cloned receipt content after print dialog has likely opened.
+    setTimeout(function () {
+        $('.print_section').removeClass('print-target');
+        $('.print_section#receipt_section').html('');
+        __receipt_print_target = null;
+    }, 10000);
 }
 
 function __getUnitMultiplier(row) {

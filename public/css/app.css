@@ -978,13 +978,19 @@ tr.details td.details-control {
       visibility: hidden !important;
   }
 
-  body.is-printing-receipt #receipt_section,
-  body.is-printing-receipt #receipt_section * {
+  body.is-printing-receipt .print_section {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  body.is-printing-receipt .print_section.print-target,
+  body.is-printing-receipt .print_section.print-target * {
       visibility: visible !important;
   }
 
-  body.is-printing-receipt #receipt_section {
-      position: fixed !important;
+  body.is-printing-receipt .print_section.print-target {
+    display: block !important;
+    position: absolute !important;
       top: 0 !important;
       left: 0 !important;
       width: 100% !important;
