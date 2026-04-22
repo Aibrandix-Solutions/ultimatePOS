@@ -998,13 +998,13 @@ tr.details td.details-control {
   }
 
   #receipt_section {
-    font-family: 'Times New Roman', Times, serif !important;
+    font-family: Arial, Helvetica, sans-serif !important;
     font-size: 16px;
     line-height: 1.35;
   }
 
   #receipt_section * {
-    font-family: 'Times New Roman', Times, serif !important;
+    font-family: Arial, Helvetica, sans-serif !important;
   }
 
   #receipt_section small {

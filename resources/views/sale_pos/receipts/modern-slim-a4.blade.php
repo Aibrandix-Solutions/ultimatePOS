@@ -306,7 +306,7 @@
     .thank-you {
         text-align: center;
         font-size: 12px;
-        color: #666 !important;
+        color: #000000 !important;
         margin-top: 6px;
         padding-top: 4px;
         border-top: 1px solid #ccc;

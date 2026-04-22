@@ -1,6 +1,6 @@
 <!-- business information here -->
 
-<div class="row" style="color: #000000 !important;">
+<div class="row" style="color: #000000 !important; font-family: Arial, Helvetica, sans-serif !important;">
 		<!-- Logo -->
 		@if(empty($receipt_details->letter_head))
 			@if(!empty($receipt_details->logo))

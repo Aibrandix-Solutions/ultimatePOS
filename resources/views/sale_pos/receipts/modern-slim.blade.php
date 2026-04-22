@@ -1,4 +1,4 @@
-﻿<!-- Modern Slim Receipt - Designed for 80mm thermal printers -->
+<!-- Modern Slim Receipt - Designed for 80mm thermal printers -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -164,7 +164,7 @@
     }
     .item-sub {
         font-size: 11px;
-        color: #555 !important;
+        color: #000000 !important;
         margin-top: 0;
     }
     .detail-row td {
@@ -174,7 +174,7 @@
     }
     .modifier-row td {
         font-size: 11px;
-        color: #555 !important;
+        color: #000000 !important;
         padding: 1px 1px;
     }
 
@@ -204,7 +204,7 @@
         padding: 2px 0;
         font-size: 17px;
         font-weight: 900;
-        border-top: 2px solid #000;
+        border-top: none;
         border-bottom: 2px solid #000;
         margin: 2px 0;
     }
@@ -216,7 +216,7 @@
         padding: 2px 0;
         font-size: 16px;
         font-weight: 800;
-        border-top: 1px solid #000;
+        border-top: none;
         border-bottom: 1px solid #000;
         margin: 2px 0;
     }
@@ -264,14 +264,14 @@
         font-size: 17px;
         font-weight: 900;
         border-top: 2px solid #000;
-        border-bottom: 1px solid #000;
+        border-bottom: none;
         padding: 2px 0;
         margin-top: 3px;
     }
 
     .total-words {
         font-size: 11px;
-        color: #555 !important;
+        color: #000000 !important;
         margin: 0;
         font-style: italic;
     }
@@ -279,7 +279,7 @@
     .due-note-block {
         margin: 2px 0;
         padding-top: 2px;
-        border-top: 1px solid #000;
+        border-top: none;
     }
     .due-note-title {
         font-size: 12px;
@@ -321,7 +321,7 @@
     .thank-you {
         text-align: center;
         font-size: 12px;
-        color: #666 !important;
+        color: #000000 !important;
         margin-top: 3px;
         padding-top: 2px;
     }
@@ -330,7 +330,7 @@
     @media print {
         body {
             font-size: 19px;
-            font-family: 'Times New Roman', Times, serif;
+            font-family: Roboto, Helvetica, sans-serif;
         }
         .receipt {
             width: calc(100% - 12px);

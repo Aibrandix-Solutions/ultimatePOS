@@ -547,7 +547,7 @@ class InvoiceLayoutController extends Controller
 
         // Additional / Service
         $receipt_details->additional_notes = '';
-        $receipt_details->footer_text = '<p style="text-align:center;">Thank you for your business!</p>';
+        $receipt_details->footer_text = '<p style="text-align:center; color:black;">Thank you for your business!</p>';
         $receipt_details->additional_expenses = [];
         $receipt_details->reward_point_label = '';
         $receipt_details->reward_point_amount = '';

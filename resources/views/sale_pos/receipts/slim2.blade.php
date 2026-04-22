@@ -8,8 +8,8 @@
         <!-- <link rel="stylesheet" href="style.css"> -->
         <title>Receipt-{{$receipt_details->invoice_no}}</title>
     </head>
-    <body>
-        <div class="ticket">
+    <body style="font-family: Arial, Helvetica, sans-serif !important; color: #000000; margin: 5px; padding: 5px;">
+        <div class="ticket" style="font-family: Arial, Helvetica, sans-serif !important;">
 			@if(empty($receipt_details->letter_head))
 				@if(!empty($receipt_details->logo))
 					<div class="text-box centered">
@@ -663,7 +663,7 @@ body {
 @media print {
 	* {
 	    	font-size: 15px;
-    	font-family: 'Times New Roman';
+    	font-family: Arial, Helvetica, sans-serif;
     	word-break: break-all;
 	}
 	.f-8 {

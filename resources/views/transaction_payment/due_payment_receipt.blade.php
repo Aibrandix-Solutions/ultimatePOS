@@ -111,7 +111,7 @@
     .table-info td { padding: 2px 0; }
 
     @media print {
-        * { font-size: 12px; font-family: 'Times New Roman'; word-break: break-word; }
+        * { font-size: 12px; font-family: Arial, Helvetica, sans-serif; word-break: break-word; }
         .hidden-print, .hidden-print * { display: none !important; }
     }
 </style>

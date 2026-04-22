@@ -1,4 +1,4 @@
-<table style="width:100%; color: #000000 !important;">
+<table style="width:100%; color: #000000 !important; font-family: Arial, Helvetica, sans-serif !important;">
 	<thead>
 		<tr>
 			<td>
