@@ -59,8 +59,8 @@ class TaxRateController extends Controller
                 ->editColumn('amount', '@if($calculation_type == "fixed") {{@num_format($amount)}} @lang("lang_v1.fixed") @else {{@num_format($amount)}}% @endif')
                 ->removeColumn('for_tax_group')
                 ->removeColumn('id')
-                ->rawColumns([0, 2])
-                ->make(false);
+                ->rawColumns(['name', 'action'])
+                ->make(true);
         }
 
         return view('tax_rate.index');

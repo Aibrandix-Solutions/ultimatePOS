@@ -192,6 +192,11 @@ $(document).ready(function () {
                 searchable: false,
             },
         ],
+        columns: [
+            { data: 'name', name: 'name' },
+            { data: 'amount', name: 'amount' },
+            { data: 'action', name: 'action' },
+        ],
     });
 
     $(document).on('submit', 'form#tax_rate_add_form', function (e) {
