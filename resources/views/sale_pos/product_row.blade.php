@@ -262,6 +262,12 @@
 			// mapPurchaseSell: lot_no_line_id and/or batch_id pin stock to a bucket. Hidden lot is only for legacy purchase_line_id mapping.
 			$need_hidden_lot_for_batch_map = !empty($batch_purchase_line_id) && empty($row_batch_id) && empty($is_sales_order)
 				&& (!$show_lot_expiry_dropdown || !$purchase_line_in_lot_list);
+
+			if (!empty($row_batch_id)) {
+				$max_qty_msg = __('lang_v1.batch_quantity_not_available', [
+					'max' => trim($formatted_max_quantity.' '.$product->unit),
+				]);
+			}
 		@endphp
 		@if( session()->get('business.enable_lot_number') == 1 || session()->get('business.enable_product_expiry') == 1)
 		@php
@@ -353,6 +359,10 @@
 
         			if(!empty($product->lot_no_line_id)){
         				$max_qty_msg = __('lang_v1.quantity_error_msg_in_lot', ['qty'=> $max_qty_rule, 'unit' => $unit_name  ]);
+        			} elseif(!empty($row_batch_id)){
+        				$max_qty_msg = __('lang_v1.batch_quantity_not_available', [
+        					'max' => trim(number_format($max_qty_rule, session('business.quantity_precision', 2), session('currency')['decimal_separator'], session('currency')['thousand_separator']).' '.$unit_name),
+        				]);
         			}
 
         			if($value['allow_decimal']) {

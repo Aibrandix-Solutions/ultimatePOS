@@ -468,6 +468,17 @@ class SellPosController extends Controller
                     }
                 }
 
+                $batch_stock_error = $this->validatePosBatchLineStock($request, $input['products'], null);
+                if ($batch_stock_error !== null) {
+                    if (!$is_direct_sale) {
+                        return $batch_stock_error;
+                    }
+
+                    return redirect()
+                        ->action([\App\Http\Controllers\SellController::class, 'index'])
+                        ->with('status', $batch_stock_error);
+                }
+
                 //Check if subscribed or not, then check for users quota
                 if (!$this->moduleUtil->isSubscribed($business_id)) {
                     return $this->moduleUtil->expiredResponse();
@@ -1246,6 +1257,23 @@ class SellPosController extends Controller
 
                     $sell_details[$key]->formatted_qty_available = $this->productUtil->num_f($value->qty_available, false, null, true);
 
+                    if (!empty($value->batch_id) && Schema::hasTable('product_batches')
+                        && request()->session()->get('business.enable_batch_pricing')
+                        && !empty($value->enable_stock)
+                        && $value->product_type !== 'combo') {
+                        $sell_details[$key]->qty_available = ProductBatch::maxLineQuantity(
+                            (int) $value->batch_id,
+                            (float) $value->quantity_ordered
+                        );
+                        $value->qty_available = $sell_details[$key]->qty_available;
+                        $sell_details[$key]->formatted_qty_available = $this->productUtil->num_f(
+                            $sell_details[$key]->qty_available,
+                            false,
+                            null,
+                            true
+                        );
+                    }
+
                     if ($this->transactionUtil->isModuleEnabled('modifiers')) {
                         //Add modifier details to sel line details
                         $sell_line_modifiers = TransactionSellLine::where('parent_sell_line_id', $sell_details[$key]->transaction_sell_lines_id)
@@ -1636,6 +1664,17 @@ class SellPosController extends Controller
                     $output = ['success' => 1, 'msg' => $msg, 'receipt' => $receipt];
 
                     return $output;
+                }
+
+                $batch_stock_error = $this->validatePosBatchLineStock($request, $input['products'], (int) $id);
+                if ($batch_stock_error !== null) {
+                    if (!$is_direct_sale) {
+                        return $batch_stock_error;
+                    }
+
+                    return redirect()
+                        ->action([\App\Http\Controllers\SellController::class, 'index'])
+                        ->with('status', $batch_stock_error);
                 }
 
                 //Begin transaction
@@ -2116,6 +2155,16 @@ class SellPosController extends Controller
             }
         }
 
+        // Batch bucket: cap displayed / max sellable qty to remaining stock in this batch (not total variation stock).
+        if ($check_qty
+            && !empty($product->enable_stock)
+            && request()->session()->get('business.enable_batch_pricing')
+            && !empty($batch_id)
+            && Schema::hasTable('product_batches')) {
+            $product->qty_available = ProductBatch::remainingStock((int) $batch_id);
+            $product->formatted_qty_available = $this->productUtil->num_f($product->qty_available, false, null, true);
+        }
+
         $warranties = $this->__getwarranties();
 
         $output['success'] = true;
@@ -2161,6 +2210,59 @@ class SellPosController extends Controller
         }
 
         return $output;
+    }
+
+    /**
+     * Enforce per-batch stock caps on POS lines when overselling is disabled.
+     *
+     * @param  int|null  $transactionIdForEdit  When editing, sell lines must belong to this transaction.
+     * @return array|null
+     */
+    private function validatePosBatchLineStock(Request $request, array $products, ?int $transactionIdForEdit = null): ?array
+    {
+        $pos_settings = !empty($request->session()->get('business.pos_settings'))
+            ? (json_decode($request->session()->get('business.pos_settings'), true) ?? [])
+            : [];
+        if (!empty($pos_settings['allow_overselling'])) {
+            return null;
+        }
+        if (!$request->session()->get('business.enable_batch_pricing') || !Schema::hasTable('product_batches')) {
+            return null;
+        }
+
+        foreach ($products as $product_line) {
+            if (empty($product_line['enable_stock']) || empty($product_line['batch_id'])) {
+                continue;
+            }
+
+            $batch_id = (int) $product_line['batch_id'];
+            $qty = $this->productUtil->num_uf($product_line['quantity'] ?? 0);
+            if (!empty($product_line['base_unit_multiplier'])) {
+                $qty *= (float) $product_line['base_unit_multiplier'];
+            }
+
+            $already_on_line = 0.0;
+            if (!empty($product_line['transaction_sell_lines_id']) && !empty($transactionIdForEdit)) {
+                $sl = TransactionSellLine::where('transaction_id', $transactionIdForEdit)
+                    ->where('id', (int) $product_line['transaction_sell_lines_id'])
+                    ->first(['quantity', 'batch_id']);
+                if (!empty($sl) && (int) $sl->batch_id === $batch_id) {
+                    $already_on_line = (float) $sl->quantity;
+                }
+            }
+
+            $max = ProductBatch::maxLineQuantity($batch_id, $already_on_line);
+            if ($qty > $max + 0.0001) {
+                $max_fmt = $this->productUtil->num_f($max, false, null, true);
+
+                return [
+                    'success' => 0,
+                    'msg' => __('lang_v1.batch_quantity_not_available', ['max' => $max_fmt]),
+                ];
+            }
+        }
+
+        return null;
     }
 
     /**

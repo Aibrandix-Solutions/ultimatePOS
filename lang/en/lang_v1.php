@@ -285,6 +285,7 @@ return [
     'standard_restock_no_batch' => 'Batch 1 restock (default product price)',
     'standard_restock_short' => 'Batch 1',
     'batch_1_label' => 'Batch 1',
+    'batch_quantity_not_available' => 'Only :max units are available for the selected batch.',
     'purchase_batch_choice_intro' => 'This product already has one or more batches. Choose how to record this purchase line:',
     'purchase_batch_choice_next' => 'If you add a new batch, the next label will be:',
     'refill_existing_batch' => 'Refill (add stock to this batch)',

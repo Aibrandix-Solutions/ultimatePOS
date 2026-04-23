@@ -28,6 +28,15 @@ class ProductBatch extends Model
     }
 
     /**
+     * Max quantity allowed on one POS line for this batch: warehouse remaining plus
+     * quantity already committed on that line (used when editing an invoice).
+     */
+    public static function maxLineQuantity(int $batchId, float $quantityAlreadyOnLine = 0): float
+    {
+        return self::remainingStock($batchId) + $quantityAlreadyOnLine;
+    }
+
+    /**
      * Next label "Batch N" from existing product_batches rows for this SKU/location.
      */
     public static function nextBatchLabel(int $business_id, int $product_id, int $variation_id, int $location_id): string

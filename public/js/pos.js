@@ -1884,6 +1884,9 @@ $(document).ready(function () {
                 base_max_avlbl = lot_select.find(':selected').data('qty_available');
                 error_msg_line = 'lot_max_qty_error';
             }
+        } else if (tr.find('input.row_batch_id').length && String(tr.find('input.row_batch_id').val() || '').length > 0) {
+            base_max_avlbl = qty_element.data('qty_available');
+            error_msg_line = 'lot_max_qty_error';
         }
 
         qty_element.attr('data-decimal', allow_decimal);
