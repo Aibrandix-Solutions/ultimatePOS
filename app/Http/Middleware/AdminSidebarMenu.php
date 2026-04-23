@@ -211,6 +211,14 @@ class AdminSidebarMenu
                                 ['icon' => '', 'active' => request()->segment(1) == 'selling-price-group']
                             );
                         }
+
+                        if (session('business.enable_batch_pricing') && auth()->user()->can('product.view')) {
+                            $sub->url(
+                                url('/products/batches'),
+                                __('lang_v1.batch_details'),
+                                ['icon' => '', 'active' => request()->segment(1) == 'products' && request()->segment(2) == 'batches']
+                            );
+                        }
                         if (auth()->user()->can('unit.view') || auth()->user()->can('unit.create')) {
                             $sub->url(
                                 action([\App\Http\Controllers\UnitController::class, 'index']),

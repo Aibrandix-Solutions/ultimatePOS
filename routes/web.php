@@ -188,6 +188,7 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
     Route::post('/products/mass-delete', [ProductController::class, 'massDestroy']);
     Route::get('/products/view/{id}', [ProductController::class, 'view']);
     Route::get('/products/list', [ProductController::class, 'getProducts']);
+    Route::get('/products/batches', [\App\Http\Controllers\ProductBatchController::class, 'index']);
     Route::get('/products/list-no-variation', [ProductController::class, 'getProductsWithoutVariations']);
     Route::post('/products/bulk-edit', [ProductController::class, 'bulkEdit']);
     Route::post('/products/bulk-update', [ProductController::class, 'bulkUpdate']);
@@ -230,6 +231,7 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
     Route::get('/purchases/get_suppliers', [PurchaseController::class, 'getSuppliers']);
     Route::post('/purchases/get_purchase_entry_row', [PurchaseController::class, 'getPurchaseEntryRow']);
     Route::post('/purchases/check_ref_number', [PurchaseController::class, 'checkRefNumber']);
+    Route::get('/purchases/check-batch', [PurchaseController::class, 'checkBatch']);
     Route::resource('purchases', PurchaseController::class)->except(['show']);
 
     Route::get('/toggle-subscription/{id}', [SellPosController::class, 'toggleRecurringInvoices']);
@@ -252,6 +254,7 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
     Route::get('/revert-sale-import/{batch}', [ImportSalesController::class, 'revertSaleImport']);
 
     Route::get('/sells/pos/get_product_row/{variation_id}/{location_id}', [SellPosController::class, 'getProductRow']);
+    Route::get('/sells/pos/get-batches', [SellPosController::class, 'getBatches']);
     Route::post('/sells/pos/get_payment_row', [SellPosController::class, 'getPaymentRow']);
     Route::post('/sells/pos/get-reward-details', [SellPosController::class, 'getRewardDetails']);
     Route::get('/sells/pos/get-recent-transactions', [SellPosController::class, 'getRecentTransactions']);

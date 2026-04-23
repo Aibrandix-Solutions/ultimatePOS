@@ -40,6 +40,15 @@
                 @if(!empty($sell_line->sell_line_note))
                 <br> {{$sell_line->sell_line_note}}
                 @endif
+                @if(session()->get('business.enable_batch_pricing') && (!empty($sell_line->batch_id) || !empty($sell_line->lot_no_line_id)))
+                    <br><small class="text-muted">@lang('lang_v1.batch_number'):
+                        @if(!empty($sell_line->batch_id) && optional($sell_line->product_batch)->batch_label)
+                            {{ $sell_line->product_batch->batch_label }}
+                        @else
+                            {{ optional($sell_line->lot_details)->batch_number ?? __('lang_v1.batch_1_label') }}
+                        @endif
+                    </small>
+                @endif
                 @if($is_warranty_enabled && !empty($sell_line->warranties->first()) )
                     <br><small>{{$sell_line->warranties->first()->display_name ?? ''}} - {{ @format_date($sell_line->warranties->first()->getEndDate($sell->transaction_date))}}</small>
                     @if(!empty($sell_line->warranties->first()->description))

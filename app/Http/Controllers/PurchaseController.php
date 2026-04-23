@@ -8,6 +8,7 @@ use App\BusinessLocation;
 use App\Contact;
 use App\CustomerGroup;
 use App\Product;
+use App\ProductBatch;
 use App\PurchaseLine;
 use App\TaxRate;
 use App\Transaction;
@@ -20,6 +21,7 @@ use App\Variation;
 use Excel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Spatie\Activitylog\Models\Activity;
 use Yajra\DataTables\Facades\DataTables;
 use App\Events\PurchaseCreatedOrModified;
@@ -1192,6 +1194,42 @@ class PurchaseController extends Controller
 
                 $last_purchase_line = $this->getLastPurchaseLine($variation_id, $location_id, $supplier_id);
 
+                // Auto-assign next batch number for the batch-pricing UI, unless the user
+                // chose "standard restock" or is refilling an existing batch bucket.
+                $skip_batch_for_row = $request->boolean('skip_batch');
+                $next_batch_number = null;
+                $refill_product_batch_id = null;
+                $refill_batch_label = null;
+                $enable_batch_pricing = $request->session()->get('business.enable_batch_pricing');
+
+                $product_batch_id = $request->input('product_batch_id');
+                if ($enable_batch_pricing && !empty($product_batch_id) && Schema::hasTable('product_batches')
+                    && !empty($variation_id) && $variation_id !== '0' && !empty($location_id)) {
+                    $pb = ProductBatch::where('id', $product_batch_id)
+                        ->where('business_id', $business_id)
+                        ->where('product_id', $product_id)
+                        ->where('variation_id', $variation_id)
+                        ->where('location_id', $location_id)
+                        ->first();
+                    if ($pb) {
+                        $refill_product_batch_id = $pb->id;
+                        $refill_batch_label = $pb->batch_label;
+                    }
+                }
+
+                if ($enable_batch_pricing && !empty($variation_id) && $variation_id !== '0' && !empty($location_id) && !$skip_batch_for_row && empty($refill_product_batch_id)) {
+                    if (Schema::hasTable('product_batches')) {
+                        $next_batch_number = ProductBatch::nextBatchLabel(
+                            (int) $business_id,
+                            (int) $product_id,
+                            (int) $variation_id,
+                            (int) $location_id
+                        );
+                    } else {
+                        $next_batch_number = PurchaseLine::nextBatchNumber($product_id, $variation_id, $location_id);
+                    }
+                }
+
                 return view('purchase.partials.purchase_entry_row')
                     ->with(compact(
                         'product',
@@ -1203,10 +1241,102 @@ class PurchaseController extends Controller
                         'hide_tax',
                         'sub_units',
                         'is_purchase_order',
-                        'last_purchase_line'
+                        'last_purchase_line',
+                        'enable_batch_pricing',
+                        'next_batch_number',
+                        'skip_batch_for_row',
+                        'refill_product_batch_id',
+                        'refill_batch_label'
                     ));
             }
         }
+    }
+
+    /**
+     * Checks whether a given variation already has batches at a location.
+     * Powers the "This product already exists. Add as a new batch?" prompt in the purchase form.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function checkBatch(Request $request)
+    {
+        if (!$request->ajax()) {
+            return response()->json(['success' => false]);
+        }
+
+        $business_id = $request->session()->get('user.business_id');
+        $variation_id = $request->input('variation_id');
+        $product_id = $request->input('product_id');
+        $location_id = $request->input('location_id');
+
+        if (empty($variation_id) || empty($product_id) || empty($location_id)) {
+            return response()->json(['success' => true, 'has_batches' => false, 'batches' => []]);
+        }
+
+        if (Schema::hasTable('product_batches')) {
+            $batches = ProductBatch::where('business_id', $business_id)
+                ->where('location_id', $location_id)
+                ->where('product_id', $product_id)
+                ->where('variation_id', $variation_id)
+                ->orderBy('id')
+                ->get()
+                ->map(function ($pb) {
+                    $remaining = ProductBatch::remainingStock((int) $pb->id);
+
+                    return [
+                        'id' => $pb->id,
+                        'batch_number' => $pb->batch_label,
+                        'batch_label' => $pb->batch_label,
+                        'remaining' => $remaining,
+                        'batch_selling_price_inc_tax' => $pb->sell_price_inc_tax,
+                    ];
+                })
+                ->values();
+
+            $next_batch_number = ProductBatch::nextBatchLabel(
+                (int) $business_id,
+                (int) $product_id,
+                (int) $variation_id,
+                (int) $location_id
+            );
+        } else {
+            $batches = PurchaseLine::join('transactions as t', 't.id', '=', 'purchase_lines.transaction_id')
+                ->where('t.business_id', $business_id)
+                ->where('t.location_id', $location_id)
+                ->whereIn('t.type', ['purchase', 'opening_stock', 'purchase_transfer'])
+                ->where('purchase_lines.variation_id', $variation_id)
+                ->select([
+                    'purchase_lines.id',
+                    'purchase_lines.batch_number',
+                    'purchase_lines.purchase_price',
+                    'purchase_lines.batch_selling_price_inc_tax',
+                    'purchase_lines.quantity',
+                    'purchase_lines.quantity_sold',
+                    'purchase_lines.quantity_adjusted',
+                    'purchase_lines.quantity_returned',
+                    'purchase_lines.mfg_quantity_used',
+                    't.transaction_date',
+                    't.ref_no',
+                ])
+                ->orderByDesc('purchase_lines.id')
+                ->limit(20)
+                ->get()
+                ->map(function ($b) {
+                    $b->remaining = (float) ($b->quantity - $b->quantity_sold - $b->quantity_adjusted - $b->quantity_returned - $b->mfg_quantity_used);
+
+                    return $b;
+                })
+                ->values();
+
+            $next_batch_number = PurchaseLine::nextBatchNumber($product_id, $variation_id, $location_id);
+        }
+
+        return response()->json([
+            'success' => true,
+            'has_batches' => $batches->isNotEmpty(),
+            'next_batch_number' => $next_batch_number,
+            'batches' => $batches,
+        ]);
     }
 
     /**

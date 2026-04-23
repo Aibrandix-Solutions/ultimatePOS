@@ -26,6 +26,7 @@ use App\TransactionSellLinesPurchaseLines;
 use App\Variation;
 use App\VariationLocationDetails;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use App\CashRegister;
 
@@ -404,6 +405,10 @@ class TransactionUtil extends Util
 
                 if (!empty($product['lot_no_line_id'])) {
                     $line['lot_no_line_id'] = $product['lot_no_line_id'];
+                }
+
+                if (!empty($product['batch_id'])) {
+                    $line['batch_id'] = $product['batch_id'];
                 }
 
                 //Check if restaurant module is enabled then add more data related to that.
@@ -3923,6 +3928,8 @@ class TransactionUtil extends Util
             //If lot number present consider only lot number purchase line
             if (!empty($line->lot_no_line_id)) {
                 $query->where('PL.id', $line->lot_no_line_id);
+            } elseif (!empty($line->batch_id) && Schema::hasColumn('purchase_lines', 'batch_id')) {
+                $query->where('PL.batch_id', $line->batch_id);
             }
 
             //Sort according to LIFO or FIFO
@@ -3942,9 +3949,14 @@ class TransactionUtil extends Util
                 'transactions.invoice_no'
             )->get();
 
-            // Sometimes stale/invalid lot_no_line_id can be submitted from POS rows.
-            // Retry allocation without lot restriction before raising mismatch.
-            if ($rows->isEmpty() && !empty($line->lot_no_line_id) && empty($purchase_line_id)) {
+            // Sometimes stale/invalid lot_no_line_id / batch_id can be submitted from POS rows.
+            // Retry allocation without lot/batch restriction before raising mismatch.
+            // With batch-based pricing enabled, never fall back to FIFO: the cashier picked a specific bucket.
+            $__biz = request()->session()->get('business', []);
+            $batch_pricing_strict = !empty($__biz['enable_batch_pricing']);
+            $picked_lot_or_batch = !empty($line->lot_no_line_id)
+                || (!empty($line->batch_id) && Schema::hasColumn('purchase_lines', 'batch_id'));
+            if ($rows->isEmpty() && $picked_lot_or_batch && empty($purchase_line_id) && !$batch_pricing_strict) {
                 $fallback_query = clone $base_query;
                 if ($business['accounting_method'] == 'lifo') {
                     $fallback_query = $fallback_query->orderBy('transaction_date', 'desc');
@@ -5099,6 +5111,9 @@ class TransactionUtil extends Util
             }
             if (isset($sell_line_data['lot_no_line_id'])) {
                 unset($sell_line_data['lot_no_line_id']);
+            }
+            if (isset($sell_line_data['batch_id'])) {
+                unset($sell_line_data['batch_id']);
             }
             if (isset($sell_line_data['woocommerce_line_items_id'])) {
                 unset($sell_line_data['woocommerce_line_items_id']);

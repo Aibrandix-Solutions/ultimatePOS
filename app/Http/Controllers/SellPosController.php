@@ -64,6 +64,9 @@ use Stripe\Charge;
 use Stripe\Stripe;
 use Yajra\DataTables\Facades\DataTables;
 use App\Events\SellCreatedOrModified;
+use App\ProductBatch;
+use App\PurchaseLine;
+use Illuminate\Support\Facades\Schema;
 
 class SellPosController extends Controller
 {
@@ -1192,6 +1195,7 @@ class SellPosController extends Controller
                 'transaction_sell_lines.sell_line_note as sell_line_note',
                 'transaction_sell_lines.parent_sell_line_id',
                 'transaction_sell_lines.lot_no_line_id',
+                'transaction_sell_lines.batch_id',
                 'transaction_sell_lines.line_discount_type',
                 'transaction_sell_lines.line_discount_amount',
                 'transaction_sell_lines.res_service_staff_id',
@@ -2048,6 +2052,59 @@ class SellPosController extends Controller
         $product->lot_numbers = $lot_numbers;
 
         $purchase_line_id = request()->get('purchase_line_id');
+        $batch_id = request()->get('batch_id');
+
+        if (!empty($so_line)) {
+            if (!empty($so_line->batch_id)) {
+                $batch_id = $so_line->batch_id;
+            }
+            if (!empty($so_line->lot_no_line_id)) {
+                $purchase_line_id = $so_line->lot_no_line_id;
+            }
+        }
+
+        if (empty($batch_id) && !empty($purchase_line_id) && Schema::hasTable('product_batches')) {
+            $pl_row = PurchaseLine::select(['batch_id', 'variation_id'])->find($purchase_line_id);
+            if (!empty($pl_row) && (int) $pl_row->variation_id === (int) $variation_id && !empty($pl_row->batch_id)) {
+                $batch_id = $pl_row->batch_id;
+            }
+        }
+
+        $product->batch_id = $batch_id;
+
+        // Batch-pricing: prefer stable product_batches row (POS batch picker), else a specific purchase line.
+        if (request()->session()->get('business.enable_batch_pricing')) {
+            if (!empty($batch_id) && Schema::hasTable('product_batches')) {
+                $pb = ProductBatch::find($batch_id);
+                if (!empty($pb) && (int) $pb->variation_id === (int) $variation_id) {
+                    if ($pb->sell_price_inc_tax !== null) {
+                        $product->sell_price_inc_tax = (float) $pb->sell_price_inc_tax;
+                    }
+                    if ($pb->sell_price_exc_tax !== null) {
+                        $product->default_sell_price = (float) $pb->sell_price_exc_tax;
+                    } elseif ($pb->sell_price_inc_tax !== null && !empty($product->item_tax)) {
+                        $product->default_sell_price = max(0, (float) $pb->sell_price_inc_tax - (float) $product->item_tax);
+                    }
+                }
+            } elseif (!empty($purchase_line_id)) {
+                $batch_line = PurchaseLine::select([
+                    'batch_selling_price',
+                    'batch_selling_price_inc_tax',
+                    'variation_id',
+                ])->find($purchase_line_id);
+
+                if (!empty($batch_line) && (int) $batch_line->variation_id === (int) $variation_id) {
+                    if ($batch_line->batch_selling_price_inc_tax !== null) {
+                        $product->sell_price_inc_tax = (float) $batch_line->batch_selling_price_inc_tax;
+                    }
+                    if ($batch_line->batch_selling_price !== null) {
+                        $product->default_sell_price = (float) $batch_line->batch_selling_price;
+                    } elseif ($batch_line->batch_selling_price_inc_tax !== null && !empty($product->item_tax)) {
+                        $product->default_sell_price = max(0, (float) $batch_line->batch_selling_price_inc_tax - (float) $product->item_tax);
+                    }
+                }
+            }
+        }
 
         $price_group = request()->input('price_group');
         if (!empty($price_group)) {
@@ -2186,6 +2243,79 @@ class SellPosController extends Controller
         }
 
         return $output;
+    }
+
+    /**
+     * Returns available purchase batches for the given variation at a location,
+     * filtered to batches with remaining stock. Powers the POS batch-select popup.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getBatches(Request $request)
+    {
+        if (!$request->ajax()) {
+            return response()->json(['success' => false]);
+        }
+
+        $business_id = $request->session()->get('user.business_id');
+        $variation_id = $request->input('variation_id');
+        $location_id = $request->input('location_id');
+
+        if (empty($variation_id) || empty($location_id)) {
+            return response()->json(['success' => false, 'batches' => []]);
+        }
+
+        $variation = Variation::where('id', $variation_id)->first(['sell_price_inc_tax']);
+        $variation_sell_inc_tax = $variation ? (float) $variation->sell_price_inc_tax : null;
+
+        if (Schema::hasTable('product_batches')) {
+            $batches = ProductBatch::where('business_id', $business_id)
+                ->where('variation_id', $variation_id)
+                ->where('location_id', $location_id)
+                ->orderBy('id')
+                ->get()
+                ->map(function ($pb) use ($variation_sell_inc_tax) {
+                    $remaining = ProductBatch::remainingStock((int) $pb->id);
+                    $display_inc = $pb->sell_price_inc_tax !== null
+                        ? (float) $pb->sell_price_inc_tax
+                        : $variation_sell_inc_tax;
+
+                    return [
+                        'id' => $pb->id,
+                        'batch_number' => $pb->batch_label,
+                        'batch_label' => $pb->batch_label,
+                        'batch_selling_price_inc_tax' => $pb->sell_price_inc_tax,
+                        'display_sell_price_inc_tax' => $display_inc,
+                        'remaining' => $remaining,
+                        'lot_number' => null,
+                        'transaction_date' => null,
+                    ];
+                })
+                ->filter(function ($b) {
+                    return $b['remaining'] > 0;
+                })
+                ->values();
+        } else {
+            $batches = PurchaseLine::availableBatches($variation_id, $location_id, $business_id)
+                ->map(function ($b) use ($variation_sell_inc_tax) {
+                    $qty_used = (float) ($b->quantity_sold + $b->quantity_adjusted + $b->quantity_returned + $b->mfg_quantity_used);
+                    $b->remaining = (float) $b->quantity - $qty_used;
+                    $b->display_sell_price_inc_tax = $b->batch_selling_price_inc_tax !== null
+                        ? (float) $b->batch_selling_price_inc_tax
+                        : $variation_sell_inc_tax;
+
+                    return $b;
+                })
+                ->filter(function ($b) {
+                    return $b->remaining > 0;
+                })
+                ->values();
+        }
+
+        return response()->json([
+            'success' => true,
+            'batches' => $batches,
+        ]);
     }
 
     /**

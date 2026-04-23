@@ -55,6 +55,11 @@ class TransactionSellLine extends Model
         return $this->belongsTo(\App\PurchaseLine::class, 'lot_no_line_id');
     }
 
+    public function product_batch()
+    {
+        return $this->belongsTo(\App\ProductBatch::class, 'batch_id');
+    }
+
     public function get_discount_amount()
     {
         $discount_amount = 0;

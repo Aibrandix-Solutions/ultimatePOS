@@ -2273,8 +2273,139 @@ function get_recent_transactions(status, element_obj) {
     });
 }
 
+/**
+ * Fetches available batches for a variation at the current location and,
+ * depending on how many there are:
+ *   - 0 batches → adds to cart normally (no modal; never shown).
+ *   - 1 batch  → adds with that purchase_line_id (no modal; never shown).
+ *   - 2+ batches → opens the batch-select modal only after data is ready.
+ */
+function __pos_show_batch_select(variation_id, quantity) {
+    var location_id = $('input#location_id').val();
+    if (!location_id) {
+        toastr.error('Location not selected. Please select a location first.');
+        return;
+    }
+
+    var $modal = $('#pos_batch_select_modal');
+
+    // If the modal was never rendered (feature disabled server-side), fall through.
+    if (!$modal.length) {
+        window.__batch_select_in_progress = true;
+        try { pos_product_row(variation_id, null, null, quantity); }
+        finally { window.__batch_select_in_progress = false; }
+        return;
+    }
+
+    // Do not open the modal until we know there are 2+ batches — avoids flash on 0/1 batch products.
+    $.ajax({
+        method: 'GET',
+        url: '/sells/pos/get-batches',
+        data: { variation_id: variation_id, location_id: location_id },
+        dataType: 'json',
+    }).done(function (res) {
+        var batches = (res && res.batches) ? res.batches : [];
+
+        if (!batches.length) {
+            window.__batch_select_in_progress = true;
+            try { pos_product_row(variation_id, null, null, quantity); }
+            finally { window.__batch_select_in_progress = false; }
+            return;
+        }
+
+        if (batches.length === 1) {
+            window.__batch_select_in_progress = true;
+            try { pos_product_row(variation_id, null, null, quantity, batches[0].id); }
+            finally { window.__batch_select_in_progress = false; }
+            return;
+        }
+
+        // Two or more batches: populate and show the modal (first time it becomes visible).
+        var $body = $modal.find('tbody').empty();
+        $modal.find('#pos_batch_select_loading').hide();
+        $modal.find('#pos_batch_select_empty').hide();
+
+        batches.forEach(function (b, idx) {
+            var priceRaw = (b.display_sell_price_inc_tax !== null && b.display_sell_price_inc_tax !== undefined)
+                ? b.display_sell_price_inc_tax
+                : ((b.batch_selling_price_inc_tax !== null && b.batch_selling_price_inc_tax !== undefined)
+                    ? b.batch_selling_price_inc_tax
+                    : null);
+            var price = priceRaw !== null
+                ? __currency_trans_from_en(priceRaw, true)
+                : '—';
+            var row = '<tr>' +
+                '<td>' + (idx + 1) + '</td>' +
+                '<td><strong>' + (b.batch_number || (LANG.standard_restock_short || 'Batch 1')) + '</strong>' +
+                    (b.lot_number ? '<br><small class="text-muted">Lot: ' + b.lot_number + '</small>' : '') +
+                '</td>' +
+                '<td>' + price + '</td>' +
+                '<td>' + (b.remaining || 0) + '</td>' +
+                '<td>' + (b.transaction_date || '') + '</td>' +
+                '<td><button type="button" class="btn btn-primary btn-sm pos_batch_pick_btn" ' +
+                    'data-batch_id="' + b.id + '" ' +
+                    'data-variation_id="' + variation_id + '" ' +
+                    'data-quantity="' + (quantity || 1) + '">' +
+                    (LANG.select || 'Select') +
+                '</button></td>' +
+                '</tr>';
+            $body.append(row);
+        });
+        $modal.find('#pos_batch_select_table').show();
+        $modal.modal('show');
+    }).fail(function () {
+        toastr.error('Could not load batches.');
+        window.__batch_select_in_progress = true;
+        try { pos_product_row(variation_id, null, null, quantity); }
+        finally { window.__batch_select_in_progress = false; }
+    });
+}
+
+// Reset modal DOM when closed (e.g. user dismissed without choosing).
+$(document).on('hidden.bs.modal', '#pos_batch_select_modal', function () {
+    var $m = $('#pos_batch_select_modal');
+    $m.find('#pos_batch_select_table').hide();
+    $m.find('tbody').empty();
+    $m.find('#pos_batch_select_loading').hide();
+    $m.find('#pos_batch_select_empty').hide();
+});
+
+// Delegated handler: picks a batch and adds it to cart with its price.
+$(document).on('click', '.pos_batch_pick_btn', function () {
+    var pick_batch_id = $(this).data('batch_id');
+    var variation_id = $(this).data('variation_id');
+    var quantity = $(this).data('quantity') || 1;
+
+    $('#pos_batch_select_modal').modal('hide');
+
+    window.__batch_select_in_progress = true;
+    try {
+        pos_product_row(variation_id, null, null, quantity, pick_batch_id);
+    } finally {
+        window.__batch_select_in_progress = false;
+    }
+});
+
 //variation_id is null when weighing_scale_barcode is used.
-function pos_product_row(variation_id = null, purchase_line_id = null, weighing_scale_barcode = null, quantity = 1) {
+function pos_product_row(variation_id = null, purchase_line_id = null, weighing_scale_barcode = null, quantity = 1, batch_id = null) {
+
+    // Batch-pricing: when enabled, intercept the add-to-cart flow and
+    // prompt the cashier to pick a specific batch if more than one exists.
+    // We only intercept when the caller did NOT already supply purchase_line_id
+    // or batch_id (lot-dropdown path uses purchase_line_id).
+    var batch_pricing_on = window.__enable_batch_pricing === true
+        || window.__enable_batch_pricing === 1
+        || window.__enable_batch_pricing === '1';
+
+    var incoming_batch = (batch_id !== null && batch_id !== undefined && batch_id !== '') ? String(batch_id) : '';
+
+    if (batch_pricing_on && variation_id && !purchase_line_id && incoming_batch === '' && !weighing_scale_barcode) {
+        if (!window.__batch_select_in_progress) {
+            __pos_show_batch_select(variation_id, quantity);
+            return;
+        }
+        // __batch_select_in_progress: invoked from the batch modal with batch_id set — continue.
+    }
 
     //Get item addition method
     var item_addtn_method = 0;
@@ -2296,6 +2427,27 @@ function pos_product_row(variation_id = null, purchase_line_id = null, weighing_
                 var row_v_id = $(this)
                     .find('.row_variation_id')
                     .val();
+                if (batch_pricing_on && String(row_v_id) == String(variation_id)) {
+                    var row_batch_el = $(this).find('input.row_batch_id');
+                    var row_batch = row_batch_el.length ? String(row_batch_el.val() || '') : '';
+                    if (incoming_batch !== row_batch) {
+                        return;
+                    }
+                    var incoming_lot = purchase_line_id ? String(purchase_line_id) : '';
+                    var row_lot = '';
+                    var $lotSel = $(this).find('select.lot_number');
+                    if ($lotSel.length) {
+                        row_lot = String($lotSel.val() || '');
+                    } else {
+                        var $lotH = $(this).find('input.lot_no_line_id_batch_purchase_line');
+                        if ($lotH.length) {
+                            row_lot = String($lotH.val() || '');
+                        }
+                    }
+                    if (incoming_lot !== '' && incoming_lot !== row_lot) {
+                        return;
+                    }
+                }
                 var enable_sr_no = $(this)
                     .find('.enable_sr_no')
                     .val();
@@ -2404,6 +2556,7 @@ function pos_product_row(variation_id = null, purchase_line_id = null, weighing_
                 is_serial_no: is_serial_no,
                 price_group: price_group,
                 purchase_line_id: purchase_line_id,
+                batch_id: incoming_batch,
                 weighing_scale_barcode: weighing_scale_barcode,
                 quantity: quantity,
                 is_sales_order: is_sales_order,

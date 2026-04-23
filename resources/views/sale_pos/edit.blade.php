@@ -83,6 +83,10 @@
 
 @include('sale_pos.partials.weighing_scale_modal')
 
+@if(session('business.enable_batch_pricing'))
+    @include('sale_pos.partials.batch_select_modal')
+@endif
+
 <!-- Product Price Edit Modal - Single modal for all products -->
 <div class="modal fade row_edit_product_price_model" id="row_edit_product_price_modal" tabindex="-1" role="dialog" aria-labelledby="row_edit_product_price_modal_label" aria-hidden="true">
     @include('sale_pos.partials.row_edit_product_price_modal_single')
@@ -92,6 +96,9 @@
 
 
 @section('javascript')
+   <script type="text/javascript">
+      window.__enable_batch_pricing = {{ session('business.enable_batch_pricing') ? 'true' : 'false' }};
+   </script>
    <script src="{{ asset('js/pos.js?v=' . $asset_v) }}"></script>
    <script src="{{ asset('js/printer.js?v=' . $asset_v) }}"></script>
    <script src="{{ asset('js/product.js?v=' . $asset_v) }}"></script>
