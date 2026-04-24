@@ -1158,6 +1158,7 @@ class SellController extends Controller
                 'transaction_sell_lines.sell_line_note as sell_line_note',
                 'transaction_sell_lines.parent_sell_line_id',
                 'transaction_sell_lines.lot_no_line_id',
+                'transaction_sell_lines.batch_id',
                 'transaction_sell_lines.line_discount_type',
                 'transaction_sell_lines.line_discount_amount',
                 'transaction_sell_lines.res_service_staff_id',

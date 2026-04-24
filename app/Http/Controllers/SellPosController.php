@@ -64,6 +64,9 @@ use Stripe\Charge;
 use Stripe\Stripe;
 use Yajra\DataTables\Facades\DataTables;
 use App\Events\SellCreatedOrModified;
+use App\ProductBatch;
+use App\PurchaseLine;
+use Illuminate\Support\Facades\Schema;
 
 class SellPosController extends Controller
 {
@@ -463,6 +466,17 @@ class SellPosController extends Controller
                             }
                         }
                     }
+                }
+
+                $batch_stock_error = $this->validatePosBatchLineStock($request, $input['products'], null);
+                if ($batch_stock_error !== null) {
+                    if (!$is_direct_sale) {
+                        return $batch_stock_error;
+                    }
+
+                    return redirect()
+                        ->action([\App\Http\Controllers\SellController::class, 'index'])
+                        ->with('status', $batch_stock_error);
                 }
 
                 //Check if subscribed or not, then check for users quota
@@ -1192,6 +1206,7 @@ class SellPosController extends Controller
                 'transaction_sell_lines.sell_line_note as sell_line_note',
                 'transaction_sell_lines.parent_sell_line_id',
                 'transaction_sell_lines.lot_no_line_id',
+                'transaction_sell_lines.batch_id',
                 'transaction_sell_lines.line_discount_type',
                 'transaction_sell_lines.line_discount_amount',
                 'transaction_sell_lines.res_service_staff_id',
@@ -1241,6 +1256,23 @@ class SellPosController extends Controller
                     }
 
                     $sell_details[$key]->formatted_qty_available = $this->productUtil->num_f($value->qty_available, false, null, true);
+
+                    if (!empty($value->batch_id) && Schema::hasTable('product_batches')
+                        && request()->session()->get('business.enable_batch_pricing')
+                        && !empty($value->enable_stock)
+                        && $value->product_type !== 'combo') {
+                        $sell_details[$key]->qty_available = ProductBatch::maxLineQuantity(
+                            (int) $value->batch_id,
+                            (float) $value->quantity_ordered
+                        );
+                        $value->qty_available = $sell_details[$key]->qty_available;
+                        $sell_details[$key]->formatted_qty_available = $this->productUtil->num_f(
+                            $sell_details[$key]->qty_available,
+                            false,
+                            null,
+                            true
+                        );
+                    }
 
                     if ($this->transactionUtil->isModuleEnabled('modifiers')) {
                         //Add modifier details to sel line details
@@ -1632,6 +1664,17 @@ class SellPosController extends Controller
                     $output = ['success' => 1, 'msg' => $msg, 'receipt' => $receipt];
 
                     return $output;
+                }
+
+                $batch_stock_error = $this->validatePosBatchLineStock($request, $input['products'], (int) $id);
+                if ($batch_stock_error !== null) {
+                    if (!$is_direct_sale) {
+                        return $batch_stock_error;
+                    }
+
+                    return redirect()
+                        ->action([\App\Http\Controllers\SellController::class, 'index'])
+                        ->with('status', $batch_stock_error);
                 }
 
                 //Begin transaction
@@ -2048,6 +2091,59 @@ class SellPosController extends Controller
         $product->lot_numbers = $lot_numbers;
 
         $purchase_line_id = request()->get('purchase_line_id');
+        $batch_id = request()->get('batch_id');
+
+        if (!empty($so_line)) {
+            if (!empty($so_line->batch_id)) {
+                $batch_id = $so_line->batch_id;
+            }
+            if (!empty($so_line->lot_no_line_id)) {
+                $purchase_line_id = $so_line->lot_no_line_id;
+            }
+        }
+
+        if (empty($batch_id) && !empty($purchase_line_id) && Schema::hasTable('product_batches')) {
+            $pl_row = PurchaseLine::select(['batch_id', 'variation_id'])->find($purchase_line_id);
+            if (!empty($pl_row) && (int) $pl_row->variation_id === (int) $variation_id && !empty($pl_row->batch_id)) {
+                $batch_id = $pl_row->batch_id;
+            }
+        }
+
+        $product->batch_id = $batch_id;
+
+        // Batch-pricing: prefer stable product_batches row (POS batch picker), else a specific purchase line.
+        if (request()->session()->get('business.enable_batch_pricing')) {
+            if (!empty($batch_id) && Schema::hasTable('product_batches')) {
+                $pb = ProductBatch::find($batch_id);
+                if (!empty($pb) && (int) $pb->variation_id === (int) $variation_id) {
+                    if ($pb->sell_price_inc_tax !== null) {
+                        $product->sell_price_inc_tax = (float) $pb->sell_price_inc_tax;
+                    }
+                    if ($pb->sell_price_exc_tax !== null) {
+                        $product->default_sell_price = (float) $pb->sell_price_exc_tax;
+                    } elseif ($pb->sell_price_inc_tax !== null && !empty($product->item_tax)) {
+                        $product->default_sell_price = max(0, (float) $pb->sell_price_inc_tax - (float) $product->item_tax);
+                    }
+                }
+            } elseif (!empty($purchase_line_id)) {
+                $batch_line = PurchaseLine::select([
+                    'batch_selling_price',
+                    'batch_selling_price_inc_tax',
+                    'variation_id',
+                ])->find($purchase_line_id);
+
+                if (!empty($batch_line) && (int) $batch_line->variation_id === (int) $variation_id) {
+                    if ($batch_line->batch_selling_price_inc_tax !== null) {
+                        $product->sell_price_inc_tax = (float) $batch_line->batch_selling_price_inc_tax;
+                    }
+                    if ($batch_line->batch_selling_price !== null) {
+                        $product->default_sell_price = (float) $batch_line->batch_selling_price;
+                    } elseif ($batch_line->batch_selling_price_inc_tax !== null && !empty($product->item_tax)) {
+                        $product->default_sell_price = max(0, (float) $batch_line->batch_selling_price_inc_tax - (float) $product->item_tax);
+                    }
+                }
+            }
+        }
 
         $price_group = request()->input('price_group');
         if (!empty($price_group)) {
@@ -2057,6 +2153,16 @@ class SellPosController extends Controller
                 $product->sell_price_inc_tax = $variation_group_prices['price_inc_tax'];
                 $product->default_sell_price = $variation_group_prices['price_exc_tax'];
             }
+        }
+
+        // Batch bucket: cap displayed / max sellable qty to remaining stock in this batch (not total variation stock).
+        if ($check_qty
+            && !empty($product->enable_stock)
+            && request()->session()->get('business.enable_batch_pricing')
+            && !empty($batch_id)
+            && Schema::hasTable('product_batches')) {
+            $product->qty_available = ProductBatch::remainingStock((int) $batch_id);
+            $product->formatted_qty_available = $this->productUtil->num_f($product->qty_available, false, null, true);
         }
 
         $warranties = $this->__getwarranties();
@@ -2104,6 +2210,59 @@ class SellPosController extends Controller
         }
 
         return $output;
+    }
+
+    /**
+     * Enforce per-batch stock caps on POS lines when overselling is disabled.
+     *
+     * @param  int|null  $transactionIdForEdit  When editing, sell lines must belong to this transaction.
+     * @return array|null
+     */
+    private function validatePosBatchLineStock(Request $request, array $products, ?int $transactionIdForEdit = null): ?array
+    {
+        $pos_settings = !empty($request->session()->get('business.pos_settings'))
+            ? (json_decode($request->session()->get('business.pos_settings'), true) ?? [])
+            : [];
+        if (!empty($pos_settings['allow_overselling'])) {
+            return null;
+        }
+        if (!$request->session()->get('business.enable_batch_pricing') || !Schema::hasTable('product_batches')) {
+            return null;
+        }
+
+        foreach ($products as $product_line) {
+            if (empty($product_line['enable_stock']) || empty($product_line['batch_id'])) {
+                continue;
+            }
+
+            $batch_id = (int) $product_line['batch_id'];
+            $qty = $this->productUtil->num_uf($product_line['quantity'] ?? 0);
+            if (!empty($product_line['base_unit_multiplier'])) {
+                $qty *= (float) $product_line['base_unit_multiplier'];
+            }
+
+            $already_on_line = 0.0;
+            if (!empty($product_line['transaction_sell_lines_id']) && !empty($transactionIdForEdit)) {
+                $sl = TransactionSellLine::where('transaction_id', $transactionIdForEdit)
+                    ->where('id', (int) $product_line['transaction_sell_lines_id'])
+                    ->first(['quantity', 'batch_id']);
+                if (!empty($sl) && (int) $sl->batch_id === $batch_id) {
+                    $already_on_line = (float) $sl->quantity;
+                }
+            }
+
+            $max = ProductBatch::maxLineQuantity($batch_id, $already_on_line);
+            if ($qty > $max + 0.0001) {
+                $max_fmt = $this->productUtil->num_f($max, false, null, true);
+
+                return [
+                    'success' => 0,
+                    'msg' => __('lang_v1.batch_quantity_not_available', ['max' => $max_fmt]),
+                ];
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -2186,6 +2345,79 @@ class SellPosController extends Controller
         }
 
         return $output;
+    }
+
+    /**
+     * Returns available purchase batches for the given variation at a location,
+     * filtered to batches with remaining stock. Powers the POS batch-select popup.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getBatches(Request $request)
+    {
+        if (!$request->ajax()) {
+            return response()->json(['success' => false]);
+        }
+
+        $business_id = $request->session()->get('user.business_id');
+        $variation_id = $request->input('variation_id');
+        $location_id = $request->input('location_id');
+
+        if (empty($variation_id) || empty($location_id)) {
+            return response()->json(['success' => false, 'batches' => []]);
+        }
+
+        $variation = Variation::where('id', $variation_id)->first(['sell_price_inc_tax']);
+        $variation_sell_inc_tax = $variation ? (float) $variation->sell_price_inc_tax : null;
+
+        if (Schema::hasTable('product_batches')) {
+            $batches = ProductBatch::where('business_id', $business_id)
+                ->where('variation_id', $variation_id)
+                ->where('location_id', $location_id)
+                ->orderBy('id')
+                ->get()
+                ->map(function ($pb) use ($variation_sell_inc_tax) {
+                    $remaining = ProductBatch::remainingStock((int) $pb->id);
+                    $display_inc = $pb->sell_price_inc_tax !== null
+                        ? (float) $pb->sell_price_inc_tax
+                        : $variation_sell_inc_tax;
+
+                    return [
+                        'id' => $pb->id,
+                        'batch_number' => $pb->batch_label,
+                        'batch_label' => $pb->batch_label,
+                        'batch_selling_price_inc_tax' => $pb->sell_price_inc_tax,
+                        'display_sell_price_inc_tax' => $display_inc,
+                        'remaining' => $remaining,
+                        'lot_number' => null,
+                        'transaction_date' => null,
+                    ];
+                })
+                ->filter(function ($b) {
+                    return $b['remaining'] > 0;
+                })
+                ->values();
+        } else {
+            $batches = PurchaseLine::availableBatches($variation_id, $location_id, $business_id)
+                ->map(function ($b) use ($variation_sell_inc_tax) {
+                    $qty_used = (float) ($b->quantity_sold + $b->quantity_adjusted + $b->quantity_returned + $b->mfg_quantity_used);
+                    $b->remaining = (float) $b->quantity - $qty_used;
+                    $b->display_sell_price_inc_tax = $b->batch_selling_price_inc_tax !== null
+                        ? (float) $b->batch_selling_price_inc_tax
+                        : $variation_sell_inc_tax;
+
+                    return $b;
+                })
+                ->filter(function ($b) {
+                    return $b->remaining > 0;
+                })
+                ->values();
+        }
+
+        return response()->json([
+            'success' => true,
+            'batches' => $batches,
+        ]);
     }
 
     /**

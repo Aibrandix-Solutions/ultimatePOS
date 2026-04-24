@@ -7,6 +7,7 @@ use App\BusinessLocation;
 use App\Discount;
 use App\Media;
 use App\Product;
+use App\ProductBatch;
 use App\ProductRack;
 use App\ProductVariation;
 use App\PurchaseLine;
@@ -21,6 +22,7 @@ use App\VariationLocationDetails;
 use App\VariationTemplate;
 use App\VariationValueTemplate;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class ProductUtil extends Util
 {
@@ -1298,6 +1300,133 @@ class ProductUtil extends Util
             $purchase_line->purchase_order_line_id = !empty($data['purchase_order_line_id']) ? $data['purchase_order_line_id'] : null;
             $purchase_line->purchase_requisition_line_id = !empty($data['purchase_requisition_line_id']) && $transaction->type == 'purchase_order' ? $data['purchase_requisition_line_id'] : null;
 
+            // Batch-based pricing: persist per-batch selling price, stable batch_id
+            // (product_batches), and auto-assign batch labels on new lines.
+            // Only applied for stock-bearing purchase transactions, not for
+            // purchase_order / purchase_requisition templates (they don't hold stock).
+            $is_stock_transaction = in_array($transaction->type, ['purchase', 'opening_stock', 'purchase_transfer']);
+            if ($is_stock_transaction) {
+                $skip_batch = !empty($data['skip_batch']) && ($data['skip_batch'] === '1' || $data['skip_batch'] === 1 || $data['skip_batch'] === true);
+                $refill_batch_id = !empty($data['product_batch_id']) ? (int) $data['product_batch_id'] : null;
+
+                if (Schema::hasTable('product_batches')) {
+                    $refill_batch = null;
+                    if ($refill_batch_id) {
+                        $refill_batch = ProductBatch::where('id', $refill_batch_id)
+                            ->where('business_id', $transaction->business_id)
+                            ->where('product_id', $data['product_id'])
+                            ->where('variation_id', $data['variation_id'])
+                            ->where('location_id', $transaction->location_id)
+                            ->first();
+                    }
+
+                    if ($refill_batch) {
+                        $purchase_line->batch_id = $refill_batch->id;
+                        $purchase_line->batch_number = $refill_batch->batch_label;
+                    } elseif ($skip_batch) {
+                        $batch = ProductBatch::firstOrCreateBatchOne(
+                            (int) $transaction->business_id,
+                            (int) $data['product_id'],
+                            (int) $data['variation_id'],
+                            (int) $transaction->location_id
+                        );
+                        $purchase_line->batch_id = $batch->id;
+                        $purchase_line->batch_number = 'Batch 1';
+                        $purchase_line->batch_selling_price = null;
+                        $purchase_line->batch_selling_price_inc_tax = null;
+                        $purchase_line->batch_profit_margin = null;
+                    } else {
+                        if (empty($purchase_line->batch_id)) {
+                            $label = !empty($data['batch_number'])
+                                ? $data['batch_number']
+                                : ProductBatch::nextBatchLabel(
+                                    (int) $transaction->business_id,
+                                    (int) $data['product_id'],
+                                    (int) $data['variation_id'],
+                                    (int) $transaction->location_id
+                                );
+                            $batch = ProductBatch::firstOrCreate(
+                                [
+                                    'business_id' => $transaction->business_id,
+                                    'product_id' => $data['product_id'],
+                                    'variation_id' => $data['variation_id'],
+                                    'location_id' => $transaction->location_id,
+                                    'batch_label' => $label,
+                                ],
+                                []
+                            );
+                            $purchase_line->batch_id = $batch->id;
+                            $purchase_line->batch_number = $batch->batch_label;
+                        } elseif (!empty($data['batch_number']) && empty($purchase_line->batch_number)) {
+                            $purchase_line->batch_number = $data['batch_number'];
+                        }
+                    }
+
+                    if (!$skip_batch) {
+                        $batch_sp_inc_tax_raw = $data['batch_selling_price_inc_tax']
+                            ?? ($data['default_sell_price'] ?? null);
+                        if ($batch_sp_inc_tax_raw !== null && $batch_sp_inc_tax_raw !== '') {
+                            $purchase_line->batch_selling_price_inc_tax =
+                                ($this->num_uf($batch_sp_inc_tax_raw, $currency_details)) / $multiplier;
+                        }
+
+                        if (isset($data['batch_selling_price']) && $data['batch_selling_price'] !== '') {
+                            $purchase_line->batch_selling_price =
+                                ($this->num_uf($data['batch_selling_price'], $currency_details)) / $multiplier;
+                        } elseif ($purchase_line->batch_selling_price_inc_tax !== null) {
+                            $item_tax_f = (float) ($purchase_line->item_tax ?? 0);
+                            $purchase_line->batch_selling_price = max(0,
+                                (float) $purchase_line->batch_selling_price_inc_tax - $item_tax_f);
+                        }
+
+                        $batch_margin_raw = $data['batch_profit_margin']
+                            ?? ($data['profit_percent'] ?? null);
+                        if ($batch_margin_raw !== null && $batch_margin_raw !== '') {
+                            $purchase_line->batch_profit_margin = $this->num_uf($batch_margin_raw, $currency_details);
+                        }
+                    }
+                } else {
+                    if ($skip_batch) {
+                        $purchase_line->batch_number = 'Batch 1';
+                        $purchase_line->batch_selling_price = null;
+                        $purchase_line->batch_selling_price_inc_tax = null;
+                        $purchase_line->batch_profit_margin = null;
+                    } else {
+                        if (!$purchase_line->exists && empty($data['batch_number'])) {
+                            $purchase_line->batch_number = PurchaseLine::nextBatchNumber(
+                                $data['product_id'],
+                                $data['variation_id'],
+                                $transaction->location_id
+                            );
+                        } elseif (!empty($data['batch_number'])) {
+                            $purchase_line->batch_number = $data['batch_number'];
+                        }
+
+                        $batch_sp_inc_tax_raw = $data['batch_selling_price_inc_tax']
+                            ?? ($data['default_sell_price'] ?? null);
+                        if ($batch_sp_inc_tax_raw !== null && $batch_sp_inc_tax_raw !== '') {
+                            $purchase_line->batch_selling_price_inc_tax =
+                                ($this->num_uf($batch_sp_inc_tax_raw, $currency_details)) / $multiplier;
+                        }
+
+                        if (isset($data['batch_selling_price']) && $data['batch_selling_price'] !== '') {
+                            $purchase_line->batch_selling_price =
+                                ($this->num_uf($data['batch_selling_price'], $currency_details)) / $multiplier;
+                        } elseif ($purchase_line->batch_selling_price_inc_tax !== null) {
+                            $item_tax_f = (float) ($purchase_line->item_tax ?? 0);
+                            $purchase_line->batch_selling_price = max(0,
+                                (float) $purchase_line->batch_selling_price_inc_tax - $item_tax_f);
+                        }
+
+                        $batch_margin_raw = $data['batch_profit_margin']
+                            ?? ($data['profit_percent'] ?? null);
+                        if ($batch_margin_raw !== null && $batch_margin_raw !== '') {
+                            $purchase_line->batch_profit_margin = $this->num_uf($batch_margin_raw, $currency_details);
+                        }
+                    }
+                }
+            }
+
             if (!empty($data['secondary_unit_quantity'])) {
                 $purchase_line->secondary_unit_quantity = $this->num_uf($data['secondary_unit_quantity']);
             }
@@ -1374,6 +1503,11 @@ class ProductUtil extends Util
         //update purchase lines
         if (!empty($updated_purchase_lines)) {
             $transaction->purchase_lines()->saveMany($updated_purchase_lines);
+            if (Schema::hasTable('product_batches')) {
+                foreach ($updated_purchase_lines as $saved_pl) {
+                    ProductBatch::syncSellPricesFromPurchaseLine($saved_pl);
+                }
+            }
         }
 
         return $delete_purchase_lines;

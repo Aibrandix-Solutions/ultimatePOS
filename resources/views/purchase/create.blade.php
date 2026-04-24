@@ -303,6 +303,11 @@
 										@lang('lang_v1.lot_number')
 									</th>
 								@endif
+								@if(session('business.enable_batch_pricing'))
+									<th>
+										@lang('lang_v1.batch_number')
+									</th>
+								@endif
 								@if(session('business.enable_product_expiry'))
 									<th>
 										@lang('product.mfg_date') / @lang('product.exp_date')
@@ -625,6 +630,9 @@
 </div>
 
 @include('purchase.partials.import_purchase_products_modal')
+@if(session('business.enable_batch_pricing'))
+	@include('purchase.partials.batch_choice_modal')
+@endif
 <!-- /.content -->
 @endsection
 
@@ -633,6 +641,7 @@
 	<script src="{{ asset('js/product.js?v=' . $asset_v) }}"></script>
 	<script type="text/javascript">
 		window.__hide_purchase_cost = {{ $can_view_purchase_cost ? 'false' : 'true' }};
+		window.__enable_batch_pricing = {{ session('business.enable_batch_pricing') ? 'true' : 'false' }};
 		$(document).ready( function(){
       		__page_leave_confirmation('#add_purchase_form');
       		$('.paid_on').datetimepicker({

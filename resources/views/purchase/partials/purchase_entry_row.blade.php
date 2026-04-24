@@ -195,6 +195,28 @@
                 {!! Form::text('purchases[' . $row_count . '][lot_number]', $lot_number, ['class' => 'form-control input-sm']) !!}
             </td>
         @endif
+        @if(session('business.enable_batch_pricing'))
+            <td>
+                @if(!empty($skip_batch_for_row))
+                    <span class="text-muted">@lang('lang_v1.standard_restock_short')</span>
+                    {!! Form::hidden('purchases[' . $row_count . '][skip_batch]', 1) !!}
+                @elseif(!empty($refill_product_batch_id))
+                    <strong>{{ $refill_batch_label }}</strong>
+                    <br><small class="text-muted">@lang('lang_v1.refill_existing_batch')</small>
+                    {!! Form::hidden('purchases[' . $row_count . '][product_batch_id]', $refill_product_batch_id) !!}
+                @else
+                    @php
+                        $batch_value = $next_batch_number ?? ($imported_data['batch_number'] ?? null);
+                    @endphp
+                    {!! Form::text('purchases[' . $row_count . '][batch_number]', $batch_value, [
+                        'class' => 'form-control input-sm batch_number_input',
+                        'readonly' => true,
+                        'title' => __('lang_v1.batch_number'),
+                    ]) !!}
+                    <small class="text-muted">@lang('lang_v1.new_batch')</small>
+                @endif
+            </td>
+        @endif
         @if(session('business.enable_product_expiry'))
             <td style="text-align: left;">
                 @php

@@ -773,31 +773,171 @@ function update_row_selling_line_total(row) {
 }
 
 function get_purchase_entry_row(product_id, variation_id) {
-    if (product_id) {
-        var row_count = $('#row_count').val();
-        var location_id = $('#location_id').val();
-        var supplier_id = $('#supplier_id').val();
-        var data = { 
-            product_id: product_id, 
-            row_count: row_count, 
-            variation_id: variation_id,
-            location_id: location_id,
-            supplier_id: supplier_id
-        };
+    if (!product_id) {
+        return;
+    }
 
-        if ($('#is_purchase_order').length) {
-            data.is_purchase_order = true;
-        }
+    var location_id = $('#location_id').val();
+    // Batch-pricing duplicate check: ask the user before appending
+    // a new batch for a product already present at this location.
+    var batch_pricing_on = window.__enable_batch_pricing === true
+        || window.__enable_batch_pricing === 1
+        || window.__enable_batch_pricing === '1';
+
+    if (batch_pricing_on && location_id && variation_id) {
         $.ajax({
-            method: 'POST',
-            url: '/purchases/get_purchase_entry_row',
-            dataType: 'html',
-            data: data,
-            success: function(result) {
-                append_purchase_lines(result, row_count);
+            method: 'GET',
+            url: '/purchases/check-batch',
+            data: {
+                product_id: product_id,
+                variation_id: variation_id,
+                location_id: location_id,
+            },
+            dataType: 'json',
+            success: function (res) {
+                if (res && res.has_batches) {
+                    __open_purchase_batch_choice_modal(product_id, variation_id, res);
+                } else {
+                    _do_get_purchase_entry_row(product_id, variation_id, false);
+                }
+            },
+            error: function () {
+                // If the check fails for any reason, don't block the cashier.
+                _do_get_purchase_entry_row(product_id, variation_id, false);
             },
         });
+    } else {
+        _do_get_purchase_entry_row(product_id, variation_id, false);
     }
+}
+
+/**
+ * When batch pricing is on and the variation already has batches, let the user pick:
+ * - New numbered batch (per-batch cost/sell), or
+ * - Standard restock (no batch label; POS uses variation default selling price).
+ */
+function __open_purchase_batch_choice_modal(product_id, variation_id, res) {
+    var $modal = $('#purchase_batch_choice_modal');
+    if (!$modal.length) {
+        _do_get_purchase_entry_row(product_id, variation_id, false);
+        return;
+    }
+
+    var nextText = (LANG.purchase_batch_choice_next || 'Next batch would be:') + ' ' +
+        (res.next_batch_number || 'Batch 1');
+    $('#purchase_batch_choice_next').text(nextText);
+
+    var allBatches = res.batches || [];
+    var batches = allBatches.slice(0, 5);
+    var $list = $('#purchase_batch_choice_list').empty();
+    if (batches.length) {
+        batches.forEach(function (b) {
+            var label = b.batch_number || b.batch_label || (LANG.standard_restock_short || 'Standard');
+            $list.append(
+                $('<li></li>').text(
+                    label + ' — ' +
+                    (LANG.available_stock || 'Stock') + ': ' + (b.remaining != null ? b.remaining : 0)
+                )
+            );
+        });
+        $('#purchase_batch_choice_list_wrap').show();
+    } else {
+        $('#purchase_batch_choice_list_wrap').hide();
+    }
+
+    var $refillSelect = $('#purchase_batch_refill_select').empty();
+    var $refillWrap = $('#purchase_batch_refill_wrap');
+    var $refillBtn = $('#purchase_batch_choice_refill');
+    if (allBatches.length) {
+        allBatches.forEach(function (b) {
+            var label = b.batch_number || b.batch_label || 'Batch';
+            $refillSelect.append(
+                $('<option></option>')
+                    .val(b.id)
+                    .text(
+                        label + ' — ' +
+                        (LANG.available_stock || 'Stock') + ': ' + (b.remaining != null ? b.remaining : 0)
+                    )
+            );
+        });
+        $refillWrap.show();
+        $refillBtn.show();
+    } else {
+        $refillWrap.hide();
+        $refillBtn.hide();
+    }
+
+    $modal.data('product_id', product_id);
+    $modal.data('variation_id', variation_id);
+    $modal.modal('show');
+}
+
+$(document).on('click', '#purchase_batch_choice_new', function () {
+    var $modal = $('#purchase_batch_choice_modal');
+    var product_id = $modal.data('product_id');
+    var variation_id = $modal.data('variation_id');
+    $modal.modal('hide');
+    _do_get_purchase_entry_row(product_id, variation_id, false);
+});
+
+$(document).on('click', '#purchase_batch_choice_standard', function () {
+    var $modal = $('#purchase_batch_choice_modal');
+    var product_id = $modal.data('product_id');
+    var variation_id = $modal.data('variation_id');
+    $modal.modal('hide');
+    _do_get_purchase_entry_row(product_id, variation_id, true);
+});
+
+$(document).on('click', '#purchase_batch_choice_refill', function () {
+    var $modal = $('#purchase_batch_choice_modal');
+    var product_id = $modal.data('product_id');
+    var variation_id = $modal.data('variation_id');
+    var product_batch_id = $('#purchase_batch_refill_select').val();
+    if (!product_batch_id) {
+        return;
+    }
+    $modal.modal('hide');
+    _do_get_purchase_entry_row(product_id, variation_id, false, product_batch_id);
+});
+
+$(document).on('hidden.bs.modal', '#purchase_batch_choice_modal', function () {
+    $('#purchase_batch_refill_wrap').hide();
+    $('#purchase_batch_choice_refill').hide();
+    $('#purchase_batch_refill_select').empty();
+});
+
+function _do_get_purchase_entry_row(product_id, variation_id, skip_batch, product_batch_id) {
+    var row_count = $('#row_count').val();
+    var location_id = $('#location_id').val();
+    var supplier_id = $('#supplier_id').val();
+    var data = {
+        product_id: product_id,
+        row_count: row_count,
+        variation_id: variation_id,
+        location_id: location_id,
+        supplier_id: supplier_id
+    };
+
+    if (skip_batch) {
+        data.skip_batch = 1;
+    }
+
+    if (product_batch_id) {
+        data.product_batch_id = product_batch_id;
+    }
+
+    if ($('#is_purchase_order').length) {
+        data.is_purchase_order = true;
+    }
+    $.ajax({
+        method: 'POST',
+        url: '/purchases/get_purchase_entry_row',
+        dataType: 'html',
+        data: data,
+        success: function(result) {
+            append_purchase_lines(result, row_count);
+        },
+    });
 }
 
 function append_purchase_lines(data, row_count, trigger_change = false) {

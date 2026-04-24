@@ -533,12 +533,16 @@
   @include('contact.create', ['quick_add' => true])
 </div>
 @include('purchase.partials.import_purchase_products_modal')
+@if(session('business.enable_batch_pricing'))
+  @include('purchase.partials.batch_choice_modal')
+@endif
 @endsection
 
 @section('javascript')
   <script src="{{ asset('js/purchase.js?v=' . $asset_v) }}"></script>
   <script src="{{ asset('js/product.js?v=' . $asset_v) }}"></script>
   <script type="text/javascript">
+    window.__enable_batch_pricing = {{ session('business.enable_batch_pricing') ? 'true' : 'false' }};
     $(document).ready( function(){
       update_table_total();
       update_grand_total();

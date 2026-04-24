@@ -31,6 +31,11 @@
                             @lang('lang_v1.lot_number')
                         </th>
                     @endif
+                    @if(session('business.enable_batch_pricing'))
+                        <th>
+                            @lang('lang_v1.batch_number')
+                        </th>
+                    @endif
                     @if(session('business.enable_product_expiry'))
                         <th>@lang('product.mfg_date') / @lang('product.exp_date')</th>
                     @endif
@@ -194,6 +199,17 @@
             @if(session('business.enable_lot_number'))
                 <td>
                     {!! Form::text('purchases[' . $loop->index . '][lot_number]', $purchase_line->lot_number, ['class' => 'form-control input-sm']) !!}
+                </td>
+            @endif
+            @if(session('business.enable_batch_pricing'))
+                <td>
+                    {!! Form::text('purchases[' . $loop->index . '][batch_number]', $purchase_line->batch_number, [
+                        'class' => 'form-control input-sm batch_number_input',
+                        'readonly' => true,
+                    ]) !!}
+                    @if(!empty($purchase_line->batch_id))
+                        {!! Form::hidden('purchases[' . $loop->index . '][product_batch_id]', $purchase_line->batch_id) !!}
+                    @endif
                 </td>
             @endif
 
