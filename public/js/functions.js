@@ -384,10 +384,11 @@ function __sum_stock(table, class_name, label_direction = 'right') {
 
 function __isMobileDevice() {
     var ua = navigator.userAgent || '';
-    var uaLooksMobile = /Mobi|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
-    // iPadOS 13+ reports as "MacIntel" but is touch-capable; treat narrow touch screens as mobile.
-    var touchSmallScreen = ('ontouchstart' in window) && Math.min(window.innerWidth, window.innerHeight) <= 820;
-    return uaLooksMobile || touchSmallScreen;
+    var uaLooksMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+    var coarsePointer = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+    var narrowScreen = Math.min(window.innerWidth || 0, window.innerHeight || 0) <= 767;
+
+    return uaLooksMobile || (coarsePointer && narrowScreen);
 }
 
 function __print_receipt(section_id = null) {
@@ -407,10 +408,11 @@ function __print_receipt(section_id = null) {
         $targetSection.html($sourceSection.html());
     }
 
-    // === MOBILE: printThis() iframe printing silently fails on most mobile
-    // browsers (iOS Safari, in-app browsers, many Android Chrome cases),
-    // so on mobile we render the receipt in a full-screen overlay and let
-    // the user tap a Print button (which uses the OS share/print sheet). ===
+    $('.print_section').removeClass('print-target');
+    $targetSection.addClass('print-target');
+
+    // Mobile browsers often block iframe printing. Show a receipt preview first,
+    // then let the user's tap on "Print" open the OS print/share sheet.
     if (__isMobileDevice()) {
         var receiptHtml = $targetSection.html();
         var $mobileModal = $('#mobile_receipt_modal');
@@ -433,12 +435,10 @@ function __print_receipt(section_id = null) {
         return;
     }
 
-    // === DESKTOP: Use printThis plugin ===
-    $('.print_section').removeClass('print-target');
-    $targetSection.addClass('print-target');
     $('body').addClass('is-printing-receipt');
 
     __receipt_print_target = $targetSection;
+    __receipt_print_started = false;
 
     var imgs = $targetSection[0].getElementsByTagName('img');
 
@@ -447,7 +447,21 @@ function __print_receipt(section_id = null) {
         img_counter = 0;
 
         [].forEach.call(imgs, function (img) {
-            img.addEventListener('load', incrementImageCounter, false);
+            var imageReadyHandled = false;
+            var handleImageReady = function () {
+                if (imageReadyHandled) {
+                    return;
+                }
+                imageReadyHandled = true;
+                incrementImageCounter();
+            };
+
+            if (img.complete) {
+                handleImageReady();
+            } else {
+                img.addEventListener('load', handleImageReady, false);
+                img.addEventListener('error', handleImageReady, false);
+            }
         });
     } else {
         setTimeout(function () {
@@ -459,38 +473,60 @@ function __print_receipt(section_id = null) {
 
 function incrementImageCounter() {
     img_counter++;
-    if (img_counter === img_len) {
+    if (img_counter >= img_len) {
         __execute_receipt_print();
     }
 }
 
+var img_len = 0;
+var img_counter = 0;
 var __receipt_print_target = null;
+var __receipt_print_started = false;
 function __execute_receipt_print() {
     if (!__receipt_print_target || !__receipt_print_target.length) {
         return;
     }
+    if (__receipt_print_started) {
+        return;
+    }
+    __receipt_print_started = true;
 
-    __receipt_print_target.printThis({
-        importCSS: true,
-        importStyle: true,
-        copyTagClasses: true,
-        printDelay: 1000
-    });
+    try {
+        window.print();
+    } catch (err) {
+        __cleanup_receipt_print();
+        return;
+    }
 
-    // Cleanup cloned receipt content after print dialog has likely opened.
     setTimeout(function () {
-        $('.print_section').removeClass('print-target');
-        $('.print_section#receipt_section').html('');
-        $('body').removeClass('is-printing-receipt');
-        __receipt_print_target = null;
-    }, 10000);
+        if (__receipt_print_target) {
+            __cleanup_receipt_print();
+        }
+    }, 30000);
+}
+
+function __cleanup_receipt_print() {
+    $('.print_section').removeClass('print-target');
+    $('.print_section#receipt_section').html('');
+    $('body').removeClass('is-printing-receipt');
+    __receipt_print_target = null;
+    __receipt_print_started = false;
 }
 
 // === Mobile receipt modal: wire up the Print and Close buttons.
 // Delegated handlers so they keep working even if the modal markup is
 // re-rendered or replaced.
 $(function () {
+    if (window.addEventListener) {
+        window.addEventListener('afterprint', function () {
+            if (!$('#mobile_receipt_modal:visible').length) {
+                __cleanup_receipt_print();
+            }
+        });
+    }
+
     $(document).on('click', '#mobile_receipt_print_btn', function () {
+        $('body').addClass('is-printing-receipt');
         try {
             window.print();
         } catch (err) {
