@@ -99,7 +99,9 @@
         {!! Form::close() !!}
     </section>
 
-    <!-- This will be printed -->
+    {{-- The #receipt_section element lives in layouts/app.blade.php so it is
+         shared across all pages. Do NOT add another one here — duplicate IDs
+         break __print_receipt(). --}}
     <div class="modal fade contact_modal" tabindex="-1" role="dialog" aria-labelledby="gridSystemModalLabel">
         @include('contact.create', ['quick_add' => true])
     </div>

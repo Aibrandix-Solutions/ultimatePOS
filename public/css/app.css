@@ -1029,21 +1029,26 @@ tr.details td.details-control {
     display: none;
   }
 
-  /* Mobile receipt modal print rules */
+  /* Mobile receipt modal: when the user taps "Print" inside the modal,
+     window.print() runs in the same document. Strip the modal chrome and
+     let only the receipt content print. */
   #mobile_receipt_modal {
     position: static !important;
     overflow: visible !important;
     z-index: auto !important;
     background: #fff !important;
   }
-  #mobile_receipt_modal > div:first-child {
-    /* hide the sticky header bar when printing */
+  #mobile_receipt_modal #mobile_receipt_header {
     display: none !important;
+  }
+  #mobile_receipt_content,
+  #mobile_receipt_content * {
+    visibility: visible !important;
   }
   #mobile_receipt_content {
     display: block !important;
-    visibility: visible !important;
     padding: 0 !important;
+    max-width: 100% !important;
   }
 }
 

@@ -133,13 +133,15 @@
             <section class="invoice print_section" id="receipt_section">
             </section>
 
-            <!-- Mobile receipt preview modal -->
-            <div id="mobile_receipt_modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#fff; z-index:99999; overflow-y:auto; -webkit-overflow-scrolling:touch;">
-                <div style="position:sticky; top:0; background:linear-gradient(135deg,#161160,#2a2480); padding:12px 16px; display:flex; align-items:center; justify-content:space-between; z-index:1;">
+            <!-- Mobile receipt preview modal (shown after a sale on mobile devices,
+                 because printThis() iframe-based printing silently fails on most
+                 mobile browsers). -->
+            <div id="mobile_receipt_modal" class="no-print-on-close" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#fff; z-index:99999; overflow-y:auto; -webkit-overflow-scrolling:touch;">
+                <div id="mobile_receipt_header" style="position:sticky; top:0; background:linear-gradient(135deg,#161160,#2a2480); padding:12px 16px; display:flex; align-items:center; justify-content:space-between; z-index:1;">
                     <span style="color:#fff; font-weight:700; font-size:16px;">Receipt</span>
                     <div style="display:flex; gap:10px; align-items:center;">
-                        <button id="mobile_receipt_print_btn" onclick="window.print();" style="background:#28b77b; color:#fff; border:none; border-radius:6px; padding:8px 16px; font-weight:600; font-size:14px; cursor:pointer;">&#128424; Print</button>
-                        <button onclick="document.getElementById('mobile_receipt_modal').style.display='none'; document.body.classList.remove('is-printing-receipt');" style="background:rgba(255,255,255,0.2); color:#fff; border:none; border-radius:6px; padding:8px 14px; font-weight:600; font-size:14px; cursor:pointer;">&#10005; Close</button>
+                        <button type="button" id="mobile_receipt_print_btn" style="background:#28b77b; color:#fff; border:none; border-radius:6px; padding:8px 16px; font-weight:600; font-size:14px; cursor:pointer;">&#128424; Print</button>
+                        <button type="button" id="mobile_receipt_close_btn" style="background:rgba(255,255,255,0.2); color:#fff; border:none; border-radius:6px; padding:8px 14px; font-weight:600; font-size:14px; cursor:pointer;">&#10005; Close</button>
                     </div>
                 </div>
                 <div id="mobile_receipt_content" style="padding:16px; max-width:600px; margin:0 auto;"></div>

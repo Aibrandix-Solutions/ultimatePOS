@@ -383,7 +383,11 @@ function __sum_stock(table, class_name, label_direction = 'right') {
 }
 
 function __isMobileDevice() {
-    return /Mobi|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    var ua = navigator.userAgent || '';
+    var uaLooksMobile = /Mobi|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+    // iPadOS 13+ reports as "MacIntel" but is touch-capable; treat narrow touch screens as mobile.
+    var touchSmallScreen = ('ontouchstart' in window) && Math.min(window.innerWidth, window.innerHeight) <= 820;
+    return uaLooksMobile || touchSmallScreen;
 }
 
 function __print_receipt(section_id = null) {
@@ -403,25 +407,27 @@ function __print_receipt(section_id = null) {
         $targetSection.html($sourceSection.html());
     }
 
+    // === MOBILE: printThis() iframe printing silently fails on most mobile
+    // browsers (iOS Safari, in-app browsers, many Android Chrome cases),
+    // so on mobile we render the receipt in a full-screen overlay and let
+    // the user tap a Print button (which uses the OS share/print sheet). ===
     if (__isMobileDevice()) {
-        // === MOBILE: Show in full-screen overlay ===
         var receiptHtml = $targetSection.html();
         var $mobileModal = $('#mobile_receipt_modal');
         var $mobileContent = $('#mobile_receipt_content');
 
-        if ($mobileModal.length) {
+        if ($mobileModal.length && $.trim(receiptHtml || '').length) {
             $mobileContent.html(receiptHtml);
             $mobileModal.show();
-            // Add body class so @media print rules hide sidebar etc. when Print button is tapped
             $('body').addClass('is-printing-receipt');
-        } else {
-            // Fallback: open in new window
+        } else if ($.trim(receiptHtml || '').length) {
+            // Fallback when the modal markup is missing for any reason.
             var win = window.open('', '_blank');
             if (win) {
                 win.document.write('<html><head><title>Receipt</title><style>body{font-family:Arial,sans-serif;padding:12px;}</style></head><body>' + receiptHtml + '</body></html>');
                 win.document.close();
                 win.focus();
-                setTimeout(function() { win.print(); }, 600);
+                setTimeout(function () { win.print(); }, 600);
             }
         }
         return;
@@ -479,6 +485,28 @@ function __execute_receipt_print() {
         __receipt_print_target = null;
     }, 10000);
 }
+
+// === Mobile receipt modal: wire up the Print and Close buttons.
+// Delegated handlers so they keep working even if the modal markup is
+// re-rendered or replaced.
+$(function () {
+    $(document).on('click', '#mobile_receipt_print_btn', function () {
+        try {
+            window.print();
+        } catch (err) {
+            // Some embedded mobile browsers throw on window.print(); ignore.
+        }
+    });
+
+    $(document).on('click', '#mobile_receipt_close_btn', function () {
+        var $modal = $('#mobile_receipt_modal');
+        $modal.hide();
+        $('#mobile_receipt_content').html('');
+        $('body').removeClass('is-printing-receipt');
+        // Also clear the hidden receipt section so the next sale starts clean.
+        $('.print_section#receipt_section').html('');
+    });
+});
 
 function __getUnitMultiplier(row) {
     multiplier = row.find('select.sub_unit').find(':selected').data('multiplier');
