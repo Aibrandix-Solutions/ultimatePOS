@@ -401,6 +401,9 @@ function __print_receipt(section_id = null) {
 
     $('.print_section').removeClass('print-target');
     $targetSection.addClass('print-target');
+    
+    // Add class to body to trigger CSS rules
+    $('body').addClass('is-printing-receipt');
 
     __receipt_print_target = $targetSection;
 
@@ -445,6 +448,7 @@ function __execute_receipt_print() {
     setTimeout(function () {
         $('.print_section').removeClass('print-target');
         $('.print_section#receipt_section').html('');
+        $('body').removeClass('is-printing-receipt');
         __receipt_print_target = null;
     }, 10000);
 }
