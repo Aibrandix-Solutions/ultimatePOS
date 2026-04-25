@@ -1028,6 +1028,23 @@ tr.details td.details-control {
   #toast-container {
     display: none;
   }
+
+  /* Mobile receipt modal print rules */
+  #mobile_receipt_modal {
+    position: static !important;
+    overflow: visible !important;
+    z-index: auto !important;
+    background: #fff !important;
+  }
+  #mobile_receipt_modal > div:first-child {
+    /* hide the sticky header bar when printing */
+    display: none !important;
+  }
+  #mobile_receipt_content {
+    display: block !important;
+    visibility: visible !important;
+    padding: 0 !important;
+  }
 }
 
 .input-number .btn-default {

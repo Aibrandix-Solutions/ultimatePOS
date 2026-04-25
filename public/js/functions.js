@@ -382,6 +382,10 @@ function __sum_stock(table, class_name, label_direction = 'right') {
     return stock_html;
 }
 
+function __isMobileDevice() {
+    return /Mobi|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
+
 function __print_receipt(section_id = null) {
     var $allReceiptSections = $('.print_section#receipt_section');
     var $sourceSection = section_id ? $('#' + section_id).filter(function () {
@@ -399,10 +403,33 @@ function __print_receipt(section_id = null) {
         $targetSection.html($sourceSection.html());
     }
 
+    if (__isMobileDevice()) {
+        // === MOBILE: Show in full-screen overlay ===
+        var receiptHtml = $targetSection.html();
+        var $mobileModal = $('#mobile_receipt_modal');
+        var $mobileContent = $('#mobile_receipt_content');
+
+        if ($mobileModal.length) {
+            $mobileContent.html(receiptHtml);
+            $mobileModal.show();
+            // Add body class so @media print rules hide sidebar etc. when Print button is tapped
+            $('body').addClass('is-printing-receipt');
+        } else {
+            // Fallback: open in new window
+            var win = window.open('', '_blank');
+            if (win) {
+                win.document.write('<html><head><title>Receipt</title><style>body{font-family:Arial,sans-serif;padding:12px;}</style></head><body>' + receiptHtml + '</body></html>');
+                win.document.close();
+                win.focus();
+                setTimeout(function() { win.print(); }, 600);
+            }
+        }
+        return;
+    }
+
+    // === DESKTOP: Use printThis plugin ===
     $('.print_section').removeClass('print-target');
     $targetSection.addClass('print-target');
-    
-    // Add class to body to trigger CSS rules
     $('body').addClass('is-printing-receipt');
 
     __receipt_print_target = $targetSection;
