@@ -382,37 +382,90 @@ function __sum_stock(table, class_name, label_direction = 'right') {
     return stock_html;
 }
 
+function __isMobileDevice() {
+    var ua = navigator.userAgent || '';
+    var uaLooksMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+    var coarsePointer = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+    var narrowScreen = Math.min(window.innerWidth || 0, window.innerHeight || 0) <= 767;
+
+    return uaLooksMobile || (coarsePointer && narrowScreen);
+}
+
 function __print_receipt(section_id = null) {
-    if (section_id) {
-        var imgs = document.getElementById(section_id).getElementsByTagName("img");
-    } else {
-        var imgs = document.images;
+    var $allReceiptSections = $('.print_section#receipt_section');
+    var $sourceSection = section_id ? $('#' + section_id).filter(function () {
+        return $.trim($(this).html() || '').length > 0;
+    }).first() : $allReceiptSections.filter(function () {
+        return $.trim($(this).html() || '').length > 0;
+    }).first();
+
+    var $targetSection = $allReceiptSections.last();
+    if (!$targetSection.length) {
+        return;
     }
+
+    if ($sourceSection.length && $sourceSection[0] !== $targetSection[0]) {
+        $targetSection.html($sourceSection.html());
+    }
+
+    $('.print_section').removeClass('print-target');
+    $targetSection.addClass('print-target');
+
+    // Mobile browsers often block iframe printing. Show a receipt preview first,
+    // then let the user's tap on "Print" open the OS print/share sheet.
+    if (__isMobileDevice()) {
+        var receiptHtml = $targetSection.html();
+        var $mobileModal = $('#mobile_receipt_modal');
+        var $mobileContent = $('#mobile_receipt_content');
+
+        if ($mobileModal.length && $.trim(receiptHtml || '').length) {
+            $mobileContent.html(receiptHtml);
+            $mobileModal.show();
+            $('body').addClass('is-printing-receipt');
+        } else if ($.trim(receiptHtml || '').length) {
+            // Fallback when the modal markup is missing for any reason.
+            var win = window.open('', '_blank');
+            if (win) {
+                win.document.write('<html><head><title>Receipt</title><style>body{font-family:Arial,sans-serif;padding:12px;}</style></head><body>' + receiptHtml + '</body></html>');
+                win.document.close();
+                win.focus();
+                setTimeout(function () { win.print(); }, 600);
+            }
+        }
+        return;
+    }
+
+    $('body').addClass('is-printing-receipt');
+
+    __receipt_print_target = $targetSection;
+    __receipt_print_started = false;
+
+    var imgs = $targetSection[0].getElementsByTagName('img');
 
     img_len = imgs.length;
     if (img_len) {
         img_counter = 0;
 
         [].forEach.call(imgs, function (img) {
-            img.addEventListener('load', incrementImageCounter, false);
+            var imageReadyHandled = false;
+            var handleImageReady = function () {
+                if (imageReadyHandled) {
+                    return;
+                }
+                imageReadyHandled = true;
+                incrementImageCounter();
+            };
+
+            if (img.complete) {
+                handleImageReady();
+            } else {
+                img.addEventListener('load', handleImageReady, false);
+                img.addEventListener('error', handleImageReady, false);
+            }
         });
     } else {
         setTimeout(function () {
-            $('body').addClass('is-printing-receipt');
-            // Clear receipt after print dialog closes (modern browsers)
-            window.onafterprint = function () {
-                $('body').removeClass('is-printing-receipt');
-                $('#receipt_section').html('');
-                window.onafterprint = null;
-            };
-
-            window.print();
-
-            // Fallback: clear after 5 seconds if onafterprint didn't fire
-            setTimeout(function () {
-                $('body').removeClass('is-printing-receipt');
-                $('#receipt_section').html('');
-            }, 5000);
+            __execute_receipt_print();
 
         }, 1000);
     }
@@ -420,24 +473,76 @@ function __print_receipt(section_id = null) {
 
 function incrementImageCounter() {
     img_counter++;
-    if (img_counter === img_len) {
-        $('body').addClass('is-printing-receipt');
-        // Clear receipt after print dialog closes (modern browsers)
-        window.onafterprint = function () {
-            $('body').removeClass('is-printing-receipt');
-            $('#receipt_section').html('');
-            window.onafterprint = null;
-        };
-
-        window.print();
-
-        // Fallback: clear after 5 seconds if onafterprint didn't fire
-        setTimeout(function () {
-            $('body').removeClass('is-printing-receipt');
-            $('#receipt_section').html('');
-        }, 5000);
+    if (img_counter >= img_len) {
+        __execute_receipt_print();
     }
 }
+
+var img_len = 0;
+var img_counter = 0;
+var __receipt_print_target = null;
+var __receipt_print_started = false;
+function __execute_receipt_print() {
+    if (!__receipt_print_target || !__receipt_print_target.length) {
+        return;
+    }
+    if (__receipt_print_started) {
+        return;
+    }
+    __receipt_print_started = true;
+
+    try {
+        window.print();
+    } catch (err) {
+        __cleanup_receipt_print();
+        return;
+    }
+
+    setTimeout(function () {
+        if (__receipt_print_target) {
+            __cleanup_receipt_print();
+        }
+    }, 30000);
+}
+
+function __cleanup_receipt_print() {
+    $('.print_section').removeClass('print-target');
+    $('.print_section#receipt_section').html('');
+    $('body').removeClass('is-printing-receipt');
+    __receipt_print_target = null;
+    __receipt_print_started = false;
+}
+
+// === Mobile receipt modal: wire up the Print and Close buttons.
+// Delegated handlers so they keep working even if the modal markup is
+// re-rendered or replaced.
+$(function () {
+    if (window.addEventListener) {
+        window.addEventListener('afterprint', function () {
+            if (!$('#mobile_receipt_modal:visible').length) {
+                __cleanup_receipt_print();
+            }
+        });
+    }
+
+    $(document).on('click', '#mobile_receipt_print_btn', function () {
+        $('body').addClass('is-printing-receipt');
+        try {
+            window.print();
+        } catch (err) {
+            // Some embedded mobile browsers throw on window.print(); ignore.
+        }
+    });
+
+    $(document).on('click', '#mobile_receipt_close_btn', function () {
+        var $modal = $('#mobile_receipt_modal');
+        $modal.hide();
+        $('#mobile_receipt_content').html('');
+        $('body').removeClass('is-printing-receipt');
+        // Also clear the hidden receipt section so the next sale starts clean.
+        $('.print_section#receipt_section').html('');
+    });
+});
 
 function __getUnitMultiplier(row) {
     multiplier = row.find('select.sub_unit').find(':selected').data('multiplier');

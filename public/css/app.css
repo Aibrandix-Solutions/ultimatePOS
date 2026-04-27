@@ -978,13 +978,19 @@ tr.details td.details-control {
       visibility: hidden !important;
   }
 
-  body.is-printing-receipt #receipt_section,
-  body.is-printing-receipt #receipt_section * {
+  body.is-printing-receipt .print_section {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  body.is-printing-receipt .print_section.print-target,
+  body.is-printing-receipt .print_section.print-target * {
       visibility: visible !important;
   }
 
-  body.is-printing-receipt #receipt_section {
-      position: absolute !important;
+  body.is-printing-receipt .print_section.print-target {
+    display: block !important;
+    position: absolute !important;
       top: 0 !important;
       left: 0 !important;
       width: 100% !important;
@@ -1021,6 +1027,28 @@ tr.details td.details-control {
 
   #toast-container {
     display: none;
+  }
+
+  /* Mobile receipt modal: when the user taps "Print" inside the modal,
+     window.print() runs in the same document. Strip the modal chrome and
+     let only the receipt content print. */
+  #mobile_receipt_modal {
+    position: static !important;
+    overflow: visible !important;
+    z-index: auto !important;
+    background: #fff !important;
+  }
+  #mobile_receipt_modal #mobile_receipt_header {
+    display: none !important;
+  }
+  #mobile_receipt_content,
+  #mobile_receipt_content * {
+    visibility: visible !important;
+  }
+  #mobile_receipt_content {
+    display: block !important;
+    padding: 0 !important;
+    max-width: 100% !important;
   }
 }
 
