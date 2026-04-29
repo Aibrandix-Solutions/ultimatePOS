@@ -1555,3 +1555,64 @@ table.table-text-center th {
     box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
   }
 }
+
+/* Pay Due modal — pending cheque notice (below amount field) */
+.pay-due-pending-cheques-hint {
+  display: flex;
+  width: 100%;
+  margin-top: 10px;
+  padding: 3px 3px;
+  border-radius: 8px;
+  border: 1px solid rgba(244, 114, 182, 0.45);
+  background: linear-gradient(125deg, #fff7fb 0%, #fce7f3 42%, #f5f3ff 100%);
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
+}
+
+.pay-due-pending-cheques-hint .pch-icon-wrap {
+  display: table-cell;
+  vertical-align: middle;
+  width: 40px;
+  text-align: center;
+}
+
+.pay-due-pending-cheques-hint .pch-icon-wrap .fa {
+  font-size: 22px;
+  color: #e11d48;
+  opacity: 0.95;
+}
+
+.pay-due-pending-cheques-hint .pch-body {
+  display: table-cell;
+  vertical-align: middle;
+  padding-left: 4px;
+}
+
+.pay-due-pending-cheques-hint .pch-title {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: #9f1239;
+  line-height: 1.2;
+}
+
+.pay-due-pending-cheques-hint .pch-amount {
+  margin-top: 4px;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: #881337;
+}
+
+.pay-due-pending-cheques-hint .pch-sub {
+  margin-top: 6px;
+  font-size: 11px;
+  line-height: 1.35;
+  color: #86198f;
+}
+
+.pay-due-pending-cheques-hint .pch-sub .fa {
+  margin-right: 5px;
+  color: #c026d3;
+  opacity: 0.9;
+}

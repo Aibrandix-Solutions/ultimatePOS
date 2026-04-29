@@ -300,11 +300,11 @@ class ContactController extends Controller
         $query = $this->contactUtil->getContactQuery($business_id, 'customer');
 
         if (request()->has('has_sell_due')) {
-            $query->havingRaw('(COALESCE(total_invoice, 0) - COALESCE(invoice_received, 0) - COALESCE(total_ledger_discount, 0) - COALESCE(total_sell_return, 0) + COALESCE(sell_return_paid, 0)) > 0');
+            $query->havingRaw('(COALESCE(total_invoice, 0) - COALESCE(invoice_received, 0) - COALESCE(total_ledger_discount, 0) - (COALESCE(total_sell_return, 0) - COALESCE(total_paid_sale_sell_return, 0)) + (COALESCE(sell_return_paid, 0) - COALESCE(paid_sale_sell_return_paid, 0))) > 0');
         }
 
         if (request()->has('has_sell_return')) {
-            $query->havingRaw('total_sell_return > 0');
+            $query->havingRaw('COALESCE(total_paid_sale_sell_return, 0) > 0');
         }
 
         if (request()->has('has_advance_balance')) {
@@ -368,15 +368,13 @@ class ContactController extends Controller
 
         $contacts = Datatables::of($query)
             ->addColumn('address', '{{implode(", ", array_filter([$address_line_1, $address_line_2, $city, $state, $country, $zip_code]))}}')
-            //    + $sell_return_paid add this in due because after paymnet for sell return not calculated 
-            //    + ($opening_balance - $opening_balance_paid) included to show total due including opening balance
             ->addColumn(
                 'due',
-                '<span class="contact_due" data-orig-value="{{$total_invoice - $invoice_received - $total_ledger_discount - $total_sell_return + $sell_return_paid + ($opening_balance - $opening_balance_paid)}}" data-highlight=true>@format_currency($total_invoice - $invoice_received - $total_ledger_discount - $total_sell_return + $sell_return_paid + ($opening_balance - $opening_balance_paid))  </span>'
+                '<span class="contact_due" data-orig-value="{{$total_invoice - $invoice_received - $total_ledger_discount - ($total_sell_return - $total_paid_sale_sell_return) + ($sell_return_paid - $paid_sale_sell_return_paid) + ($opening_balance - $opening_balance_paid)}}" data-highlight=true>@format_currency($total_invoice - $invoice_received - $total_ledger_discount - ($total_sell_return - $total_paid_sale_sell_return) + ($sell_return_paid - $paid_sale_sell_return_paid) + ($opening_balance - $opening_balance_paid))  </span>'
             )
             ->addColumn(
                 'return_due',
-                '<span class="return_due" data-orig-value="{{$total_sell_return - $sell_return_paid}}" data-highlight=false>@format_currency($total_sell_return - $sell_return_paid)</span>'
+                '<span class="return_due" data-orig-value="{{$total_paid_sale_sell_return - $paid_sale_sell_return_paid}}" data-highlight=false>@format_currency($total_paid_sale_sell_return - $paid_sale_sell_return_paid)</span>'
             )
             ->addColumn(
                 'action',
@@ -391,7 +389,7 @@ class ContactController extends Controller
                     <ul class="dropdown-menu dropdown-menu-left" role="menu">';
 
                     $html .= '<li><a href="' . action([\App\Http\Controllers\TransactionPaymentController::class, 'getPayContactDue'], [$row->id]) . '?type=sell" class="pay_sale_due"><i class="fas fa-money-bill-alt" aria-hidden="true"></i>' . __('lang_v1.pay') . '</a></li>';
-                    $return_due = $row->total_sell_return - $row->sell_return_paid;
+                    $return_due = $row->total_paid_sale_sell_return - $row->paid_sale_sell_return_paid;
                     if ($return_due > 0) {
                         $html .= '<li><a href="' . action([\App\Http\Controllers\TransactionPaymentController::class, 'getPayContactDue'], [$row->id]) . '?type=sell_return" class="pay_purchase_due"><i class="fas fa-money-bill-alt" aria-hidden="true"></i>' . __('lang_v1.pay_sell_return_due') . '</a></li>';
                     }
@@ -515,6 +513,8 @@ class ContactController extends Controller
             ->removeColumn('is_default')
             ->removeColumn('total_sell_return')
             ->removeColumn('sell_return_paid')
+            ->removeColumn('total_paid_sale_sell_return')
+            ->removeColumn('paid_sale_sell_return_paid')
             ->filterColumn('address', function ($query, $keyword) {
                 $query->where(function ($q) use ($keyword) {
                     $q->where('address_line_1', 'like', "%{$keyword}%")

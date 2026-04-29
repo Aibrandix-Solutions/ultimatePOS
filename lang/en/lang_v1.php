@@ -361,6 +361,8 @@ return [
     'cheque_status' => 'Cheque Status',
     'cheque_payment_requires_registered_customer' => 'Cheque payment is allowed only for registered customers. Please add/register customer first.',
     'due_payable' => 'Due Payable (Due - Pending Cheque)',
+    'pending_cheques' => 'Pending Cheques',
+    'pending_cheques_pay_due_subtitle' => 'Included in Amount above until the cheque clears.',
     'mark_as_cleared' => 'Mark Passed',
     'mark_as_pending' => 'Mark Pending',
     'mark_as_bounced' => 'Mark Bounced',

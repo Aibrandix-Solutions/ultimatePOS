@@ -246,11 +246,6 @@ class CashRegisterUtil extends Util
             return false;
         }
 
-        //Keep register aligned with payment-status logic: pending cheque is not realized cash yet.
-        if ($payment->method === 'cheque' && $payment->cheque_status !== 'cleared') {
-            return false;
-        }
-
         $user_id = !empty($user_id) ? $user_id : $payment->created_by;
         if (empty($user_id)) {
             return false;
@@ -269,15 +264,53 @@ class CashRegisterUtil extends Util
             return false;
         }
 
+        $this->syncTransactionPaymentToRegister($register, $transaction, $payment);
+
+        return true;
+    }
+
+    /**
+     * Sync a transaction payment to register.
+     * Pending/cleared cheques stay in register; bounced cheques reverse the flow.
+     *
+     * @param object $register
+     * @param object $transaction
+     * @param object $payment
+     * @return void
+     */
+    protected function syncTransactionPaymentToRegister($register, $transaction, $payment)
+    {
         $entry = $this->mapPaymentToRegisterEntry($transaction, $payment);
 
-        $register->cash_register_transactions()->create([
-            'amount' => $amount,
+        $attributes = [
+            'cash_register_id' => $register->id,
+            'payment_id' => $payment->id,
+        ];
+
+        $values = [
+            'amount' => (float) $payment->amount,
             'pay_method' => $payment->method,
             'type' => $entry['type'],
             'transaction_type' => $entry['transaction_type'],
             'transaction_id' => $transaction->id,
-        ]);
+        ];
+
+        CashRegisterTransaction::updateOrCreate($attributes, $values);
+    }
+
+    /**
+     * Remove a synced payment row from register if it exists.
+     *
+     * @param int $payment_id
+     * @return bool
+     */
+    public function removeTransactionPaymentFromRegister($payment_id)
+    {
+        if (empty($payment_id)) {
+            return false;
+        }
+
+        CashRegisterTransaction::where('payment_id', $payment_id)->delete();
 
         return true;
     }
@@ -320,6 +353,10 @@ class CashRegisterUtil extends Util
                 $transaction_type = 'sell';
                 $type = 'credit';
             }
+        }
+
+        if ($payment->method === 'cheque' && $payment->cheque_status === 'bounced') {
+            $type = $type === 'credit' ? 'debit' : 'credit';
         }
 
         return [

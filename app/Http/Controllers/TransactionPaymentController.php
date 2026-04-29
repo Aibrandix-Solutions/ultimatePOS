@@ -38,6 +38,39 @@ class TransactionPaymentController extends Controller
         $this->cashRegisterUtil = $cashRegisterUtil;
     }
 
+    private function getSellPaymentSumSubquery($transactionAlias, $paymentAlias = 'transaction_payments')
+    {
+        return "(SELECT COALESCE(SUM(IF({$paymentAlias}.is_return = 1,-1*{$paymentAlias}.amount,{$paymentAlias}.amount)), 0)
+            FROM transaction_payments {$paymentAlias}
+            WHERE {$paymentAlias}.transaction_id={$transactionAlias}.id
+                AND ({$paymentAlias}.method != 'cheque' OR {$paymentAlias}.cheque_status = 'cleared'))";
+    }
+
+    private function getPaymentSumSubquery($transactionAlias, $paymentAlias = 'transaction_payments')
+    {
+        return "(SELECT COALESCE(SUM({$paymentAlias}.amount), 0)
+            FROM transaction_payments {$paymentAlias}
+            WHERE {$paymentAlias}.transaction_id={$transactionAlias}.id
+                AND ({$paymentAlias}.method != 'cheque' OR {$paymentAlias}.cheque_status = 'cleared'))";
+    }
+
+    private function getEligibleSellReturnCondition($returnAlias = 't')
+    {
+        $parentAlias = 'parent_sell';
+        $paymentAlias = 'parent_sell_payments';
+        $paid_sum = $this->getSellPaymentSumSubquery($parentAlias, $paymentAlias);
+
+        return "{$returnAlias}.type = 'sell_return'
+            AND EXISTS (
+                SELECT 1
+                FROM transactions {$parentAlias}
+                WHERE {$parentAlias}.id = {$returnAlias}.return_parent_id
+                    AND {$parentAlias}.type = 'sell'
+                    AND {$parentAlias}.status = 'final'
+                    AND {$paid_sum} >= {$parentAlias}.final_total
+            )";
+    }
+
     /**
      * Display a listing of the resource.
      *
@@ -348,6 +381,7 @@ class TransactionPaymentController extends Controller
             DB::beginTransaction();
 
             $payment->update($inputs);
+            $this->cashRegisterUtil->addTransactionPaymentToRegister($transaction, $payment, $payment->created_by);
 
             //update payment status
             $payment_status = $this->transactionUtil->updatePaymentStatus($payment->transaction_id);
@@ -400,6 +434,7 @@ class TransactionPaymentController extends Controller
                 DB::beginTransaction();
 
                 if (! empty($payment->transaction_id)) {
+                    $this->cashRegisterUtil->removeTransactionPaymentFromRegister($payment->id);
                     TransactionPayment::deletePayment($payment);
                 } else { //advance payment
                     $adjusted_payments = TransactionPayment::where('parent_id',
@@ -416,6 +451,9 @@ class TransactionPaymentController extends Controller
 
                     //Delete all child payments
                     foreach ($adjusted_payments as $adjusted_payment) {
+                        if (! empty($adjusted_payment->transaction_id)) {
+                            $this->cashRegisterUtil->removeTransactionPaymentFromRegister($adjusted_payment->id);
+                        }
                         //Make parent payment null as it will get deleted
                         $adjusted_payment->parent_id = null;
                         TransactionPayment::deletePayment($adjusted_payment);
@@ -489,6 +527,7 @@ class TransactionPaymentController extends Controller
 
         try {
             DB::beginTransaction();
+            $updated_payment_ids = collect();
 
             //Update the clicked payment
             $payment->cheque_status = $status;
@@ -497,17 +536,22 @@ class TransactionPaymentController extends Controller
             //If this is a parent due-pay cheque payment, update its child allocations too.
             //If this is a child payment, also update its parent + siblings for consistency.
             if (empty($payment->parent_id)) {
-                TransactionPayment::where('business_id', $business_id)
+                $updated_payment_ids = TransactionPayment::where('business_id', $business_id)
                     ->where('parent_id', $payment->id)
                     ->where('method', 'cheque')
-                    ->update(['cheque_status' => $status]);
+                    ->pluck('id');
             } else {
-                TransactionPayment::where('business_id', $business_id)
+                $updated_payment_ids = TransactionPayment::where('business_id', $business_id)
                     ->where(function ($q) use ($payment) {
                         $q->where('id', $payment->parent_id)
                             ->orWhere('parent_id', $payment->parent_id);
                     })
                     ->where('method', 'cheque')
+                    ->pluck('id');
+            }
+
+            if ($updated_payment_ids->isNotEmpty()) {
+                TransactionPayment::whereIn('id', $updated_payment_ids)
                     ->update(['cheque_status' => $status]);
             }
 
@@ -537,6 +581,21 @@ class TransactionPaymentController extends Controller
                 $t = Transaction::where('business_id', $business_id)->find($tid);
                 if (!empty($t)) {
                     $this->transactionUtil->updatePaymentStatus($t->id, $t->final_total);
+                }
+            }
+
+            $payments_to_sync = TransactionPayment::where('business_id', $business_id)
+                ->whereIn('id', collect([$payment->id])->merge($updated_payment_ids)->unique()->values())
+                ->with('transaction')
+                ->get();
+
+            foreach ($payments_to_sync as $payment_to_sync) {
+                if (!empty($payment_to_sync->transaction)) {
+                    $this->cashRegisterUtil->addTransactionPaymentToRegister(
+                        $payment_to_sync->transaction,
+                        $payment_to_sync,
+                        $payment_to_sync->created_by
+                    );
                 }
             }
 
@@ -618,6 +677,9 @@ class TransactionPaymentController extends Controller
 
         if (request()->ajax()) {
             $business_id = request()->session()->get('user.business_id');
+            $eligible_sell_return_condition = $this->getEligibleSellReturnCondition('t');
+            $sell_payment_sum = $this->getSellPaymentSumSubquery('t');
+            $payment_sum = $this->getPaymentSumSubquery('t');
 
             $due_payment_type = request()->input('type');
             $query = Contact::where('contacts.id', $contact_id)
@@ -641,17 +703,19 @@ class TransactionPaymentController extends Controller
             } elseif ($due_payment_type == 'sell') {
                 $query->select(
                     DB::raw("SUM(IF(t.type = 'sell' AND t.status = 'final', final_total, 0)) as total_invoice"),
-                    DB::raw("SUM(IF(t.type = 'sell' AND t.status = 'final', (SELECT COALESCE(SUM(IF(is_return = 1,-1*amount,amount)), 0) FROM transaction_payments WHERE transaction_payments.transaction_id=t.id AND (transaction_payments.method != 'cheque' OR transaction_payments.cheque_status = 'cleared')), 0)) as total_paid"),
+                    DB::raw("SUM(IF(t.type = 'sell' AND t.status = 'final', {$sell_payment_sum}, 0)) as total_paid"),
                     DB::raw("SUM(IF(t.type = 'sell_return', final_total, 0)) as total_sell_return"),
-                    DB::raw("SUM(IF(t.type = 'sell_return', (SELECT COALESCE(SUM(amount), 0) FROM transaction_payments WHERE transaction_payments.transaction_id=t.id AND (transaction_payments.method != 'cheque' OR transaction_payments.cheque_status = 'cleared')), 0)) as sell_return_paid"),
+                    DB::raw("SUM(IF(t.type = 'sell_return', {$payment_sum}, 0)) as sell_return_paid"),
+                    DB::raw("SUM(IF({$eligible_sell_return_condition}, final_total, 0)) as total_paid_sale_sell_return"),
+                    DB::raw("SUM(IF({$eligible_sell_return_condition}, {$payment_sum}, 0)) as paid_sale_sell_return_paid"),
                     'contacts.name',
                     'contacts.supplier_business_name',
                     'contacts.id as contact_id'
                 );
             } elseif ($due_payment_type == 'sell_return') {
                 $query->select(
-                    DB::raw("SUM(IF(t.type = 'sell_return', final_total, 0)) as total_sell_return"),
-                    DB::raw("SUM(IF(t.type = 'sell_return', (SELECT COALESCE(SUM(amount), 0) FROM transaction_payments WHERE transaction_payments.transaction_id=t.id AND (transaction_payments.method != 'cheque' OR transaction_payments.cheque_status = 'cleared')), 0)) as total_return_paid"),
+                    DB::raw("SUM(IF({$eligible_sell_return_condition}, final_total, 0)) as total_sell_return"),
+                    DB::raw("SUM(IF({$eligible_sell_return_condition}, {$payment_sum}, 0)) as total_return_paid"),
                     'contacts.name',
                     'contacts.supplier_business_name',
                     'contacts.id as contact_id'
@@ -677,10 +741,13 @@ class TransactionPaymentController extends Controller
                 $contact_details->total_invoice = empty($contact_details->total_invoice) ? 0 : $contact_details->total_invoice;
                 $contact_details->total_sell_return = empty($contact_details->total_sell_return) ? 0 : $contact_details->total_sell_return;
                 $contact_details->sell_return_paid = empty($contact_details->sell_return_paid) ? 0 : $contact_details->sell_return_paid;
+                $contact_details->total_paid_sale_sell_return = empty($contact_details->total_paid_sale_sell_return) ? 0 : $contact_details->total_paid_sale_sell_return;
+                $contact_details->paid_sale_sell_return_paid = empty($contact_details->paid_sale_sell_return_paid) ? 0 : $contact_details->paid_sale_sell_return_paid;
 
-                $sell_return_due = $contact_details->total_sell_return - $contact_details->sell_return_paid;
+                $credit_sell_return_due = ($contact_details->total_sell_return - $contact_details->total_paid_sale_sell_return)
+                    - ($contact_details->sell_return_paid - $contact_details->paid_sale_sell_return_paid);
                 $payment_line->amount = $contact_details->total_invoice -
-                                    $contact_details->total_paid - $sell_return_due;
+                                    $contact_details->total_paid - $credit_sell_return_due;
             } elseif ($due_payment_type == 'sell_return') {
                 $payment_line->amount = $contact_details->total_sell_return -
                                     $contact_details->total_return_paid;
@@ -706,8 +773,22 @@ class TransactionPaymentController extends Controller
             //Accounts
             $accounts = $this->moduleUtil->accountsDropdown($business_id, true);
 
+            // Match contact Cheques tab: uncleared cheques toward this contact (top-level rows only).
+            $pending_cheques_total = 0;
+            if (in_array($due_payment_type, ['sell', 'purchase'], true)) {
+                $pending_cheques_total = (float) TransactionPayment::where('transaction_payments.business_id', $business_id)
+                    ->where('transaction_payments.payment_for', $contact_id)
+                    ->whereNull('transaction_payments.parent_id')
+                    ->where('transaction_payments.method', 'cheque')
+                    ->where(function ($q) {
+                        $q->where('transaction_payments.cheque_status', 'pending')
+                            ->orWhereNull('transaction_payments.cheque_status');
+                    })
+                    ->sum('transaction_payments.amount');
+            }
+
             return view('transaction_payment.pay_supplier_due_modal')
-                        ->with(compact('contact_details', 'payment_types', 'payment_line', 'due_payment_type', 'ob_due', 'amount_formated', 'accounts'));
+                        ->with(compact('contact_details', 'payment_types', 'payment_line', 'due_payment_type', 'ob_due', 'amount_formated', 'accounts', 'pending_cheques_total'));
         }
     }
 
@@ -797,6 +878,12 @@ class TransactionPaymentController extends Controller
             if ($request->ajax()) {
                 $contact = Contact::where('business_id', $business_id)->findOrFail($contact_id);
                 $total_due = $this->getContactDueAmountByType($contact_id, $due_payment_type, $business_id);
+                $is_reverse_payment = (int) $request->input('is_reverse', 0) === 1;
+                //Receipt should show running due immediately after this payment entry.
+                //Use arithmetic on previous_due so pending cheque receipts still show reduced due.
+                $receipt_total_due = $is_reverse_payment
+                    ? ($previous_due + $amount_paid)
+                    : max(($previous_due - $amount_paid), 0);
 
                 $business = $request->session()->get('business');
                 $business_name = $request->session()->get('business.name');
@@ -837,7 +924,7 @@ class TransactionPaymentController extends Controller
 
                     'previous_due' => $previous_due,
                     'amount_paid' => $amount_paid,
-                    'total_due' => $total_due,
+                    'total_due' => $receipt_total_due,
                     'next_due_date' => $next_due_date,
 
                     'footer_text' => $request->session()->get('business.receipt_footer') ?? '',
@@ -866,6 +953,10 @@ class TransactionPaymentController extends Controller
 
     private function getContactDueAmountByType($contact_id, $due_payment_type, $business_id)
     {
+        $eligible_sell_return_condition = $this->getEligibleSellReturnCondition('t');
+        $sell_payment_sum = $this->getSellPaymentSumSubquery('t');
+        $payment_sum = $this->getPaymentSumSubquery('t');
+
         $query = Contact::where('contacts.id', $contact_id)
             ->where('contacts.business_id', $business_id)
             ->leftJoin('transactions as t', 'contacts.id', '=', 't.contact_id');
@@ -873,21 +964,27 @@ class TransactionPaymentController extends Controller
         if ($due_payment_type === 'purchase') {
             $query->select(
                 DB::raw("SUM(IF(t.type = 'purchase', final_total, 0)) as total_purchase"),
-                DB::raw("SUM(IF(t.type = 'purchase', (SELECT COALESCE(SUM(amount), 0) FROM transaction_payments WHERE transaction_payments.transaction_id=t.id AND (transaction_payments.method != 'cheque' OR transaction_payments.cheque_status = 'cleared')), 0)) as total_paid")
+                DB::raw("SUM(IF(t.type = 'purchase', {$payment_sum}, 0)) as total_paid")
+            );
+        } elseif ($due_payment_type === 'sell_return') {
+            $query->select(
+                DB::raw("SUM(IF({$eligible_sell_return_condition}, final_total, 0)) as total_sell_return"),
+                DB::raw("SUM(IF({$eligible_sell_return_condition}, {$payment_sum}, 0)) as sell_return_paid")
             );
         } else {
-            // default to sell – include sell_return so credit notes reduce the due
             $query->select(
                 DB::raw("SUM(IF(t.type = 'sell' AND t.status = 'final', final_total, 0)) as total_invoice"),
-                DB::raw("SUM(IF(t.type = 'sell' AND t.status = 'final', (SELECT COALESCE(SUM(IF(is_return = 1,-1*amount,amount)), 0) FROM transaction_payments WHERE transaction_payments.transaction_id=t.id AND (transaction_payments.method != 'cheque' OR transaction_payments.cheque_status = 'cleared')), 0)) as total_paid"),
+                DB::raw("SUM(IF(t.type = 'sell' AND t.status = 'final', {$sell_payment_sum}, 0)) as total_paid"),
                 DB::raw("SUM(IF(t.type = 'sell_return', final_total, 0)) as total_sell_return"),
-                DB::raw("SUM(IF(t.type = 'sell_return', (SELECT COALESCE(SUM(amount), 0) FROM transaction_payments WHERE transaction_payments.transaction_id=t.id AND (transaction_payments.method != 'cheque' OR transaction_payments.cheque_status = 'cleared')), 0)) as sell_return_paid")
+                DB::raw("SUM(IF(t.type = 'sell_return', {$payment_sum}, 0)) as sell_return_paid"),
+                DB::raw("SUM(IF({$eligible_sell_return_condition}, final_total, 0)) as total_paid_sale_sell_return"),
+                DB::raw("SUM(IF({$eligible_sell_return_condition}, {$payment_sum}, 0)) as paid_sale_sell_return_paid")
             );
         }
 
         $query->addSelect(
             DB::raw("SUM(IF(t.type = 'opening_balance', final_total, 0)) as opening_balance"),
-            DB::raw("SUM(IF(t.type = 'opening_balance', (SELECT COALESCE(SUM(amount), 0) FROM transaction_payments WHERE transaction_payments.transaction_id=t.id AND (transaction_payments.method != 'cheque' OR transaction_payments.cheque_status = 'cleared')), 0)) as opening_balance_paid")
+            DB::raw("SUM(IF(t.type = 'opening_balance', {$payment_sum}, 0)) as opening_balance_paid")
         );
 
         $details = $query->first();
@@ -900,10 +997,12 @@ class TransactionPaymentController extends Controller
 
         if ($due_payment_type === 'purchase') {
             $due = (float) (($details->total_purchase ?? 0) - ($details->total_paid ?? 0));
+        } elseif ($due_payment_type === 'sell_return') {
+            $due = (float) (($details->total_sell_return ?? 0) - ($details->sell_return_paid ?? 0));
         } else {
-            $total_sell_return = (float) ($details->total_sell_return ?? 0);
-            $sell_return_paid = (float) ($details->sell_return_paid ?? 0);
-            $sell_return_due = $total_sell_return - $sell_return_paid;
+            $credit_sell_return = (float) (($details->total_sell_return ?? 0) - ($details->total_paid_sale_sell_return ?? 0));
+            $credit_sell_return_paid = (float) (($details->sell_return_paid ?? 0) - ($details->paid_sale_sell_return_paid ?? 0));
+            $sell_return_due = $credit_sell_return - $credit_sell_return_paid;
 
             $due = (float) (($details->total_invoice ?? 0) - ($details->total_paid ?? 0) - $sell_return_due);
         }

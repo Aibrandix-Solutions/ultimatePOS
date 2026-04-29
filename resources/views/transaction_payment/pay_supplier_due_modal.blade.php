@@ -147,6 +147,20 @@
                 {!! Form::text("amount", @num_format($payment_line->amount), ['class' => 'form-control input_number payment_amount', 'required', 'placeholder' => __('sale.amount')]) !!}
               @endif
             </div>
+            @if(!empty($pending_cheques_total) && $pending_cheques_total > 0)
+              <div class="pay-due-pending-cheques-hint" role="status">
+                <div class="pch-icon-wrap"><i class="fa fa-clock-o" aria-hidden="true"></i></div>
+                <div class="pch-body">
+                  <div class="pch-title">@lang('lang_v1.pending_cheques')</div>
+                  <div class="pch-amount">
+                    <span class="display_currency" data-currency_symbol="true">{{ $pending_cheques_total }}</span>
+                  </div>
+                  <div class="pch-sub">
+                    <i class="fa fa-info-circle" aria-hidden="true"></i> @lang('lang_v1.pending_cheques_pay_due_subtitle')
+                  </div>
+                </div>
+              </div>
+            @endif
           </div>
         </div>
         @php

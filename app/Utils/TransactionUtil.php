@@ -3520,8 +3520,11 @@ class TransactionUtil extends Util
                     continue;
                 }
                 if ($total_amount > 0) {
-                    $total_paid = $this->getTotalPaid($transaction->id);
-                    $due = $transaction->final_total - $total_paid;
+                    $due = $this->getNetDueForTransaction($transaction);
+
+                    if ($due <= 0) {
+                        continue;
+                    }
 
                     $now = \Carbon::now()->toDateTimeString();
 
@@ -3621,6 +3624,42 @@ class TransactionUtil extends Util
         return $total_amount;
     }
 
+    protected function getLinkedSellReturnDueForSale($transaction)
+    {
+        if (empty($transaction) || $transaction->type !== 'sell') {
+            return 0;
+        }
+
+        $sell_return_totals = Transaction::where('return_parent_id', $transaction->id)
+            ->where('type', 'sell_return')
+            ->select(
+                DB::raw('COALESCE(SUM(final_total), 0) as total_sell_return'),
+                DB::raw("COALESCE(SUM((SELECT COALESCE(SUM(amount), 0) FROM transaction_payments WHERE transaction_payments.transaction_id=transactions.id AND (transaction_payments.method != 'cheque' OR transaction_payments.cheque_status = 'cleared'))), 0) as sell_return_paid")
+            )
+            ->first();
+
+        $total_sell_return = (float) ($sell_return_totals->total_sell_return ?? 0);
+        $sell_return_paid = (float) ($sell_return_totals->sell_return_paid ?? 0);
+
+        return max(0, $total_sell_return - $sell_return_paid);
+    }
+
+    protected function getNetDueForTransaction($transaction)
+    {
+        if (empty($transaction)) {
+            return 0;
+        }
+
+        $total_paid = $this->getTotalPaid($transaction->id);
+        $due = (float) $transaction->final_total - (float) $total_paid;
+
+        if ($transaction->type === 'sell') {
+            $due -= $this->getLinkedSellReturnDueForSale($transaction);
+        }
+
+        return max(0, $due);
+    }
+
     /**
      * Allocate POS-entered payments to customer's previous due sell invoices (oldest first).
      *
@@ -3687,8 +3726,7 @@ class TransactionUtil extends Util
         if ($due_transactions->isEmpty()) {
             //No old dues to apply against. Apply to current transaction if provided.
             if (!empty($current_transaction)) {
-                $current_total_paid = $this->getTotalPaid($current_transaction->id);
-                $current_due = $current_transaction->final_total - $current_total_paid;
+                $current_due = $this->getNetDueForTransaction($current_transaction);
 
                 if ($current_due > 0) {
                     foreach ($normalized_payment_lines as $idx => $pl) {
@@ -3739,8 +3777,7 @@ class TransactionUtil extends Util
         }
 
         foreach ($due_transactions as $transaction) {
-            $total_paid = $this->getTotalPaid($transaction->id);
-            $due = $transaction->final_total - $total_paid;
+            $due = $this->getNetDueForTransaction($transaction);
 
             if ($due <= 0) {
                 continue;
@@ -3802,8 +3839,7 @@ class TransactionUtil extends Util
 
         //Apply any leftover to the current transaction (if provided)
         if (!empty($current_transaction)) {
-            $current_total_paid = $this->getTotalPaid($current_transaction->id);
-            $current_due = $current_transaction->final_total - $current_total_paid;
+            $current_due = $this->getNetDueForTransaction($current_transaction);
 
             if ($current_due > 0) {
                 foreach ($normalized_payment_lines as $idx => $pl) {
@@ -3838,7 +3874,16 @@ class TransactionUtil extends Util
             }
         }
 
+        $remaining_total = 0;
+        foreach ($normalized_payment_lines as $pl) {
+            if (!empty($pl['_remaining']) && $pl['_remaining'] > 0) {
+                $remaining_total += $pl['_remaining'];
+            }
+        }
 
+        if ($remaining_total > 0 && !$is_walk_in_customer) {
+            $this->updateContactBalance($contact_id, $remaining_total, 'add');
+        }
 
         return $payments_by_transaction;
     }
