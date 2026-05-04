@@ -1,8 +1,8 @@
-name: Deploy UltimatePOS (homeneeds.genxpos360.com via SFTP)
+name: Deploy UltimatePOS (modernicon.genxpos360.com via SFTP)
 
 on:
   push:
-    branches: [ home ]
+    branches: [ modern ]
   workflow_dispatch:
 
 jobs:
@@ -26,7 +26,7 @@ jobs:
       - name: SSH preflight (connect & exit)
         run: |
           # Note: ULTIMPOS_SSH_HOST is your server SSH/SFTP host (often an IP/hosting hostname),
-          # not the website URL (homeneeds.genxpos360.com).
+          # not the website URL (modernicon.genxpos360.com).
           ssh -i /tmp/ultimpos_key \
               -p "${{ secrets.ULTIMPOS_SSH_PORT }}" \
               -o StrictHostKeyChecking=no \
@@ -122,10 +122,10 @@ jobs:
           key: ${{ secrets.ULTIMPOS_SSH_KEY }}
           script: |
             set -e
-            # Create directory structure for homeneeds subdomain
-            mkdir -p ~/domains/genxpos360.com/public_html/homeneeds/backend
-            mkdir -p ~/domains/genxpos360.com/public_html/homeneeds/backend/storage/framework/{cache,sessions,views}
-            mkdir -p ~/domains/genxpos360.com/public_html/homeneeds/backend/bootstrap/cache
+            # Create directory structure for modernicon subdomain
+            mkdir -p ~/domains/genxpos360.com/public_html/modernicon/backend
+            mkdir -p ~/domains/genxpos360.com/public_html/modernicon/backend/storage/framework/{cache,sessions,views}
+            mkdir -p ~/domains/genxpos360.com/public_html/modernicon/backend/bootstrap/cache
             echo "✅ Directory structure created"
 
       # --- SFTP uploads ---
@@ -137,8 +137,8 @@ jobs:
           username: ${{ secrets.ULTIMPOS_SSH_USER }}
           ssh_private_key: ${{ secrets.ULTIMPOS_SSH_KEY }}
           local_path: "deploy_app/*"
-          # Website: https://homeneeds.genxpos360.com
-          remote_path: "domains/genxpos360.com/public_html/homeneeds/backend/"
+          # Website: https://modernicon.genxpos360.com
+          remote_path: "domains/genxpos360.com/public_html/modernicon/backend/"
           delete_remote_files: false
           sftp_only: true
 
@@ -150,8 +150,8 @@ jobs:
           username: ${{ secrets.ULTIMPOS_SSH_USER }}
           ssh_private_key: ${{ secrets.ULTIMPOS_SSH_KEY }}
           local_path: "deploy_public/*"
-          # Website: https://homeneeds.genxpos360.com
-          remote_path: "domains/genxpos360.com/public_html/homeneeds/"
+          # Website: https://modernicon.genxpos360.com
+          remote_path: "domains/genxpos360.com/public_html/modernicon/"
           delete_remote_files: false
           sftp_only: true
 
@@ -165,13 +165,13 @@ jobs:
           key: ${{ secrets.ULTIMPOS_SSH_KEY }}
           script: |
             set -e
-            # Target homeneeds.genxpos360.com Laravel app dir
-            cd ~/domains/genxpos360.com/public_html/homeneeds/backend
+            # Target modernicon.genxpos360.com Laravel app dir
+            cd ~/domains/genxpos360.com/public_html/modernicon/backend
 
             # Safety: do not run artisan/migrations until the subdomain has its own .env
             if [ ! -f .env ]; then
               echo "❌ Missing .env at $(pwd)/.env"
-              echo "Create it with separate DB credentials and correct APP_URL=https://homeneeds.genxpos360.com"
+              echo "Create it with separate DB credentials and correct APP_URL=https://modernicon.genxpos360.com"
               exit 1
             fi
 
@@ -218,8 +218,8 @@ jobs:
             # Storage link
             php artisan storage:link || true
 
-            # Symlink for user-uploads within homeneeds docroot
-            cd ~/domains/genxpos360.com/public_html/homeneeds
+            # Symlink for user-uploads within modernicon docroot
+            cd ~/domains/genxpos360.com/public_html/modernicon
             rm -rf user-uploads 2>/dev/null || true
             ln -sf ./backend/public/user-uploads user-uploads
             ls -la user-uploads
