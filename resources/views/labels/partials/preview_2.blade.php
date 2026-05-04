@@ -53,7 +53,6 @@
 							</span>
 						@endif
 					@endforeach
-					<br>
 
 					{{-- Price --}}
 					@if(!empty($print['price']))

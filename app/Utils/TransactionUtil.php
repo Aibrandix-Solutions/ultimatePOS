@@ -1480,7 +1480,7 @@ class TransactionUtil extends Util
 
         $output['hide_price'] = !empty($il->common_settings['hide_price']) ? true : false;
 
-        if (!empty($il->common_settings['show_due_date']) && $transaction->payment_status != 'paid') {
+        if (!empty($il->common_settings['show_due_date']) && $transaction->payment_status != 'paid' && !$output['is_walk_in_customer']) {
             $output['due_date_label'] = !empty($il->common_settings['due_date_label']) ? $il->common_settings['due_date_label'] : '';
             $due_date = $transaction->due_date;
             if (!empty($due_date)) {
@@ -1496,7 +1496,7 @@ class TransactionUtil extends Util
         $output['receipt_due_date_label'] = '';
         $output['receipt_due_date'] = '';
         $transaction_due_date = $transaction->due_date;
-        if (!empty($transaction_due_date)) {
+        if (!empty($transaction_due_date) && !$output['is_walk_in_customer']) {
             $output['receipt_due_date_label'] = !empty($output['due_date_label']) ? $output['due_date_label'] : __('lang_v1.due_date') . ':';
             if (blank($il->date_time_format)) {
                 $output['receipt_due_date'] = $this->format_date($transaction_due_date->toDateTimeString(), false, $business_details);
@@ -1516,7 +1516,7 @@ class TransactionUtil extends Util
         $installment_plan = \App\InstallmentPlan::with(['lines' => function ($query) {
             $query->orderBy('sequence', 'asc');
         }])->where('transaction_id', $transaction->id)->first();
-        if (!empty($installment_plan) && !empty($installment_plan->lines)) {
+        if (!empty($installment_plan) && !empty($installment_plan->lines) && !$output['is_walk_in_customer']) {
             $output['installment_due_dates_label'] = __('lang_v1.installment_plan') . ' ' . __('lang_v1.due_date') . ':';
             foreach ($installment_plan->lines as $plan_line) {
                 $line_due_date = '';
@@ -1777,7 +1777,7 @@ class TransactionUtil extends Util
 
             $output['total_paid'] = ($paid_amount == 0) ? 0 : $this->num_f($paid_amount, $show_currency, $business_details);
             $output['total_paid_label'] = $il->paid_label;
-            $output['total_due'] = ($due == 0) ? 0 : $this->num_f($due, $show_currency, $business_details);
+            $output['total_due'] = ($due == 0 || $output['is_walk_in_customer']) ? 0 : $this->num_f($due, $show_currency, $business_details);
             $output['total_due_label'] = $il->total_due_label;
 
             //Customer due (overall due for registered customer)
@@ -1821,7 +1821,7 @@ class TransactionUtil extends Util
             $output['receipt_previous_due'] = $this->num_f($previous_due_amount, $show_currency, $business_details);
             $output['receipt_amount_payable'] = $this->num_f($amount_payable, $show_currency, $business_details);
             $output['receipt_amount_paid'] = $this->num_f($receipt_paid_amount, $show_currency, $business_details);
-            $output['receipt_total_due'] = $this->num_f($receipt_total_due, $show_currency, $business_details);
+            $output['receipt_total_due'] = ($receipt_total_due == 0 || $output['is_walk_in_customer']) ? 0 : $this->num_f($receipt_total_due, $show_currency, $business_details);
 
             //Get payment details
             $output['payments'] = [];
