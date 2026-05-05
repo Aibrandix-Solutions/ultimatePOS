@@ -453,6 +453,36 @@ class Util
         }
     }
 
+    private function sendSmsViaSmsLenz($data)
+    {
+        $sms_settings = $data['sms_settings'];
+
+        $api_url = !empty($sms_settings['smslenz_url']) ? trim($sms_settings['smslenz_url']) : 'https://smslenz.lk/api/send-sms';
+        $user_id = !empty($sms_settings['smslenz_user_id']) ? trim($sms_settings['smslenz_user_id']) : '';
+        $api_key = !empty($sms_settings['smslenz_api_key']) ? trim($sms_settings['smslenz_api_key']) : '';
+        $sender_id = !empty($sms_settings['smslenz_sender_id']) ? trim($sms_settings['smslenz_sender_id']) : '';
+        $contact = trim((string) $data['mobile_number']);
+        $message = trim((string) $data['sms_body']);
+
+        if (empty($api_url) || empty($user_id) || empty($api_key) || empty($sender_id) || empty($contact) || empty($message)) {
+            return false;
+        }
+
+        $client = new Client();
+        $options = [
+            'http_errors' => false,
+            'query' => [
+                'user_id' => $user_id,
+                'api_key' => $api_key,
+                'sender_id' => $sender_id,
+                'contact' => $contact,
+                'message' => $message,
+            ],
+        ];
+
+        return $client->get($api_url, $options);
+    }
+
     /**
      * Sends SMS notification.
      *
@@ -471,6 +501,10 @@ class Util
 
         if ($sms_service == 'twilio') {
             return $this->sendSmsViaTwilio($data);
+        }
+
+        if ($sms_service == 'smslenz') {
+            return $this->sendSmsViaSmsLenz($data);
         }
 
         $request_data = [

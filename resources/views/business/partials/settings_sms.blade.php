@@ -10,7 +10,7 @@
         <div class="col-xs-3">
             <div class="form-group">
                 {!! Form::label('sms_service', __('lang_v1.sms_service') . ':') !!}
-                {!! Form::select('sms_settings[sms_service]', ['nexmo' => 'Nexmo', 'twilio' => 'Twilio', 'other' => __('lang_v1.other')], $sms_service , ['class' => 'form-control', 'id' => 'sms_service']) !!}
+                {!! Form::select('sms_settings[sms_service]', ['nexmo' => 'Nexmo', 'twilio' => 'Twilio', 'smslenz' => 'SMSLenz API', 'other' => __('lang_v1.other')], $sms_service , ['class' => 'form-control', 'id' => 'sms_service']) !!}
             </div>
         </div>
     </div>
@@ -51,6 +51,61 @@
             <div class="form-group">
                 {!! Form::label('twilio_from', __('account.from') . ':') !!}
                 {!! Form::text('sms_settings[twilio_from]', !empty($sms_settings['twilio_from']) ? $sms_settings['twilio_from'] : null, ['class' => 'form-control','placeholder' => __('account.from'), 'id' => 'twilio_from']) !!}
+            </div>
+        </div>
+    </div>
+    <div class="row sms_service_settings @if($sms_service != 'smslenz') hide @endif" data-service="smslenz">
+        <div class="col-xs-12">
+            <div class="alert alert-info">
+                SMSLenz required fields: user_id, api_key, sender_id, contact, message.
+            </div>
+        </div>
+        <div class="col-xs-4">
+            <div class="form-group">
+                {!! Form::label('smslenz_url', 'URL:') !!}
+                {!! Form::text('sms_settings[smslenz_url]', !empty($sms_settings['smslenz_url']) ? $sms_settings['smslenz_url'] : 'https://smslenz.lk/api/send-sms', ['class' => 'form-control','placeholder' => 'https://smslenz.lk/api/send-sms', 'id' => 'smslenz_url']) !!}
+            </div>
+        </div>
+        <div class="col-xs-4">
+            <div class="form-group">
+                {!! Form::label('smslenz_user_id', 'User ID:') !!}
+                {!! Form::text('sms_settings[smslenz_user_id]', $sms_settings['smslenz_user_id'] ?? null, ['class' => 'form-control','placeholder' => 'User ID from SMSLenz settings', 'id' => 'smslenz_user_id']) !!}
+            </div>
+        </div>
+        <div class="col-xs-4">
+            <div class="form-group">
+                {!! Form::label('smslenz_api_key', 'API Key:') !!}
+                {!! Form::text('sms_settings[smslenz_api_key]', $sms_settings['smslenz_api_key'] ?? null, ['class' => 'form-control','placeholder' => 'API Key from SMSLenz settings', 'id' => 'smslenz_api_key']) !!}
+            </div>
+        </div>
+        <div class="col-xs-4">
+            <div class="form-group">
+                {!! Form::label('smslenz_sender_id', 'Sender ID:') !!}
+                {!! Form::text('sms_settings[smslenz_sender_id]', $sms_settings['smslenz_sender_id'] ?? null, ['class' => 'form-control','placeholder' => 'Example: SMSlenzDEMO', 'id' => 'smslenz_sender_id']) !!}
+            </div>
+        </div>
+        <div class="col-xs-4">
+            <div class="form-group">
+                {!! Form::label('smslenz_contact_param', 'Contact parameter name:') !!}
+                {!! Form::text('sms_settings[smslenz_contact_param]', !empty($sms_settings['smslenz_contact_param']) ? $sms_settings['smslenz_contact_param'] : 'contact', ['class' => 'form-control','readonly' => 'readonly']) !!}
+            </div>
+        </div>
+        <div class="col-xs-4">
+            <div class="form-group">
+                {!! Form::label('smslenz_message_param', 'Message parameter name:') !!}
+                {!! Form::text('sms_settings[smslenz_message_param]', !empty($sms_settings['smslenz_message_param']) ? $sms_settings['smslenz_message_param'] : 'message', ['class' => 'form-control','readonly' => 'readonly']) !!}
+            </div>
+        </div>
+        <div class="clearfix"></div>
+        <hr>
+        <div class="col-md-8 col-xs-12">
+            <div class="form-group">
+                <div class="input-group">
+                    {!! Form::text('test_number', null, ['class' => 'form-control test_number_field','placeholder' => __('lang_v1.test_number')]) !!}
+                    <span class="input-group-btn">
+                        <button type="button" class="btn btn-success pull-right test_sms_btn">@lang('lang_v1.test_sms_configuration')</button>
+                    </span>
+                </div>
             </div>
         </div>
     </div>
@@ -269,9 +324,9 @@
         <div class="col-md-8 col-xs-12">
             <div class="form-group">
                 <div class="input-group">
-                    {!! Form::text('test_number', null, ['class' => 'form-control','placeholder' => __('lang_v1.test_number'), 'id' => 'test_number']) !!}
+                    {!! Form::text('test_number', null, ['class' => 'form-control test_number_field','placeholder' => __('lang_v1.test_number')]) !!}
                     <span class="input-group-btn">
-                        <button type="button" class="btn btn-success pull-right" id="test_sms_btn">@lang('lang_v1.test_sms_configuration')</button>
+                        <button type="button" class="btn btn-success pull-right test_sms_btn">@lang('lang_v1.test_sms_configuration')</button>
                     </span>
                 </div>
             </div>

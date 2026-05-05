@@ -2,7 +2,7 @@ name: Deploy UltimatePOS (modernicon.genxpos360.com via SFTP)
 
 on:
   push:
-    branches: [ modern ]
+    branches: [ modern22 ]
   workflow_dispatch:
 
 jobs:
