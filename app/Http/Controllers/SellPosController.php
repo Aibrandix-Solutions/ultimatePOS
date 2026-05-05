@@ -3620,6 +3620,39 @@ class SellPosController extends Controller
     }
 
     /**
+     * Download E-bill PDF for guest user through token.
+     *
+     * @param  string  $token
+     * @return \Illuminate\Http\Response
+     */
+    public function downloadEbillPdf($token)
+    {
+        if (!config('constants.enable_download_pdf')) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $transaction = Transaction::where('invoice_token', $token)
+            ->where('type', 'sell')
+            ->first();
+
+        if (empty($transaction)) {
+            abort(404);
+        }
+
+        $mpdf = $this->transactionUtil->getEmailAttachmentForGivenTransaction(
+            $transaction->business_id,
+            $transaction->id,
+            false
+        );
+
+        $pdf_name = 'INVOICE-' . $transaction->invoice_no . '.pdf';
+
+        return response($mpdf->Output($pdf_name, 'S'))
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'inline; filename="' . $pdf_name . '"');
+    }
+
+    /**
      * download pdf for given transaction
      */
     public function downloadPdf($id)

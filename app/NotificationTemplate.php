@@ -50,7 +50,7 @@ class NotificationTemplate extends Model
                 'name' => __('lang_v1.new_sale'),
                 'extra_tags' => [
                     ['{business_name}', '{business_logo}'],
-                    ['{invoice_number}', '{invoice_url}', '{total_amount}', '{paid_amount}', '{due_amount}', '{cumulative_due_amount}', '{due_date}'],
+                    ['{invoice_number}', '{invoice_url}', '{ebill_url}', '{ebill_pdf_url}', '{invoice_no}', '{total_amount}', '{total}', '{paid_amount}', '{due_amount}', '{cumulative_due_amount}', '{due_date}', '{ebill_link}'],
                     ['{location_name}', '{location_address}', '{location_email}', '{location_phone}', '{location_custom_field_1}', '{location_custom_field_2}', '{location_custom_field_3}', '{location_custom_field_4}'],
                     ['{contact_name}', '{contact_custom_field_1}', '{contact_custom_field_2}', '{contact_custom_field_3}', '{contact_custom_field_4}', '{contact_custom_field_5}', '{contact_custom_field_6}', '{contact_custom_field_7}', '{contact_custom_field_8}', '{contact_custom_field_9}', '{contact_custom_field_10}'],
                     ['{sell_custom_field_1}', '{sell_custom_field_2}', '{sell_custom_field_3}', '{sell_custom_field_4}'],
@@ -69,7 +69,7 @@ class NotificationTemplate extends Model
                 'name' => __('lang_v1.payment_reminder'),
                 'extra_tags' => [
                     ['{business_name}', '{business_logo}'],
-                    ['{invoice_number}', '{due_amount}', '{cumulative_due_amount}', '{due_date}'],
+                    ['{invoice_number}', '{ebill_url}', '{ebill_pdf_url}', '{invoice_no}', '{due_amount}', '{cumulative_due_amount}', '{due_date}', '{ebill_link}'],
                     ['{contact_name}', '{contact_custom_field_1}', '{contact_custom_field_2}', '{contact_custom_field_3}', '{contact_custom_field_4}', '{contact_custom_field_5}', '{contact_custom_field_6}', '{contact_custom_field_7}', '{contact_custom_field_8}', '{contact_custom_field_9}', '{contact_custom_field_10}'],
 
                 ],
@@ -158,7 +158,7 @@ class NotificationTemplate extends Model
     public static function notificationTags()
     {
         return ['{contact_name}', '{invoice_number}', '{total_amount}',
-            '{paid_amount}', '{due_amount}', '{business_name}', '{business_logo}', '{cumulative_due_amount}', '{due_date}', '{contact_business_name}', ];
+            '{paid_amount}', '{due_amount}', '{business_name}', '{business_logo}', '{cumulative_due_amount}', '{due_date}', '{contact_business_name}', '{ebill_url}', '{ebill_pdf_url}', '{invoice_no}', '{total}', '{ebill_link}', ];
     }
 
     public static function bookingNotificationTags()
@@ -188,7 +188,7 @@ class NotificationTemplate extends Model
                     <p>{business_logo}</p>
 
                     <p>&nbsp;</p>',
-                'sms_body' => 'Dear {contact_name}, Thank you for shopping with us. {business_name}',
+                'sms_body' => 'Dear {contact_name}, Thank you for shopping with us. View your E-bill: {ebill_url}',
                 'subject' => 'Thank you from {business_name}',
                 'auto_send' => '0',
             ],

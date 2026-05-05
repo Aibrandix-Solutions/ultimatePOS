@@ -679,6 +679,46 @@ class Util
     }
 
     /**
+     * Generates E-bill url for transaction.
+     *
+     * @param  int  $transaction_id
+     * @param  int  $business_id
+     * @return string
+     */
+    public function getEbillUrl($transaction_id, $business_id)
+    {
+        $transaction = Transaction::where('business_id', $business_id)
+            ->findOrFail($transaction_id);
+
+        if (empty($transaction->invoice_token)) {
+            $transaction->invoice_token = $this->generateToken();
+            $transaction->save();
+        }
+
+        return route('show_ebill', ['token' => $transaction->invoice_token]);
+    }
+
+    /**
+     * Generates E-bill PDF url for transaction.
+     *
+     * @param  int  $transaction_id
+     * @param  int  $business_id
+     * @return string
+     */
+    public function getEbillPdfUrl($transaction_id, $business_id)
+    {
+        $transaction = Transaction::where('business_id', $business_id)
+            ->findOrFail($transaction_id);
+
+        if (empty($transaction->invoice_token)) {
+            $transaction->invoice_token = $this->generateToken();
+            $transaction->save();
+        }
+
+        return route('ebill_pdf', ['token' => $transaction->invoice_token]);
+    }
+
+    /**
      * Generates payment link for the transaction
      *
      * @param  int  $transaction_id, int $business_id
@@ -834,6 +874,13 @@ class Util
                 $data[$key] = str_replace('{invoice_number}', $invoice_number, $data[$key]);
             }
 
+            //Replace invoice_no (alias of invoice_number)
+            if (strpos($value, '{invoice_no}') !== false) {
+                $invoice_no = $transaction->type == 'sell' ? $transaction->invoice_no : '';
+
+                $data[$key] = str_replace('{invoice_no}', $invoice_no, $data[$key]);
+            }
+
             //Replace ref number
             if (strpos($value, '{order_ref_number}') !== false) {
                 $order_ref_number = $transaction->ref_no;
@@ -845,6 +892,13 @@ class Util
                 $total_amount = $this->num_f($transaction->final_total, true, $business->currency);
 
                 $data[$key] = str_replace('{total_amount}', $total_amount, $data[$key]);
+            }
+
+            //Replace total (alias of total_amount)
+            if (strpos($value, '{total}') !== false) {
+                $total_amount = $this->num_f($transaction->final_total, true, $business->currency);
+
+                $data[$key] = str_replace('{total}', $total_amount, $data[$key]);
             }
 
             $total_paid = 0;
@@ -901,6 +955,24 @@ class Util
             if (!empty($transaction) && strpos($value, '{invoice_url}') !== false && $transaction->type == 'sell') {
                 $invoice_url = $this->getInvoiceUrl($transaction->id, $transaction->business_id);
                 $data[$key] = str_replace('{invoice_url}', $invoice_url, $data[$key]);
+            }
+
+            //Replace ebill_url
+            if (!empty($transaction) && strpos($value, '{ebill_url}') !== false && $transaction->type == 'sell') {
+                $ebill_url = $this->getEbillUrl($transaction->id, $transaction->business_id);
+                $data[$key] = str_replace('{ebill_url}', $ebill_url, $data[$key]);
+            }
+
+            //Replace ebill_link (alias of ebill_url)
+            if (!empty($transaction) && strpos($value, '{ebill_link}') !== false && $transaction->type == 'sell') {
+                $ebill_url = $this->getEbillUrl($transaction->id, $transaction->business_id);
+                $data[$key] = str_replace('{ebill_link}', $ebill_url, $data[$key]);
+            }
+
+            //Replace ebill_pdf_url
+            if (!empty($transaction) && strpos($value, '{ebill_pdf_url}') !== false && $transaction->type == 'sell') {
+                $ebill_pdf_url = $this->getEbillPdfUrl($transaction->id, $transaction->business_id);
+                $data[$key] = str_replace('{ebill_pdf_url}', $ebill_pdf_url, $data[$key]);
             }
 
             if (!empty($transaction) && strpos($value, '{quote_url}') !== false && $transaction->type == 'sell') {

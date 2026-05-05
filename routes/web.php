@@ -103,6 +103,10 @@ Route::middleware(['setData'])->group(function () {
 
     Route::get('/invoice/{token}', [SellPosController::class, 'showInvoice'])
         ->name('show_invoice');
+    Route::get('/ebill/{token}', [SellPosController::class, 'showInvoice'])
+        ->name('show_ebill');
+    Route::get('/ebill/{token}/pdf', [SellPosController::class, 'downloadEbillPdf'])
+        ->name('ebill_pdf');
     Route::get('/quote/{token}', [SellPosController::class, 'showInvoice'])
         ->name('show_quote');
 
