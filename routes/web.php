@@ -107,6 +107,10 @@ Route::middleware(['setData'])->group(function () {
         ->name('show_ebill');
     Route::get('/ebill/{token}/pdf', [SellPosController::class, 'downloadEbillPdf'])
         ->name('ebill_pdf');
+    Route::get('/e/{code}', [SellPosController::class, 'showEbillShort'])
+        ->name('show_ebill_short');
+    Route::get('/ep/{code}', [SellPosController::class, 'downloadEbillPdfShort'])
+        ->name('ebill_pdf_short');
     Route::get('/quote/{token}', [SellPosController::class, 'showInvoice'])
         ->name('show_quote');
 

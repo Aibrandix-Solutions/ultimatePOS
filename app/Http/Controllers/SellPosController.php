@@ -2734,6 +2734,22 @@ class SellPosController extends Controller
     }
 
     /**
+     * Shows short E-bill URL.
+     *
+     * @param  string  $code
+     * @return \Illuminate\Http\Response
+     */
+    public function showEbillShort($code)
+    {
+        $transaction = $this->resolveEbillTransactionFromCode($code);
+        if (empty($transaction)) {
+            exit(__('messages.something_went_wrong'));
+        }
+
+        return $this->showInvoice($transaction->invoice_token);
+    }
+
+    /**
      * Allows payment for the invoice by guest user.
      *
      * @param  string  $token
@@ -3650,6 +3666,55 @@ class SellPosController extends Controller
         return response($mpdf->Output($pdf_name, 'S'))
             ->header('Content-Type', 'application/pdf')
             ->header('Content-Disposition', 'inline; filename="' . $pdf_name . '"');
+    }
+
+    /**
+     * Download E-bill PDF via short code.
+     *
+     * @param  string  $code
+     * @return \Illuminate\Http\Response
+     */
+    public function downloadEbillPdfShort($code)
+    {
+        $transaction = $this->resolveEbillTransactionFromCode($code);
+        if (empty($transaction)) {
+            abort(404);
+        }
+
+        return $this->downloadEbillPdf($transaction->invoice_token);
+    }
+
+    /**
+     * Resolve E-bill transaction from short code.
+     *
+     * @param  string  $code
+     * @return \App\Transaction|null
+     */
+    private function resolveEbillTransactionFromCode($code)
+    {
+        $parts = explode('-', (string) $code);
+        if (count($parts) !== 2 || empty($parts[0]) || empty($parts[1])) {
+            return null;
+        }
+
+        $transaction_id = (int) base_convert($parts[0], 36, 10);
+        if (empty($transaction_id)) {
+            return null;
+        }
+
+        $transaction = Transaction::where('id', $transaction_id)
+            ->where('type', 'sell')
+            ->first();
+
+        if (empty($transaction) || empty($transaction->invoice_token)) {
+            return null;
+        }
+
+        if (substr($transaction->invoice_token, 0, 6) !== $parts[1]) {
+            return null;
+        }
+
+        return $transaction;
     }
 
     /**

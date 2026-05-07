@@ -729,7 +729,9 @@ class Util
             $transaction->save();
         }
 
-        return route('show_ebill', ['token' => $transaction->invoice_token]);
+        $code = base_convert((string) $transaction->id, 10, 36) . '-' . substr($transaction->invoice_token, 0, 6);
+
+        return route('show_ebill_short', ['code' => $code]);
     }
 
     /**
@@ -749,7 +751,9 @@ class Util
             $transaction->save();
         }
 
-        return route('ebill_pdf', ['token' => $transaction->invoice_token]);
+        $code = base_convert((string) $transaction->id, 10, 36) . '-' . substr($transaction->invoice_token, 0, 6);
+
+        return route('ebill_pdf_short', ['code' => $code]);
     }
 
     /**
