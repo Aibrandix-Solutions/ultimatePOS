@@ -1363,20 +1363,26 @@ class ProductUtil extends Util
                     }
 
                     if (!$skip_batch) {
-                        $batch_sp_inc_tax_raw = $data['batch_selling_price_inc_tax']
+                        $batch_sp_raw = $data['batch_selling_price_inc_tax']
                             ?? ($data['default_sell_price'] ?? null);
-                        if ($batch_sp_inc_tax_raw !== null && $batch_sp_inc_tax_raw !== '') {
-                            $purchase_line->batch_selling_price_inc_tax =
-                                ($this->num_uf($batch_sp_inc_tax_raw, $currency_details)) / $multiplier;
-                        }
+                        $tax_type = $data['selling_price_tax_type'] ?? 'exclusive';
 
-                        if (isset($data['batch_selling_price']) && $data['batch_selling_price'] !== '') {
-                            $purchase_line->batch_selling_price =
-                                ($this->num_uf($data['batch_selling_price'], $currency_details)) / $multiplier;
-                        } elseif ($purchase_line->batch_selling_price_inc_tax !== null) {
-                            $item_tax_f = (float) ($purchase_line->item_tax ?? 0);
-                            $purchase_line->batch_selling_price = max(0,
-                                (float) $purchase_line->batch_selling_price_inc_tax - $item_tax_f);
+                        if ($batch_sp_raw !== null && $batch_sp_raw !== '') {
+                            $price_uf = ($this->num_uf($batch_sp_raw, $currency_details)) / $multiplier;
+                            
+                            $sell_tax_rate = 0;
+                            if (!empty($purchase_line->tax_id)) {
+                                $tax_obj = \App\TaxRate::find($purchase_line->tax_id);
+                                if ($tax_obj) { $sell_tax_rate = $tax_obj->amount; }
+                            }
+
+                            if ($tax_type == 'inclusive') {
+                                $purchase_line->batch_selling_price_inc_tax = $price_uf;
+                                $purchase_line->batch_selling_price = $this->calc_percentage_base($price_uf, $sell_tax_rate);
+                            } else {
+                                $purchase_line->batch_selling_price = $price_uf;
+                                $purchase_line->batch_selling_price_inc_tax = $this->calc_percentage($price_uf, $sell_tax_rate, $price_uf);
+                            }
                         }
 
                         $batch_margin_raw = $data['batch_profit_margin']
@@ -1402,20 +1408,26 @@ class ProductUtil extends Util
                             $purchase_line->batch_number = $data['batch_number'];
                         }
 
-                        $batch_sp_inc_tax_raw = $data['batch_selling_price_inc_tax']
+                        $batch_sp_raw = $data['batch_selling_price_inc_tax']
                             ?? ($data['default_sell_price'] ?? null);
-                        if ($batch_sp_inc_tax_raw !== null && $batch_sp_inc_tax_raw !== '') {
-                            $purchase_line->batch_selling_price_inc_tax =
-                                ($this->num_uf($batch_sp_inc_tax_raw, $currency_details)) / $multiplier;
-                        }
+                        $tax_type = $data['selling_price_tax_type'] ?? 'exclusive';
 
-                        if (isset($data['batch_selling_price']) && $data['batch_selling_price'] !== '') {
-                            $purchase_line->batch_selling_price =
-                                ($this->num_uf($data['batch_selling_price'], $currency_details)) / $multiplier;
-                        } elseif ($purchase_line->batch_selling_price_inc_tax !== null) {
-                            $item_tax_f = (float) ($purchase_line->item_tax ?? 0);
-                            $purchase_line->batch_selling_price = max(0,
-                                (float) $purchase_line->batch_selling_price_inc_tax - $item_tax_f);
+                        if ($batch_sp_raw !== null && $batch_sp_raw !== '') {
+                            $price_uf = ($this->num_uf($batch_sp_raw, $currency_details)) / $multiplier;
+                            
+                            $sell_tax_rate = 0;
+                            if (!empty($purchase_line->tax_id)) {
+                                $tax_obj = \App\TaxRate::find($purchase_line->tax_id);
+                                if ($tax_obj) { $sell_tax_rate = $tax_obj->amount; }
+                            }
+
+                            if ($tax_type == 'inclusive') {
+                                $purchase_line->batch_selling_price_inc_tax = $price_uf;
+                                $purchase_line->batch_selling_price = $this->calc_percentage_base($price_uf, $sell_tax_rate);
+                            } else {
+                                $purchase_line->batch_selling_price = $price_uf;
+                                $purchase_line->batch_selling_price_inc_tax = $this->calc_percentage($price_uf, $sell_tax_rate, $price_uf);
+                            }
                         }
 
                         $batch_margin_raw = $data['batch_profit_margin']

@@ -17,6 +17,7 @@
                             <th>@lang('lang_v1.remaining_stock')</th>
                             <th>@lang('purchase.purchase_date')</th>
                             <th>@lang('purchase.ref_no')</th>
+                            <th>@lang('messages.action')</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -36,6 +37,11 @@
                                 </td>
                                 <td>{{ @format_date($batch->transaction_date) }}</td>
                                 <td>{{ $batch->purchase_ref }}</td>
+                                <td>
+                                    <button type="button" class="btn btn-xs btn-primary btn-modal" data-href="{{ action([\App\Http\Controllers\ProductBatchController::class, 'edit'], [$batch->id]) }}" data-container="#edit_batch_modal">
+                                        <i class="fa fa-edit"></i> @lang('messages.edit')
+                                    </button>
+                                </td>
                             </tr>
                         @endforeach
                     </tbody>

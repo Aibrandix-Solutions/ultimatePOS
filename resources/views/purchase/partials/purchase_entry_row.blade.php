@@ -109,6 +109,7 @@
 
                 $profit_percent = $variation->profit_percent;
                 $sell_price_inc_tax = $variation->sell_price_inc_tax;
+                $sell_price_exc_tax = $variation->default_sell_price;
                 $purchase_price_inc_tax = !empty($purchase_order_line) ? $purchase_order_line->purchase_price_inc_tax/$purchase_order->exchange_rate : $variation->dpp_inc_tax;
 
                 if ($is_new_batch && !empty($last_purchase_line)) {
@@ -123,8 +124,10 @@
                     }
                     if ($last_purchase_line->batch_selling_price_inc_tax !== null) {
                         $sell_price_inc_tax = $last_purchase_line->batch_selling_price_inc_tax;
+                        $sell_price_exc_tax = $last_purchase_line->batch_selling_price;
                     }
                 }
+                $sell_price_to_show = (!empty($product->tax_type) && $product->tax_type == 'inclusive') ? $sell_price_inc_tax : $sell_price_exc_tax;
             @endphp
             <td>
                 {!! Form::text('purchases[' . $row_count . '][pp_without_discount]',
@@ -184,20 +187,22 @@
             </td>
             @if(empty($is_purchase_order))
                 <td>
+                    {!! Form::hidden('purchases[' . $row_count . '][selling_price_tax_type]', $product->tax_type ?? 'exclusive') !!}
                     @if(session('business.enable_editing_product_from_purchase'))
-                        {!! Form::text('purchases[' . $row_count . '][default_sell_price]', number_format($sell_price_inc_tax, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator), ['class' => 'form-control input-sm input_number default_sell_price', 'required']) !!}
+                        {!! Form::text('purchases[' . $row_count . '][default_sell_price]', number_format($sell_price_to_show, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator), ['class' => 'form-control input-sm input_number default_sell_price', 'required']) !!}
                     @else
-                        {{ number_format($sell_price_inc_tax, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator)}}
+                        {{ number_format($sell_price_to_show, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator)}}
                     @endif
                 </td>
             @endif
         @else
             @if(empty($is_purchase_order))
                 <td>
+                    {!! Form::hidden('purchases[' . $row_count . '][selling_price_tax_type]', $product->tax_type ?? 'exclusive') !!}
                     @if(session('business.enable_editing_product_from_purchase'))
-                        {!! Form::text('purchases[' . $row_count . '][default_sell_price]', number_format($sell_price_inc_tax, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator), ['class' => 'form-control input-sm input_number default_sell_price', 'required']) !!}
+                        {!! Form::text('purchases[' . $row_count . '][default_sell_price]', number_format($sell_price_to_show, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator), ['class' => 'form-control input-sm input_number default_sell_price', 'required']) !!}
                     @else
-                        {{ number_format($sell_price_inc_tax, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator)}}
+                        {{ number_format($sell_price_to_show, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator)}}
                     @endif
                 </td>
                 <td>

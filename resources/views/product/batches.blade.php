@@ -68,6 +68,7 @@
     </div>
 
     <div class="modal fade batch_details_modal" tabindex="-1" role="dialog" aria-labelledby="gridSystemModalLabel"></div>
+    <div class="modal fade" id="edit_batch_modal" tabindex="-1" role="dialog" aria-labelledby="gridSystemModalLabel"></div>
 </section>
 
 @stop
@@ -143,6 +144,8 @@ $(document).ready(function () {
     });
 
     $(document).on('click', '.view_batch_details', function() {
+        $('.view_batch_details').removeClass('active');
+        $(this).addClass('active');
         var product_id = $(this).data('product_id');
         var variation_id = $(this).data('variation_id');
         var location_id = $(this).data('location_id');
@@ -159,6 +162,36 @@ $(document).ready(function () {
                 $('.batch_details_modal').html(result).modal('show');
                 __currency_convert_recursively($('.batch_details_modal'));
             }
+        });
+    });
+
+    $(document).on('submit', 'form#batch_edit_form', function(e) {
+        e.preventDefault();
+        var data = $(this).serialize();
+        $.ajax({
+            method: 'POST',
+            url: $(this).attr('action'),
+            dataType: 'json',
+            data: data,
+            success: function(result) {
+                if (result.success === 1) {
+                    $('#edit_batch_modal').modal('hide');
+                    toastr.success(result.msg);
+                    // Refresh the batch details modal if it's open
+                    var $detailsModal = $('.batch_details_modal');
+                    if ($detailsModal.hasClass('in') || $detailsModal.is(':visible')) {
+                        var $activeBtn = $('.view_batch_details.active');
+                        if ($activeBtn.length) {
+                             $activeBtn.click();
+                        } else {
+                             $detailsModal.modal('hide');
+                        }
+                    }
+                    batch_table.ajax.reload();
+                } else {
+                    toastr.error(result.msg);
+                }
+            },
         });
     });
 
