@@ -55,15 +55,9 @@
                             <thead>
                                 <tr>
                                     <th>@lang('product.product')</th>
-                                    <th>@lang('lang_v1.batch_number')</th>
                                     <th>@lang('purchase.location')</th>
-                                    <th>@lang('lang_v1.purchase_price')</th>
-                                    <th>@lang('lang_v1.selling_price_inc_tax')</th>
-                                    <th>@lang('lang_v1.qty_in')</th>
-                                    <th>@lang('lang_v1.qty_out')</th>
-                                    <th>@lang('lang_v1.remaining_stock')</th>
-                                    <th>@lang('purchase.purchase_date')</th>
-                                    <th>@lang('purchase.ref_no')</th>
+                                    <th>@lang('lang_v1.total_remaining_stock')</th>
+                                    <th>@lang('messages.action')</th>
                                 </tr>
                             </thead>
                         </table>
@@ -72,6 +66,8 @@
             </div>
         </div>
     </div>
+
+    <div class="modal fade batch_details_modal" tabindex="-1" role="dialog" aria-labelledby="gridSystemModalLabel"></div>
 </section>
 
 @stop
@@ -138,18 +134,32 @@ $(document).ready(function () {
         },
         columns: [
             { data: 'product_name', name: 'p.name' },
-            { data: 'batch_number', name: 'purchase_lines.batch_number' },
             { data: 'location_name', name: 'bl.name' },
-            { data: 'purchase_price', name: 'purchase_lines.purchase_price' },
-            { data: 'batch_selling_price_inc_tax', name: 'purchase_lines.batch_selling_price_inc_tax' },
-            { data: 'qty_in', name: 'purchase_lines.quantity' },
-            { data: 'qty_out', name: 'qty_out', orderable: false, searchable: false },
-            { data: 'qty_remaining', name: 'qty_remaining', orderable: false, searchable: false },
-            { data: 'transaction_date', name: 't.transaction_date' },
-            { data: 'purchase_ref', name: 't.ref_no' },
+            { data: 'total_qty_remaining', name: 'total_qty_remaining', orderable: false, searchable: false },
+            { data: 'action', name: 'action', orderable: false, searchable: false },
         ],
-        order: [[8, 'desc']],
+        order: [[0, 'asc']],
         fnDrawCallback: function () { __currency_convert_recursively($('#batch_details_table')); },
+    });
+
+    $(document).on('click', '.view_batch_details', function() {
+        var product_id = $(this).data('product_id');
+        var variation_id = $(this).data('variation_id');
+        var location_id = $(this).data('location_id');
+
+        $.ajax({
+            url: "{{ action([\App\Http\Controllers\ProductBatchController::class, 'getBatchDetails']) }}",
+            data: { 
+                product_id: product_id,
+                variation_id: variation_id,
+                location_id: location_id
+            },
+            dataType: 'html',
+            success: function(result) {
+                $('.batch_details_modal').html(result).modal('show');
+                __currency_convert_recursively($('.batch_details_modal'));
+            }
+        });
     });
 
     $('#product_filter, #location_filter').on('change', function () { batch_table.ajax.reload(); });

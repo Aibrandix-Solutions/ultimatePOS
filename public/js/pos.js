@@ -330,7 +330,11 @@ $(document).ready(function () {
 
                         //Pre select lot number only if the searched term is same as the lot number
                         var purchase_line_id = ui.item.purchase_line_id && searched_term == ui.item.lot_number ? ui.item.purchase_line_id : null;
-                        pos_product_row(ui.item.variation_id, purchase_line_id);
+                        if (typeof __pos_show_batch_select === 'function' && !purchase_line_id) {
+                            __pos_show_batch_select(ui.item.variation_id, 1);
+                        } else {
+                            pos_product_row(ui.item.variation_id, purchase_line_id);
+                        }
                     } else {
                         console.log('Product out of stock, showing alert');
                         alert(LANG.out_of_stock);
@@ -1724,7 +1728,12 @@ $(document).ready(function () {
         if ($('input#location_id').val() == '') {
             toastr.warning(LANG.select_location);
         } else {
-            pos_product_row($(this).data('variation_id'));
+            var variation_id = $(this).data('variation_id');
+            if (typeof __pos_show_batch_select === 'function') {
+                __pos_show_batch_select(variation_id, 1);
+            } else {
+                pos_product_row(variation_id);
+            }
         }
     });
 
@@ -1807,7 +1816,12 @@ $(document).ready(function () {
         if ($('input#location_id').val() == '') {
             toastr.warning(LANG.select_location);
         } else {
-            pos_product_row(e.variation.id);
+            var variation_id = e.variation.id;
+            if (typeof __pos_show_batch_select === 'function') {
+                __pos_show_batch_select(variation_id, 1);
+            } else {
+                pos_product_row(variation_id);
+            }
         }
     });
 

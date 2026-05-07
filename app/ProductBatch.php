@@ -47,7 +47,20 @@ class ProductBatch extends Model
             ->where('location_id', $location_id)
             ->pluck('batch_label');
 
-        $max = 0;
+        $max = 0; 
+        
+        // Check if any legacy stock exists (not assigned to a batch yet)
+        $legacy_exists = \App\PurchaseLine::join('transactions as t', 't.id', '=', 'purchase_lines.transaction_id')
+            ->where('t.business_id', $business_id)
+            ->where('t.location_id', $location_id)
+            ->where('purchase_lines.variation_id', $variation_id)
+            ->whereNull('purchase_lines.batch_id')
+            ->exists();
+
+        if ($legacy_exists) {
+            $max = 1;
+        }
+
         foreach ($labels as $label) {
             if (preg_match('/^Batch\s+(\d+)$/i', trim((string) $label), $m)) {
                 $max = max($max, (int) $m[1]);
@@ -60,9 +73,9 @@ class ProductBatch extends Model
     /**
      * Ensure Batch 1 exists for this SKU at the location (standard restock bucket).
      */
-    public static function firstOrCreateBatchOne(int $business_id, int $product_id, int $variation_id, int $location_id): self
+    public static function firstOrCreateBatchOne(int $business_id, int $product_id, int $variation_id, int $location_id, $price = null, $margin = null): self
     {
-        return self::firstOrCreate(
+        $batch = self::firstOrCreate(
             [
                 'business_id' => $business_id,
                 'product_id' => $product_id,
@@ -70,8 +83,22 @@ class ProductBatch extends Model
                 'location_id' => $location_id,
                 'batch_label' => 'Batch 1',
             ],
-            []
+            [
+                'sell_price_inc_tax' => $price,
+                'profit_margin' => $margin
+            ]
         );
+
+        // Migrate legacy stock (where batch_id is null) to this permanent Batch 1 record.
+        // This ensures the stock is correctly tracked and the batch price is applied in POS.
+        \DB::table('purchase_lines')
+            ->join('transactions as t', 't.id', '=', 'purchase_lines.transaction_id')
+            ->where('purchase_lines.variation_id', $variation_id)
+            ->where('t.location_id', $location_id)
+            ->whereNull('purchase_lines.batch_id')
+            ->update(['purchase_lines.batch_id' => $batch->id]);
+
+        return $batch;
     }
 
     /**

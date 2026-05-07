@@ -2367,11 +2367,13 @@ class SellPosController extends Controller
             return response()->json(['success' => false, 'batches' => []]);
         }
 
-        $variation = Variation::where('id', $variation_id)->first(['sell_price_inc_tax']);
+        $variation = Variation::where('id', $variation_id)->first(['product_id', 'sell_price_inc_tax', 'min_sell_price_inc_tax', 'profit_percent', 'default_purchase_price', 'dpp_inc_tax']);
         $variation_sell_inc_tax = $variation ? (float) $variation->sell_price_inc_tax : null;
 
+        $batches = collect();
+
         if (Schema::hasTable('product_batches')) {
-            $batches = ProductBatch::where('business_id', $business_id)
+            $pb_batches = ProductBatch::where('business_id', $business_id)
                 ->where('variation_id', $variation_id)
                 ->where('location_id', $location_id)
                 ->orderBy('id')
@@ -2395,21 +2397,73 @@ class SellPosController extends Controller
                 })
                 ->filter(function ($b) {
                     return $b['remaining'] > 0;
-                })
-                ->values();
+                });
+            
+            $batches = $batches->concat($pb_batches);
+
+            // Also check for legacy stock (where batch_id is null)
+            $legacy_stock_query = PurchaseLine::join('transactions as t', 't.id', '=', 'purchase_lines.transaction_id')
+                ->where('purchase_lines.variation_id', $variation_id)
+                ->where('t.location_id', $location_id)
+                ->whereIn('t.type', ['purchase', 'opening_stock', 'purchase_transfer'])
+                ->where('t.status', 'received')
+                ->whereNull('purchase_lines.batch_id');
+
+            $legacy_qty = (clone $legacy_stock_query)
+                ->selectRaw('SUM(purchase_lines.quantity - (purchase_lines.quantity_sold + purchase_lines.quantity_adjusted + purchase_lines.quantity_returned + purchase_lines.mfg_quantity_used)) as remaining')
+                ->value('remaining');
+
+            if ($legacy_qty > 0) {
+                // Try to find the most recent selling price from these legacy lines
+                $legacy_price = (clone $legacy_stock_query)
+                    ->whereNotNull('purchase_lines.batch_selling_price_inc_tax')
+                    ->orderByDesc('purchase_lines.id')
+                    ->value('purchase_lines.batch_selling_price_inc_tax');
+
+                $final_legacy_price = $legacy_price ?? (($variation->min_sell_price_inc_tax > 0) ? $variation->min_sell_price_inc_tax : $variation_sell_inc_tax);
+
+                // Self-healing: ensure Batch 1 exists in product_batches with the recovered price
+                $b1 = ProductBatch::firstOrCreateBatchOne(
+                    (int)$business_id,
+                    (int)$variation->product_id,
+                    (int)$variation_id,
+                    (int)$location_id,
+                    $final_legacy_price,
+                    $variation->profit_percent
+                );
+
+                $batches->prepend([
+                    'id' => $b1->id,
+                    'batch_number' => 'Batch 1',
+                    'batch_label' => 'Batch 1',
+                    'batch_selling_price_inc_tax' => $legacy_price,
+                    'display_sell_price_inc_tax' => $final_legacy_price,
+                    'remaining' => (float) $legacy_qty,
+                    'lot_number' => null,
+                    'transaction_date' => null,
+                ]);
+            }
+            
+            $batches = $batches->values();
         } else {
             $batches = PurchaseLine::availableBatches($variation_id, $location_id, $business_id)
                 ->map(function ($b) use ($variation_sell_inc_tax) {
                     $qty_used = (float) ($b->quantity_sold + $b->quantity_adjusted + $b->quantity_returned + $b->mfg_quantity_used);
-                    $b->remaining = (float) $b->quantity - $qty_used;
-                    $b->display_sell_price_inc_tax = $b->batch_selling_price_inc_tax !== null
-                        ? (float) $b->batch_selling_price_inc_tax
-                        : $variation_sell_inc_tax;
-
-                    return $b;
+                    $remaining = (float) $b->quantity - $qty_used;
+                    
+                    return [
+                        'id' => $b->id,
+                        'batch_number' => $b->batch_number,
+                        'batch_label' => $b->batch_number,
+                        'batch_selling_price_inc_tax' => $b->batch_selling_price_inc_tax,
+                        'display_sell_price_inc_tax' => $b->batch_selling_price_inc_tax !== null ? (float) $b->batch_selling_price_inc_tax : $variation_sell_inc_tax,
+                        'remaining' => $remaining,
+                        'lot_number' => $b->lot_number,
+                        'transaction_date' => $b->transaction_date,
+                    ];
                 })
                 ->filter(function ($b) {
-                    return $b->remaining > 0;
+                    return $b['remaining'] > 0;
                 })
                 ->values();
         }

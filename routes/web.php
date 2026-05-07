@@ -189,6 +189,7 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
     Route::get('/products/view/{id}', [ProductController::class, 'view']);
     Route::get('/products/list', [ProductController::class, 'getProducts']);
     Route::get('/products/batches', [\App\Http\Controllers\ProductBatchController::class, 'index']);
+    Route::get('/products/get-batch-details', [\App\Http\Controllers\ProductBatchController::class, 'getBatchDetails']);
     Route::get('/products/list-no-variation', [ProductController::class, 'getProductsWithoutVariations']);
     Route::post('/products/bulk-edit', [ProductController::class, 'bulkEdit']);
     Route::post('/products/bulk-update', [ProductController::class, 'bulkUpdate']);

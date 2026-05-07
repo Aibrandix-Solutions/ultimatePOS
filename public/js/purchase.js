@@ -784,7 +784,9 @@ function get_purchase_entry_row(product_id, variation_id) {
         || window.__enable_batch_pricing === 1
         || window.__enable_batch_pricing === '1';
 
-    if (batch_pricing_on && location_id && variation_id) {
+    if (batch_pricing_on && location_id && variation_id && variation_id != '0' && parseInt(variation_id) > 0) {
+        console.log('[Batch] Checking batches for product_id=' + product_id +
+            ', variation_id=' + variation_id + ', location_id=' + location_id);
         $.ajax({
             method: 'GET',
             url: '/purchases/check-batch',
@@ -795,18 +797,23 @@ function get_purchase_entry_row(product_id, variation_id) {
             },
             dataType: 'json',
             success: function (res) {
-                if (res && res.has_batches) {
+                console.log('[Batch] check-batch response:', res);
+                if (res) {
                     __open_purchase_batch_choice_modal(product_id, variation_id, res);
                 } else {
                     _do_get_purchase_entry_row(product_id, variation_id, false);
                 }
             },
-            error: function () {
+            error: function (xhr, status, err) {
+                console.warn('[Batch] check-batch AJAX failed:', status, err);
                 // If the check fails for any reason, don't block the cashier.
                 _do_get_purchase_entry_row(product_id, variation_id, false);
             },
         });
     } else {
+        if (batch_pricing_on) {
+            console.log('[Batch] Skipping batch check — variation_id=' + variation_id + ', location_id=' + location_id);
+        }
         _do_get_purchase_entry_row(product_id, variation_id, false);
     }
 }
@@ -821,6 +828,12 @@ function __open_purchase_batch_choice_modal(product_id, variation_id, res) {
     if (!$modal.length) {
         _do_get_purchase_entry_row(product_id, variation_id, false);
         return;
+    }
+
+    if (res.has_batches) {
+        $('#purchase_batch_choice_modal_label').text(LANG.product_already_has_batches || 'Product already has batches');
+    } else {
+        $('#purchase_batch_choice_modal_label').text('Select Batch Options');
     }
 
     var nextText = (LANG.purchase_batch_choice_next || 'Next batch would be:') + ' ' +

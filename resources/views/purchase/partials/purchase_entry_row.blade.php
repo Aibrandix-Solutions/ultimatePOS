@@ -104,6 +104,27 @@
 
                 $pp_without_discount = !empty($imported_data['unit_cost_before_discount']) ? $imported_data['unit_cost_before_discount'] : $pp_without_discount;
                 $discount_percent = !empty($imported_data['discount_percent']) ? $imported_data['discount_percent'] : $discount_percent;
+
+                $is_new_batch = !empty($enable_batch_pricing) && empty($skip_batch_for_row) && empty($refill_product_batch_id);
+
+                $profit_percent = $variation->profit_percent;
+                $sell_price_inc_tax = $variation->sell_price_inc_tax;
+                $purchase_price_inc_tax = !empty($purchase_order_line) ? $purchase_order_line->purchase_price_inc_tax/$purchase_order->exchange_rate : $variation->dpp_inc_tax;
+
+                if ($is_new_batch && !empty($last_purchase_line)) {
+                    $pp_without_discount = $last_purchase_line->pp_without_discount;
+                    $discount_percent = $last_purchase_line->discount_percent;
+                    $purchase_price = $last_purchase_line->purchase_price;
+                    $tax_id = $last_purchase_line->tax_id;
+                    $purchase_price_inc_tax = $last_purchase_line->purchase_price_inc_tax;
+
+                    if ($last_purchase_line->batch_profit_margin !== null) {
+                        $profit_percent = $last_purchase_line->batch_profit_margin;
+                    }
+                    if ($last_purchase_line->batch_selling_price_inc_tax !== null) {
+                        $sell_price_inc_tax = $last_purchase_line->batch_selling_price_inc_tax;
+                    }
+                }
             @endphp
             <td>
                 {!! Form::text('purchases[' . $row_count . '][pp_without_discount]',
@@ -147,12 +168,10 @@
             </td>
             <td class="{{$hide_tax}}">
                 @php
-                    $dpp_inc_tax = number_format($variation->dpp_inc_tax, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator);
+                    $dpp_inc_tax = number_format($purchase_price_inc_tax, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator);
                     if($hide_tax == 'hide'){
-                        $dpp_inc_tax = number_format($variation->default_purchase_price, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator);
+                        $dpp_inc_tax = number_format($pp_without_discount, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator);
                     }
-
-                    $dpp_inc_tax = !empty($purchase_order_line) ? number_format($purchase_order_line->purchase_price_inc_tax/$purchase_order->exchange_rate, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator) : $dpp_inc_tax;
                 @endphp
                 {!! Form::text('purchases[' . $row_count . '][purchase_price_inc_tax]', $dpp_inc_tax, ['class' => 'form-control input-sm purchase_unit_cost_after_tax input_number', 'required']) !!}
             </td>
@@ -161,14 +180,14 @@
                 <input type="hidden" class="row_subtotal_after_tax_hidden" value=0>
             </td>
             <td class="@if(!session('business.enable_editing_product_from_purchase') || !empty($is_purchase_order)) hide @endif">
-                {!! Form::text('purchases[' . $row_count . '][profit_percent]', number_format($variation->profit_percent, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator), ['class' => 'form-control input-sm input_number profit_percent', 'required']) !!}
+                {!! Form::text('purchases[' . $row_count . '][profit_percent]', number_format($profit_percent, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator), ['class' => 'form-control input-sm input_number profit_percent', 'required']) !!}
             </td>
             @if(empty($is_purchase_order))
                 <td>
                     @if(session('business.enable_editing_product_from_purchase'))
-                        {!! Form::text('purchases[' . $row_count . '][default_sell_price]', number_format($variation->sell_price_inc_tax, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator), ['class' => 'form-control input-sm input_number default_sell_price', 'required']) !!}
+                        {!! Form::text('purchases[' . $row_count . '][default_sell_price]', number_format($sell_price_inc_tax, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator), ['class' => 'form-control input-sm input_number default_sell_price', 'required']) !!}
                     @else
-                        {{ number_format($variation->sell_price_inc_tax, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator)}}
+                        {{ number_format($sell_price_inc_tax, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator)}}
                     @endif
                 </td>
             @endif
@@ -176,9 +195,9 @@
             @if(empty($is_purchase_order))
                 <td>
                     @if(session('business.enable_editing_product_from_purchase'))
-                        {!! Form::text('purchases[' . $row_count . '][default_sell_price]', number_format($variation->sell_price_inc_tax, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator), ['class' => 'form-control input-sm input_number default_sell_price', 'required']) !!}
+                        {!! Form::text('purchases[' . $row_count . '][default_sell_price]', number_format($sell_price_inc_tax, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator), ['class' => 'form-control input-sm input_number default_sell_price', 'required']) !!}
                     @else
-                        {{ number_format($variation->sell_price_inc_tax, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator)}}
+                        {{ number_format($sell_price_inc_tax, $currency_precision, $currency_details->decimal_separator, $currency_details->thousand_separator)}}
                     @endif
                 </td>
                 <td>

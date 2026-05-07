@@ -860,10 +860,14 @@
 <div class="modal fade quick_add_product_modal" tabindex="-1" role="dialog" aria-labelledby="modalTitle"></div>
 
 @include('sale_pos.partials.configure_search_modal')
+@include('sale_pos.partials.batch_select_modal')
 
 @stop
 
 @section('javascript')
+	<script type="text/javascript">
+        window.__enable_batch_pricing = {{ session('business.enable_batch_pricing') ? 'true' : 'false' }};
+    </script>
 	<script src="{{ asset('js/pos.js?v=' . $asset_v) }}"></script>
 	<script src="{{ asset('js/product.js?v=' . $asset_v) }}"></script>
 	<script src="{{ asset('js/opening_stock.js?v=' . $asset_v) }}"></script>

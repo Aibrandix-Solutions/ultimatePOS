@@ -128,7 +128,7 @@ class PurchaseLine extends Model
                 ->where('purchase_lines.variation_id', $variation_id)
                 ->where('t.location_id', $location_id)
                 ->count();
-            $next = $count + 1;
+            $next = max(1, $count) + 1;
         }
 
         return 'Batch '.$next;

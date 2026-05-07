@@ -1225,6 +1225,20 @@ class PurchaseController extends Controller
                             (int) $variation_id,
                             (int) $location_id
                         );
+
+                        // If we are about to create a NEW batch (e.g. Batch 2), we should first "snapshot"
+                        // the current global price into a Batch 1 record to freeze it for legacy stock.
+                        $v = $variations->first();
+                        if ($v) {
+                            ProductBatch::firstOrCreateBatchOne(
+                                (int)$business_id, 
+                                (int)$product_id, 
+                                (int)$variation_id, 
+                                (int)$location_id, 
+                                $v->sell_price_inc_tax,
+                                $v->profit_percent
+                            );
+                        }
                     } else {
                         $next_batch_number = PurchaseLine::nextBatchNumber($product_id, $variation_id, $location_id);
                     }
@@ -1273,7 +1287,12 @@ class PurchaseController extends Controller
             return response()->json(['success' => true, 'has_batches' => false, 'batches' => []]);
         }
 
-        if (Schema::hasTable('product_batches')) {
+        $has_product_batches_table = Schema::hasTable('product_batches');
+        $batches = collect();
+        $next_batch_number = null;
+
+        // First: try the new product_batches table
+        if ($has_product_batches_table) {
             $batches = ProductBatch::where('business_id', $business_id)
                 ->where('location_id', $location_id)
                 ->where('product_id', $product_id)
@@ -1290,8 +1309,50 @@ class PurchaseController extends Controller
                         'remaining' => $remaining,
                         'batch_selling_price_inc_tax' => $pb->sell_price_inc_tax,
                     ];
-                })
-                ->values();
+                });
+
+            // Check for legacy stock (not explicitly assigned to a batch)
+            $legacy_stock_query = PurchaseLine::join('transactions as t', 't.id', '=', 'purchase_lines.transaction_id')
+                ->where('t.business_id', $business_id)
+                ->where('t.location_id', $location_id)
+                ->where('purchase_lines.variation_id', $variation_id)
+                ->whereNull('purchase_lines.batch_id');
+
+            $legacy_qty = (clone $legacy_stock_query)
+                ->selectRaw('SUM(purchase_lines.quantity - (purchase_lines.quantity_sold + purchase_lines.quantity_adjusted + purchase_lines.quantity_returned + purchase_lines.mfg_quantity_used)) as remaining')
+                ->value('remaining');
+
+            if ($legacy_qty > 0) {
+                // Self-healing: ensure Batch 1 exists in product_batches
+                $variation = \App\Variation::find($variation_id);
+                $final_legacy_price = ($variation->min_sell_price_inc_tax > 0) ? $variation->min_sell_price_inc_tax : $variation->sell_price_inc_tax;
+
+                $b1 = ProductBatch::firstOrCreateBatchOne(
+                    (int)$business_id,
+                    (int)$product_id,
+                    (int)$variation_id,
+                    (int)$location_id,
+                    $final_legacy_price,
+                    $variation->profit_percent
+                );
+
+                // Add Batch 1 to the list if not already present
+                $has_batch1 = $batches->contains(function($b) {
+                    return $b['batch_label'] === 'Batch 1';
+                });
+
+                if (!$has_batch1) {
+                    $batches->prepend([
+                        'id' => $b1->id,
+                        'batch_number' => 'Batch 1',
+                        'batch_label' => 'Batch 1',
+                        'remaining' => (float) $legacy_qty,
+                        'batch_selling_price_inc_tax' => $b1->sell_price_inc_tax,
+                    ]);
+                }
+            }
+            
+            $batches = $batches->values();
 
             $next_batch_number = ProductBatch::nextBatchLabel(
                 (int) $business_id,
@@ -1299,12 +1360,18 @@ class PurchaseController extends Controller
                 (int) $variation_id,
                 (int) $location_id
             );
-        } else {
-            $batches = PurchaseLine::join('transactions as t', 't.id', '=', 'purchase_lines.transaction_id')
+        }
+
+        // Fallback: if product_batches table doesn't exist OR has no rows for
+        // this variation, check legacy batches stored in purchase_lines.
+        if ($batches->isEmpty()) {
+            $legacy_batches = PurchaseLine::join('transactions as t', 't.id', '=', 'purchase_lines.transaction_id')
                 ->where('t.business_id', $business_id)
                 ->where('t.location_id', $location_id)
                 ->whereIn('t.type', ['purchase', 'opening_stock', 'purchase_transfer'])
                 ->where('purchase_lines.variation_id', $variation_id)
+                ->whereNotNull('purchase_lines.batch_number')
+                ->where('purchase_lines.batch_number', '!=', '')
                 ->select([
                     'purchase_lines.id',
                     'purchase_lines.batch_number',
@@ -1328,7 +1395,17 @@ class PurchaseController extends Controller
                 })
                 ->values();
 
-            $next_batch_number = PurchaseLine::nextBatchNumber($product_id, $variation_id, $location_id);
+            if ($legacy_batches->isNotEmpty()) {
+                $batches = $legacy_batches;
+            }
+
+            // Use legacy next batch number if the product_batches table result was empty
+            if (empty($next_batch_number) || $next_batch_number === 'Batch 1') {
+                $legacy_next = PurchaseLine::nextBatchNumber($product_id, $variation_id, $location_id);
+                if (!empty($legacy_next)) {
+                    $next_batch_number = $legacy_next;
+                }
+            }
         }
 
         return response()->json([
