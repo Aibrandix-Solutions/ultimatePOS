@@ -822,7 +822,12 @@ class Util
         foreach ($data as $key => $value) {
             //Replace contact name
             if (strpos($value, '{contact_name}') !== false) {
-                $contact_name = empty($contact) ? $transaction->contact->name : $contact->name;
+                $contact_name = '';
+                if (!empty($contact)) {
+                    $contact_name = $contact->name;
+                } elseif (!empty($transaction->contact)) {
+                    $contact_name = $transaction->contact->name;
+                }
 
                 $data[$key] = str_replace('{contact_name}', $contact_name, $data[$key]);
             }

@@ -73,7 +73,7 @@ class NotificationUtil extends Util
                 }
 
                 //Auto send sms
-                if (! empty($notification_template->auto_send_sms)) {
+                if (! empty($notification_template->auto_send_sms) && !empty($contact)) {
                     $data['mobile_number'] = $contact->mobile;
                     if (! empty($contact->mobile)) {
                         try {
@@ -86,7 +86,7 @@ class NotificationUtil extends Util
                     }
                 }
 
-                if (! empty($notification_template->auto_send_wa_notif)) {
+                if (! empty($notification_template->auto_send_wa_notif) && !empty($contact)) {
                     $data['mobile_number'] = $contact->mobile;
                     if (! empty($contact->mobile)) {
                         $whatsapp_link = $this->getWhatsappNotificationLink($data);

@@ -74,7 +74,7 @@
          <div class="col-md-6">
           <div class="well">
             <strong>@lang('sale.customer_name'): </strong>{{ $contact_details->name }}<br>
-              <br><br>
+              <br>
           </div>
         </div>
         <div class="col-md-6">
@@ -82,6 +82,35 @@
             <strong>@lang('lang_v1.total_sell_return'): </strong><span class="display_currency" data-currency_symbol="true">{{ $contact_details->total_sell_return }}</span><br>
             <strong>@lang('lang_v1.total_sell_return_paid'): </strong><span class="display_currency" data-currency_symbol="true">{{ $contact_details->total_return_paid }}</span><br>
             <strong>@lang('lang_v1.total_sell_return_due'): </strong><span class="display_currency" data-currency_symbol="true">{{ $contact_details->total_sell_return - $contact_details->total_return_paid }}</span>
+            @if(!empty($sale_due_amount) && $sale_due_amount > 0)
+              <br><strong>Customer's Sale Due: </strong>
+              <span class="display_currency text-red" data-currency_symbol="true">{{ $sale_due_amount }}</span>
+            @endif
+          </div>
+        </div>
+
+        {{-- Return Credit Action Choice --}}
+        <div class="col-md-12">
+          <div class="well" style="background: #f9f9f9; border-left: 4px solid #d9534f;">
+            <strong style="font-size: 14px;">How do you want to handle this return credit?</strong>
+            <div style="margin-top: 10px;">
+              @if(!empty($sale_due_amount) && $sale_due_amount > 0)
+              <div class="radio">
+                <label>
+                  <input type="radio" name="return_credit_action" id="return_action_deduct" value="deduct_from_due" checked>
+                  <strong>Deduct from Customer's Sale Due</strong>
+                  <small class="text-muted"> — reduces what the customer owes you</small>
+                </label>
+              </div>
+              @endif
+              <div class="radio">
+                <label>
+                  <input type="radio" name="return_credit_action" id="return_action_payback" value="pay_back" @if(empty($sale_due_amount) || $sale_due_amount <= 0) checked @endif>
+                  <strong>Pay Back to Customer</strong>
+                  <small class="text-muted"> — refund cash/bank to customer immediately</small>
+                </label>
+              </div>
+            </div>
           </div>
         </div>
         @endif

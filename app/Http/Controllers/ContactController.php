@@ -300,11 +300,11 @@ class ContactController extends Controller
         $query = $this->contactUtil->getContactQuery($business_id, 'customer');
 
         if (request()->has('has_sell_due')) {
-            $query->havingRaw('(COALESCE(total_invoice, 0) - COALESCE(invoice_received, 0) - COALESCE(total_ledger_discount, 0) - COALESCE(total_sell_return, 0) + COALESCE(sell_return_paid, 0)) > 0');
+            $query->havingRaw('(COALESCE(total_invoice, 0) - COALESCE(invoice_received, 0) - COALESCE(total_ledger_discount, 0) + (COALESCE(opening_balance, 0) - COALESCE(opening_balance_paid, 0))) > 0');
         }
 
         if (request()->has('has_sell_return')) {
-            $query->havingRaw('total_sell_return > 0');
+            $query->havingRaw('(COALESCE(total_sell_return, 0) - COALESCE(sell_return_paid, 0)) > 0');
         }
 
         if (request()->has('has_advance_balance')) {
@@ -370,14 +370,23 @@ class ContactController extends Controller
             ->addColumn('address', '{{implode(", ", array_filter([$address_line_1, $address_line_2, $city, $state, $country, $zip_code]))}}')
             //    + $sell_return_paid add this in due because after paymnet for sell return not calculated 
             //    + ($opening_balance - $opening_balance_paid) included to show total due including opening balance
-            ->addColumn(
-                'due',
-                '<span class="contact_due" data-orig-value="{{$total_invoice - $invoice_received - $total_ledger_discount - $total_sell_return + $sell_return_paid + ($opening_balance - $opening_balance_paid)}}" data-highlight=true>@format_currency($total_invoice - $invoice_received - $total_ledger_discount - $total_sell_return + $sell_return_paid + ($opening_balance - $opening_balance_paid))  </span>'
-            )
-            ->addColumn(
-                'return_due',
-                '<span class="return_due" data-orig-value="{{$total_sell_return - $sell_return_paid}}" data-highlight=false>@format_currency($total_sell_return - $sell_return_paid)</span>'
-            )
+            ->editColumn('due', function ($row) {
+                $opening_balance_due = $row->opening_balance - $row->opening_balance_paid;
+                $due = $row->total_invoice - $row->invoice_received - $row->total_ledger_discount + $opening_balance_due;
+                $due = max(0, $due);
+
+                return '<span class="contact_due" data-orig-value="' . $due . '" data-highlight=true>' . $this->transactionUtil->num_f($due, true) . '</span>';
+            })
+            ->editColumn('return_due', function ($row) {
+                $return_due = $row->total_sell_return - $row->sell_return_paid;
+                $return_due = max(0, $return_due);
+
+                return '<span class="return_due" data-orig-value="' . $return_due . '" data-highlight=false>' . $this->transactionUtil->num_f($return_due, true) . '</span>';
+            })
+            ->editColumn('balance', function ($row) {
+                $balance = abs($row->balance);
+                return '<span data-orig-value="' . $balance . '">' . $this->transactionUtil->num_f($balance, true) . '</span>';
+            })
             ->addColumn(
                 'action',
                 function ($row) {
@@ -391,8 +400,10 @@ class ContactController extends Controller
                     <ul class="dropdown-menu dropdown-menu-left" role="menu">';
 
                     $html .= '<li><a href="' . action([\App\Http\Controllers\TransactionPaymentController::class, 'getPayContactDue'], [$row->id]) . '?type=sell" class="pay_sale_due"><i class="fas fa-money-bill-alt" aria-hidden="true"></i>' . __('lang_v1.pay') . '</a></li>';
-                    $return_due = $row->total_sell_return - $row->sell_return_paid;
-                    if ($return_due > 0) {
+                    
+                    $gross_return_due = $row->total_sell_return - $row->sell_return_paid;
+                    
+                    if ($gross_return_due > 0) {
                         $html .= '<li><a href="' . action([\App\Http\Controllers\TransactionPaymentController::class, 'getPayContactDue'], [$row->id]) . '?type=sell_return" class="pay_purchase_due"><i class="fas fa-money-bill-alt" aria-hidden="true"></i>' . __('lang_v1.pay_sell_return_due') . '</a></li>';
                     }
 

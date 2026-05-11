@@ -1,117 +1,85 @@
-<div class="ticket">
-    <div class="text-box centered">
-        <div class="headings">
-            {{ $business_name ?? '' }}
+<div class="receipt">
+    <div class="text-center">
+        @if(!empty($business_name))
+            <div class="business-name">{{ $business_name }}</div>
+        @endif
+        <div class="business-info">
+            @if(!empty($location_name)) <div>{{ $location_name }}</div> @endif
+            @if(!empty($location_address)) <div>{!! $location_address !!}</div> @endif
+            @if(!empty($location_contact)) <div>{!! $location_contact !!}</div> @endif
         </div>
-        @if(!empty($location_name))
-            <div class="sub-headings">{{ $location_name }}</div>
-        @endif
-        @if(!empty($location_address))
-            <div class="f-12">{!! $location_address !!}</div>
-        @endif
-        @if(!empty($location_contact))
-            <div class="f-12">{!! $location_contact !!}</div>
-        @endif
-        @if(!empty($location_email))
-            <div class="f-12">{{ $location_email }}</div>
-        @endif
     </div>
 
-    <div class="border-top"></div>
+    <div class="sub-heading centered">PAYMENT RECEIPT</div>
 
-    <div class="textbox-info">
-        <p class="f-left"><strong>@lang('messages.date'):</strong></p>
-        <p class="f-right">{{ $payment_date ?? '' }}</p>
+    <div class="info-row">
+        <span><strong>@lang('messages.date'):</strong></span>
+        <span>{{ $payment_date ?? '' }}</span>
     </div>
-    <div class="textbox-info">
-        <p class="f-left"><strong>@lang('purchase.ref_no'):</strong></p>
-        <p class="f-right">{{ $payment_ref_no ?? '' }}</p>
+    <div class="info-row">
+        <span><strong>@lang('purchase.ref_no'):</strong></span>
+        <span>{{ $payment_ref_no ?? '' }}</span>
     </div>
-    <div class="textbox-info">
-        <p class="f-left"><strong>@lang('contact.customer'):</strong></p>
-        <p class="f-right">{{ $contact_name ?? '' }}</p>
+    <div class="info-row">
+        <span><strong>Customer:</strong></span>
+        <span>{{ $contact_name ?? '' }}</span>
     </div>
     @if(!empty($contact_mobile))
-        <div class="textbox-info">
-            <p class="f-left"><strong>@lang('contact.mobile'):</strong></p>
-            <p class="f-right">{{ $contact_mobile }}</p>
-        </div>
-    @endif
-    @if(!empty($cashier_name))
-        <div class="textbox-info">
-            <p class="f-left"><strong>Cashier:</strong></p>
-            <p class="f-right">{{ $cashier_name }}</p>
+        <div class="info-row">
+            <span><strong>Mobile:</strong></span>
+            <span>{{ $contact_mobile }}</span>
         </div>
     @endif
 
-    <div class="border-top"></div>
+    <div class="sep-thick"></div>
 
-    <div class="centered sub-headings" style="margin: 6px 0;">PAYMENT RECEIPT</div>
+    <div class="tot-row">
+        <span>Previous Due:</span>
+        <span class="val">{{ $previous_due ?? 0 }}</span>
+    </div>
+    <div class="tot-row" style="background: #f4f4f4; padding: 5px 0;">
+        <span><strong>Amount Paid:</strong></span>
+        <span class="val"><strong>{{ $amount_paid ?? 0 }}</strong></span>
+    </div>
 
-    <table class="table-info">
-        <tbody>
-            <tr>
-                <td class="text-left">Previous Due</td>
-                <td class="text-right">
-                    <span class="display_currency" data-currency_symbol="true">{{ $previous_due ?? 0 }}</span>
-                </td>
-            </tr>
-            <tr>
-                <td class="text-left">Amount Paid</td>
-                <td class="text-right">
-                    <span class="display_currency" data-currency_symbol="true">{{ $amount_paid ?? 0 }}</span>
-                </td>
-            </tr>
-        </tbody>
-    </table>
-
-    <div class="border-top"></div>
-
-    <div class="textbox-info total">
-        <p class="f-left"><strong>Total Due</strong></p>
-        <p class="f-right"><strong><span class="display_currency" data-currency_symbol="true">{{ $total_due ?? 0 }}</span></strong></p>
+    <div class="grand-total">
+        <span>TOTAL DUE:</span>
+        <span class="val">{{ $total_due ?? 0 }}</span>
     </div>
 
     @if(!empty($next_due_date))
-        <div class="border-top"></div>
-        <div class="textbox-info">
-            <p class="f-left"><strong>Payment Due Date:</strong></p>
-            <p class="f-right">{{ $next_due_date }}</p>
+        <div class="info-row" style="margin-top: 5px;">
+            <span>Next Due Date:</span>
+            <span>{{ $next_due_date }}</span>
         </div>
     @endif
 
-    <div class="border-top"></div>
-
-    <div class="centered f-12" style="margin-top: 8px;">
+    <div class="footer-text">
         {{ $footer_text ?? '' }}
+        <div style="margin-top: 10px;">Thank You!</div>
     </div>
 </div>
 
 <style type="text/css">
-    body { color: #000; }
-
-    .ticket { width: 100%; max-width: 100%; }
+    body { font-family: Arial, Helvetica, sans-serif; color: #000; margin: 5px; padding: 5px; background: #fff; }
+    .receipt { width: 100%; max-width: 100%; }
+    .text-center { text-align: center; }
     .centered { text-align: center; }
-    .text-left { text-align: left; }
-    .text-right { text-align: right; }
-
-    .headings { font-size: 16px; font-weight: 700; text-transform: uppercase; }
-    .sub-headings { font-size: 15px; font-weight: 700; }
-
-    .f-12 { font-size: 12px; }
-
-    .border-top { border-top: 1px solid #242424; margin: 6px 0; }
-
-    .textbox-info { width: 100%; clear: both; }
-    .textbox-info:after { content: ""; display: table; clear: both; }
-    .textbox-info .f-left { float: left; width: 50%; margin: 0; }
-    .textbox-info .f-right { float: right; width: 50%; margin: 0; text-align: right; }
-
-    .table-info { width: 100%; border-collapse: collapse; }
-    .table-info td { padding: 2px 0; }
+    
+    .business-name { font-size: 18px; font-weight: 900; text-transform: uppercase; margin-bottom: 2px; }
+    .business-info { font-size: 12px; line-height: 1.3; margin-bottom: 5px; }
+    
+    .sub-heading { font-size: 15px; font-weight: 800; text-transform: uppercase; margin: 10px 0; border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 3px 0; }
+    
+    .info-row { display: flex; justify-content: space-between; font-size: 12px; line-height: 1.4; }
+    .tot-row { display: flex; justify-content: space-between; font-size: 13px; padding: 2px 0; }
+    .grand-total { display: flex; justify-content: space-between; font-size: 16px; font-weight: 900; border-top: 1px solid #000; border-bottom: 2px solid #000; margin: 5px 0; padding: 5px 0; }
+    
+    .sep-thick { border-bottom: 2px solid #000; margin: 8px 0; }
+    .footer-text { text-align: center; font-size: 12px; margin-top: 15px; }
 
     @media print {
-        * { font-size: 12px; font-family: 'Times New Roman'; word-break: break-word; }
-        .hidden-print, .hidden-print * { display: none !important; }
+        body { font-size: 12px; }
+        .hidden-print { display: none !important; }
     }
 </style>

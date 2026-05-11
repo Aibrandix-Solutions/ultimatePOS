@@ -642,6 +642,7 @@ class TransactionPaymentController extends Controller
                 $query->select(
                     DB::raw("SUM(IF(t.type = 'sell' AND t.status = 'final', final_total, 0)) as total_invoice"),
                     DB::raw("SUM(IF(t.type = 'sell' AND t.status = 'final', (SELECT COALESCE(SUM(IF(is_return = 1,-1*amount,amount)), 0) FROM transaction_payments WHERE transaction_payments.transaction_id=t.id AND (transaction_payments.method != 'cheque' OR transaction_payments.cheque_status = 'cleared')), 0)) as total_paid"),
+                    DB::raw("SUM(IF(t.type = 'ledger_discount', t.final_total, 0)) as total_ledger_discount"),
                     DB::raw("SUM(IF(t.type = 'sell_return', final_total, 0)) as total_sell_return"),
                     DB::raw("SUM(IF(t.type = 'sell_return', (SELECT COALESCE(SUM(amount), 0) FROM transaction_payments WHERE transaction_payments.transaction_id=t.id AND (transaction_payments.method != 'cheque' OR transaction_payments.cheque_status = 'cleared')), 0)) as sell_return_paid"),
                     'contacts.name',
@@ -650,6 +651,9 @@ class TransactionPaymentController extends Controller
                 );
             } elseif ($due_payment_type == 'sell_return') {
                 $query->select(
+                    DB::raw("SUM(IF(t.type = 'sell' AND t.status = 'final', final_total, 0)) as total_invoice"),
+                    DB::raw("SUM(IF(t.type = 'sell' AND t.status = 'final', (SELECT COALESCE(SUM(IF(is_return = 1,-1*amount,amount)), 0) FROM transaction_payments WHERE transaction_payments.transaction_id=t.id AND (transaction_payments.method != 'cheque' OR transaction_payments.cheque_status = 'cleared')), 0)) as total_paid"),
+                    DB::raw("SUM(IF(t.type = 'ledger_discount', t.final_total, 0)) as total_ledger_discount"),
                     DB::raw("SUM(IF(t.type = 'sell_return', final_total, 0)) as total_sell_return"),
                     DB::raw("SUM(IF(t.type = 'sell_return', (SELECT COALESCE(SUM(amount), 0) FROM transaction_payments WHERE transaction_payments.transaction_id=t.id AND (transaction_payments.method != 'cheque' OR transaction_payments.cheque_status = 'cleared')), 0)) as total_return_paid"),
                     'contacts.name',
@@ -675,22 +679,28 @@ class TransactionPaymentController extends Controller
                                     $contact_details->total_return_paid;
             } elseif ($due_payment_type == 'sell') {
                 $contact_details->total_invoice = empty($contact_details->total_invoice) ? 0 : $contact_details->total_invoice;
-                $contact_details->total_sell_return = empty($contact_details->total_sell_return) ? 0 : $contact_details->total_sell_return;
-                $contact_details->sell_return_paid = empty($contact_details->sell_return_paid) ? 0 : $contact_details->sell_return_paid;
+                $contact_details->total_paid = empty($contact_details->total_paid) ? 0 : $contact_details->total_paid;
+                $contact_details->total_ledger_discount = empty($contact_details->total_ledger_discount) ? 0 : $contact_details->total_ledger_discount;
 
-                $sell_return_due = $contact_details->total_sell_return - $contact_details->sell_return_paid;
-                $payment_line->amount = $contact_details->total_invoice -
-                                    $contact_details->total_paid - $sell_return_due;
+                $contact_details->opening_balance = ! empty($contact_details->opening_balance) ? $contact_details->opening_balance : 0;
+                $contact_details->opening_balance_paid = ! empty($contact_details->opening_balance_paid) ? $contact_details->opening_balance_paid : 0;
+                $ob_due = $contact_details->opening_balance - $contact_details->opening_balance_paid;
+
+                $payment_line->amount = max(0, $contact_details->total_invoice -
+                                    $contact_details->total_paid - $contact_details->total_ledger_discount + $ob_due);
             } elseif ($due_payment_type == 'sell_return') {
-                $payment_line->amount = $contact_details->total_sell_return -
-                                    $contact_details->total_return_paid;
+                $contact_details->total_sell_return = empty($contact_details->total_sell_return) ? 0 : $contact_details->total_sell_return;
+                $contact_details->total_return_paid = empty($contact_details->total_return_paid) ? 0 : $contact_details->total_return_paid;
+
+                $payment_line->amount = max(0, $contact_details->total_sell_return -
+                                    $contact_details->total_return_paid);
             }
 
             //If opening balance due exists add to payment amount
             $contact_details->opening_balance = ! empty($contact_details->opening_balance) ? $contact_details->opening_balance : 0;
             $contact_details->opening_balance_paid = ! empty($contact_details->opening_balance_paid) ? $contact_details->opening_balance_paid : 0;
             $ob_due = $contact_details->opening_balance - $contact_details->opening_balance_paid;
-            if ($ob_due > 0) {
+            if ($ob_due > 0 && !in_array($due_payment_type, ['sell', 'sell_return'])) {
                 $payment_line->amount += $ob_due;
             }
 
@@ -706,8 +716,18 @@ class TransactionPaymentController extends Controller
             //Accounts
             $accounts = $this->moduleUtil->accountsDropdown($business_id, true);
 
+            // For sell_return: calculate existing sale due so modal can offer the 'deduct from due' option
+            $sale_due_amount = 0;
+            if ($due_payment_type == 'sell_return') {
+                $contact_details->total_invoice = empty($contact_details->total_invoice) ? 0 : $contact_details->total_invoice;
+                $contact_details->total_paid    = empty($contact_details->total_paid) ? 0 : $contact_details->total_paid;
+                $contact_details->total_ledger_discount = empty($contact_details->total_ledger_discount) ? 0 : $contact_details->total_ledger_discount;
+                $ob = ($contact_details->opening_balance ?? 0) - ($contact_details->opening_balance_paid ?? 0);
+                $sale_due_amount = max(0, $contact_details->total_invoice - $contact_details->total_paid - $contact_details->total_ledger_discount + $ob);
+            }
+
             return view('transaction_payment.pay_supplier_due_modal')
-                        ->with(compact('contact_details', 'payment_types', 'payment_line', 'due_payment_type', 'ob_due', 'amount_formated', 'accounts'));
+                        ->with(compact('contact_details', 'payment_types', 'payment_line', 'due_payment_type', 'ob_due', 'amount_formated', 'accounts', 'sale_due_amount'));
         }
     }
 
@@ -731,8 +751,29 @@ class TransactionPaymentController extends Controller
             $previous_due = $this->getContactDueAmountByType($contact_id, $due_payment_type, $business_id);
             $amount_paid = $this->transactionUtil->num_uf($request->input('amount'));
 
+            // If the user chose to deduct the return credit from the customer's existing sale due,
+            // we need to perform two actions:
+            // 1. Pay the 'sell' transactions (reduces what the customer owes).
+            // 2. Pay the 'sell_return' transactions (marks the return credit as "used/cleared").
+            $return_credit_action = $request->input('return_credit_action', 'pay_back');
+            $is_deduction = ($due_payment_type === 'sell_return' && $return_credit_action === 'deduct_from_due');
+
             DB::beginTransaction();
-            $tp = $this->transactionUtil->payContact($request);
+
+            if ($is_deduction) {
+                // First, apply payment to Sales (reduces debt)
+                $request->merge(['due_payment_type' => 'sell']);
+                $tp_sell = $this->transactionUtil->payContact($request);
+                
+                // Second, apply payment to Returns (clears the credit)
+                // We use the same request but switch type to sell_return
+                $request->merge(['due_payment_type' => 'sell_return']);
+                $tp_return = $this->transactionUtil->payContact($request);
+                
+                $tp = $tp_sell; // Use the sell payment as the primary reference for the register
+            } else {
+                $tp = $this->transactionUtil->payContact($request);
+            }
 
             //payContact creates child payments allocated to actual due transactions.
             //Push each allocated child payment to register movement.
@@ -740,6 +781,8 @@ class TransactionPaymentController extends Controller
                 ->whereNotNull('transaction_id')
                 ->with('transaction')
                 ->get();
+
+            $total_allocated = $allocated_payments->sum('amount');
 
             foreach ($allocated_payments as $allocated_payment) {
                 if (!empty($allocated_payment->transaction)) {
@@ -749,6 +792,31 @@ class TransactionPaymentController extends Controller
                         $allocated_payment->created_by
                     );
                 }
+            }
+
+            // Also record the PARENT payment into the register for the advance/excess portion.
+            // This covers:
+            // (a) Pure advance payments (no due invoices, full amount is advance balance)
+            // (b) Excess payments (some allocated to invoices, rest goes to advance balance)
+            // (c) Pay-back to customer for sell_return (no allocation — full amount is cash-out)
+            $advance_amount = $tp->amount - $total_allocated;
+            if ($advance_amount > 0.001) {
+                // Build a synthetic transaction stub for the register entry
+                // so the correct credit/debit type is determined by contact type.
+                $contact_for_register = Contact::find($contact_id);
+                $synthetic_transaction = (object) [
+                    'type' => ($contact_for_register && $contact_for_register->type === 'supplier') ? 'purchase' : 'sell',
+                    'contact_id' => $contact_id,
+                    'id' => null,
+                ];
+                // Clone the payment object and set amount to the advance portion only
+                $advance_payment_entry = clone $tp;
+                $advance_payment_entry->amount = $advance_amount;
+                $this->cashRegisterUtil->addTransactionPaymentToRegister(
+                    $synthetic_transaction,
+                    $advance_payment_entry,
+                    $tp->created_by
+                );
             }
 
             $pos_settings = ! empty(session()->get('business.pos_settings')) ? json_decode(session()->get('business.pos_settings'), true) : [];
@@ -879,7 +947,8 @@ class TransactionPaymentController extends Controller
             // default to sell – include sell_return so credit notes reduce the due
             $query->select(
                 DB::raw("SUM(IF(t.type = 'sell' AND t.status = 'final', final_total, 0)) as total_invoice"),
-                DB::raw("SUM(IF(t.type = 'sell' AND t.status = 'final', (SELECT COALESCE(SUM(IF(is_return = 1,-1*amount,amount)), 0) FROM transaction_payments WHERE transaction_payments.transaction_id=t.id AND (transaction_payments.method != 'cheque' OR transaction_payments.cheque_status = 'cleared')), 0)) as total_paid"),
+                DB::raw("SUM(IF(t.type = 'sell', (SELECT SUM(IF(is_return = 1, -1*amount, amount)) FROM transaction_payments WHERE transaction_payments.transaction_id=t.id AND (transaction_payments.method != 'cheque' OR transaction_payments.cheque_status = 'cleared')), 0)) as total_paid"),
+                DB::raw("SUM(IF(t.type = 'ledger_discount', t.final_total, 0)) as total_ledger_discount"),
                 DB::raw("SUM(IF(t.type = 'sell_return', final_total, 0)) as total_sell_return"),
                 DB::raw("SUM(IF(t.type = 'sell_return', (SELECT COALESCE(SUM(amount), 0) FROM transaction_payments WHERE transaction_payments.transaction_id=t.id AND (transaction_payments.method != 'cheque' OR transaction_payments.cheque_status = 'cleared')), 0)) as sell_return_paid")
             );
@@ -900,12 +969,23 @@ class TransactionPaymentController extends Controller
 
         if ($due_payment_type === 'purchase') {
             $due = (float) (($details->total_purchase ?? 0) - ($details->total_paid ?? 0));
-        } else {
+        } elseif ($due_payment_type === 'sell') {
             $total_sell_return = (float) ($details->total_sell_return ?? 0);
             $sell_return_paid = (float) ($details->sell_return_paid ?? 0);
             $sell_return_due = $total_sell_return - $sell_return_paid;
 
-            $due = (float) (($details->total_invoice ?? 0) - ($details->total_paid ?? 0) - $sell_return_due);
+            $due = (float) (($details->total_invoice ?? 0) - ($details->total_paid ?? 0) - ($details->total_ledger_discount ?? 0) + $ob_due - $sell_return_due);
+            $due = max(0, $due);
+            $ob_due = 0; // Already added
+        } elseif ($due_payment_type === 'sell_return') {
+            $total_sell_return = (float) ($details->total_sell_return ?? 0);
+            $sell_return_paid = (float) ($details->sell_return_paid ?? 0);
+            $sell_return_due = $total_sell_return - $sell_return_paid;
+            $total_ledger_discount = (float) ($details->total_ledger_discount ?? 0);
+
+            $sale_due = (float) (($details->total_invoice ?? 0) - ($details->total_paid ?? 0) - $total_ledger_discount + $ob_due);
+            $due = max(0, $sell_return_due - $sale_due);
+            $ob_due = 0; // Already handled in sale_due
         }
 
         if ($ob_due > 0) {
