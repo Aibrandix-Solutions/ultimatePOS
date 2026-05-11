@@ -2,7 +2,7 @@ name: Deploy UltimatePOS (homeneeds.genxpos360.com via SFTP)
 
 on:
   push:
-    branches: [ home2 ]
+    branches: [ batch ]
   workflow_dispatch:
 
 jobs:
