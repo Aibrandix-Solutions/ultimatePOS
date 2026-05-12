@@ -821,6 +821,9 @@ class TransactionPaymentController extends Controller
                     $next_due_date = $this->transactionUtil->format_date($next_due_date->toDateTimeString());
                 }
 
+                $amount_paid = $tp->amount;
+                $previous_due = $total_due + $amount_paid;
+
                 $receipt_html = view('transaction_payment.due_payment_receipt', [
                     'business_name' => $business_name,
                     'location_name' => $location->name ?? null,

@@ -453,36 +453,6 @@ class Util
         }
     }
 
-    private function sendSmsViaSmsLenz($data)
-    {
-        $sms_settings = $data['sms_settings'];
-
-        $api_url = !empty($sms_settings['smslenz_url']) ? trim($sms_settings['smslenz_url']) : 'https://smslenz.lk/api/send-sms';
-        $user_id = !empty($sms_settings['smslenz_user_id']) ? trim($sms_settings['smslenz_user_id']) : '';
-        $api_key = !empty($sms_settings['smslenz_api_key']) ? trim($sms_settings['smslenz_api_key']) : '';
-        $sender_id = !empty($sms_settings['smslenz_sender_id']) ? trim($sms_settings['smslenz_sender_id']) : '';
-        $contact = trim((string) $data['mobile_number']);
-        $message = trim((string) $data['sms_body']);
-
-        if (empty($api_url) || empty($user_id) || empty($api_key) || empty($sender_id) || empty($contact) || empty($message)) {
-            return false;
-        }
-
-        $client = new Client();
-        $options = [
-            'http_errors' => false,
-            'query' => [
-                'user_id' => $user_id,
-                'api_key' => $api_key,
-                'sender_id' => $sender_id,
-                'contact' => $contact,
-                'message' => $message,
-            ],
-        ];
-
-        return $client->get($api_url, $options);
-    }
-
     /**
      * Sends SMS notification.
      *
@@ -501,10 +471,6 @@ class Util
 
         if ($sms_service == 'twilio') {
             return $this->sendSmsViaTwilio($data);
-        }
-
-        if ($sms_service == 'smslenz') {
-            return $this->sendSmsViaSmsLenz($data);
         }
 
         $request_data = [
@@ -713,50 +679,6 @@ class Util
     }
 
     /**
-     * Generates E-bill url for transaction.
-     *
-     * @param  int  $transaction_id
-     * @param  int  $business_id
-     * @return string
-     */
-    public function getEbillUrl($transaction_id, $business_id)
-    {
-        $transaction = Transaction::where('business_id', $business_id)
-            ->findOrFail($transaction_id);
-
-        if (empty($transaction->invoice_token)) {
-            $transaction->invoice_token = $this->generateToken();
-            $transaction->save();
-        }
-
-        $code = base_convert((string) $transaction->id, 10, 36) . '-' . substr($transaction->invoice_token, 0, 6);
-
-        return route('show_ebill_short', ['code' => $code]);
-    }
-
-    /**
-     * Generates E-bill PDF url for transaction.
-     *
-     * @param  int  $transaction_id
-     * @param  int  $business_id
-     * @return string
-     */
-    public function getEbillPdfUrl($transaction_id, $business_id)
-    {
-        $transaction = Transaction::where('business_id', $business_id)
-            ->findOrFail($transaction_id);
-
-        if (empty($transaction->invoice_token)) {
-            $transaction->invoice_token = $this->generateToken();
-            $transaction->save();
-        }
-
-        $code = base_convert((string) $transaction->id, 10, 36) . '-' . substr($transaction->invoice_token, 0, 6);
-
-        return route('ebill_pdf_short', ['code' => $code]);
-    }
-
-    /**
      * Generates payment link for the transaction
      *
      * @param  int  $transaction_id, int $business_id
@@ -900,7 +822,12 @@ class Util
         foreach ($data as $key => $value) {
             //Replace contact name
             if (strpos($value, '{contact_name}') !== false) {
-                $contact_name = empty($contact) ? $transaction->contact->name : $contact->name;
+                $contact_name = '';
+                if (!empty($contact)) {
+                    $contact_name = $contact->name;
+                } elseif (!empty($transaction) && !empty($transaction->contact)) {
+                    $contact_name = $transaction->contact->name;
+                }
 
                 $data[$key] = str_replace('{contact_name}', $contact_name, $data[$key]);
             }
@@ -910,13 +837,6 @@ class Util
                 $invoice_number = $transaction->type == 'sell' ? $transaction->invoice_no : '';
 
                 $data[$key] = str_replace('{invoice_number}', $invoice_number, $data[$key]);
-            }
-
-            //Replace invoice_no (alias of invoice_number)
-            if (strpos($value, '{invoice_no}') !== false) {
-                $invoice_no = $transaction->type == 'sell' ? $transaction->invoice_no : '';
-
-                $data[$key] = str_replace('{invoice_no}', $invoice_no, $data[$key]);
             }
 
             //Replace ref number
@@ -930,13 +850,6 @@ class Util
                 $total_amount = $this->num_f($transaction->final_total, true, $business->currency);
 
                 $data[$key] = str_replace('{total_amount}', $total_amount, $data[$key]);
-            }
-
-            //Replace total (alias of total_amount)
-            if (strpos($value, '{total}') !== false) {
-                $total_amount = $this->num_f($transaction->final_total, true, $business->currency);
-
-                $data[$key] = str_replace('{total}', $total_amount, $data[$key]);
             }
 
             $total_paid = 0;
@@ -995,24 +908,6 @@ class Util
                 $data[$key] = str_replace('{invoice_url}', $invoice_url, $data[$key]);
             }
 
-            //Replace ebill_url
-            if (!empty($transaction) && strpos($value, '{ebill_url}') !== false && $transaction->type == 'sell') {
-                $ebill_url = $this->getEbillUrl($transaction->id, $transaction->business_id);
-                $data[$key] = str_replace('{ebill_url}', $ebill_url, $data[$key]);
-            }
-
-            //Replace ebill_link (alias of ebill_url)
-            if (!empty($transaction) && strpos($value, '{ebill_link}') !== false && $transaction->type == 'sell') {
-                $ebill_url = $this->getEbillUrl($transaction->id, $transaction->business_id);
-                $data[$key] = str_replace('{ebill_link}', $ebill_url, $data[$key]);
-            }
-
-            //Replace ebill_pdf_url
-            if (!empty($transaction) && strpos($value, '{ebill_pdf_url}') !== false && $transaction->type == 'sell') {
-                $ebill_pdf_url = $this->getEbillPdfUrl($transaction->id, $transaction->business_id);
-                $data[$key] = str_replace('{ebill_pdf_url}', $ebill_pdf_url, $data[$key]);
-            }
-
             if (!empty($transaction) && strpos($value, '{quote_url}') !== false && $transaction->type == 'sell') {
                 $invoice_url = $this->getInvoiceUrl($transaction->id, $transaction->business_id);
                 $data[$key] = str_replace('{quote_url}', $invoice_url, $data[$key]);
@@ -1035,7 +930,7 @@ class Util
                 $contact_business_name = !empty($transaction->contact->supplier_business_name) ? $transaction->contact->supplier_business_name : '';
                 $data[$key] = str_replace('{contact_business_name}', $contact_business_name, $data[$key]);
             }
-            if (!empty($transaction->location)) {
+            if (!empty($transaction) && !empty($transaction->location)) {
                 if (strpos($value, '{location_name}') !== false) {
                     $location = $transaction->location->name;
 

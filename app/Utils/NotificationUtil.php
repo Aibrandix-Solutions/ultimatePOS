@@ -44,7 +44,7 @@ class NotificationUtil extends Util
                     'subject' => $notification_template->subject,
                     'whatsapp_text' => $notification_template->whatsapp_text,
                 ];
-                $tag_replaced_data = $this->replaceTags($business_id, $orig_data, $transaction);
+                $tag_replaced_data = $this->replaceTags($business_id, $orig_data, $transaction, $contact);
 
                 $data['email_body'] = $tag_replaced_data['email_body'];
                 $data['sms_body'] = $tag_replaced_data['sms_body'];

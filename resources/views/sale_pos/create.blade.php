@@ -63,6 +63,7 @@
 															- {{ data_get($exchange_data, 'customer.mobile') }}
                                                         @endif
                                                     </p>
+                                                    <input type="hidden" name="contact_id" value="{{ $exchange_data['customer_id'] }}">
                                                     <input type="hidden" name="exchange_return_id" value="{{ $exchange_data['return_id'] }}">
                                                     <input type="hidden" name="exchange_parent_sale_id" value="{{ $exchange_data['parent_sale_id'] }}">
                                                 </div>
