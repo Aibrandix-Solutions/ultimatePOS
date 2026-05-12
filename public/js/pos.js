@@ -216,6 +216,13 @@ $(document).ready(function () {
         $('#advance_balance_text').text(__currency_trans_from_en(data.balance), true);
         $('#advance_balance').val(data.balance);
 
+        if (parseFloat(data.balance) > 0) {
+            $('#advance_deduct_checkbox_wrapper').removeClass('hide');
+        } else {
+            $('#advance_deduct_checkbox_wrapper').addClass('hide');
+            $('#deduct_from_advance').prop('checked', false);
+        }
+
         if (data.price_calculation_type == 'selling_price_group') {
             $('#price_group').val(data.selling_price_group_id);
             $('#price_group').change();
@@ -3005,7 +3012,16 @@ function calculate_balance_due() {
     }
 
     // Calculate balance due and change return based on the amount remaining for the current invoice
-    var bal_due = total_payable - payment_for_current;
+    var raw_bal_due = total_payable - payment_for_current;
+    var advance_to_use = 0;
+    var advance_balance = parseFloat($('#advance_balance').val()) || 0;
+    var deduct_checked = $('#deduct_from_advance').is(':checked');
+
+    if (advance_balance > 0 && raw_bal_due > 0 && !is_walk_in && deduct_checked) {
+        advance_to_use = Math.min(raw_bal_due, advance_balance);
+    }
+
+    var bal_due = raw_bal_due - advance_to_use;
     var change_return = 0;
 
     if (bal_due < 0 || Math.abs(bal_due) < 0.05) {
@@ -3065,24 +3081,18 @@ function calculate_balance_due() {
     __highlight(bal_due * -1, $('span.balance_due'));
     __highlight(change_return * -1, $('span.change_return_span'));
 
-    // Advance auto-deduction hint
+    // Advance deduction hint (inline)
     try {
-        var advance_balance = parseFloat($('#advance_balance').val()) || 0;
-        var $hint = $('#advance_auto_deduct_hint');
         var $hint_text = $('#advance_auto_deduct_text');
-        if ($hint.length && advance_balance > 0 && bal_due > 0 && !is_walk_in) {
-            var advance_to_use = Math.min(bal_due, advance_balance);
-            var remaining_after = bal_due - advance_to_use;
-            var msg = '\u26a1 Advance will auto-cover: ' + __currency_trans_from_en(advance_to_use, true);
-            if (remaining_after > 0.01) {
-                msg += ' — Remaining due: ' + __currency_trans_from_en(remaining_after, true);
+        if ($hint_text.length && advance_to_use > 0) {
+            var msg = '';
+            if (bal_due > 0.01) {
+                msg = '(Covers: ' + __currency_trans_from_en(advance_to_use, true) + ' — Remaining: ' + __currency_trans_from_en(bal_due, true) + ')';
             } else {
-                msg += ' — Sale will be fully PAID';
+                msg = '(Covers everything — Fully Paid)';
             }
             $hint_text.text(msg);
-            $hint.removeClass('hide');
-        } else if ($hint.length) {
-            $hint.addClass('hide');
+        } else if ($hint_text.length) {
             $hint_text.text('');
         }
     } catch (e) { /* ignore */ }
@@ -3283,6 +3293,13 @@ $(document).on('change', '#apply_payment_to_old_dues', function () {
     }
 });
 
+//POS: when manual advance deduction toggled, recalc totals
+$(document).on('change', '#deduct_from_advance', function () {
+    if (typeof calculate_balance_due === 'function') {
+        calculate_balance_due();
+    }
+});
+
 function set_default_customer() {
     var default_customer_id = $('#default_customer_id').val();
     var default_customer_name = $('#default_customer_name').val();
@@ -3300,6 +3317,13 @@ function set_default_customer() {
     }
     $('#advance_balance_text').text(__currency_trans_from_en(default_customer_balance), true);
     $('#advance_balance').val(default_customer_balance);
+
+    if (parseFloat(default_customer_balance) > 0) {
+        $('#advance_deduct_checkbox_wrapper').removeClass('hide');
+    } else {
+        $('#advance_deduct_checkbox_wrapper').addClass('hide');
+        $('#deduct_from_advance').prop('checked', false);
+    }
     $('#shipping_address_modal').val(default_customer_address);
     if (default_customer_address) {
         $('#shipping_address').val(default_customer_address);

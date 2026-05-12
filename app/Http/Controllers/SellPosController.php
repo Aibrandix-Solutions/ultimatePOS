@@ -668,11 +668,12 @@ class SellPosController extends Controller
                 // (enforced above by overriding apply-to-old-dues when installment plan is enabled)
 
                 // Auto-deduct from advance balance if received amount < total payable (registered customers only)
-                if (!$transaction->is_suspend && !$is_credit_sale && $input['status'] === 'final') {
+                if (!$transaction->is_suspend && !$is_credit_sale && $input['status'] === 'final' && !empty($input['deduct_from_advance'])) {
                     $sale_payment_lines = $this->injectAdvanceDeductionIfNeeded(
                         $sale_payment_lines,
                         (float) $transaction->final_total,
-                        $contact_id
+                        $contact_id,
+                        $old_due_payment_lines
                     );
                 }
 
@@ -1753,6 +1754,14 @@ class SellPosController extends Controller
                     }
                     $input['payment'][] = $change_return;
 
+                    if (!empty($input['deduct_from_advance'])) {
+                        $input['payment'] = $this->injectAdvanceDeductionIfNeeded(
+                            $input['payment'],
+                            (float) $transaction->final_total,
+                            $contact_id
+                        );
+                    }
+
                     if (!$is_direct_sale || auth()->user()->can('sell.payments')) {
                         $this->transactionUtil->createOrUpdatePaymentLines($transaction, $input['payment']);
 
@@ -1943,11 +1952,13 @@ class SellPosController extends Controller
         $input['payment'][] = $change_return;
 
         // Auto-deduct from advance balance if received amount < total payable (registered customers only)
-        $input['payment'] = $this->injectAdvanceDeductionIfNeeded(
-            $input['payment'],
-            (float) $transaction->final_total,
-            $transaction->contact_id
-        );
+        if (!empty($input['deduct_from_advance'])) {
+            $input['payment'] = $this->injectAdvanceDeductionIfNeeded(
+                $input['payment'],
+                (float) $transaction->final_total,
+                $transaction->contact_id
+            );
+        }
 
         $this->transactionUtil->createOrUpdatePaymentLines($transaction, $input['payment']);
         $this->cashRegisterUtil->updateSellPayments($transaction->status, $transaction, $input['payment']);
@@ -3962,7 +3973,7 @@ class SellPosController extends Controller
      * @param  int|null $contact_id  The customer contact ID
      * @return array  Payment lines, possibly with an extra advance line appended
      */
-    private function injectAdvanceDeductionIfNeeded(array $payment_lines, float $final_total, $contact_id): array
+    private function injectAdvanceDeductionIfNeeded(array $payment_lines, float $final_total, $contact_id, array $old_due_payment_lines = []): array
     {
         // Must have a specific registered customer
         if (empty($contact_id)) {
@@ -3992,6 +4003,17 @@ class SellPosController extends Controller
             }
             if (!empty($line['method']) && $line['method'] === 'advance') {
                 continue; // skip any manually entered advance lines
+            }
+            $total_received += (float) ($line['amount'] ?? 0);
+        }
+
+        // Also sum what is being applied to old dues in the same request to avoid false shortfall
+        foreach ($old_due_payment_lines as $line) {
+            if (!empty($line['is_return'])) {
+                continue; 
+            }
+            if (!empty($line['method']) && $line['method'] === 'advance') {
+                continue;
             }
             $total_received += (float) ($line['amount'] ?? 0);
         }

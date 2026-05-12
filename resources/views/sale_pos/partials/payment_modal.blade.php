@@ -15,10 +15,12 @@
                             'data-error-msg' => __('lang_v1.required_advance_balance_not_available'),
                         ]) !!}
                     </div>
-                    <div id="advance_auto_deduct_hint" class="col-md-12 mb-12 hide" style="margin-top:2px; margin-bottom:4px;">
-                        <small style="color:#d97706; font-weight:600;">
-                            <i class="fa fa-bolt"></i> <span id="advance_auto_deduct_text"></span>
-                        </small>
+                    <div class="col-md-12 mb-12 hide" id="advance_deduct_checkbox_wrapper" style="margin-top:4px;">
+                        <label style="font-weight: 600; cursor: pointer; color: #161160;">
+                            {!! Form::checkbox('deduct_from_advance', 1, false, ['id' => 'deduct_from_advance']) !!}
+                            Use Advance Balance to pay this bill
+                            <span id="advance_auto_deduct_text" style="color:#d97706; font-weight:700; margin-left:8px;"></span>
+                        </label>
                     </div>
 
                     <div class="col-md-12 mb-12 apply_to_old_dues_wrapper" style="margin-top:6px;">
