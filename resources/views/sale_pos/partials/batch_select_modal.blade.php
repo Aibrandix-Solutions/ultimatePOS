@@ -14,19 +14,22 @@
                 <div id="pos_batch_select_loading" class="text-center" style="display:none;">
                     <i class="fa fa-spinner fa-spin fa-2x"></i>
                 </div>
-                <table class="table table-bordered table-hover" id="pos_batch_select_table" style="display:none;">
-                    <thead>
-                        <tr>
-                            <th style="width:60px;">#</th>
-                            <th>@lang('lang_v1.batch_number')</th>
-                            <th>@lang('lang_v1.selling_price_inc_tax')</th>
-                            <th>@lang('lang_v1.available_stock')</th>
-                            <th>@lang('purchase.purchase_date')</th>
-                            <th style="width:90px;"></th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover" id="pos_batch_select_table" style="display:none;">
+                        <thead>
+                            <tr>
+                                <th style="width:60px;">#</th>
+                                <th>@lang('lang_v1.batch_number')</th>
+                                <th>@lang('lang_v1.selling_price_inc_tax')</th>
+                                <th>@lang('lang_v1.available_stock')</th>
+                                <th>@lang('purchase.purchase_date')</th>
+                                <th style="width:90px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+
                 <div id="pos_batch_select_empty" class="text-center text-muted" style="display:none; padding:24px;">
                     @lang('lang_v1.no_records_found')
                 </div>

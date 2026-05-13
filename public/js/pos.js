@@ -2349,6 +2349,13 @@ function __pos_show_batch_select(variation_id, quantity) {
         $modal.find('#pos_batch_select_loading').hide();
         $modal.find('#pos_batch_select_empty').hide();
 
+        var labels = {
+            batch: $modal.find('thead th:eq(1)').text().trim(),
+            price: $modal.find('thead th:eq(2)').text().trim(),
+            stock: $modal.find('thead th:eq(3)').text().trim(),
+            date: $modal.find('thead th:eq(4)').text().trim()
+        };
+
         batches.forEach(function (b, idx) {
             var priceRaw = (b.display_sell_price_inc_tax !== null && b.display_sell_price_inc_tax !== undefined)
                 ? b.display_sell_price_inc_tax
@@ -2359,13 +2366,13 @@ function __pos_show_batch_select(variation_id, quantity) {
                 ? __currency_trans_from_en(priceRaw, true)
                 : '—';
             var row = '<tr>' +
-                '<td>' + (idx + 1) + '</td>' +
-                '<td><strong>' + (b.batch_number || (LANG.standard_restock_short || 'Batch 1')) + '</strong>' +
+                '<td data-label="#">' + (idx + 1) + '</td>' +
+                '<td data-label="' + labels.batch + '"><strong>' + (b.batch_number || (LANG.standard_restock_short || 'Batch 1')) + '</strong>' +
                     (b.lot_number ? '<br><small class="text-muted">Lot: ' + b.lot_number + '</small>' : '') +
                 '</td>' +
-                '<td>' + price + '</td>' +
-                '<td>' + (b.remaining || 0) + '</td>' +
-                '<td>' + (b.transaction_date || '') + '</td>' +
+                '<td data-label="' + labels.price + '">' + price + '</td>' +
+                '<td data-label="' + labels.stock + '">' + (b.remaining || 0) + '</td>' +
+                '<td data-label="' + labels.date + '">' + (b.transaction_date || '') + '</td>' +
                 '<td><button type="button" class="btn btn-primary btn-sm pos_batch_pick_btn" ' +
                     'data-batch_id="' + b.id + '" ' +
                     'data-variation_id="' + variation_id + '" ' +
@@ -2375,6 +2382,7 @@ function __pos_show_batch_select(variation_id, quantity) {
                 '</tr>';
             $body.append(row);
         });
+
         $modal.find('#pos_batch_select_table').show();
         $modal.modal('show');
     }).fail(function () {

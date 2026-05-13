@@ -140,8 +140,15 @@ $(document).ready(function () {
             { data: 'action', name: 'action', orderable: false, searchable: false },
         ],
         order: [[0, 'asc']],
+        createdRow: function( row, data, dataIndex ) {
+            $(row).find('td:eq(0)').attr('data-label', "@lang('product.product')");
+            $(row).find('td:eq(1)').attr('data-label', "@lang('purchase.location')");
+            $(row).find('td:eq(2)').attr('data-label', "@lang('lang_v1.total_remaining_stock')");
+            $(row).find('td:eq(3)').attr('data-label', "@lang('messages.action')");
+        },
         fnDrawCallback: function () { __currency_convert_recursively($('#batch_details_table')); },
     });
+
 
     $(document).on('click', '.view_batch_details', function() {
         $('.view_batch_details').removeClass('active');

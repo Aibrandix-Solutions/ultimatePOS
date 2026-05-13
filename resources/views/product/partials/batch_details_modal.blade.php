@@ -23,27 +23,28 @@
                     <tbody>
                         @foreach($batches as $batch)
                             <tr>
-                                <td>{{ $batch->batch_number }}</td>
-                                <td><span class="display_currency" data-currency_symbol="true">{{ $batch->purchase_price_inc_tax }}</span></td>
-                                <td><span class="display_currency" data-currency_symbol="true">{{ $batch->batch_selling_price_inc_tax ?? 0 }}</span></td>
-                                <td>{{ @format_quantity($batch->qty_in) }}</td>
-                                <td>{{ @format_quantity($batch->qty_out) }}</td>
-                                <td>
+                                <td data-label="@lang('lang_v1.batch_number')">{{ $batch->batch_number }}</td>
+                                <td data-label="@lang('lang_v1.purchase_price_inc_tax')"><span class="display_currency" data-currency_symbol="true">{{ $batch->purchase_price_inc_tax }}</span></td>
+                                <td data-label="@lang('lang_v1.selling_price_inc_tax')"><span class="display_currency" data-currency_symbol="true">{{ $batch->batch_selling_price_inc_tax ?? 0 }}</span></td>
+                                <td data-label="@lang('lang_v1.qty_in')">{{ @format_quantity($batch->qty_in) }}</td>
+                                <td data-label="@lang('lang_v1.qty_out')">{{ @format_quantity($batch->qty_out) }}</td>
+                                <td data-label="@lang('lang_v1.remaining_stock')">
                                     @php
                                         $qty = (float) $batch->qty_remaining;
                                         $cls = $qty <= 0 ? 'label-danger' : ($qty < 5 ? 'label-warning' : 'label-success');
                                     @endphp
                                     <span class="label {{ $cls }}">{{ @format_quantity($qty) }}</span>
                                 </td>
-                                <td>{{ @format_date($batch->transaction_date) }}</td>
-                                <td>{{ $batch->purchase_ref }}</td>
-                                <td>
+                                <td data-label="@lang('purchase.purchase_date')">{{ @format_date($batch->transaction_date) }}</td>
+                                <td data-label="@lang('purchase.ref_no')">{{ $batch->purchase_ref }}</td>
+                                <td data-label="@lang('messages.action')">
                                     <button type="button" class="btn btn-xs btn-primary btn-modal" data-href="{{ action([\App\Http\Controllers\ProductBatchController::class, 'edit'], [$batch->id]) }}" data-container="#edit_batch_modal">
                                         <i class="fa fa-edit"></i> @lang('messages.edit')
                                     </button>
                                 </td>
                             </tr>
                         @endforeach
+
                     </tbody>
                 </table>
             </div>

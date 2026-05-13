@@ -180,18 +180,58 @@
             @endforeach
         @endif
         <div>
-
             <div class="overlay tw-hidden"></div>
         </div>
+
+        <style>
+            @media print {
+                #scrollable-container {
+                    overflow: visible !important;
+                    height: auto !important;
+                }
+                
+                /* Robust fix for mobile receipt printing */
+                body.is-printing-receipt {
+                    height: auto !important;
+                    overflow: visible !important;
+                    background-color: white !important;
+                }
+
+                body.is-printing-receipt .thetop,
+                body.is-printing-receipt main {
+                    display: block !important;
+                    height: auto !important;
+                    position: static !important;
+                    overflow: visible !important;
+                    width: 100% !important;
+                    margin: 0 !important;
+                    padding: 0 !important;
+                }
+
+                body.is-printing-receipt #scrollable-container,
+                body.is-printing-receipt .main-sidebar,
+                body.is-printing-receipt .main-header,
+                body.is-printing-receipt .scrolltop,
+                body.is-printing-receipt .overlay {
+                    display: none !important;
+                }
+
+                body.is-printing-receipt #receipt_section {
+                    position: relative !important;
+                    display: block !important;
+                    width: 100% !important;
+                    top: 0 !important;
+                    left: 0 !important;
+                    margin: 0 !important;
+                    padding: 0 !important;
+                    visibility: visible !important;
+                    height: auto !important;
+                    overflow: visible !important;
+                }
+            }
+        </style>
 </body>
-<style>
-    @media print {
-  #scrollable-container {
-    overflow: visible !important;
-    height: auto !important;
-  }
-}
-</style>
+
 <style>
     /* Ensure readable text inside Select2 single select for customer field */
     .select2-container .select2-selection__rendered {
