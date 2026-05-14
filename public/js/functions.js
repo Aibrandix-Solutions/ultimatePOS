@@ -383,70 +383,120 @@ function __sum_stock(table, class_name, label_direction = 'right') {
 }
 
 function __print_receipt(section_id = null) {
-    if (section_id) {
-        var imgs = document.getElementById(section_id).getElementsByTagName("img");
-    } else {
-        var imgs = document.images;
-    }
+    var receiptEl = document.getElementById(section_id || 'receipt_section');
+    if (!receiptEl || !receiptEl.innerHTML.trim()) return;
 
+    var imgs = receiptEl.getElementsByTagName("img");
     var img_len = imgs.length;
 
     var doPrint = function() {
-        $('body').addClass('is-printing-receipt');
+        // Step 1: Inject print styles directly via JS (bypasses all CSS caching)
+        var printStyleId = '__receipt_print_style';
+        var old = document.getElementById(printStyleId);
+        if (old) old.parentNode.removeChild(old);
 
-        // Increase delay to 1000ms to allow CSS/layout to apply before calling print
-        // This is crucial for Android Chrome which can show blank pages if triggered too fast.
+        var style = document.createElement('style');
+        style.id = printStyleId;
+        style.textContent =
+            '@media print {' +
+            '  body * { visibility: hidden !important; }' +
+            '  #receipt_section, #receipt_section * { visibility: visible !important; }' +
+            '  #receipt_section {' +
+            '    position: absolute !important;' +
+            '    left: 0 !important;' +
+            '    top: 0 !important;' +
+            '    width: 100% !important;' +
+            '    display: block !important;' +
+            '    margin: 0 !important;' +
+            '    padding: 10px !important;' +
+            '    border: none !important;' +
+            '  }' +
+            '  body, html {' +
+            '    height: auto !important;' +
+            '    overflow: visible !important;' +
+            '    background: white !important;' +
+            '    margin: 0 !important;' +
+            '    padding: 0 !important;' +
+            '  }' +
+            '  .main-header, .main-sidebar, .scrolltop, .no-print,' +
+            '  footer, .overlay, #scrollable-container,' +
+            '  .thetop > aside, .wrapper > aside, .wrapper > header {' +
+            '    display: none !important;' +
+            '  }' +
+            '  main, .thetop, .wrapper, .content-wrapper {' +
+            '    display: block !important;' +
+            '    height: auto !important;' +
+            '    overflow: visible !important;' +
+            '    width: 100% !important;' +
+            '    margin: 0 !important;' +
+            '    padding: 0 !important;' +
+            '    min-height: 0 !important;' +
+            '    position: static !important;' +
+            '  }' +
+            '}';
+        document.head.appendChild(style);
+
+        // Step 2: Add body class (used as a secondary signal)
+        document.body.classList.add('is-printing-receipt');
+
+        // Step 3: Wait for browser to apply the injected styles, then print
         setTimeout(function() {
             window.print();
-            
-            // Mobile-safe cleanup strategy
+
+            // Step 4: Cleanup after user closes print dialog
             var cleanupDone = false;
             var cleanupPrint = function() {
-                if(cleanupDone) return;
+                if (cleanupDone) return;
                 cleanupDone = true;
-                
-                // Restore main UI immediately upon return
-                $('body').removeClass('is-printing-receipt');
-                
-                // Clear receipt HTML after a delay to ensure background PDF spooler is completely finished
+
+                document.body.classList.remove('is-printing-receipt');
+
+                // Remove injected print styles
+                var ps = document.getElementById(printStyleId);
+                if (ps) ps.parentNode.removeChild(ps);
+
+                // Clear receipt HTML after PDF spooler finishes
                 setTimeout(function() {
-                    $('#receipt_section').html('');
+                    var rs = document.getElementById('receipt_section');
+                    if (rs) rs.innerHTML = '';
                 }, 2000);
 
                 window.removeEventListener('afterprint', cleanupPrint);
                 window.removeEventListener('focus', cleanupPrint);
             };
 
-            // Standard afterprint listener
             window.addEventListener('afterprint', cleanupPrint);
-            
-            // Fallback: when user returns to the window (focus restored)
             setTimeout(function() {
                 window.addEventListener('focus', cleanupPrint);
             }, 1500);
-
-            // Ultimate fallback (60 seconds) in case events fail, instead of aggressive 5s
             setTimeout(cleanupPrint, 60000);
 
-        }, 1000); 
+        }, 1000);
     };
 
+    // Wait for all images to load (or fail) before printing
     if (img_len) {
         var img_counter = 0;
         var checkDone = function() {
             img_counter++;
-            if (img_counter === img_len) {
+            if (img_counter >= img_len) {
                 doPrint();
             }
         };
-        [].forEach.call(imgs, function (img) {
+        [].forEach.call(imgs, function(img) {
             if (img.complete) {
                 checkDone();
             } else {
                 img.addEventListener('load', checkDone, false);
-                img.addEventListener('error', checkDone, false); // prevent hanging on broken images
+                img.addEventListener('error', checkDone, false);
             }
         });
+        // Safety: if images hang for over 5 seconds, print anyway
+        setTimeout(function() {
+            if (img_counter < img_len) {
+                doPrint();
+            }
+        }, 5000);
     } else {
         setTimeout(doPrint, 500);
     }
