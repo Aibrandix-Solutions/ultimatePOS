@@ -83,15 +83,15 @@
         }
         
         /* Card-style stacking for tables */
-        #pos_batch_select_table, .batch_details_modal table, #batch_details_table {
+        #pos_batch_select_table, .batch_details_modal table, #batch_details_table, #ledger_table {
             display: block;
             width: 100% !important;
             border: 0;
         }
-        #pos_batch_select_table thead, .batch_details_modal table thead, #batch_details_table thead {
+        #pos_batch_select_table thead, .batch_details_modal table thead, #batch_details_table thead, #ledger_table thead {
             display: none;
         }
-        #pos_batch_select_table tr, .batch_details_modal table tr, #batch_details_table tr {
+        #pos_batch_select_table tr, .batch_details_modal table tr, #batch_details_table tr, #ledger_table tr {
             display: block;
             margin-bottom: 15px;
             border: 1px solid #e1e1e1;
@@ -100,7 +100,7 @@
             background: #ffffff;
             box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
-        #pos_batch_select_table td, .batch_details_modal table td, #batch_details_table td {
+        #pos_batch_select_table td, .batch_details_modal table td, #batch_details_table td, #ledger_table td {
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -109,7 +109,7 @@
             text-align: right;
             width: 100%;
         }
-        #pos_batch_select_table td:before, .batch_details_modal table td:before, #batch_details_table td:before {
+        #pos_batch_select_table td:before, .batch_details_modal table td:before, #batch_details_table td:before, #ledger_table td:before {
             content: attr(data-label);
             font-weight: 600;
             text-align: left;
@@ -118,18 +118,18 @@
             color: #555;
         }
         /* Handle special elements inside td */
-        #pos_batch_select_table td strong, .batch_details_modal table td strong, #batch_details_table td strong {
+        #pos_batch_select_table td strong, .batch_details_modal table td strong, #batch_details_table td strong, #ledger_table td strong {
             display: inline-block;
         }
         /* Action buttons column */
-        #pos_batch_select_table td:last-child, .batch_details_modal table td:last-child, #batch_details_table td:last-child {
+        #pos_batch_select_table td:last-child, .batch_details_modal table td:last-child, #batch_details_table td:last-child, #ledger_table td:last-child {
             display: block;
             text-align: center;
             padding-top: 12px !important;
             margin-top: 8px;
             border-top: 1px solid #eee !important;
         }
-        #pos_batch_select_table td:last-child:before, .batch_details_modal table td:last-child:before, #batch_details_table td:last-child:before {
+        #pos_batch_select_table td:last-child:before, .batch_details_modal table td:last-child:before, #batch_details_table td:last-child:before, #ledger_table td:last-child:before {
             content: none !important;
         }
 
@@ -142,6 +142,62 @@
         .btn-xs, .btn-sm {
             padding: 6px 12px !important;
             font-size: 13px !important;
+        }
+    }
+
+    /* Robust Global Receipt Printing Fix */
+    @media print {
+        /* When printing a receipt, hide all page content by default */
+        body.is-printing-receipt * {
+            visibility: hidden;
+        }
+
+        /* Show the receipt section and its children */
+        body.is-printing-receipt #receipt_section,
+        body.is-printing-receipt #receipt_section * {
+            visibility: visible !important;
+        }
+
+        /* Force display:none on major UI components to prevent blank space/pages */
+        body.is-printing-receipt .main-header,
+        body.is-printing-receipt .main-sidebar,
+        body.is-printing-receipt .thetop > aside,
+        body.is-printing-receipt #scrollable-container,
+        body.is-printing-receipt .wrapper > header,
+        body.is-printing-receipt .wrapper > aside,
+        body.is-printing-receipt footer,
+        body.is-printing-receipt .no-print,
+        body.is-printing-receipt .scrolltop,
+        body.is-printing-receipt .modal:not(.show) {
+            display: none !important;
+        }
+
+        /* Position receipt at the absolute top-left for the print engine */
+        body.is-printing-receipt #receipt_section {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            display: block !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            border: none !important;
+        }
+
+        /* Reset main containers to ensure they don't restrict the receipt size */
+        body.is-printing-receipt, 
+        body.is-printing-receipt .wrapper,
+        body.is-printing-receipt main,
+        body.is-printing-receipt .thetop,
+        body.is-printing-receipt .content-wrapper {
+            height: auto !important;
+            min-height: 0 !important;
+            overflow: visible !important;
+            background-color: white !important;
+            display: block !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
         }
     }
 </style>

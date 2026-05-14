@@ -394,10 +394,11 @@ function __print_receipt(section_id = null) {
     var doPrint = function() {
         $('body').addClass('is-printing-receipt');
 
-        // Small delay to allow CSS/layout to apply before calling print (crucial for mobile)
+        // Increase delay to 1000ms to allow CSS/layout to apply before calling print
+        // This is crucial for Android Chrome which can show blank pages if triggered too fast.
         setTimeout(function() {
             window.print();
-
+            
             // Mobile-safe cleanup strategy
             var cleanupDone = false;
             var cleanupPrint = function() {
@@ -422,12 +423,12 @@ function __print_receipt(section_id = null) {
             // Fallback: when user returns to the window (focus restored)
             setTimeout(function() {
                 window.addEventListener('focus', cleanupPrint);
-            }, 1000);
+            }, 1500);
 
             // Ultimate fallback (60 seconds) in case events fail, instead of aggressive 5s
             setTimeout(cleanupPrint, 60000);
 
-        }, 300); 
+        }, 1000); 
     };
 
     if (img_len) {
