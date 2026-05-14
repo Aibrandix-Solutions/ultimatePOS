@@ -389,55 +389,68 @@ function __print_receipt(section_id = null) {
         var imgs = document.images;
     }
 
-    img_len = imgs.length;
-    if (img_len) {
-        img_counter = 0;
+    var img_len = imgs.length;
 
-        [].forEach.call(imgs, function (img) {
-            img.addEventListener('load', incrementImageCounter, false);
-        });
-    } else {
-        setTimeout(function () {
-            $('body').addClass('is-printing-receipt');
-            // Clear receipt after print dialog closes (modern browsers)
-            window.onafterprint = function () {
-                $('body').removeClass('is-printing-receipt');
-                $('#receipt_section').html('');
-                window.onafterprint = null;
-            };
+    var doPrint = function() {
+        $('body').addClass('is-printing-receipt');
 
+        // Small delay to allow CSS/layout to apply before calling print (crucial for mobile)
+        setTimeout(function() {
             window.print();
 
-            // Fallback: clear after 5 seconds if onafterprint didn't fire
-            setTimeout(function () {
+            // Mobile-safe cleanup strategy
+            var cleanupDone = false;
+            var cleanupPrint = function() {
+                if(cleanupDone) return;
+                cleanupDone = true;
+                
+                // Restore main UI immediately upon return
                 $('body').removeClass('is-printing-receipt');
-                $('#receipt_section').html('');
-            }, 5000);
+                
+                // Clear receipt HTML after a delay to ensure background PDF spooler is completely finished
+                setTimeout(function() {
+                    $('#receipt_section').html('');
+                }, 2000);
 
-        }, 1000);
-    }
-}
+                window.removeEventListener('afterprint', cleanupPrint);
+                window.removeEventListener('focus', cleanupPrint);
+            };
 
-function incrementImageCounter() {
-    img_counter++;
-    if (img_counter === img_len) {
-        $('body').addClass('is-printing-receipt');
-        // Clear receipt after print dialog closes (modern browsers)
-        window.onafterprint = function () {
-            $('body').removeClass('is-printing-receipt');
-            $('#receipt_section').html('');
-            window.onafterprint = null;
+            // Standard afterprint listener
+            window.addEventListener('afterprint', cleanupPrint);
+            
+            // Fallback: when user returns to the window (focus restored)
+            setTimeout(function() {
+                window.addEventListener('focus', cleanupPrint);
+            }, 1000);
+
+            // Ultimate fallback (60 seconds) in case events fail, instead of aggressive 5s
+            setTimeout(cleanupPrint, 60000);
+
+        }, 300); 
+    };
+
+    if (img_len) {
+        var img_counter = 0;
+        var checkDone = function() {
+            img_counter++;
+            if (img_counter === img_len) {
+                doPrint();
+            }
         };
-
-        window.print();
-
-        // Fallback: clear after 5 seconds if onafterprint didn't fire
-        setTimeout(function () {
-            $('body').removeClass('is-printing-receipt');
-            $('#receipt_section').html('');
-        }, 5000);
+        [].forEach.call(imgs, function (img) {
+            if (img.complete) {
+                checkDone();
+            } else {
+                img.addEventListener('load', checkDone, false);
+                img.addEventListener('error', checkDone, false); // prevent hanging on broken images
+            }
+        });
+    } else {
+        setTimeout(doPrint, 500);
     }
 }
+
 
 function __getUnitMultiplier(row) {
     multiplier = row.find('select.sub_unit').find(':selected').data('multiplier');
