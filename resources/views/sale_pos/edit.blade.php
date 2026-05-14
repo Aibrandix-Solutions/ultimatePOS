@@ -58,9 +58,9 @@
 	{!! Form::close() !!}
 </section>
 
-<!-- This will be printed -->
-<section class="invoice print_section" id="receipt_section">
-</section>
+{{-- Receipt markup: single #receipt_section lives in layouts/app.blade.php (after
+     #scrollable-container). A duplicate here breaks printing: jQuery fills the
+     first #receipt_section in the tree, which is hidden/clipped on mobile. --}}
 <div class="modal fade contact_modal" tabindex="-1" role="dialog" aria-labelledby="gridSystemModalLabel">
 	@include('contact.create', ['quick_add' => true])
 </div>

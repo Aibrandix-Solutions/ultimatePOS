@@ -383,107 +383,131 @@ function __sum_stock(table, class_name, label_direction = 'right') {
 }
 
 function __print_receipt(section_id = null) {
-    var receiptEl = document.getElementById(section_id || 'receipt_section');
-    if (!receiptEl || !receiptEl.innerHTML.trim()) return;
+    var rid = section_id || 'receipt_section';
+    var receiptEl = document.getElementById(rid);
+    if (!receiptEl || !receiptEl.innerHTML.trim()) {
+        return;
+    }
 
-    var imgs = receiptEl.getElementsByTagName("img");
+    var receiptHtml = receiptEl.innerHTML;
+    var imgs = receiptEl.getElementsByTagName('img');
     var img_len = imgs.length;
+    var jobStarted = false;
 
-    var doPrint = function() {
-        // Step 1: Inject print styles directly via JS (bypasses all CSS caching)
-        var printStyleId = '__receipt_print_style';
-        var old = document.getElementById(printStyleId);
-        if (old) old.parentNode.removeChild(old);
+    function escAttr(s) {
+        return String(s)
+            .replace(/&/g, '&amp;')
+            .replace(/"/g, '&quot;')
+            .replace(/</g, '&lt;');
+    }
 
-        var style = document.createElement('style');
-        style.id = printStyleId;
-        style.textContent =
-            '@media print {' +
-            '  body * { visibility: hidden !important; }' +
-            '  #receipt_section, #receipt_section * { visibility: visible !important; }' +
-            '  #receipt_section {' +
-            '    position: absolute !important;' +
-            '    left: 0 !important;' +
-            '    top: 0 !important;' +
-            '    width: 100% !important;' +
-            '    display: block !important;' +
-            '    margin: 0 !important;' +
-            '    padding: 10px !important;' +
-            '    border: none !important;' +
-            '  }' +
-            '  body, html {' +
-            '    height: auto !important;' +
-            '    overflow: visible !important;' +
-            '    background: white !important;' +
-            '    margin: 0 !important;' +
-            '    padding: 0 !important;' +
-            '  }' +
-            '  .main-header, .main-sidebar, .scrolltop, .no-print,' +
-            '  footer, .overlay, #scrollable-container,' +
-            '  .thetop > aside, .wrapper > aside, .wrapper > header {' +
-            '    display: none !important;' +
-            '  }' +
-            '  main, .thetop, .wrapper, .content-wrapper {' +
-            '    display: block !important;' +
-            '    height: auto !important;' +
-            '    overflow: visible !important;' +
-            '    width: 100% !important;' +
-            '    margin: 0 !important;' +
-            '    padding: 0 !important;' +
-            '    min-height: 0 !important;' +
-            '    position: static !important;' +
-            '  }' +
-            '}';
-        document.head.appendChild(style);
+    /**
+     * Print via a dedicated iframe document. Android Chrome often shows a blank
+     * PDF when using visibility tricks on the main page; a minimal iframe doc
+     * matches what print engines expect and reliably shows receipt preview.
+     */
+    function printReceiptInIframe() {
+        if (jobStarted) {
+            return;
+        }
+        jobStarted = true;
 
-        // Step 2: Add body class (used as a secondary signal)
-        document.body.classList.add('is-printing-receipt');
+        var iframe = document.createElement('iframe');
+        iframe.setAttribute('title', 'Receipt');
+        iframe.setAttribute('aria-hidden', 'true');
+        iframe.style.cssText =
+            'position:fixed;width:0;height:0;left:0;top:0;border:0;opacity:0;pointer-events:none;visibility:hidden';
+        document.body.appendChild(iframe);
 
-        // Step 3: Wait for browser to apply the injected styles, then print
-        setTimeout(function() {
-            window.print();
+        var win = iframe.contentWindow;
+        var doc = win.document;
+        var baseNode = document.querySelector('base');
+        var baseHref = (baseNode && baseNode.href) ? baseNode.href : window.location.href.split('#')[0];
 
-            // Step 4: Cleanup after user closes print dialog
-            var cleanupDone = false;
-            var cleanupPrint = function() {
-                if (cleanupDone) return;
-                cleanupDone = true;
+        doc.open();
+        doc.write('<!DOCTYPE html><html><head><meta charset="utf-8">');
+        doc.write('<base href="' + escAttr(baseHref) + '">');
 
-                document.body.classList.remove('is-printing-receipt');
+        var linkNodes = document.querySelectorAll('link[rel="stylesheet"]');
+        for (var li = 0; li < linkNodes.length; li++) {
+            var href = linkNodes[li].href;
+            if (href) {
+                doc.write('<link rel="stylesheet" href="' + escAttr(href) + '">');
+            }
+        }
 
-                // Remove injected print styles
-                var ps = document.getElementById(printStyleId);
-                if (ps) ps.parentNode.removeChild(ps);
+        doc.write(
+            '<style>' +
+            '@page{margin:6mm}' +
+            'html,body{margin:0;padding:8px;background:#fff;color:#000}' +
+            'img{max-width:100%;height:auto}' +
+            'table{max-width:100%}' +
+            '</style></head><body>'
+        );
+        doc.write(receiptHtml);
+        doc.write('</body></html>');
+        doc.close();
 
-                // Clear receipt HTML after PDF spooler finishes
-                setTimeout(function() {
-                    var rs = document.getElementById('receipt_section');
-                    if (rs) rs.innerHTML = '';
-                }, 2000);
+        var printed = false;
 
-                window.removeEventListener('afterprint', cleanupPrint);
-                window.removeEventListener('focus', cleanupPrint);
-            };
+        function clearHostReceipt() {
+            var rs = document.getElementById(rid);
+            if (rs) {
+                setTimeout(function () {
+                    rs.innerHTML = '';
+                }, 800);
+            }
+        }
 
-            window.addEventListener('afterprint', cleanupPrint);
-            setTimeout(function() {
-                window.addEventListener('focus', cleanupPrint);
-            }, 1500);
-            setTimeout(cleanupPrint, 60000);
+        function removeFrame() {
+            try {
+                if (iframe.parentNode) {
+                    iframe.parentNode.removeChild(iframe);
+                }
+            } catch (e) {
+                /* ignore */
+            }
+        }
 
-        }, 1000);
-    };
+        function invokePrint() {
+            if (printed) {
+                return;
+            }
+            printed = true;
+            try {
+                win.focus();
+                win.print();
+            } catch (e) {
+                /* ignore */
+            }
+        }
 
-    // Wait for all images to load (or fail) before printing
+        win.addEventListener('afterprint', function () {
+            removeFrame();
+            clearHostReceipt();
+        });
+
+        setTimeout(function () {
+            invokePrint();
+        }, 500);
+
+        setTimeout(function () {
+            if (iframe.parentNode) {
+                removeFrame();
+                clearHostReceipt();
+            }
+        }, 180000);
+    }
+
     if (img_len) {
         var img_counter = 0;
-        var checkDone = function() {
+        var checkDone = function () {
             img_counter++;
             if (img_counter >= img_len) {
-                doPrint();
+                printReceiptInIframe();
             }
         };
-        [].forEach.call(imgs, function(img) {
+        [].forEach.call(imgs, function (img) {
             if (img.complete) {
                 checkDone();
             } else {
@@ -491,14 +515,13 @@ function __print_receipt(section_id = null) {
                 img.addEventListener('error', checkDone, false);
             }
         });
-        // Safety: if images hang for over 5 seconds, print anyway
-        setTimeout(function() {
-            if (img_counter < img_len) {
-                doPrint();
+        setTimeout(function () {
+            if (!jobStarted) {
+                printReceiptInIframe();
             }
         }, 5000);
     } else {
-        setTimeout(doPrint, 500);
+        setTimeout(printReceiptInIframe, 200);
     }
 }
 
