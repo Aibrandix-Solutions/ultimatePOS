@@ -23,19 +23,19 @@
               <tr>
                 <td>
                   <label>@lang('lang_v1.exc_tax'):*</label>
-                  {!! Form::text('purchase_price', @num_format($purchase_line->purchase_price), ['class' => 'form-control input_number', 'id' => 'purchase_price', 'required']); !!}
+                  {!! Form::text('purchase_price', @num_format($purchase_line->purchase_price), ['class' => 'form-control input_number', 'id' => 'purchase_price', 'required']) !!}
                 </td>
                 <td>
                   <label>@lang('lang_v1.inc_tax'):*</label>
-                  {!! Form::text('purchase_price_inc_tax', @num_format($purchase_line->purchase_price_inc_tax), ['class' => 'form-control input_number', 'id' => 'purchase_price_inc_tax', 'required']); !!}
+                  {!! Form::text('purchase_price_inc_tax', @num_format($purchase_line->purchase_price_inc_tax), ['class' => 'form-control input_number', 'id' => 'purchase_price_inc_tax', 'required']) !!}
                 </td>
                 <td>
                    <label>&nbsp;</label>
-                   {!! Form::text('batch_profit_margin', @num_format($purchase_line->batch_profit_margin), ['class' => 'form-control input_number', 'id' => 'batch_profit_margin', 'required']); !!}
+                   {!! Form::text('batch_profit_margin', @num_format($purchase_line->batch_profit_margin), ['class' => 'form-control input_number', 'id' => 'batch_profit_margin', 'required']) !!}
                 </td>
                 <td>
                   <label>@lang('lang_v1.inc_tax')</label>
-                  {!! Form::text('batch_selling_price_inc_tax', @num_format($purchase_line->batch_selling_price_inc_tax), ['class' => 'form-control input_number', 'id' => 'batch_selling_price_inc_tax', 'required']); !!}
+                  {!! Form::text('batch_selling_price_inc_tax', @num_format($purchase_line->batch_selling_price_inc_tax), ['class' => 'form-control input_number', 'id' => 'batch_selling_price_inc_tax', 'required']) !!}
                 </td>
               </tr>
             </tbody>
