@@ -132,7 +132,7 @@
                     data: data,
                     success: function(result){
                         if (result.success == 1 && result.html_content != '') {
-                            $('#receipt_section').html(result.html_content);
+                            $('#receipt_section').last().html(result.html_content);
                             __print_receipt('receipt_section');
                         } else {
                             toastr.error(result.msg);

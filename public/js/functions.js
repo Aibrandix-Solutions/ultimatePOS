@@ -382,9 +382,25 @@ function __sum_stock(table, class_name, label_direction = 'right') {
     return stock_html;
 }
 
+/**
+ * Resolve the receipt mount node. When duplicate ids exist in the DOM,
+ * document.getElementById returns the first node (often wrong/hidden).
+ * The canonical receipt target is the last #receipt_section in tree order.
+ */
+function __getReceiptPrintElement(section_id) {
+    var sid = section_id || 'receipt_section';
+    if (typeof jQuery !== 'undefined' && jQuery('#' + sid).length) {
+        var $last = jQuery('#' + sid).last();
+        if ($last.length) {
+            return $last[0];
+        }
+    }
+    return document.getElementById(sid);
+}
+
 function __print_receipt(section_id = null) {
     var rid = section_id || 'receipt_section';
-    var receiptEl = document.getElementById(rid);
+    var receiptEl = __getReceiptPrintElement(rid);
     if (!receiptEl || !receiptEl.innerHTML.trim()) {
         return;
     }
@@ -402,9 +418,9 @@ function __print_receipt(section_id = null) {
     }
 
     /**
-     * Print via a dedicated iframe document. Android Chrome often shows a blank
-     * PDF when using visibility tricks on the main page; a minimal iframe doc
-     * matches what print engines expect and reliably shows receipt preview.
+     * Print via a dedicated iframe document. Samsung / Android Chrome often
+     * rasterizes a blank page if the iframe has 0×0 size, visibility:hidden,
+     * or print() runs before stylesheets / images have loaded in the iframe.
      */
     function printReceiptInIframe() {
         if (jobStarted) {
@@ -415,8 +431,12 @@ function __print_receipt(section_id = null) {
         var iframe = document.createElement('iframe');
         iframe.setAttribute('title', 'Receipt');
         iframe.setAttribute('aria-hidden', 'true');
+        // Non-zero layout box off-screen — critical for Android print preview.
         iframe.style.cssText =
-            'position:fixed;width:0;height:0;left:0;top:0;border:0;opacity:0;pointer-events:none;visibility:hidden';
+            'position:fixed;left:-9999px;top:0;width:100mm;min-width:280px;' +
+            'min-height:120mm;height:auto;border:0;margin:0;padding:0;' +
+            'opacity:0.01;pointer-events:none;z-index:0;overflow:hidden;background:#fff';
+
         document.body.appendChild(iframe);
 
         var win = iframe.contentWindow;
@@ -424,26 +444,40 @@ function __print_receipt(section_id = null) {
         var baseNode = document.querySelector('base');
         var baseHref = (baseNode && baseNode.href) ? baseNode.href : window.location.href.split('#')[0];
 
+        var isAndroid = /Android/i.test(navigator.userAgent || '');
+
+        var inlineBaseCss =
+            '@page{margin:5mm}' +
+            'html,body{margin:0;padding:8px;background:#fff!important;color:#111!important;' +
+            'font:14px/1.35 Arial,Helvetica,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
+            '*{box-sizing:border-box}' +
+            'table{width:100%;border-collapse:collapse}' +
+            'td,th{padding:2px 4px;vertical-align:top}' +
+            'img{max-width:100%!important;height:auto!important;display:inline-block}' +
+            '.text-center{text-align:center}.text-left{text-align:left}.text-right{text-align:right}';
+
         doc.open();
         doc.write('<!DOCTYPE html><html><head><meta charset="utf-8">');
+        doc.write('<meta name="viewport" content="width=device-width, initial-scale=1">');
         doc.write('<base href="' + escAttr(baseHref) + '">');
+        doc.write('<style>' + inlineBaseCss + '</style>');
 
         var linkNodes = document.querySelectorAll('link[rel="stylesheet"]');
         for (var li = 0; li < linkNodes.length; li++) {
             var href = linkNodes[li].href;
             if (href) {
-                doc.write('<link rel="stylesheet" href="' + escAttr(href) + '">');
+                var media = linkNodes[li].getAttribute('media') || 'all';
+                doc.write(
+                    '<link rel="stylesheet" href="' +
+                        escAttr(href) +
+                        '" media="' +
+                        escAttr(media) +
+                        '">'
+                );
             }
         }
 
-        doc.write(
-            '<style>' +
-            '@page{margin:6mm}' +
-            'html,body{margin:0;padding:8px;background:#fff;color:#000}' +
-            'img{max-width:100%;height:auto}' +
-            'table{max-width:100%}' +
-            '</style></head><body>'
-        );
+        doc.write('</head><body>');
         doc.write(receiptHtml);
         doc.write('</body></html>');
         doc.close();
@@ -451,7 +485,7 @@ function __print_receipt(section_id = null) {
         var printed = false;
 
         function clearHostReceipt() {
-            var rs = document.getElementById(rid);
+            var rs = __getReceiptPrintElement(rid);
             if (rs) {
                 setTimeout(function () {
                     rs.innerHTML = '';
@@ -482,14 +516,119 @@ function __print_receipt(section_id = null) {
             }
         }
 
+        var iframeBodyWaitAttempts = 0;
+
+        function waitIframeImagesThenPrint() {
+            var body = doc.body;
+            if (!body) {
+                iframeBodyWaitAttempts++;
+                if (iframeBodyWaitAttempts < 100) {
+                    setTimeout(waitIframeImagesThenPrint, 50);
+                } else {
+                    schedulePrintAfterPaint();
+                }
+                return;
+            }
+
+            var iImgs = body.getElementsByTagName('img');
+            var n = iImgs.length;
+            if (!n) {
+                schedulePrintAfterPaint();
+                return;
+            }
+
+            var done = 0;
+            var fired = false;
+
+            function tick() {
+                if (fired) {
+                    return;
+                }
+                done++;
+                if (done >= n) {
+                    fired = true;
+                    schedulePrintAfterPaint();
+                }
+            }
+
+            for (var ii = 0; ii < n; ii++) {
+                var im = iImgs[ii];
+                if (im.complete) {
+                    tick();
+                } else {
+                    im.addEventListener(
+                        'load',
+                        function () {
+                            tick();
+                        },
+                        false
+                    );
+                    im.addEventListener(
+                        'error',
+                        function () {
+                            tick();
+                        },
+                        false
+                    );
+                }
+            }
+
+            setTimeout(function () {
+                if (!fired) {
+                    fired = true;
+                    schedulePrintAfterPaint();
+                }
+            }, 8000);
+        }
+
+        var printPipelineStarted = false;
+        function schedulePrintAfterPaint() {
+            if (printPipelineStarted) {
+                return;
+            }
+            printPipelineStarted = true;
+
+            function waitFontsThenDelay() {
+                var delayAfterFonts = isAndroid ? 650 : 200;
+
+                function runPrint() {
+                    requestAnimationFrame(function () {
+                        requestAnimationFrame(function () {
+                            invokePrint();
+                        });
+                    });
+                }
+
+                if (doc.fonts && doc.fonts.ready && typeof doc.fonts.ready.then === 'function') {
+                    doc.fonts.ready.then(function () {
+                        setTimeout(runPrint, delayAfterFonts);
+                    }).catch(function () {
+                        setTimeout(runPrint, delayAfterFonts + 200);
+                    });
+                } else {
+                    setTimeout(runPrint, isAndroid ? 900 : 350);
+                }
+            }
+
+            if (doc.readyState === 'complete') {
+                waitFontsThenDelay();
+            } else {
+                win.addEventListener('load', waitFontsThenDelay);
+                setTimeout(waitFontsThenDelay, isAndroid ? 3500 : 2000);
+            }
+        }
+
         win.addEventListener('afterprint', function () {
             removeFrame();
             clearHostReceipt();
         });
 
-        setTimeout(function () {
-            invokePrint();
-        }, 500);
+        if (doc.readyState === 'complete') {
+            waitIframeImagesThenPrint();
+        } else {
+            win.addEventListener('load', waitIframeImagesThenPrint);
+            setTimeout(waitIframeImagesThenPrint, isAndroid ? 5000 : 3000);
+        }
 
         setTimeout(function () {
             if (iframe.parentNode) {

@@ -1731,8 +1731,8 @@ $(document).ready(function () {
             dataType: 'json',
             success: function (result) {
                 if (result.success == 1 && result.receipt.html_content != '') {
-                    $('#receipt_section').html(result.receipt.html_content);
-                    __currency_convert_recursively($('#receipt_section'));
+                    $('#receipt_section').last().html(result.receipt.html_content);
+                    __currency_convert_recursively($('#receipt_section').last());
 
                     var title = document.title;
                     if (typeof result.receipt.print_title != 'undefined') {
@@ -2971,8 +2971,8 @@ $(document).on('submit', 'form#pay_contact_due_form', function (e) {
                 }
 
                 if (result.receipt && result.receipt.html_content != '') {
-                    $('#receipt_section').html(result.receipt.html_content);
-                    __currency_convert_recursively($('#receipt_section'));
+                    $('#receipt_section').last().html(result.receipt.html_content);
+                    __currency_convert_recursively($('#receipt_section').last());
 
                     var title = document.title;
                     if (typeof result.print_title != 'undefined') {

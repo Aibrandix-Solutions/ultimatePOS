@@ -73,8 +73,8 @@ function pos_print(receipt) {
         }
 
         //If printer type browser then print content
-        $('#receipt_section').html(receipt.html_content);
-        __currency_convert_recursively($('#receipt_section'));
+        $('#receipt_section').last().html(receipt.html_content);
+        __currency_convert_recursively($('#receipt_section').last());
         setTimeout(function() {
             window.print();
             document.title = title;

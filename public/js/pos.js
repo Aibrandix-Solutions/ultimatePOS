@@ -3447,8 +3447,8 @@ function pos_print(receipt) {
             if (typeof receipt.print_title != 'undefined') {
                 document.title = receipt.print_title;
             }
-            $('#receipt_section').html(receipt.html_content);
-            __currency_convert_recursively($('#receipt_section'));
+            $('#receipt_section').last().html(receipt.html_content);
+            __currency_convert_recursively($('#receipt_section').last());
             __print_receipt('receipt_section');
             setTimeout(function () {
                 document.title = title;
