@@ -18,7 +18,9 @@
             $payable_label = 'Due Receivable';
         }
 
-        $due_payable_receivable = $total_due - $pending_cheques;
+        // Customer invoice_received already counts pending cheques toward due.
+        // Supplier purchase_paid uses cleared-only, so subtract pending cheques there.
+        $due_payable_receivable = $is_supplier ? max(0, $total_due - $pending_cheques) : max(0, $total_due);
     @endphp
 
     <div class="row" style="margin-bottom: 15px;">

@@ -13,7 +13,7 @@
         box-sizing: border-box;
     }
     @page {
-        margin: 5px;
+        margin: 2px 0;
     }
     body {
         font-family: Arial, Helvetica, sans-serif;
@@ -21,8 +21,8 @@
         color: #000 !important;
         line-height: 1.2;
         background: #fff;
-        margin: 5px;
-        padding: 5px;
+        margin: 0;
+        padding: 0 1px;
     }
     a, a:visited, a:hover, a:active {
         color: #000 !important;
@@ -31,10 +31,10 @@
 
     /* ===== Receipt Container ===== */
     .receipt {
-        width: calc(100% - 12px);
-        max-width: calc(100% - 12px);
-        margin: 0 auto;
-        padding: 2px 0;
+        width: 100%;
+        max-width: 100%;
+        margin: 0;
+        padding: 0;
         color: #000 !important;
     }
     .receipt * {
@@ -120,7 +120,7 @@
     .ptable {
         width: 100%;
         border-collapse: collapse;
-        font-size: 12px;
+        font-size: 13px;
         table-layout: fixed;
     }
     .ptable thead {
@@ -128,7 +128,7 @@
     }
     .ptable th {
         font-weight: 700;
-        padding: 1px 1px;
+        padding: 1px 0;
         font-size: 11px;
         text-align: left;
         overflow: hidden;
@@ -137,9 +137,9 @@
     }
     .ptable th.r { text-align: right; }
     .ptable td {
-        padding: 2px 1px;
+        padding: 2px 0;
         vertical-align: top;
-        font-size: 12px;
+        font-size: 13px;
         word-wrap: break-word;
         overflow-wrap: break-word;
     }
@@ -159,7 +159,7 @@
 
     .item-name {
         font-weight: normal;
-        font-size: 12px;
+        font-size: 13px;
         word-wrap: break-word;
     }
     .item-sub {
@@ -168,12 +168,12 @@
         margin-top: 0;
     }
     .detail-row td {
-        font-size: 11px;
+        font-size: 12px;
         padding: 1px 1px;
         border-bottom: 1px dashed #ddd;
     }
     .modifier-row td {
-        font-size: 11px;
+        font-size: 12px;
         color: #000000 !important;
         padding: 1px 1px;
     }
@@ -328,14 +328,19 @@
 
     /* ===== Print Styles ===== */
     @media print {
+        @page {
+            margin: 0;
+        }
         body {
             font-size: 19px;
             font-family: Roboto, Helvetica, sans-serif;
+            margin: 0;
+            padding: 0;
         }
         .receipt {
-            width: calc(100% - 12px);
-            max-width: calc(100% - 12px);
-            margin: 0 auto;
+            width: 100%;
+            max-width: 100%;
+            margin: 0;
             padding: 0;
         }
         .receipt-logo {
@@ -445,7 +450,7 @@
         <div style="display:flex; justify-content:space-between; align-items:flex-start; font-size: 12px; line-height:1.4;">
 
             {{-- LEFT: Customer details --}}
-            <div style="flex:1; padding-right:4px;">
+            <div style="flex:1; padding-right:2px;">
                 @if(!$isWalkInCustomer && (!empty($receipt_details->customer_label) || !empty($receipt_details->customer_info)))
                     <div>
                         @if(!empty($receipt_details->customer_label))
@@ -616,7 +621,7 @@
                 </tr>
                 {{-- Header row 2: blank | Type | Qty | Price | [Disc] | Total --}}
                 @if(empty($receipt_details->hide_price))
-                <tr style="font-size: 11px; border-bottom: 1px solid #000;">
+                <tr style="font-size: 12px; border-bottom: 1px solid #000;">
                     <th class="c-sno"></th>
                     <th class="c-type" style="text-align:left;">Type</th>
                     <th class="c-qty r">Qty</th>

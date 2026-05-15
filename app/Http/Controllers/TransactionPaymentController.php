@@ -13,6 +13,7 @@ use App\TransactionPayment;
 use App\Utils\CashRegisterUtil;
 use App\Utils\ModuleUtil;
 use App\Utils\TransactionUtil;
+use App\Utils\Util;
 use Datatables;
 use DB;
 use Illuminate\Http\Request;
@@ -639,23 +640,25 @@ class TransactionPaymentController extends Controller
                     'contacts.id as contact_id'
                     );
             } elseif ($due_payment_type == 'sell') {
+                $customer_paid_sql = Util::sqlPaymentCountsTowardContactDue();
                 $query->select(
                     DB::raw("SUM(IF(t.type = 'sell' AND t.status = 'final', final_total, 0)) as total_invoice"),
-                    DB::raw("SUM(IF(t.type = 'sell' AND t.status = 'final', (SELECT COALESCE(SUM(IF(is_return = 1,-1*amount,amount)), 0) FROM transaction_payments WHERE transaction_payments.transaction_id=t.id AND (transaction_payments.method != 'cheque' OR transaction_payments.cheque_status = 'cleared')), 0)) as total_paid"),
+                    DB::raw("SUM(IF(t.type = 'sell' AND t.status = 'final', (SELECT COALESCE(SUM(IF(is_return = 1,-1*amount,amount)), 0) FROM transaction_payments WHERE transaction_payments.transaction_id=t.id AND {$customer_paid_sql}), 0)) as total_paid"),
                     DB::raw("SUM(IF(t.type = 'ledger_discount', t.final_total, 0)) as total_ledger_discount"),
                     DB::raw("SUM(IF(t.type = 'sell_return', final_total, 0)) as total_sell_return"),
-                    DB::raw("SUM(IF(t.type = 'sell_return', (SELECT COALESCE(SUM(amount), 0) FROM transaction_payments WHERE transaction_payments.transaction_id=t.id AND (transaction_payments.method != 'cheque' OR transaction_payments.cheque_status = 'cleared')), 0)) as sell_return_paid"),
+                    DB::raw("SUM(IF(t.type = 'sell_return', (SELECT COALESCE(SUM(amount), 0) FROM transaction_payments WHERE transaction_payments.transaction_id=t.id AND {$customer_paid_sql}), 0)) as sell_return_paid"),
                     'contacts.name',
                     'contacts.supplier_business_name',
                     'contacts.id as contact_id'
                 );
             } elseif ($due_payment_type == 'sell_return') {
+                $customer_paid_sql = Util::sqlPaymentCountsTowardContactDue();
                 $query->select(
                     DB::raw("SUM(IF(t.type = 'sell' AND t.status = 'final', final_total, 0)) as total_invoice"),
-                    DB::raw("SUM(IF(t.type = 'sell' AND t.status = 'final', (SELECT COALESCE(SUM(IF(is_return = 1,-1*amount,amount)), 0) FROM transaction_payments WHERE transaction_payments.transaction_id=t.id AND (transaction_payments.method != 'cheque' OR transaction_payments.cheque_status = 'cleared')), 0)) as total_paid"),
+                    DB::raw("SUM(IF(t.type = 'sell' AND t.status = 'final', (SELECT COALESCE(SUM(IF(is_return = 1,-1*amount,amount)), 0) FROM transaction_payments WHERE transaction_payments.transaction_id=t.id AND {$customer_paid_sql}), 0)) as total_paid"),
                     DB::raw("SUM(IF(t.type = 'ledger_discount', t.final_total, 0)) as total_ledger_discount"),
                     DB::raw("SUM(IF(t.type = 'sell_return', final_total, 0)) as total_sell_return"),
-                    DB::raw("SUM(IF(t.type = 'sell_return', (SELECT COALESCE(SUM(amount), 0) FROM transaction_payments WHERE transaction_payments.transaction_id=t.id AND (transaction_payments.method != 'cheque' OR transaction_payments.cheque_status = 'cleared')), 0)) as total_return_paid"),
+                    DB::raw("SUM(IF(t.type = 'sell_return', (SELECT COALESCE(SUM(amount), 0) FROM transaction_payments WHERE transaction_payments.transaction_id=t.id AND {$customer_paid_sql}), 0)) as total_return_paid"),
                     'contacts.name',
                     'contacts.supplier_business_name',
                     'contacts.id as contact_id'
@@ -663,9 +666,12 @@ class TransactionPaymentController extends Controller
             }
 
             //Query for opening balance details
+            $opening_balance_paid_sql = in_array($due_payment_type, ['sell', 'sell_return'])
+                ? Util::sqlPaymentCountsTowardContactDue()
+                : Util::sqlPaymentCountsAsClearedOnly();
             $query->addSelect(
                 DB::raw("SUM(IF(t.type = 'opening_balance', final_total, 0)) as opening_balance"),
-                DB::raw("SUM(IF(t.type = 'opening_balance', (SELECT COALESCE(SUM(amount), 0) FROM transaction_payments WHERE transaction_payments.transaction_id=t.id AND (transaction_payments.method != 'cheque' OR transaction_payments.cheque_status = 'cleared')), 0)) as opening_balance_paid")
+                DB::raw("SUM(IF(t.type = 'opening_balance', (SELECT COALESCE(SUM(amount), 0) FROM transaction_payments WHERE transaction_payments.transaction_id=t.id AND {$opening_balance_paid_sql}), 0)) as opening_balance_paid")
             );
             $contact_details = $query->first();
 
@@ -945,18 +951,22 @@ class TransactionPaymentController extends Controller
             );
         } else {
             // default to sell – include sell_return so credit notes reduce the due
+            $customer_paid_sql = Util::sqlPaymentCountsTowardContactDue();
             $query->select(
                 DB::raw("SUM(IF(t.type = 'sell' AND t.status = 'final', final_total, 0)) as total_invoice"),
-                DB::raw("SUM(IF(t.type = 'sell', (SELECT SUM(IF(is_return = 1, -1*amount, amount)) FROM transaction_payments WHERE transaction_payments.transaction_id=t.id AND (transaction_payments.method != 'cheque' OR transaction_payments.cheque_status = 'cleared')), 0)) as total_paid"),
+                DB::raw("SUM(IF(t.type = 'sell', (SELECT SUM(IF(is_return = 1, -1*amount, amount)) FROM transaction_payments WHERE transaction_payments.transaction_id=t.id AND {$customer_paid_sql}), 0)) as total_paid"),
                 DB::raw("SUM(IF(t.type = 'ledger_discount', t.final_total, 0)) as total_ledger_discount"),
                 DB::raw("SUM(IF(t.type = 'sell_return', final_total, 0)) as total_sell_return"),
-                DB::raw("SUM(IF(t.type = 'sell_return', (SELECT COALESCE(SUM(amount), 0) FROM transaction_payments WHERE transaction_payments.transaction_id=t.id AND (transaction_payments.method != 'cheque' OR transaction_payments.cheque_status = 'cleared')), 0)) as sell_return_paid")
+                DB::raw("SUM(IF(t.type = 'sell_return', (SELECT COALESCE(SUM(amount), 0) FROM transaction_payments WHERE transaction_payments.transaction_id=t.id AND {$customer_paid_sql}), 0)) as sell_return_paid")
             );
         }
 
+        $opening_balance_paid_sql = $due_payment_type === 'purchase'
+            ? Util::sqlPaymentCountsAsClearedOnly()
+            : Util::sqlPaymentCountsTowardContactDue();
         $query->addSelect(
             DB::raw("SUM(IF(t.type = 'opening_balance', final_total, 0)) as opening_balance"),
-            DB::raw("SUM(IF(t.type = 'opening_balance', (SELECT COALESCE(SUM(amount), 0) FROM transaction_payments WHERE transaction_payments.transaction_id=t.id AND (transaction_payments.method != 'cheque' OR transaction_payments.cheque_status = 'cleared')), 0)) as opening_balance_paid")
+            DB::raw("SUM(IF(t.type = 'opening_balance', (SELECT COALESCE(SUM(amount), 0) FROM transaction_payments WHERE transaction_payments.transaction_id=t.id AND {$opening_balance_paid_sql}), 0)) as opening_balance_paid")
         );
 
         $details = $query->first();

@@ -1291,18 +1291,47 @@ class Util
     }
 
     /**
+     * SQL fragment: payments that reduce a contact's displayed due.
+     * Pending cheques count; bounced cheques do not.
+     */
+    public static function sqlPaymentCountsTowardContactDue($alias = 'transaction_payments')
+    {
+        return "({$alias}.method != 'cheque' OR {$alias}.cheque_status IS NULL OR {$alias}.cheque_status IN ('cleared', 'pending'))";
+    }
+
+    /**
+     * SQL fragment: only cleared cheque payments count (cash-register / payment-status logic).
+     */
+    public static function sqlPaymentCountsAsClearedOnly($alias = 'transaction_payments')
+    {
+        return "({$alias}.method != 'cheque' OR {$alias}.cheque_status = 'cleared')";
+    }
+
+    /**
+     * Whether a cheque payment line should reduce displayed contact due.
+     */
+    public static function chequePaymentCountsTowardContactDue($payment_line)
+    {
+        if (empty($payment_line) || (is_array($payment_line) ? ($payment_line['method'] ?? '') : ($payment_line->method ?? '')) !== 'cheque') {
+            return true;
+        }
+
+        $status = is_array($payment_line) ? ($payment_line['cheque_status'] ?? null) : ($payment_line->cheque_status ?? null);
+
+        return $status === null || in_array($status, ['cleared', 'pending'], true);
+    }
+
+    /**
      * Retrieves sum of due amount of a contact
      *
      * @param  int  $contact_id
      * @return mixed
      */
-    public function getContactDue($contact_id, $business_id = null, $include_pending_cheques_as_paid = false)
+    public function getContactDue($contact_id, $business_id = null, $include_pending_cheques_as_paid = true)
     {
-        $payment_sum_condition = "(transaction_payments.method != 'cheque' OR transaction_payments.cheque_status = 'cleared')";
-
-        if ($include_pending_cheques_as_paid) {
-            $payment_sum_condition = "(transaction_payments.method != 'cheque' OR transaction_payments.cheque_status IS NULL OR transaction_payments.cheque_status IN ('cleared', 'pending'))";
-        }
+        $payment_sum_condition = $include_pending_cheques_as_paid
+            ? self::sqlPaymentCountsTowardContactDue()
+            : self::sqlPaymentCountsAsClearedOnly();
 
         // aad type sell_return for to calculate total_sell_return 
         $query = Contact::where('contacts.id', $contact_id)

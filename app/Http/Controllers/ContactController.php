@@ -1892,11 +1892,7 @@ class ContactController extends Controller
             foreach ($unpaid_invoices as $invoice) {
                 $paid_amount = $invoice->payment_lines
                     ->filter(function ($pl) {
-                        if ($pl->method !== 'cheque') {
-                            return true;
-                        }
-
-                        return $pl->cheque_status === 'cleared';
+                        return \App\Utils\Util::chequePaymentCountsTowardContactDue($pl);
                     })
                     ->sum('amount');
                 $invoice->remaining_amount = $invoice->final_total - $paid_amount;
