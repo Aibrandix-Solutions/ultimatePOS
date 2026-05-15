@@ -126,6 +126,14 @@
                         $sell_price_inc_tax = $last_purchase_line->batch_selling_price_inc_tax;
                         $sell_price_exc_tax = $last_purchase_line->batch_selling_price;
                     }
+                } elseif (!empty($refill_product_batch_id) && !empty($batch_details)) {
+                    if ($batch_details->profit_margin !== null) {
+                        $profit_percent = $batch_details->profit_margin;
+                    }
+                    if ($batch_details->sell_price_inc_tax !== null) {
+                        $sell_price_inc_tax = $batch_details->sell_price_inc_tax;
+                        $sell_price_exc_tax = $batch_details->sell_price_exc_tax;
+                    }
                 }
                 $sell_price_to_show = (!empty($product->tax_type) && $product->tax_type == 'inclusive') ? $sell_price_inc_tax : $sell_price_exc_tax;
             @endphp

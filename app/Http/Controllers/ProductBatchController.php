@@ -152,8 +152,8 @@ class ProductBatchController extends Controller
                     (int) $product_id,
                     (int) $variation_id,
                     (int) $location_id,
-                    $variation->sell_price_inc_tax,
-                    $variation->profit_percent
+                    null,
+                    null
                 );
             }
         }

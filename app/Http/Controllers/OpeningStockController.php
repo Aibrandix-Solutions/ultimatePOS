@@ -214,6 +214,10 @@ class OpeningStockController extends Controller
 
                                         $this->productUtil->updateProductQuantity($location_id, $product->id, $vid, $qty_remaining, $old_qty, null, false);
                                     }
+
+                                    if ($purchase_line->batch_profit_margin !== null) {
+                                        $profit_percent = $purchase_line->batch_profit_margin;
+                                    }
                                 } else {
                                     if ($qty_remaining != 0) {
 
@@ -236,14 +240,14 @@ class OpeningStockController extends Controller
                                     $purchase_line->lot_number = $lot_number;
                                     $purchase_line->secondary_unit_quantity = $secondary_unit_quantity;
 
-                                    //Set batch selling price
+                                    //Set batch selling price (Consistent with purchase screen: margin is on inclusive price)
                                     $purchase_line->batch_profit_margin = $profit_percent;
-                                    $purchase_line->batch_selling_price = $this->productUtil->calc_percentage($purchase_price, $profit_percent, $purchase_price);
+                                    $purchase_line->batch_selling_price_inc_tax = $this->productUtil->calc_percentage($purchase_price_inc_tax, $profit_percent, $purchase_price_inc_tax);
                                     
                                     if ($tax_type == 'fixed') {
-                                        $purchase_line->batch_selling_price_inc_tax = $purchase_line->batch_selling_price + $item_tax;
+                                        $purchase_line->batch_selling_price = max(0, $purchase_line->batch_selling_price_inc_tax - $tax_percent);
                                     } else {
-                                        $purchase_line->batch_selling_price_inc_tax = $this->productUtil->calc_percentage($purchase_line->batch_selling_price, $tax_percent, $purchase_line->batch_selling_price);
+                                        $purchase_line->batch_selling_price = $this->productUtil->calc_percentage_base($purchase_line->batch_selling_price_inc_tax, $tax_percent);
                                     }
                                 }
 

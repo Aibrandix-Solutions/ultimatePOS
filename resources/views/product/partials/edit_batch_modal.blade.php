@@ -57,10 +57,6 @@
 <script type="text/javascript">
 $(document).ready(function() {
     function calculate_prices() {
-        var purchase_price = __read_number($('#purchase_price'));
-        var purchase_price_inc_tax = __read_number($('#purchase_price_inc_tax'));
-        var margin = __read_number($('#batch_profit_margin'));
-        var selling_price_inc_tax = __read_number($('#batch_selling_price_inc_tax'));
         var tax_rate = __read_number($('#tax_rate'));
 
         // Handle purchase price changes
@@ -91,6 +87,7 @@ $(document).ready(function() {
         function update_selling_price() {
             var p_inc_tax = __read_number($('#purchase_price_inc_tax'));
             var m = __read_number($('#batch_profit_margin'));
+            // Use __add_percent from functions.js if available, or manual math (consistent with purchase.js)
             var s_inc_tax = p_inc_tax + (p_inc_tax * m / 100);
             __write_number($('#batch_selling_price_inc_tax'), s_inc_tax);
         }
@@ -103,6 +100,12 @@ $(document).ready(function() {
                 m = ((s_inc_tax - p_inc_tax) / p_inc_tax) * 100;
             }
             __write_number($('#batch_profit_margin'), m);
+        }
+
+        // Trigger initial calculation to resolve any inconsistencies on load
+        // But only if we have cost and margin
+        if (__read_number($('#purchase_price_inc_tax')) > 0 && __read_number($('#batch_profit_margin')) > 0) {
+            update_selling_price();
         }
     }
     calculate_prices();

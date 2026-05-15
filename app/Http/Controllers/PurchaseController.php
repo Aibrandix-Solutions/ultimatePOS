@@ -1203,6 +1203,7 @@ class PurchaseController extends Controller
                 $enable_batch_pricing = $request->session()->get('business.enable_batch_pricing');
 
                 $product_batch_id = $request->input('product_batch_id');
+                $batch_details = null;
                 if ($enable_batch_pricing && !empty($product_batch_id) && Schema::hasTable('product_batches')
                     && !empty($variation_id) && $variation_id !== '0' && !empty($location_id)) {
                     $pb = ProductBatch::where('id', $product_batch_id)
@@ -1214,6 +1215,7 @@ class PurchaseController extends Controller
                     if ($pb) {
                         $refill_product_batch_id = $pb->id;
                         $refill_batch_label = $pb->batch_label;
+                        $batch_details = $pb;
                     }
                 }
 
@@ -1235,8 +1237,8 @@ class PurchaseController extends Controller
                                 (int)$product_id, 
                                 (int)$variation_id, 
                                 (int)$location_id, 
-                                $v->sell_price_inc_tax,
-                                $v->profit_percent
+                                null,
+                                null
                             );
                         }
                     } else {
@@ -1260,7 +1262,8 @@ class PurchaseController extends Controller
                         'next_batch_number',
                         'skip_batch_for_row',
                         'refill_product_batch_id',
-                        'refill_batch_label'
+                        'refill_batch_label',
+                        'batch_details'
                     ));
             }
         }
@@ -1308,6 +1311,7 @@ class PurchaseController extends Controller
                         'batch_label' => $pb->batch_label,
                         'remaining' => $remaining,
                         'batch_selling_price_inc_tax' => $pb->sell_price_inc_tax,
+                        'profit_margin' => $pb->profit_margin,
                     ];
                 });
 
@@ -1348,6 +1352,7 @@ class PurchaseController extends Controller
                         'batch_label' => 'Batch 1',
                         'remaining' => (float) $legacy_qty,
                         'batch_selling_price_inc_tax' => $b1->sell_price_inc_tax,
+                        'profit_margin' => $b1->profit_margin,
                     ]);
                 }
             }

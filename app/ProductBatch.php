@@ -75,19 +75,53 @@ class ProductBatch extends Model
      */
     public static function firstOrCreateBatchOne(int $business_id, int $product_id, int $variation_id, int $location_id, $price = null, $margin = null): self
     {
-        $batch = self::firstOrCreate(
-            [
+        $batch = self::where('business_id', $business_id)
+            ->where('product_id', $product_id)
+            ->where('variation_id', $variation_id)
+            ->where('location_id', $location_id)
+            ->where('batch_label', 'Batch 1')
+            ->first();
+
+        if (empty($batch)) {
+            // If price/margin not provided, try to find from the latest legacy purchase line
+            if ($price === null || $margin === null) {
+                $last_pl = \App\PurchaseLine::join('transactions as t', 't.id', '=', 'purchase_lines.transaction_id')
+                    ->where('t.business_id', $business_id)
+                    ->where('t.location_id', $location_id)
+                    ->where('purchase_lines.variation_id', $variation_id)
+                    ->whereNull('purchase_lines.batch_id')
+                    ->whereIn('t.type', ['purchase', 'opening_stock', 'purchase_transfer'])
+                    ->where('t.status', 'received')
+                    ->orderByDesc('t.transaction_date')
+                    ->orderByDesc('purchase_lines.id')
+                    ->select('purchase_lines.batch_selling_price_inc_tax', 'purchase_lines.batch_profit_margin', 'purchase_lines.purchase_price_inc_tax')
+                    ->first();
+
+                if ($last_pl) {
+                    $price = $price ?? ($last_pl->batch_selling_price_inc_tax ?? null);
+                    $margin = $margin ?? ($last_pl->batch_profit_margin ?? null);
+                }
+
+                // Last resort: use variation price
+                if ($price === null || $margin === null) {
+                    $v = \App\Variation::find($variation_id);
+                    if ($v) {
+                        $price = $price ?? $v->sell_price_inc_tax;
+                        $margin = $margin ?? $v->profit_percent;
+                    }
+                }
+            }
+
+            $batch = self::create([
                 'business_id' => $business_id,
                 'product_id' => $product_id,
                 'variation_id' => $variation_id,
                 'location_id' => $location_id,
                 'batch_label' => 'Batch 1',
-            ],
-            [
                 'sell_price_inc_tax' => $price,
                 'profit_margin' => $margin
-            ]
-        );
+            ]);
+        }
 
         // Migrate legacy stock (where batch_id is null) to this permanent Batch 1 record.
         // This ensures the stock is correctly tracked and the batch price is applied in POS.
