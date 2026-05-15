@@ -24,7 +24,11 @@
                         @foreach($batches as $batch)
                             <tr>
                                 <td data-label="@lang('lang_v1.batch_number')">{{ $batch->batch_number }}</td>
-                                <td data-label="@lang('lang_v1.purchase_price_inc_tax')"><span class="display_currency" data-currency_symbol="true">{{ $batch->purchase_price_inc_tax }}</span></td>
+                                <td data-label="@lang('lang_v1.purchase_price_inc_tax')">
+                                    <span class="display_currency" data-currency_symbol="true">
+                                        {{ !empty($product->tax) ? $batch->purchase_price_inc_tax : $batch->purchase_price }}
+                                    </span>
+                                </td>
                                 <td data-label="@lang('lang_v1.selling_price_inc_tax')"><span class="display_currency" data-currency_symbol="true">{{ $batch->batch_selling_price_inc_tax ?? 0 }}</span></td>
                                 <td data-label="@lang('lang_v1.qty_in')">{{ @format_quantity($batch->qty_in) }}</td>
                                 <td data-label="@lang('lang_v1.qty_out')">{{ @format_quantity($batch->qty_out) }}</td>

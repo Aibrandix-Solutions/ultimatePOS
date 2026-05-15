@@ -1,15 +1,22 @@
 function getPurchaseTaxDetails($option) {
     var tax_rate = parseFloat($option.data('tax_amount'));
-    tax_rate = isNaN(tax_rate) ? 0 : tax_rate;
+    var tax_type = $option.data('tax_type');
+
+    if (isNaN(tax_rate) || $option.val() == '') {
+        return null;
+    }
 
     return {
         amount: tax_rate,
-        type: $option.data('tax_type') || 'percentage',
+        type: tax_type || 'percentage',
     };
 }
 
 function calculatePurchaseTax($option, base_amount) {
     var tax_details = getPurchaseTaxDetails($option);
+    if (!tax_details) {
+        return 0;
+    }
 
     return __calculate_amount(tax_details.type, tax_details.amount, base_amount);
 }

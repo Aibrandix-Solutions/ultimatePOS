@@ -2443,6 +2443,12 @@ class SellPosController extends Controller
                     $variation->profit_percent
                 );
 
+                // Explicitly sync prices if they were found in legacy stock to override defaults
+                if (!empty($legacy_price)) {
+                    $b1->sell_price_inc_tax = $legacy_price;
+                    $b1->save();
+                }
+
                 $batches->prepend([
                     'id' => $b1->id,
                     'batch_number' => 'Batch 1',

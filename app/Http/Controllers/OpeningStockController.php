@@ -161,6 +161,7 @@ class OpeningStockController extends Controller
                 //Get product tax
                 $tax_percent = ! empty($product->product_tax->amount) ? $product->product_tax->amount : 0;
                 $tax_id = ! empty($product->product_tax->id) ? $product->product_tax->id : null;
+                $tax_type = !empty($product->product_tax->calculation_type) ? $product->product_tax->calculation_type : 'percentage';
 
                 //Get start date for financial year.
                 $transaction_date = request()->session()->get('financial_year.start');
@@ -180,7 +181,7 @@ class OpeningStockController extends Controller
                             //create purchase_lines array
                             foreach ($purchase_lines_data as $k => $pl) {
                                 $purchase_price = $this->productUtil->num_uf(trim($pl['purchase_price']));
-                                $item_tax = $this->productUtil->calc_percentage($purchase_price, $tax_percent);
+                                $item_tax = $tax_type == 'fixed' ? $tax_percent : $this->productUtil->calc_percentage($purchase_price, $tax_percent);
                                 $purchase_price_inc_tax = $purchase_price + $item_tax;
                                 $qty_remaining = $this->productUtil->num_uf(trim($pl['quantity']));
                                 $secondary_unit_quantity = isset($pl['secondary_unit_quantity']) ? $this->productUtil->num_uf(trim($pl['secondary_unit_quantity'])) : 0;
@@ -199,6 +200,8 @@ class OpeningStockController extends Controller
                                 $transaction_date = ! empty($pl['transaction_date']) ? $this->productUtil->uf_date($pl['transaction_date'], true) : $transaction_date;
 
                                 $purchase_line = null;
+                                $variation = $product->variations->where('id', $vid)->first();
+                                $profit_percent = !empty($variation->profit_percent) ? $variation->profit_percent : 0;
 
                                 if (isset($pl['purchase_line_id'])) {
                                     $purchase_line = PurchaseLine::findOrFail($pl['purchase_line_id']);
@@ -232,6 +235,16 @@ class OpeningStockController extends Controller
                                     $purchase_line->exp_date = $exp_date;
                                     $purchase_line->lot_number = $lot_number;
                                     $purchase_line->secondary_unit_quantity = $secondary_unit_quantity;
+
+                                    //Set batch selling price
+                                    $purchase_line->batch_profit_margin = $profit_percent;
+                                    $purchase_line->batch_selling_price = $this->productUtil->calc_percentage($purchase_price, $profit_percent, $purchase_price);
+                                    
+                                    if ($tax_type == 'fixed') {
+                                        $purchase_line->batch_selling_price_inc_tax = $purchase_line->batch_selling_price + $item_tax;
+                                    } else {
+                                        $purchase_line->batch_selling_price_inc_tax = $this->productUtil->calc_percentage($purchase_line->batch_selling_price, $tax_percent, $purchase_line->batch_selling_price);
+                                    }
                                 }
 
                                 if (! empty($purchase_line->transaction_id)) {
@@ -243,6 +256,10 @@ class OpeningStockController extends Controller
                                         'transaction_date' => $transaction_date,
                                         'additional_notes' => $purchase_line_note,
                                     ];
+
+                                    if (Schema::hasTable('product_batches')) {
+                                        \App\ProductBatch::syncSellPricesFromPurchaseLine($purchase_line);
+                                    }
                                 } else {
                                     $new_purchase_lines[] = $purchase_line;
                                     $new_transaction_data[] = [

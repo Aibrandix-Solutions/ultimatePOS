@@ -219,13 +219,17 @@ class ProductBatchController extends Controller
         $product = Product::findOrFail($purchase_line->product_id);
         
         $tax_rate = 0;
+        $tax_calculation_type = 'percentage';
         if (!empty($product->tax)) {
             $tax_obj = \App\TaxRate::find($product->tax);
-            if ($tax_obj) { $tax_rate = $tax_obj->amount; }
+            if ($tax_obj) {
+                $tax_rate = $tax_obj->amount;
+                $tax_calculation_type = $tax_obj->calculation_type ?? 'percentage';
+            }
         }
 
         return view('product.partials.edit_batch_modal')
-            ->with(compact('purchase_line', 'product', 'tax_rate'));
+            ->with(compact('purchase_line', 'product', 'tax_rate', 'tax_calculation_type'));
     }
 
     public function update(Request $request, $id)
@@ -252,15 +256,25 @@ class ProductBatchController extends Controller
             $purchase_line->purchase_price = $this->moduleUtil->num_uf($purchase_price);
             $purchase_line->purchase_price_inc_tax = $this->moduleUtil->num_uf($purchase_price_inc_tax);
             
-            // Calculate exclusive price if tax exists
             $product = Product::find($purchase_line->product_id);
+
+            // Calculate exclusive price if tax exists
             $tax_rate = 0;
+            $tax_calculation_type = 'percentage';
             if (!empty($product->tax)) {
                 $tax_obj = \App\TaxRate::find($product->tax);
-                if ($tax_obj) { $tax_rate = $tax_obj->amount; }
+                if ($tax_obj) {
+                    $tax_rate = $tax_obj->amount;
+                    $tax_calculation_type = $tax_obj->calculation_type ?? 'percentage';
+                }
             }
             
-            $purchase_line->batch_selling_price = ($purchase_line->batch_selling_price_inc_tax / (1 + ($tax_rate / 100)));
+            if ($tax_calculation_type == 'fixed') {
+                $purchase_line->batch_selling_price = max(0, $purchase_line->batch_selling_price_inc_tax - $tax_rate);
+            } else {
+                // Use ProductUtil's helper if possible, or manual math
+                $purchase_line->batch_selling_price = ($purchase_line->batch_selling_price_inc_tax / (1 + ($tax_rate / 100)));
+            }
             
             $purchase_line->save();
 

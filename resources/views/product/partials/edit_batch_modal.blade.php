@@ -8,6 +8,7 @@
 
     <div class="modal-body">
       <input type="hidden" id="tax_rate" value="{{ $tax_rate }}">
+      <input type="hidden" id="tax_type" value="{{ $tax_calculation_type }}">
       
       <div class="row">
         <div class="col-md-12">
@@ -65,14 +66,16 @@ $(document).ready(function() {
         // Handle purchase price changes
         $(document).on('change', '#purchase_price', function() {
             var val = __read_number($(this));
-            var inc_tax = val + (val * tax_rate / 100);
+            var tax_type = $('#tax_type').val();
+            var inc_tax = (tax_type == 'fixed') ? (val + tax_rate) : (val + (val * tax_rate / 100));
             __write_number($('#purchase_price_inc_tax'), inc_tax);
             update_selling_price();
         });
 
         $(document).on('change', '#purchase_price_inc_tax', function() {
             var val = __read_number($(this));
-            var exc_tax = val / (1 + tax_rate / 100);
+            var tax_type = $('#tax_type').val();
+            var exc_tax = (tax_type == 'fixed') ? (val - tax_rate) : (val / (1 + tax_rate / 100));
             __write_number($('#purchase_price'), exc_tax);
             update_selling_price();
         });

@@ -4,18 +4,29 @@ $(document).ready(function () {
     function get_product_tax_details() {
         var selected_tax = $('select#tax').find(':selected');
         var tax_rate = parseFloat(selected_tax.data('rate'));
+        var tax_type = selected_tax.data('type');
+
+        if (isNaN(tax_rate) || selected_tax.val() == '') {
+            return null;
+        }
 
         return {
-            amount: isNaN(tax_rate) ? 0 : tax_rate,
-            type: selected_tax.data('type') || 'percentage',
+            amount: tax_rate,
+            type: tax_type || 'percentage',
         };
     }
 
     function add_product_tax(amount, tax_details) {
+        if (!tax_details) {
+            return amount;
+        }
         return amount + __calculate_amount(tax_details.type, tax_details.amount, amount);
     }
 
     function remove_product_tax(amount_inc_tax, tax_details) {
+        if (!tax_details) {
+            return amount_inc_tax;
+        }
         if (tax_details.type == 'fixed') {
             var amount = amount_inc_tax - tax_details.amount;
             return amount < 0 ? 0 : amount;

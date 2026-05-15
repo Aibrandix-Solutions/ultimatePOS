@@ -946,13 +946,23 @@ class ProductUtil extends Util
             $variation_details->default_purchase_price = $variation_data['pp_without_discount'];
 
             //Set default purchase price inc. tax
-            $variation_details->dpp_inc_tax = $this->calc_percentage($variation_details->default_purchase_price, $tax_rate, $variation_details->default_purchase_price);
+            $tax_calculation_type = !empty($variation_details->product->product_tax->calculation_type) ? $variation_details->product->product_tax->calculation_type : 'percentage';
+
+            if ($tax_calculation_type == 'fixed') {
+                $variation_details->dpp_inc_tax = $variation_details->default_purchase_price + $tax_rate;
+            } else {
+                $variation_details->dpp_inc_tax = $this->calc_percentage($variation_details->default_purchase_price, $tax_rate, $variation_details->default_purchase_price);
+            }
 
             //Set default sell price inc. tax
             $variation_details->sell_price_inc_tax = $variation_data['sell_price_inc_tax'];
 
-            //set sell price inc. tax
-            $variation_details->default_sell_price = $this->calc_percentage_base($variation_details->sell_price_inc_tax, $tax_rate);
+            //set sell price exc. tax
+            if ($tax_calculation_type == 'fixed') {
+                $variation_details->default_sell_price = max($variation_details->sell_price_inc_tax - $tax_rate, 0);
+            } else {
+                $variation_details->default_sell_price = $this->calc_percentage_base($variation_details->sell_price_inc_tax, $tax_rate);
+            }
 
             //set profit margin
             $variation_details->profit_percent = $this->get_percent($variation_details->default_purchase_price, $variation_details->default_sell_price);
@@ -1371,17 +1381,29 @@ class ProductUtil extends Util
                             $price_uf = ($this->num_uf($batch_sp_raw, $currency_details)) / $multiplier;
                             
                             $sell_tax_rate = 0;
+                            $tax_calculation_type = 'percentage';
                             if (!empty($purchase_line->tax_id)) {
                                 $tax_obj = \App\TaxRate::find($purchase_line->tax_id);
-                                if ($tax_obj) { $sell_tax_rate = $tax_obj->amount; }
+                                if ($tax_obj) { 
+                                    $sell_tax_rate = $tax_obj->amount; 
+                                    $tax_calculation_type = $tax_obj->calculation_type ?? 'percentage';
+                                }
                             }
 
                             if ($tax_type == 'inclusive') {
                                 $purchase_line->batch_selling_price_inc_tax = $price_uf;
-                                $purchase_line->batch_selling_price = $this->calc_percentage_base($price_uf, $sell_tax_rate);
+                                if ($tax_calculation_type == 'fixed') {
+                                    $purchase_line->batch_selling_price = max($price_uf - $sell_tax_rate, 0);
+                                } else {
+                                    $purchase_line->batch_selling_price = $this->calc_percentage_base($price_uf, $sell_tax_rate);
+                                }
                             } else {
                                 $purchase_line->batch_selling_price = $price_uf;
-                                $purchase_line->batch_selling_price_inc_tax = $this->calc_percentage($price_uf, $sell_tax_rate, $price_uf);
+                                if ($tax_calculation_type == 'fixed') {
+                                    $purchase_line->batch_selling_price_inc_tax = $price_uf + $sell_tax_rate;
+                                } else {
+                                    $purchase_line->batch_selling_price_inc_tax = $this->calc_percentage($price_uf, $sell_tax_rate, $price_uf);
+                                }
                             }
                         }
 
@@ -1416,17 +1438,29 @@ class ProductUtil extends Util
                             $price_uf = ($this->num_uf($batch_sp_raw, $currency_details)) / $multiplier;
                             
                             $sell_tax_rate = 0;
+                            $tax_calculation_type = 'percentage';
                             if (!empty($purchase_line->tax_id)) {
                                 $tax_obj = \App\TaxRate::find($purchase_line->tax_id);
-                                if ($tax_obj) { $sell_tax_rate = $tax_obj->amount; }
+                                if ($tax_obj) { 
+                                    $sell_tax_rate = $tax_obj->amount; 
+                                    $tax_calculation_type = $tax_obj->calculation_type ?? 'percentage';
+                                }
                             }
 
                             if ($tax_type == 'inclusive') {
                                 $purchase_line->batch_selling_price_inc_tax = $price_uf;
-                                $purchase_line->batch_selling_price = $this->calc_percentage_base($price_uf, $sell_tax_rate);
+                                if ($tax_calculation_type == 'fixed') {
+                                    $purchase_line->batch_selling_price = max($price_uf - $sell_tax_rate, 0);
+                                } else {
+                                    $purchase_line->batch_selling_price = $this->calc_percentage_base($price_uf, $sell_tax_rate);
+                                }
                             } else {
                                 $purchase_line->batch_selling_price = $price_uf;
-                                $purchase_line->batch_selling_price_inc_tax = $this->calc_percentage($price_uf, $sell_tax_rate, $price_uf);
+                                if ($tax_calculation_type == 'fixed') {
+                                    $purchase_line->batch_selling_price_inc_tax = $price_uf + $sell_tax_rate;
+                                } else {
+                                    $purchase_line->batch_selling_price_inc_tax = $this->calc_percentage($price_uf, $sell_tax_rate, $price_uf);
+                                }
                             }
                         }
 
