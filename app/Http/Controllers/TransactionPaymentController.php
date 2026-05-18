@@ -767,15 +767,26 @@ class TransactionPaymentController extends Controller
             DB::beginTransaction();
 
             if ($is_deduction) {
-                // First, apply payment to Sales (reduces debt)
-                $request->merge(['due_payment_type' => 'sell']);
+                // Only offset up to the customer's gross sale due. Any excess return credit
+                // must remain as sell_return due (refundable), not advance balance.
+                $sale_due_amount = $this->getContactGrossSaleDueAmount($contact_id, $business_id);
+                $deduct_amount = min($amount_paid, $sale_due_amount);
+
+                if ($deduct_amount <= 0) {
+                    throw new \Exception(__('lang_v1.no_due_balance_to_offset'));
+                }
+
+                $request->merge([
+                    'amount' => $this->transactionUtil->num_f($deduct_amount),
+                    'suppress_excess_advance' => true,
+                    'due_payment_type' => 'sell',
+                ]);
                 $tp_sell = $this->transactionUtil->payContact($request);
-                
-                // Second, apply payment to Returns (clears the credit)
-                // We use the same request but switch type to sell_return
+
+                // Mark the same portion of return credit as applied against sale due.
                 $request->merge(['due_payment_type' => 'sell_return']);
                 $tp_return = $this->transactionUtil->payContact($request);
-                
+
                 $tp = $tp_sell; // Use the sell payment as the primary reference for the register
             } else {
                 $tp = $this->transactionUtil->payContact($request);
@@ -1003,6 +1014,35 @@ class TransactionPaymentController extends Controller
         }
 
         return $due;
+    }
+
+    /**
+     * Gross sale due before netting sell-return credit (used for return-credit offset).
+     */
+    private function getContactGrossSaleDueAmount($contact_id, $business_id)
+    {
+        $customer_paid_sql = Util::sqlPaymentCountsTowardContactDue();
+        $opening_balance_paid_sql = Util::sqlPaymentCountsTowardContactDue();
+
+        $details = Contact::where('contacts.id', $contact_id)
+            ->where('contacts.business_id', $business_id)
+            ->leftJoin('transactions as t', 'contacts.id', '=', 't.contact_id')
+            ->select(
+                DB::raw("SUM(IF(t.type = 'sell' AND t.status = 'final', final_total, 0)) as total_invoice"),
+                DB::raw("SUM(IF(t.type = 'sell' AND t.status = 'final', (SELECT COALESCE(SUM(IF(is_return = 1,-1*amount,amount)), 0) FROM transaction_payments WHERE transaction_payments.transaction_id=t.id AND {$customer_paid_sql}), 0)) as total_paid"),
+                DB::raw("SUM(IF(t.type = 'ledger_discount', t.final_total, 0)) as total_ledger_discount"),
+                DB::raw("SUM(IF(t.type = 'opening_balance', final_total, 0)) as opening_balance"),
+                DB::raw("SUM(IF(t.type = 'opening_balance', (SELECT COALESCE(SUM(amount), 0) FROM transaction_payments WHERE transaction_payments.transaction_id=t.id AND {$opening_balance_paid_sql}), 0)) as opening_balance_paid")
+            )
+            ->first();
+
+        if (empty($details)) {
+            return 0;
+        }
+
+        $ob_due = (float) (($details->opening_balance ?? 0) - ($details->opening_balance_paid ?? 0));
+
+        return max(0, (float) (($details->total_invoice ?? 0) - ($details->total_paid ?? 0) - ($details->total_ledger_discount ?? 0) + $ob_due));
     }
 
     /**

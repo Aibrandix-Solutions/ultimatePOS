@@ -92,6 +92,9 @@
           </div>
         </div>
 
+        <input type="hidden" id="sell_return_sale_due" value="{{ $sale_due_amount ?? 0 }}">
+        <input type="hidden" id="sell_return_total_due" value="{{ $payment_line->amount }}">
+
         {{-- Return Credit Action Choice --}}
         <div class="col-md-12">
           <div class="well" style="background: #f9f9f9; border-left: 4px solid #d9534f;">

@@ -124,6 +124,8 @@
                     }
                     if ($last_purchase_line->batch_selling_price_inc_tax !== null) {
                         $sell_price_inc_tax = $last_purchase_line->batch_selling_price_inc_tax;
+                    }
+                    if ($last_purchase_line->batch_selling_price !== null) {
                         $sell_price_exc_tax = $last_purchase_line->batch_selling_price;
                     }
                 } elseif (!empty($refill_product_batch_id) && !empty($batch_details)) {
@@ -132,6 +134,8 @@
                     }
                     if ($batch_details->sell_price_inc_tax !== null) {
                         $sell_price_inc_tax = $batch_details->sell_price_inc_tax;
+                    }
+                    if ($batch_details->sell_price_exc_tax !== null) {
                         $sell_price_exc_tax = $batch_details->sell_price_exc_tax;
                     }
                 }

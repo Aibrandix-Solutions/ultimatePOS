@@ -6912,8 +6912,8 @@ class TransactionUtil extends Util
         if (!$is_reverse) {
             $excess_amount = $this->payAtOnce($parent_payment, $due_payment_type);
         }
-        //Update excess amount
-        if (!empty($excess_amount)) {
+        //Update excess amount (skip when offsetting return credit against sale due)
+        if (!empty($excess_amount) && !$request->boolean('suppress_excess_advance')) {
             $this->updateContactBalance($contact, $excess_amount);
         }
 

@@ -83,6 +83,8 @@ class ProductBatch extends Model
             ->first();
 
         if (empty($batch)) {
+            $variation = \App\Variation::find($variation_id);
+
             // If price/margin not provided, try to find from the latest legacy purchase line
             if ($price === null || $margin === null) {
                 $last_pl = \App\PurchaseLine::join('transactions as t', 't.id', '=', 'purchase_lines.transaction_id')
@@ -103,12 +105,9 @@ class ProductBatch extends Model
                 }
 
                 // Last resort: use variation price
-                if ($price === null || $margin === null) {
-                    $v = \App\Variation::find($variation_id);
-                    if ($v) {
-                        $price = $price ?? $v->sell_price_inc_tax;
-                        $margin = $margin ?? $v->profit_percent;
-                    }
+                if ($variation && ($price === null || $margin === null)) {
+                    $price = $price ?? $variation->sell_price_inc_tax;
+                    $margin = $margin ?? $variation->profit_percent;
                 }
             }
 
@@ -118,8 +117,9 @@ class ProductBatch extends Model
                 'variation_id' => $variation_id,
                 'location_id' => $location_id,
                 'batch_label' => 'Batch 1',
+                'sell_price_exc_tax' => $variation ? $variation->default_sell_price : null,
                 'sell_price_inc_tax' => $price,
-                'profit_margin' => $margin
+                'profit_margin' => $margin,
             ]);
         }
 

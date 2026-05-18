@@ -1216,6 +1216,17 @@ class PurchaseController extends Controller
                         $refill_product_batch_id = $pb->id;
                         $refill_batch_label = $pb->batch_label;
                         $batch_details = $pb;
+                        $v = $variations->first();
+                        if ($v && $batch_details->sell_price_exc_tax === null) {
+                            $batch_details->sell_price_exc_tax = $v->default_sell_price;
+                            if ($batch_details->sell_price_inc_tax === null) {
+                                $batch_details->sell_price_inc_tax = $v->sell_price_inc_tax;
+                            }
+                            if ($batch_details->profit_margin === null) {
+                                $batch_details->profit_margin = $v->profit_percent;
+                            }
+                            $batch_details->save();
+                        }
                     }
                 }
 

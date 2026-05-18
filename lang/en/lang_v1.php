@@ -588,6 +588,7 @@ return [
     'sell_return_due' => 'Sell Return Due',
     'total_sell_return_due' => 'Total Sell Return Due',
     'pay_sell_return_due' => 'Pay Sell Return Due',
+    'no_due_balance_to_offset' => 'No sale due available to offset against return credit.',
     'total_sell_return' => 'Total Sell Return',
     'total_sell_return_paid' => 'Total Sell Return Paid',
     'total_sell_return_inc_tax' => 'Total Sell Return Including Tax',

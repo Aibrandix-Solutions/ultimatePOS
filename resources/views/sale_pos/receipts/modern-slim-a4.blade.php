@@ -169,10 +169,41 @@
     .c-sno  { width: 4%;  text-align: left; vertical-align: top; }
     .c-name { width: 40%; text-align: left; }
     .c-type { width: 12%; text-align: left; }
-    .c-qty  { width: 8%;  text-align: right; }
-    .c-uprc { width: 16%; text-align: right; }
-    .c-disc { width: 10%; text-align: right; }
-    .c-tot  { width: 14%; text-align: right; }
+    .c-qty  { width: 8%;  text-align: left; white-space: nowrap; }
+    .c-uprc { width: 16%; text-align: left; white-space: nowrap; }
+    .c-disc { width: 10%; text-align: left; white-space: nowrap; }
+    .c-tot  { width: 14%; text-align: left; white-space: nowrap; font-weight: 700; }
+
+    .ptable th.c-qty,
+    .ptable th.c-uprc,
+    .ptable th.c-disc,
+    .ptable th.c-tot,
+    .ptable td.c-qty,
+    .ptable td.c-uprc,
+    .ptable td.c-disc,
+    .ptable td.c-tot {
+        word-wrap: normal;
+        overflow-wrap: normal;
+        word-break: keep-all;
+    }
+
+    .ptable th.c-uprc,
+    .ptable td.c-uprc {
+        position: relative;
+        left: -25px;
+        padding-right: 6px;
+    }
+    .ptable th.c-disc,
+    .ptable td.c-disc {
+        position: relative;
+        left: -20px;
+        padding-right: 6px;
+    }
+    .ptable th.c-tot,
+    .ptable td.c-tot {
+        position: relative;
+        left: -15px;
+    }
 
     /* ===== Two-column bottom layout ===== */
     .bottom-section {
@@ -461,15 +492,15 @@
                 <tr style="font-size:11px; border-bottom: 2px solid #000;">
                     <th class="c-sno"></th>
                     <th class="c-type" style="text-align:left;">Type</th>
-                    <th class="c-qty r">Qty</th>
-                    <th class="c-uprc r">Price</th>
+                    <th class="c-qty">Qty</th>
+                    <th class="c-uprc">Price</th>
                     @if(!empty($receipt_details->item_discount_label))
-                        <th class="c-disc r">Disc</th>
+                        <th class="c-disc">Disc</th>
                     @endif
                     @if(!empty($receipt_details->discounted_unit_price_label))
-                        <th class="c-disc r">Disc Price</th>
+                        <th class="c-disc">Disc Price</th>
                     @endif
-                    <th class="c-tot r">Subtotal</th>
+                    <th class="c-tot">Subtotal</th>
                 </tr>
                 @endif
             </thead>
@@ -502,15 +533,15 @@
                     <tr class="detail-row">
                         <td class="c-sno"></td>
                         <td class="c-type">{{$line['units']}}</td>
-                        <td class="c-qty" style="text-align:right;">{{$line['quantity']}}</td>
-                        <td class="c-uprc" style="text-align:right;">{{$line['unit_price_before_discount']}}</td>
+                        <td class="c-qty">{{$line['quantity']}}</td>
+                        <td class="c-uprc">{{$line['unit_price_before_discount']}}</td>
                         @if(!empty($receipt_details->item_discount_label))
-                            <td class="c-disc" style="text-align:right;">{{$line['line_discount'] ?? '0.00'}}</td>
+                            <td class="c-disc">{{$line['line_discount'] ?? '0.00'}}</td>
                         @endif
                         @if(!empty($receipt_details->discounted_unit_price_label))
-                            <td class="c-disc" style="text-align:right;">{{$line['unit_price_inc_tax']}}</td>
+                            <td class="c-disc">{{$line['unit_price_inc_tax']}}</td>
                         @endif
-                        <td class="c-tot" style="text-align:right; font-weight:700;">{{$line['line_total']}}</td>
+                        <td class="c-tot">{{$line['line_total']}}</td>
                     </tr>
                     @endif
 
@@ -528,15 +559,15 @@
                             <tr class="modifier-row">
                                 <td></td>
                                 <td class="c-type">{{$modifier['units']}}</td>
-                                <td style="text-align:right;">{{$modifier['quantity']}}</td>
-                                <td style="text-align:right;">{{$modifier['unit_price_inc_tax']}}</td>
+                                <td class="c-qty">{{$modifier['quantity']}}</td>
+                                <td class="c-uprc">{{$modifier['unit_price_inc_tax']}}</td>
                                 @if(!empty($receipt_details->discounted_unit_price_label))
-                                    <td style="text-align:right;">{{$modifier['unit_price_exc_tax']}}</td>
+                                    <td class="c-disc">{{$modifier['unit_price_exc_tax']}}</td>
                                 @endif
                                 @if(!empty($receipt_details->item_discount_label))
-                                    <td style="text-align:right;">0.00</td>
+                                    <td class="c-disc">0.00</td>
                                 @endif
-                                <td style="text-align:right;">{{$modifier['line_total']}}</td>
+                                <td class="c-tot">{{$modifier['line_total']}}</td>
                             </tr>
                             @endif
                         @endforeach

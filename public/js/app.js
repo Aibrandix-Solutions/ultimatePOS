@@ -1702,6 +1702,23 @@ $(document).ready(function () {
                 });
 
                 container.find('form#pay_contact_due_form').validate();
+
+                // Sell return: default amount to sale due when offsetting against sale due.
+                var sellReturnSaleDue = container.find('#sell_return_sale_due');
+                if (sellReturnSaleDue.length) {
+                    var updateSellReturnPaymentAmount = function () {
+                        var saleDue = __read_number(sellReturnSaleDue);
+                        var returnDue = __read_number(container.find('#sell_return_total_due'));
+                        var amountInput = container.find('.payment_amount');
+                        if (container.find('#return_action_deduct').is(':checked') && saleDue > 0) {
+                            __write_number(amountInput, Math.min(saleDue, returnDue));
+                        } else if (returnDue > 0) {
+                            __write_number(amountInput, returnDue);
+                        }
+                    };
+                    container.on('change', 'input[name="return_credit_action"]', updateSellReturnPaymentAmount);
+                    updateSellReturnPaymentAmount();
+                }
             },
         });
     });
