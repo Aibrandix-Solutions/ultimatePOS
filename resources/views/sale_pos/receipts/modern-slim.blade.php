@@ -1,4 +1,4 @@
-﻿<!-- Modern Slim Receipt - Designed for 80mm thermal printers -->
+<!-- Modern Slim Receipt - Designed for 80mm thermal printers -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -22,7 +22,7 @@
         line-height: 1.2;
         background: #fff;
         margin: 0;
-        padding: 0 1px;
+        padding: 0 4px;
     }
     a, a:visited, a:hover, a:active {
         color: #000 !important;
@@ -34,7 +34,7 @@
         width: 100%;
         max-width: 100%;
         margin: 0;
-        padding: 0;
+        padding: 0 2px;
         color: #000 !important;
     }
     .receipt * {
@@ -128,16 +128,15 @@
     }
     .ptable th {
         font-weight: 700;
-        padding: 1px 0;
-        font-size: 11px;
+        padding: 1px 1px;
+        font-size: 10px;
         text-align: left;
-        overflow: hidden;
+        overflow: visible;
         white-space: nowrap;
-        text-overflow: ellipsis;
     }
     .ptable th.r { text-align: right; }
     .ptable td {
-        padding: 2px 0;
+        padding: 2px 1px;
         vertical-align: top;
         font-size: 13px;
         word-wrap: break-word;
@@ -150,17 +149,42 @@
         border-bottom: none;
     }
 
-    .c-sno  { width: 5%;  text-align: left; vertical-align: top; }
-    .c-type { width: 12%; text-align: left; }
-    .c-qty  { width: 10%; text-align: left; white-space: nowrap; }
-    .c-uprc { width: 30%; text-align: left; white-space: nowrap; }
-    .c-disc { width: 14%; text-align: left; white-space: nowrap; }
-    .c-tot  { width: 29%; text-align: left; white-space: nowrap; font-weight: 700; }
+    col.col-sno  { width: 4%; }
+    col.col-type { width: 12%; }
+    col.col-qty  { width: 10%; }
+    col.col-uprc { width: 26%; }
+    col.col-disc { width: 12%; }
+    col.col-tot  { width: 36%; }
 
+    .ptable-no-disc col.col-type { width: 12%; }
+    .ptable-no-disc col.col-qty  { width: 10%; }
+    .ptable-no-disc col.col-uprc { width: 30%; }
+    .ptable-no-disc col.col-tot  { width: 44%; }
+
+    .c-sno  { text-align: left; vertical-align: top; }
+    .c-type {
+        text-align: left;
+        white-space: nowrap;
+        padding-right: 4px;
+        overflow: visible;
+    }
+    .c-qty {
+        text-align: left;
+        white-space: nowrap;
+        padding-left: 2px;
+        padding-right: 2px;
+        overflow: visible;
+    }
+    .c-uprc { text-align: right; white-space: nowrap; padding-right: 2px; }
+    .c-disc { text-align: right; white-space: nowrap; padding-left: 2px; padding-right: 2px; }
+    .c-tot  { text-align: right; white-space: nowrap; font-weight: 700; padding-left: 2px; padding-right: 1px; }
+
+    .ptable th.c-type,
     .ptable th.c-qty,
     .ptable th.c-uprc,
     .ptable th.c-disc,
     .ptable th.c-tot,
+    .ptable td.c-type,
     .ptable td.c-qty,
     .ptable td.c-uprc,
     .ptable td.c-disc,
@@ -168,24 +192,29 @@
         word-wrap: normal;
         overflow-wrap: normal;
         word-break: keep-all;
+        overflow: visible;
     }
 
-    .ptable th.c-uprc,
-    .ptable td.c-uprc {
-        position: relative;
-        left: -25px;
-        padding-right: 4px;
+    .detail-row td.c-type,
+    .detail-row td.c-qty,
+    .detail-row td.c-uprc,
+    .detail-row td.c-disc,
+    .detail-row td.c-tot,
+    .modifier-row td.c-type,
+    .modifier-row td.c-qty,
+    .modifier-row td.c-uprc,
+    .modifier-row td.c-disc,
+    .modifier-row td.c-tot {
+        font-size: 10px;
+        line-height: 1.15;
+        letter-spacing: -0.2px;
     }
-    .ptable th.c-disc,
-    .ptable td.c-disc {
-        position: relative;
-        left: -20px;
-        padding-right: 4px;
-    }
-    .ptable th.c-tot,
-    .ptable td.c-tot {
-        position: relative;
-        left: -15px;
+
+    .ptable thead tr:nth-child(2) th.c-type,
+    .ptable thead tr:nth-child(2) th.c-qty {
+        font-size: 9px;
+        padding-right: 2px;
+        padding-left: 1px;
     }
 
     .item-name {
@@ -360,22 +389,38 @@
     /* ===== Print Styles ===== */
     @media print {
         @page {
-            margin: 0;
+            margin: 0 1mm;
         }
         body {
-            font-size: 19px;
+            font-size: 13px;
             font-family: Roboto, Helvetica, sans-serif;
             margin: 0;
-            padding: 0;
+            padding: 0 3px;
         }
         .receipt {
             width: 100%;
             max-width: 100%;
             margin: 0;
-            padding: 0;
+            padding: 0 2px;
         }
         .receipt-logo {
             max-height: 100px;
+        }
+        .ptable th {
+            font-size: 9px !important;
+        }
+        .detail-row td.c-type,
+        .detail-row td.c-qty,
+        .detail-row td.c-uprc,
+        .detail-row td.c-disc,
+        .detail-row td.c-tot,
+        .modifier-row td.c-type,
+        .modifier-row td.c-qty,
+        .modifier-row td.c-uprc,
+        .modifier-row td.c-disc,
+        .modifier-row td.c-tot {
+            font-size: 10px !important;
+            letter-spacing: -0.3px;
         }
         .hidden-print,
         .hidden-print * {
@@ -643,7 +688,19 @@
             $nameColspan = $hidePrice ? 1 : ($hasDisc ? 5 : 4);
         @endphp
 
-        <table class="ptable">
+        <table class="ptable {{ $hasDisc ? 'ptable-has-disc' : 'ptable-no-disc' }}">
+            <colgroup>
+                <col class="col-sno">
+                @if(empty($receipt_details->hide_price))
+                <col class="col-type">
+                <col class="col-qty">
+                <col class="col-uprc">
+                @if($hasDisc)
+                <col class="col-disc">
+                @endif
+                <col class="col-tot">
+                @endif
+            </colgroup>
             <thead>
                 {{-- Header row 1: # | Item (full span) --}}
                 <tr>
@@ -656,14 +713,14 @@
                     <th class="c-sno"></th>
                     <th class="c-type" style="text-align:left;">Type</th>
                     <th class="c-qty">Qty</th>
-                    <th class="c-uprc">Price</th>
+                    <th class="c-uprc r">Price</th>
                     @if(!empty($receipt_details->item_discount_label))
-                        <th class="c-disc">Disc</th>
+                        <th class="c-disc r">Disc</th>
                     @endif
                     @if(!empty($receipt_details->discounted_unit_price_label))
-                        <th class="c-disc">Disc</th>
+                        <th class="c-disc r">Disc</th>
                     @endif
-                    <th class="c-tot">Subtotal</th>
+                    <th class="c-tot r">Subtotal</th>
                 </tr>
                 @endif
             </thead>

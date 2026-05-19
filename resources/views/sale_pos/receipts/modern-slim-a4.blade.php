@@ -187,24 +187,6 @@
         word-break: keep-all;
     }
 
-    .ptable th.c-uprc,
-    .ptable td.c-uprc {
-        position: relative;
-        left: -25px;
-        padding-right: 6px;
-    }
-    .ptable th.c-disc,
-    .ptable td.c-disc {
-        position: relative;
-        left: -20px;
-        padding-right: 6px;
-    }
-    .ptable th.c-tot,
-    .ptable td.c-tot {
-        position: relative;
-        left: -15px;
-    }
-
     /* ===== Two-column bottom layout ===== */
     .bottom-section {
         display: flex;
