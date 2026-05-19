@@ -70,6 +70,11 @@ class Util
 
         $formatted = number_format($input_number, $currency_precision, $decimal_separator, $thousand_separator);
 
+        // Remove trailing zeros for quantities (e.g. 1.00 → 1, 2.50 → 2.5)
+        if ($is_quantity && $currency_precision > 0) {
+            $formatted = rtrim(rtrim($formatted, '0'), $decimal_separator);
+        }
+
         if ($add_symbol) {
             $currency_symbol_placement = !empty($business_details) ? $business_details->currency_symbol_placement : session('business.currency_symbol_placement');
             $symbol = !empty($business_details) ? $business_details->currency_symbol : session('currency')['symbol'];

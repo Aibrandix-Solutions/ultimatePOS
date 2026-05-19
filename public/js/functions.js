@@ -409,12 +409,83 @@ function __print_receipt(section_id = null) {
     var imgs = receiptEl.getElementsByTagName('img');
     var img_len = imgs.length;
     var jobStarted = false;
+    var hostPrintCleanupTimer = null;
+
+    function enableHostReceiptPrintMode() {
+        if (document && document.body) {
+            document.body.classList.add('is-printing-receipt');
+        }
+    }
+
+    function disableHostReceiptPrintMode() {
+        if (hostPrintCleanupTimer) {
+            clearTimeout(hostPrintCleanupTimer);
+            hostPrintCleanupTimer = null;
+        }
+        if (document && document.body) {
+            document.body.classList.remove('is-printing-receipt');
+        }
+    }
 
     function escAttr(s) {
         return String(s)
             .replace(/&/g, '&amp;')
             .replace(/"/g, '&quot;')
             .replace(/</g, '&lt;');
+    }
+
+    var isAndroid = /Android/i.test(navigator.userAgent || '');
+    var isMobile = isAndroid || /iPhone|iPad|iPod/i.test(navigator.userAgent || '');
+
+    /**
+     * On Android/mobile, open a new window with just the receipt HTML.
+     * Android Chrome ignores iframe.print() and falls back to printing the
+     * host page, which shows the full customer/supplier list in the preview.
+     * A dedicated window contains only the receipt and prints cleanly.
+     */
+    function printReceiptInNewWindow() {
+        if (jobStarted) {
+            return;
+        }
+        jobStarted = true;
+
+        var baseNode = document.querySelector('base');
+        var baseHref = (baseNode && baseNode.href) ? baseNode.href : window.location.href.split('#')[0];
+
+        var inlineBaseCss =
+            '@page{margin:5mm}' +
+            'html,body{margin:0;padding:8px;background:#fff!important;color:#111!important;' +
+            'font:14px/1.35 Arial,Helvetica,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
+            '*{box-sizing:border-box}' +
+            'table{width:100%;border-collapse:collapse}' +
+            'td,th{padding:2px 4px;vertical-align:top}' +
+            'img{max-width:100%!important;height:auto!important;display:inline-block}' +
+            '.text-center{text-align:center}.text-left{text-align:left}.text-right{text-align:right}';
+
+        var newWin = window.open('', '_blank');
+        if (!newWin) {
+            // Popup blocked — fall back to iframe method
+            printReceiptInIframe();
+            return;
+        }
+
+        var doc = newWin.document;
+        doc.open();
+        doc.write('<!DOCTYPE html><html><head><meta charset="utf-8">');
+        doc.write('<meta name="viewport" content="width=device-width, initial-scale=1">');
+        doc.write('<base href="' + escAttr(baseHref) + '">');
+        doc.write('<style>' + inlineBaseCss + '</style>');
+        doc.write('</head><body>');
+        doc.write(receiptHtml);
+        doc.write('<script>window.onload=function(){window.print();window.onafterprint=function(){window.close();};};<\/script>');
+        doc.write('</body></html>');
+        doc.close();
+
+        // Clean up host receipt section after a delay
+        setTimeout(function () {
+            var rs = __getReceiptPrintElement(rid);
+            if (rs) { rs.innerHTML = ''; }
+        }, 3000);
     }
 
     /**
@@ -443,8 +514,6 @@ function __print_receipt(section_id = null) {
         var doc = win.document;
         var baseNode = document.querySelector('base');
         var baseHref = (baseNode && baseNode.href) ? baseNode.href : window.location.href.split('#')[0];
-
-        var isAndroid = /Android/i.test(navigator.userAgent || '');
 
         var inlineBaseCss =
             '@page{margin:5mm}' +
@@ -508,11 +577,16 @@ function __print_receipt(section_id = null) {
                 return;
             }
             printed = true;
+            // Some Android browsers ignore iframe print context and print
+            // the top document instead. Enable receipt-only mode as fallback.
+            enableHostReceiptPrintMode();
+            hostPrintCleanupTimer = setTimeout(disableHostReceiptPrintMode, 15000);
             try {
                 win.focus();
                 win.print();
             } catch (e) {
                 /* ignore */
+                disableHostReceiptPrintMode();
             }
         }
 
@@ -621,7 +695,16 @@ function __print_receipt(section_id = null) {
         win.addEventListener('afterprint', function () {
             removeFrame();
             clearHostReceipt();
+            disableHostReceiptPrintMode();
         });
+
+        window.addEventListener(
+            'afterprint',
+            function () {
+                disableHostReceiptPrintMode();
+            },
+            { once: true }
+        );
 
         if (doc.readyState === 'complete') {
             waitIframeImagesThenPrint();
@@ -634,16 +717,21 @@ function __print_receipt(section_id = null) {
             if (iframe.parentNode) {
                 removeFrame();
                 clearHostReceipt();
+                disableHostReceiptPrintMode();
             }
         }, 180000);
     }
+
+    // On mobile/Android, use a new window so only the receipt is printed.
+    // The iframe approach causes Android Chrome to print the full host page.
+    var printMethod = isMobile ? printReceiptInNewWindow : printReceiptInIframe;
 
     if (img_len) {
         var img_counter = 0;
         var checkDone = function () {
             img_counter++;
             if (img_counter >= img_len) {
-                printReceiptInIframe();
+                printMethod();
             }
         };
         [].forEach.call(imgs, function (img) {
@@ -656,11 +744,11 @@ function __print_receipt(section_id = null) {
         });
         setTimeout(function () {
             if (!jobStarted) {
-                printReceiptInIframe();
+                printMethod();
             }
         }, 5000);
     } else {
-        setTimeout(printReceiptInIframe, 200);
+        setTimeout(printMethod, 200);
     }
 }
 
