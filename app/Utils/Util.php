@@ -473,6 +473,25 @@ class Util
             return $this->sendSmsViaTwilio($data);
         }
 
+        if ($sms_service == 'smslenz') {
+            $sms_settings['send_to_param_name'] = 'contact';
+            $sms_settings['msg_param_name'] = 'message';
+            $sms_settings['request_method'] = 'get'; // Ensure it's executed as GET
+            $sms_settings['url'] = $sms_settings['smslenz_url'] ?? 'https://smslenz.lk/api/send-sms';
+            $sms_settings['param_1'] = 'user_id';
+            $sms_settings['param_val_1'] = $sms_settings['smslenz_user_id'] ?? '';
+            $sms_settings['param_2'] = 'api_key';
+            $sms_settings['param_val_2'] = $sms_settings['smslenz_api_key'] ?? '';
+            $sms_settings['param_3'] = 'sender_id';
+            $sms_settings['param_val_3'] = $sms_settings['smslenz_sender_id'] ?? '';
+            
+            // clear other params to avoid conflicts
+            for ($i = 4; $i <= 10; $i++) {
+                $sms_settings['param_' . $i] = '';
+                $sms_settings['param_val_' . $i] = '';
+            }
+        }
+
         $request_data = [
             $sms_settings['send_to_param_name'] => $data['mobile_number'],
             $sms_settings['msg_param_name'] => $data['sms_body'],
@@ -833,10 +852,11 @@ class Util
             }
 
             //Replace invoice number
-            if (strpos($value, '{invoice_number}') !== false) {
+            if (strpos($value, '{invoice_number}') !== false || strpos($value, '{invoice_no}') !== false) {
                 $invoice_number = $transaction->type == 'sell' ? $transaction->invoice_no : '';
 
                 $data[$key] = str_replace('{invoice_number}', $invoice_number, $data[$key]);
+                $data[$key] = str_replace('{invoice_no}', $invoice_number, $data[$key]);
             }
 
             //Replace ref number
@@ -846,10 +866,11 @@ class Util
                 $data[$key] = str_replace('{order_ref_number}', $order_ref_number, $data[$key]);
             }
             //Replace total_amount
-            if (strpos($value, '{total_amount}') !== false) {
+            if (strpos($value, '{total_amount}') !== false || strpos($value, '{total}') !== false) {
                 $total_amount = $this->num_f($transaction->final_total, true, $business->currency);
 
                 $data[$key] = str_replace('{total_amount}', $total_amount, $data[$key]);
+                $data[$key] = str_replace('{total}', $total_amount, $data[$key]);
             }
 
             $total_paid = 0;
@@ -903,9 +924,18 @@ class Util
             }
 
             //Replace invoice_url
-            if (!empty($transaction) && strpos($value, '{invoice_url}') !== false && $transaction->type == 'sell') {
+            if (!empty($transaction) && (strpos($value, '{invoice_url}') !== false || strpos($value, '{ebill_link}') !== false || strpos($value, '{ebill_url}') !== false) && $transaction->type == 'sell') {
                 $invoice_url = $this->getInvoiceUrl($transaction->id, $transaction->business_id);
                 $data[$key] = str_replace('{invoice_url}', $invoice_url, $data[$key]);
+                $data[$key] = str_replace('{ebill_link}', $invoice_url, $data[$key]);
+                $data[$key] = str_replace('{ebill_url}', $invoice_url, $data[$key]);
+            }
+
+            //Replace ebill_pdf_url
+            if (!empty($transaction) && strpos($value, '{ebill_pdf_url}') !== false && $transaction->type == 'sell') {
+                $invoice_url = $this->getInvoiceUrl($transaction->id, $transaction->business_id);
+                // Can be changed later to point directly to PDF if PDF endpoint exists
+                $data[$key] = str_replace('{ebill_pdf_url}', $invoice_url, $data[$key]);
             }
 
             if (!empty($transaction) && strpos($value, '{quote_url}') !== false && $transaction->type == 'sell') {
