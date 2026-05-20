@@ -136,7 +136,8 @@ class ProductBatch extends Model
     }
 
     /**
-     * Copy latest per-batch sell fields from a purchase line onto the master batch row.
+     * Copy latest per-batch sell fields AND purchase cost from a purchase line
+     * onto the master batch row.
      * Does not null out master prices when the line clears prices (standard restock).
      */
     public static function syncSellPricesFromPurchaseLine(PurchaseLine $pl): void
@@ -151,6 +152,8 @@ class ProductBatch extends Model
         }
 
         $dirty = false;
+
+        // Sync selling price / margin
         if ($pl->batch_selling_price_inc_tax !== null) {
             $pb->sell_price_inc_tax = $pl->batch_selling_price_inc_tax;
             $dirty = true;
@@ -161,6 +164,16 @@ class ProductBatch extends Model
         }
         if ($pl->batch_profit_margin !== null) {
             $pb->profit_margin = $pl->batch_profit_margin;
+            $dirty = true;
+        }
+
+        // Sync purchase cost — always update so the latest purchase price is stored
+        if ($pl->purchase_price !== null && \Schema::hasColumn('product_batches', 'purchase_price_exc_tax')) {
+            $pb->purchase_price_exc_tax = $pl->purchase_price;
+            $dirty = true;
+        }
+        if ($pl->purchase_price_inc_tax !== null && \Schema::hasColumn('product_batches', 'purchase_price_inc_tax')) {
+            $pb->purchase_price_inc_tax = $pl->purchase_price_inc_tax;
             $dirty = true;
         }
 

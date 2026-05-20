@@ -355,7 +355,7 @@
 				</div>
 			@endif
 			<div class="bb-lg mt-15 mb-10"></div>
-			<table style="padding-top: 5px !important" class="border-bottom width-100 table-f-12 mb-10">
+			<table style="padding-top: 5px !important; table-layout: fixed; width: 100%;" class="border-bottom width-100 table-f-12 mb-10">
 				<thead class="border-bottom-dotted">
 					<tr>
 						<th class="text-left" style="width: 18%;">{{$receipt_details->table_qty_label ?? __('sale.qty')}}</th>
@@ -653,12 +653,12 @@
 	font-size: 8px !important;
 }
 @page {
-	margin: 5px;
+	margin: 0px;
 }
 body {
 	color: #000000;
-	margin: 5px;
-	padding: 5px;
+	margin: 0px;
+	padding: 2px;
 }
 @media print {
 	* {
@@ -728,10 +728,10 @@ th.price {
 }
 
 .ticket {
-    width: calc(100% - 12px);
-    max-width: calc(100% - 12px);
-	margin: 0 auto;
-	padding: 0;
+    width: 100%;
+    max-width: 100%;
+	margin: 0;
+	padding: 0 2px;
 	box-sizing: border-box;
 }
 
@@ -776,9 +776,22 @@ img {
 }
 .textbox-info {
 	clear: both;
+	overflow: hidden;
 }
 .textbox-info p {
 	margin-bottom: 0px
+}
+.f-left {
+	float: left;
+	width: 50%;
+	text-align: left;
+	word-break: break-word;
+}
+.f-right {
+	float: right;
+	width: 50%;
+	text-align: right;
+	word-break: break-word;
 }
 .flex-box {
 	display: flex;
@@ -787,12 +800,21 @@ img {
 .flex-box p {
 	width: 50%;
 	margin-bottom: 0px;
-	white-space: nowrap;
+	white-space: normal;
+	word-break: break-word;
 }
 
 .table-f-12 th, .table-f-12 td {
 	font-size: 12px;
 	word-break: break-word;
+}
+
+.width-50 {
+	width: 50%;
+}
+
+.width-100 {
+	width: 100%;
 }
 
 .bw {
