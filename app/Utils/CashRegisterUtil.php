@@ -506,11 +506,21 @@ class CashRegisterUtil extends Util
             )
             ->first();
 
+        // Get total sell return amount for the register period
+        $total_sell_return = Transaction::where('transactions.created_by', $user_id)
+            ->whereBetween('transactions.created_at', [$open_time, $close_time])
+            ->where('transactions.type', 'sell_return')
+            ->select(
+                DB::raw('COALESCE(SUM(final_total), 0) as total_sell_return')
+            )
+            ->first();
+
         return [
             'product_details_by_brand' => $product_details_by_brand,
             'transaction_details' => $transaction_details,
             'types_of_service_details' => $types_of_service_details,
             'product_details' => $product_details,
+            'total_sell_return' => $total_sell_return->total_sell_return ?? 0,
         ];
     }
 
