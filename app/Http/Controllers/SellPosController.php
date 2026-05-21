@@ -749,7 +749,9 @@ class SellPosController extends Controller
                             foreach ($payments_by_transaction as $paid_transaction_id => $paid_lines) {
                                 $paid_transaction = Transaction::find($paid_transaction_id);
                                 if (!empty($paid_transaction) && !empty($paid_lines)) {
-                                    $this->cashRegisterUtil->addSellPayments($paid_transaction, $paid_lines);
+                                    //Use 'sell_due' transaction_type for old due payments (not current invoice)
+                                    $register_transaction_type = ($paid_transaction_id == $transaction->id) ? null : 'sell_due';
+                                    $this->cashRegisterUtil->addSellPayments($paid_transaction, $paid_lines, $register_transaction_type);
                                 }
                             }
                         }

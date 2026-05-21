@@ -27,13 +27,15 @@ class CashRegisterUtil extends Util
     }
 
     /**
+    /**
      * Adds sell payments to currently opened cash register
      *
      * @param object/int $transaction
      * @param  array  $payments
+     * @param  string|null  $transaction_type_override  Override the transaction_type (e.g. 'sell_due' for old due collections)
      * @return bool
      */
-    public function addSellPayments($transaction, $payments)
+    public function addSellPayments($transaction, $payments, $transaction_type_override = null)
     {
         $user_id = auth()->user()->id;
         $register = CashRegister::where('user_id', $user_id)
@@ -57,7 +59,7 @@ class CashRegisterUtil extends Util
                     'amount' => $payment_amount,
                     'pay_method' => $payment['method'],
                     'type' => $type,
-                    'transaction_type' => $transaction->type,
+                    'transaction_type' => $transaction_type_override ?? $transaction->type,
                     'transaction_id' => $transaction->id,
                 ]);
             }
@@ -238,18 +240,17 @@ class CashRegisterUtil extends Util
      * @param object $transaction
      * @param object $payment
      * @param int|null $user_id
+     * @param string|null $transaction_type_override  Override the transaction_type bucket (e.g. 'sell_due' for old due collections)
      * @return bool
      */
-    public function addTransactionPaymentToRegister($transaction, $payment, $user_id = null)
+    public function addTransactionPaymentToRegister($transaction, $payment, $user_id = null, $transaction_type_override = null)
     {
         if (empty($transaction) || empty($payment) || empty($payment->method)) {
             return false;
         }
 
-        //Keep register aligned with payment-status logic: pending cheque is not realized cash yet.
-        if ($payment->method === 'cheque' && $payment->cheque_status !== 'cleared') {
-            return false;
-        }
+        //Record cheque payments to register regardless of status (consistent with POS flow).
+        //The register tracks all received payments; cheque clearance is managed separately.
 
         $user_id = !empty($user_id) ? $user_id : $payment->created_by;
         if (empty($user_id)) {
@@ -275,7 +276,7 @@ class CashRegisterUtil extends Util
             'amount' => $amount,
             'pay_method' => $payment->method,
             'type' => $entry['type'],
-            'transaction_type' => $entry['transaction_type'],
+            'transaction_type' => $transaction_type_override ?? $entry['transaction_type'],
             'transaction_id' => $transaction->id,
         ]);
 
@@ -371,27 +372,28 @@ class CashRegisterUtil extends Util
             'cash_registers.location_id',
             'cash_registers.denominations',
             DB::raw("SUM(IF(transaction_type='initial', amount, 0)) as cash_in_hand"),
-            DB::raw("SUM(IF(transaction_type='sell', amount, IF(transaction_type='refund', -1 * amount, 0))) as total_sale"),
+            DB::raw("SUM(IF(transaction_type IN ('sell','sell_due'), amount, IF(transaction_type='refund', -1 * amount, 0))) as total_sale"),
+            DB::raw("SUM(IF(transaction_type='sell_due', amount, 0)) as total_sell_due"),
             DB::raw("SUM(IF(transaction_type='expense', IF(transaction_type='refund', -1 * amount, amount), 0)) as total_expense"),
-            DB::raw("SUM(IF(pay_method='cash', IF(transaction_type='sell', amount, 0), 0)) as total_cash"),
+            DB::raw("SUM(IF(pay_method='cash', IF(transaction_type IN ('sell','sell_due'), amount, 0), 0)) as total_cash"),
             DB::raw("SUM(IF(pay_method='cash', IF(transaction_type='expense', amount, 0), 0)) as total_cash_expense"),
-            DB::raw("SUM(IF(pay_method='cheque', IF(transaction_type='sell', amount, 0), 0)) as total_cheque"),
+            DB::raw("SUM(IF(pay_method='cheque', IF(transaction_type IN ('sell','sell_due'), amount, 0), 0)) as total_cheque"),
             DB::raw("SUM(IF(pay_method='cheque', IF(transaction_type='expense', amount, 0), 0)) as total_cheque_expense"),
-            DB::raw("SUM(IF(pay_method='card', IF(transaction_type='sell', amount, 0), 0)) as total_card"),
+            DB::raw("SUM(IF(pay_method='card', IF(transaction_type IN ('sell','sell_due'), amount, 0), 0)) as total_card"),
             DB::raw("SUM(IF(pay_method='card', IF(transaction_type='expense', amount, 0), 0)) as total_card_expense"),
-            DB::raw("SUM(IF(pay_method='bank_transfer', IF(transaction_type='sell', amount, 0), 0)) as total_bank_transfer"),
+            DB::raw("SUM(IF(pay_method='bank_transfer', IF(transaction_type IN ('sell','sell_due'), amount, 0), 0)) as total_bank_transfer"),
             DB::raw("SUM(IF(pay_method='bank_transfer', IF(transaction_type='expense', amount, 0), 0)) as total_bank_transfer_expense"),
-            DB::raw("SUM(IF(pay_method='other', IF(transaction_type='sell', amount, 0), 0)) as total_other"),
+            DB::raw("SUM(IF(pay_method='other', IF(transaction_type IN ('sell','sell_due'), amount, 0), 0)) as total_other"),
             DB::raw("SUM(IF(pay_method='other', IF(transaction_type='expense', amount, 0), 0)) as total_other_expense"),
-            DB::raw("SUM(IF(pay_method='advance', IF(transaction_type='sell', amount, 0), 0)) as total_advance"),
+            DB::raw("SUM(IF(pay_method='advance', IF(transaction_type IN ('sell','sell_due'), amount, 0), 0)) as total_advance"),
             DB::raw("SUM(IF(pay_method='advance', IF(transaction_type='expense', amount, 0), 0)) as total_advance_expense"),
-            DB::raw("SUM(IF(pay_method='custom_pay_1', IF(transaction_type='sell', amount, 0), 0)) as total_custom_pay_1"),
-            DB::raw("SUM(IF(pay_method='custom_pay_2', IF(transaction_type='sell', amount, 0), 0)) as total_custom_pay_2"),
-            DB::raw("SUM(IF(pay_method='custom_pay_3', IF(transaction_type='sell', amount, 0), 0)) as total_custom_pay_3"),
-            DB::raw("SUM(IF(pay_method='custom_pay_4', IF(transaction_type='sell', amount, 0), 0)) as total_custom_pay_4"),
-            DB::raw("SUM(IF(pay_method='custom_pay_5', IF(transaction_type='sell', amount, 0), 0)) as total_custom_pay_5"),
-            DB::raw("SUM(IF(pay_method='custom_pay_6', IF(transaction_type='sell', amount, 0), 0)) as total_custom_pay_6"),
-            DB::raw("SUM(IF(pay_method='custom_pay_7', IF(transaction_type='sell', amount, 0), 0)) as total_custom_pay_7"),
+            DB::raw("SUM(IF(pay_method='custom_pay_1', IF(transaction_type IN ('sell','sell_due'), amount, 0), 0)) as total_custom_pay_1"),
+            DB::raw("SUM(IF(pay_method='custom_pay_2', IF(transaction_type IN ('sell','sell_due'), amount, 0), 0)) as total_custom_pay_2"),
+            DB::raw("SUM(IF(pay_method='custom_pay_3', IF(transaction_type IN ('sell','sell_due'), amount, 0), 0)) as total_custom_pay_3"),
+            DB::raw("SUM(IF(pay_method='custom_pay_4', IF(transaction_type IN ('sell','sell_due'), amount, 0), 0)) as total_custom_pay_4"),
+            DB::raw("SUM(IF(pay_method='custom_pay_5', IF(transaction_type IN ('sell','sell_due'), amount, 0), 0)) as total_custom_pay_5"),
+            DB::raw("SUM(IF(pay_method='custom_pay_6', IF(transaction_type IN ('sell','sell_due'), amount, 0), 0)) as total_custom_pay_6"),
+            DB::raw("SUM(IF(pay_method='custom_pay_7', IF(transaction_type IN ('sell','sell_due'), amount, 0), 0)) as total_custom_pay_7"),
             DB::raw("SUM(IF(pay_method='custom_pay_1', IF(transaction_type='expense', amount, 0), 0)) as total_custom_pay_1_expense"),
             DB::raw("SUM(IF(pay_method='custom_pay_2', IF(transaction_type='expense', amount, 0), 0)) as total_custom_pay_2_expense"),
             DB::raw("SUM(IF(pay_method='custom_pay_3', IF(transaction_type='expense', amount, 0), 0)) as total_custom_pay_3_expense"),

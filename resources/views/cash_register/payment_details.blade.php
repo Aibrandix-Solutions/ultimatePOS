@@ -236,8 +236,10 @@
           @php
             $in_period_sales = (float) ($details['transaction_details']->total_sales ?? 0);
             $collected_sales_payments = (float) ($register_details->total_sale ?? 0);
-            $credit_sales = max(0, $in_period_sales - $collected_sales_payments);
-            $old_due_collection = max(0, $collected_sales_payments - $in_period_sales);
+            $old_due_collection = (float) ($register_details->total_sell_due ?? 0);
+            //Credit sales = current period sales not yet covered by current-invoice payments
+            $current_invoice_payments = max(0, $collected_sales_payments - $old_due_collection);
+            $credit_sales = max(0, $in_period_sales - $current_invoice_payments);
           @endphp
           <b><span class="display_currency" data-currency_symbol="true">{{ $credit_sales }}</span></b>
         </td>

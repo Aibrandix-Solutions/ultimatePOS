@@ -160,7 +160,12 @@ class TransactionPaymentController extends Controller
                     event(new TransactionPaymentAdded($tp, $inputs));
 
                     //Add payment movement to currently open register for the payer user.
-                    $this->cashRegisterUtil->addTransactionPaymentToRegister($transaction, $tp, $tp->created_by);
+                    //Payments added on existing sell/opening_balance invoices are due collections.
+                    $register_transaction_type_override = null;
+                    if (in_array($transaction->type, ['sell', 'opening_balance'])) {
+                        $register_transaction_type_override = 'sell_due';
+                    }
+                    $this->cashRegisterUtil->addTransactionPaymentToRegister($transaction, $tp, $tp->created_by, $register_transaction_type_override);
                 }
 
                 //update payment status
@@ -792,48 +797,58 @@ class TransactionPaymentController extends Controller
                 $tp = $this->transactionUtil->payContact($request);
             }
 
-            //payContact creates child payments allocated to actual due transactions.
-            //Push each allocated child payment to register movement.
-            $allocated_payments = TransactionPayment::where('parent_id', $tp->id)
-                ->whereNotNull('transaction_id')
-                ->with('transaction')
-                ->get();
+            //Skip register recording for deductions — no physical cash moves.
+            //Deduction is a paper offset (return credit cancels sale due).
+            if (!$is_deduction) {
+                //payContact creates child payments allocated to actual due transactions.
+                //Push each allocated child payment to register movement.
+                $allocated_payments = TransactionPayment::where('parent_id', $tp->id)
+                    ->whereNotNull('transaction_id')
+                    ->with('transaction')
+                    ->get();
 
-            $total_allocated = $allocated_payments->sum('amount');
+                $total_allocated = $allocated_payments->sum('amount');
 
-            foreach ($allocated_payments as $allocated_payment) {
-                if (!empty($allocated_payment->transaction)) {
+                foreach ($allocated_payments as $allocated_payment) {
+                    if (!empty($allocated_payment->transaction)) {
+                        //Payments allocated to existing sell/opening_balance invoices are due collections.
+                        $register_transaction_type_override = null;
+                        if (in_array($allocated_payment->transaction->type, ['sell', 'opening_balance'])) {
+                            $register_transaction_type_override = 'sell_due';
+                        }
+                        $this->cashRegisterUtil->addTransactionPaymentToRegister(
+                            $allocated_payment->transaction,
+                            $allocated_payment,
+                            $allocated_payment->created_by,
+                            $register_transaction_type_override
+                        );
+                    }
+                }
+
+                // Also record the PARENT payment into the register for the advance/excess portion.
+                // This covers:
+                // (a) Pure advance payments (no due invoices, full amount is advance balance)
+                // (b) Excess payments (some allocated to invoices, rest goes to advance balance)
+                // (c) Pay-back to customer for sell_return (no allocation — full amount is cash-out)
+                $advance_amount = $tp->amount - $total_allocated;
+                if ($advance_amount > 0.001) {
+                    // Build a synthetic transaction stub for the register entry
+                    // so the correct credit/debit type is determined by contact type.
+                    $contact_for_register = Contact::find($contact_id);
+                    $synthetic_transaction = (object) [
+                        'type' => ($contact_for_register && $contact_for_register->type === 'supplier') ? 'purchase' : 'sell',
+                        'contact_id' => $contact_id,
+                        'id' => null,
+                    ];
+                    // Clone the payment object and set amount to the advance portion only
+                    $advance_payment_entry = clone $tp;
+                    $advance_payment_entry->amount = $advance_amount;
                     $this->cashRegisterUtil->addTransactionPaymentToRegister(
-                        $allocated_payment->transaction,
-                        $allocated_payment,
-                        $allocated_payment->created_by
+                        $synthetic_transaction,
+                        $advance_payment_entry,
+                        $tp->created_by
                     );
                 }
-            }
-
-            // Also record the PARENT payment into the register for the advance/excess portion.
-            // This covers:
-            // (a) Pure advance payments (no due invoices, full amount is advance balance)
-            // (b) Excess payments (some allocated to invoices, rest goes to advance balance)
-            // (c) Pay-back to customer for sell_return (no allocation — full amount is cash-out)
-            $advance_amount = $tp->amount - $total_allocated;
-            if ($advance_amount > 0.001) {
-                // Build a synthetic transaction stub for the register entry
-                // so the correct credit/debit type is determined by contact type.
-                $contact_for_register = Contact::find($contact_id);
-                $synthetic_transaction = (object) [
-                    'type' => ($contact_for_register && $contact_for_register->type === 'supplier') ? 'purchase' : 'sell',
-                    'contact_id' => $contact_id,
-                    'id' => null,
-                ];
-                // Clone the payment object and set amount to the advance portion only
-                $advance_payment_entry = clone $tp;
-                $advance_payment_entry->amount = $advance_amount;
-                $this->cashRegisterUtil->addTransactionPaymentToRegister(
-                    $synthetic_transaction,
-                    $advance_payment_entry,
-                    $tp->created_by
-                );
             }
 
             $pos_settings = ! empty(session()->get('business.pos_settings')) ? json_decode(session()->get('business.pos_settings'), true) : [];
