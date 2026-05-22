@@ -433,7 +433,7 @@ class CashRegisterUtil extends Util
      * @param $close_time datetime
      * @return array
      */
-    public function getRegisterTransactionDetails($user_id, $open_time, $close_time, $is_types_of_service_enabled = false)
+    public function getRegisterTransactionDetails($user_id, $open_time, $close_time, $is_types_of_service_enabled = false, $register_id = null)
     {
         $product_details_by_brand = Transaction::where('transactions.created_by', $user_id)
             ->whereBetween('transactions.created_at', [$open_time, $close_time])
@@ -515,12 +515,75 @@ class CashRegisterUtil extends Util
             )
             ->first();
 
+        // Compute Old Due Collection and Current Period Sale Payments.
+        // The system tags cash_register_transactions with:
+        // - 'sell'      : payment for the currently-created invoice
+        // - 'sell_due'  : payment applied to an EXISTING invoice (any prior bill)
+        // - 'refund'    : refund payment (sell_return or change)
+        //
+        // From the user's perspective:
+        // - "Old Due Collection" = sum of 'sell_due' payments
+        // - Payments toward in-period sells = 'sell' payments
+        //   plus 'sell_due' payments whose target sell was created in this
+        //   session (so the in-period sell's outstanding due is reduced).
+        // Refunds reduce both buckets where applicable.
+        if (empty($register_id)) {
+            $register = CashRegister::where('user_id', $user_id)
+                ->where('created_at', $open_time)
+                ->first();
+            if (empty($register)) {
+                $register = CashRegister::where('user_id', $user_id)
+                    ->where('status', 'open')
+                    ->orderBy('created_at', 'desc')
+                    ->first();
+            }
+            $register_id = $register ? $register->id : null;
+        }
+
+        $old_due_collection = 0;
+        $current_period_payments = 0;
+        if (!empty($register_id)) {
+            $payment_buckets = DB::table('cash_register_transactions as crt')
+                ->leftJoin('transactions as t', 't.id', '=', 'crt.transaction_id')
+                ->where('crt.cash_register_id', $register_id)
+                ->select(
+                    // Old Due Collection: any 'sell_due' tagged payment.
+                    DB::raw("COALESCE(SUM(
+                        CASE
+                            WHEN crt.transaction_type = 'sell_due' THEN crt.amount
+                            ELSE 0
+                        END
+                    ), 0) as old_due_collection"),
+                    // Payments applied to in-period sells:
+                    //   'sell' payments (current invoice)
+                    // + 'sell_due' payments where target sell was created in-period
+                    // - 'refund' payments (against in-period sells/sell_returns)
+                    DB::raw("COALESCE(SUM(
+                        CASE
+                            WHEN crt.transaction_type = 'sell' THEN crt.amount
+                            WHEN crt.transaction_type = 'sell_due'
+                                 AND t.id IS NOT NULL
+                                 AND t.created_at >= ?
+                                THEN crt.amount
+                            WHEN crt.transaction_type = 'refund' THEN -1 * crt.amount
+                            ELSE 0
+                        END
+                    ), 0) as current_period_payments")
+                )
+                ->addBinding([$open_time], 'select')
+                ->first();
+            $old_due_collection = $payment_buckets->old_due_collection ?? 0;
+            $current_period_payments = $payment_buckets->current_period_payments ?? 0;
+        }
+
         return [
             'product_details_by_brand' => $product_details_by_brand,
             'transaction_details' => $transaction_details,
             'types_of_service_details' => $types_of_service_details,
             'product_details' => $product_details,
             'total_sell_return' => $total_sell_return->total_sell_return ?? 0,
+            'old_due_collection' => $old_due_collection,
+            'current_period_payments' => $current_period_payments,
         ];
     }
 

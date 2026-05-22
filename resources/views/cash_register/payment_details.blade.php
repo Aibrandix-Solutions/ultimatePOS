@@ -236,13 +236,13 @@
           @php
             $in_period_sales = (float) ($details['transaction_details']->total_sales ?? 0);
             $total_sell_return = (float) ($details['total_sell_return'] ?? 0);
-            // Subtract actual sell return value from in-period sales to get net sales
+            // Net sales for the period = gross sales - sell returns
             $net_in_period_sales = max(0, $in_period_sales - $total_sell_return);
-            $collected_sales_payments = (float) ($register_details->total_sale ?? 0);
-            $old_due_collection = (float) ($register_details->total_sell_due ?? 0);
+            // Use accurate buckets: payments made on current-period sells only
+            $current_period_payments = (float) ($details['current_period_payments'] ?? 0);
+            $old_due_collection = (float) ($details['old_due_collection'] ?? 0);
             //Credit sales = current period net sales not yet covered by current-invoice payments
-            $current_invoice_payments = max(0, $collected_sales_payments - $old_due_collection);
-            $credit_sales = max(0, $net_in_period_sales - $current_invoice_payments);
+            $credit_sales = max(0, $net_in_period_sales - $current_period_payments);
           @endphp
           <b><span class="display_currency" data-currency_symbol="true">{{ $credit_sales }}</span></b>
         </td>

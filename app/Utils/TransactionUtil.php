@@ -3689,6 +3689,23 @@ class TransactionUtil extends Util
 
         $due_transactions = $due_transactions->orderBy('transaction_date', 'asc')->get();
 
+        // Cap old-due allocation by the customer's NET overall due (which
+        // accounts for sell returns / advance balance). Without this cap, a
+        // customer with returned-product credit could see their full payment
+        // applied to old invoices' raw due, leaving the current invoice
+        // unpaid and inflating "old due collection".
+        $customer_net_due = (float) $this->getContactDue($contact_id, $business_id);
+        // Subtract the current invoice's final_total (it's a NEW sell that's
+        // counted in the contact's total invoice when getContactDue runs after
+        // the current_transaction has been saved). We only want PRIOR net due.
+        if (!empty($current_transaction)) {
+            $current_total_paid_for_due = $this->getTotalPaid($current_transaction->id);
+            $current_invoice_open = (float) $current_transaction->final_total - $current_total_paid_for_due;
+            $customer_net_due -= $current_invoice_open;
+        }
+        $customer_net_due = max(0, $customer_net_due);
+        $old_due_allocated_total = 0;
+
         if ($due_transactions->isEmpty()) {
             //No old dues to apply against. Apply to current transaction if provided.
             if (!empty($current_transaction)) {
@@ -3744,9 +3761,22 @@ class TransactionUtil extends Util
         }
 
         foreach ($due_transactions as $transaction) {
+            // Stop allocating to old dues once we've covered the customer's
+            // NET due (sell returns/credits already reduced what they owe).
+            if ($old_due_allocated_total >= $customer_net_due) {
+                break;
+            }
+
             $total_paid = $this->getTotalPaid($transaction->id);
             $due = $transaction->final_total - $total_paid;
 
+            if ($due <= 0) {
+                continue;
+            }
+
+            // Cap this transaction's allocation by the remaining net-due budget.
+            $remaining_net_due_budget = $customer_net_due - $old_due_allocated_total;
+            $due = min($due, $remaining_net_due_budget);
             if ($due <= 0) {
                 continue;
             }
@@ -3789,6 +3819,7 @@ class TransactionUtil extends Util
                 $payments_by_transaction[$transaction->id][] = $payment_for_tx;
 
                 $due -= $alloc;
+                $old_due_allocated_total += $alloc;
                 $normalized_payment_lines[$idx]['_remaining'] = $normalized_payment_lines[$idx]['_remaining'] - $alloc;
             }
 
