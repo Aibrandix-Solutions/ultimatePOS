@@ -398,10 +398,63 @@ function __getReceiptPrintElement(section_id) {
     return document.getElementById(sid);
 }
 
-function __print_receipt(section_id = null) {
+/**
+ * Synchronously open a blank tab from inside a user gesture so Android
+ * Chrome does not block the popup. The handle is later passed to
+ * __print_receipt() once the AJAX response is in. On desktop this is a
+ * no-op (iframe printing is used) and on mobile when the popup is blocked
+ * we return null so the iframe path is taken as a fallback.
+ *
+ * Always call this synchronously inside a user gesture handler (click /
+ * submit) — never inside an AJAX success callback.
+ */
+function __preparePrintWindow() {
+    var ua = navigator.userAgent || '';
+    var isAndroid = /Android/i.test(ua);
+    var isMobile = isAndroid || /iPhone|iPad|iPod/i.test(ua);
+    if (!isMobile) {
+        return null;
+    }
+    var w = null;
+    try {
+        w = window.open('', '_blank');
+    } catch (e) {
+        w = null;
+    }
+    if (!w) {
+        return null;
+    }
+    try {
+        w.document.open();
+        w.document.write(
+            '<!DOCTYPE html><html><head><meta charset="utf-8">' +
+                '<title>Loading receipt...</title>' +
+                '<meta name="viewport" content="width=device-width, initial-scale=1">' +
+                '<style>html,body{margin:0;padding:0;background:#fff;color:#555;' +
+                'font:14px Arial,Helvetica,sans-serif;text-align:center}' +
+                '.box{padding:48px 16px}' +
+                '.spinner{display:inline-block;width:28px;height:28px;border:3px solid #ddd;' +
+                'border-top-color:#3498db;border-radius:50%;animation:spin 1s linear infinite;vertical-align:middle}' +
+                '@keyframes spin{to{transform:rotate(360deg)}}</style></head>' +
+                '<body><div class="box"><div class="spinner"></div>' +
+                '<p>Preparing receipt...</p></div></body></html>'
+        );
+        w.document.close();
+    } catch (e) {
+        /* ignore — caller still gets a usable window handle */
+    }
+    return w;
+}
+
+function __print_receipt(section_id = null, prePreparedWin = null) {
     var rid = section_id || 'receipt_section';
     var receiptEl = __getReceiptPrintElement(rid);
     if (!receiptEl || !receiptEl.innerHTML.trim()) {
+        // Nothing to print; close any pre-opened tab so the user is not
+        // left with an orphaned blank window.
+        if (prePreparedWin) {
+            try { prePreparedWin.close(); } catch (e) { /* ignore */ }
+        }
         return;
     }
 
@@ -410,6 +463,48 @@ function __print_receipt(section_id = null) {
     var img_len = imgs.length;
     var jobStarted = false;
     var hostPrintCleanupTimer = null;
+
+    /**
+     * On pages that mount #receipt_section in the global layout
+     * (layouts/app.blade.php) AND in a child view (e.g. sale_pos/index,
+     * sell/index, contact list), there are two nodes with the same id.
+     * If the printing path ever falls back to printing the host page,
+     * the unrelated layout-level section can leak into the preview.
+     * To guarantee consistency, snapshot any duplicate sections, clear
+     * them while we print, and restore them when done.
+     */
+    var duplicateReceiptSnapshots = [];
+    function muteDuplicateReceiptSections() {
+        if (typeof jQuery === 'undefined') {
+            return;
+        }
+        var $all = jQuery('#' + rid);
+        if ($all.length <= 1) {
+            return;
+        }
+        var canonical = receiptEl;
+        $all.each(function () {
+            if (this === canonical) {
+                return;
+            }
+            duplicateReceiptSnapshots.push({ node: this, html: this.innerHTML });
+            this.innerHTML = '';
+        });
+    }
+    function restoreDuplicateReceiptSections() {
+        for (var i = 0; i < duplicateReceiptSnapshots.length; i++) {
+            var snap = duplicateReceiptSnapshots[i];
+            try {
+                if (snap.node && snap.node.isConnected) {
+                    snap.node.innerHTML = snap.html;
+                }
+            } catch (e) {
+                /* ignore */
+            }
+        }
+        duplicateReceiptSnapshots = [];
+    }
+    muteDuplicateReceiptSections();
 
     function enableHostReceiptPrintMode() {
         if (document && document.body) {
@@ -442,12 +537,15 @@ function __print_receipt(section_id = null) {
      * Android Chrome ignores iframe.print() and falls back to printing the
      * host page, which shows the full customer/supplier list in the preview.
      * A dedicated window contains only the receipt and prints cleanly.
+     *
+     * If `prePreparedWin` was passed (opened synchronously in the user
+     * gesture), reuse it — that is the only reliable way to avoid
+     * Android Chrome's popup blocker when printing from an AJAX success.
      */
     function printReceiptInNewWindow() {
         if (jobStarted) {
             return;
         }
-        jobStarted = true;
 
         var baseNode = document.querySelector('base');
         var baseHref = (baseNode && baseNode.href) ? baseNode.href : window.location.href.split('#')[0];
@@ -462,12 +560,23 @@ function __print_receipt(section_id = null) {
             'img{max-width:100%!important;height:auto!important;display:inline-block}' +
             '.text-center{text-align:center}.text-left{text-align:left}.text-right{text-align:right}';
 
-        var newWin = window.open('', '_blank');
+        var newWin = prePreparedWin || null;
+        if (!newWin || newWin.closed) {
+            try {
+                newWin = window.open('', '_blank');
+            } catch (e) {
+                newWin = null;
+            }
+        }
         if (!newWin) {
-            // Popup blocked — fall back to iframe method
+            // Popup blocked AND no pre-prepared window — fall back to iframe.
+            // Note: jobStarted has NOT been flipped yet, so the iframe path
+            // can actually run (this was the original Android hang).
             printReceiptInIframe();
             return;
         }
+
+        jobStarted = true;
 
         var doc = newWin.document;
         doc.open();
@@ -481,10 +590,12 @@ function __print_receipt(section_id = null) {
         doc.write('</body></html>');
         doc.close();
 
-        // Clean up host receipt section after a delay
+        // Clean up host receipt section + restore any muted duplicates
+        // after a delay (gives the print dialog time to render).
         setTimeout(function () {
             var rs = __getReceiptPrintElement(rid);
             if (rs) { rs.innerHTML = ''; }
+            restoreDuplicateReceiptSections();
         }, 3000);
     }
 
@@ -558,7 +669,10 @@ function __print_receipt(section_id = null) {
             if (rs) {
                 setTimeout(function () {
                     rs.innerHTML = '';
+                    restoreDuplicateReceiptSections();
                 }, 800);
+            } else {
+                restoreDuplicateReceiptSections();
             }
         }
 
@@ -724,7 +838,9 @@ function __print_receipt(section_id = null) {
 
     // On mobile/Android, use a new window so only the receipt is printed.
     // The iframe approach causes Android Chrome to print the full host page.
-    var printMethod = isMobile ? printReceiptInNewWindow : printReceiptInIframe;
+    // If the caller pre-opened a window inside a user gesture, always use
+    // the new-window path so we don't waste it (and avoid an orphaned tab).
+    var printMethod = (isMobile || prePreparedWin) ? printReceiptInNewWindow : printReceiptInIframe;
 
     if (img_len) {
         var img_counter = 0;

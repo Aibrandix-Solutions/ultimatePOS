@@ -1742,6 +1742,13 @@ $(document).ready(function () {
         e.preventDefault();
         var href = $(this).data('href');
 
+        // Pre-open the print tab synchronously inside this click gesture so
+        // Android Chrome does not block the popup when we later print from
+        // the AJAX success callback. Returns null on desktop (no-op).
+        var __printWin = (typeof __preparePrintWindow === 'function')
+            ? __preparePrintWindow()
+            : null;
+
         $.ajax({
             method: 'GET',
             url: href,
@@ -1759,13 +1766,21 @@ $(document).ready(function () {
                         document.title = result.print_title;
                     }
 
-                    __print_receipt('receipt_section');
+                    __print_receipt('receipt_section', __printWin);
 
                     setTimeout(function () {
                         document.title = title;
                     }, 1200);
                 } else {
+                    if (__printWin) {
+                        try { __printWin.close(); } catch (e) { /* ignore */ }
+                    }
                     toastr.error(result.msg);
+                }
+            },
+            error: function () {
+                if (__printWin) {
+                    try { __printWin.close(); } catch (e) { /* ignore */ }
                 }
             },
         });
@@ -2964,6 +2979,13 @@ $(document).on('submit', 'form#pay_contact_due_form', function (e) {
 
     submitBtn.attr('disabled', true);
 
+    // Pre-open the print tab synchronously inside this submit gesture so
+    // Android Chrome does not block the popup when we later print from
+    // the AJAX success callback. Returns null on desktop (no-op).
+    var __dueWin = (typeof __preparePrintWindow === 'function')
+        ? __preparePrintWindow()
+        : null;
+
     var formData = new FormData(form[0]);
     $.ajax({
         method: 'POST',
@@ -2996,18 +3018,26 @@ $(document).on('submit', 'form#pay_contact_due_form', function (e) {
                         document.title = result.print_title;
                     }
 
-                    __print_receipt('receipt_section');
+                    __print_receipt('receipt_section', __dueWin);
 
                     setTimeout(function () {
                         document.title = title;
                     }, 1200);
+                } else if (__dueWin) {
+                    try { __dueWin.close(); } catch (e) { /* ignore */ }
                 }
             } else {
+                if (__dueWin) {
+                    try { __dueWin.close(); } catch (e) { /* ignore */ }
+                }
                 toastr.error(result.msg);
             }
         },
         error: function () {
             submitBtn.attr('disabled', false);
+            if (__dueWin) {
+                try { __dueWin.close(); } catch (e) { /* ignore */ }
+            }
             toastr.error(LANG.something_went_wrong);
         },
     });

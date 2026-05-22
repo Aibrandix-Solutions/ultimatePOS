@@ -1210,6 +1210,14 @@ $(document).ready(function () {
                 syncProductRowsToInputs();
                 disable_pos_form_actions();
 
+                // Pre-open the print tab synchronously inside this submit
+                // gesture. On Android Chrome, opening it later from inside
+                // the AJAX success callback is blocked as a popup. Returns
+                // null on desktop and acts as a no-op there.
+                var __posPrintWin = (typeof __preparePrintWindow === 'function')
+                    ? __preparePrintWindow()
+                    : null;
+
                 var data = $(form).serialize();
                 data = data + '&status=final';
                 var url = $(form).attr('action');
@@ -1240,12 +1248,23 @@ $(document).ready(function () {
 
                             //Check if enabled or not
                             if (result.receipt.is_enabled) {
-                                pos_print(result.receipt);
+                                pos_print(result.receipt, __posPrintWin);
+                            } else if (__posPrintWin) {
+                                try { __posPrintWin.close(); } catch (e) { /* ignore */ }
                             }
                         } else {
+                            if (__posPrintWin) {
+                                try { __posPrintWin.close(); } catch (e) { /* ignore */ }
+                            }
                             toastr.error(result.msg);
                         }
 
+                        enable_pos_form_actions();
+                    },
+                    error: function () {
+                        if (__posPrintWin) {
+                            try { __posPrintWin.close(); } catch (e) { /* ignore */ }
+                        }
                         enable_pos_form_actions();
                     },
                 });
@@ -3440,7 +3459,10 @@ function round_row_to_iraqi_dinnar(row) {
     }
 }
 
-function pos_print(receipt) {
+function pos_print(receipt, prePreparedWin) {
+    if (typeof prePreparedWin === 'undefined') {
+        prePreparedWin = null;
+    }
     function fallback_browser_print() {
         if (receipt.html_content != '') {
             var title = document.title;
@@ -3449,11 +3471,14 @@ function pos_print(receipt) {
             }
             $('#receipt_section').last().html(receipt.html_content);
             __currency_convert_recursively($('#receipt_section').last());
-            __print_receipt('receipt_section');
+            __print_receipt('receipt_section', prePreparedWin);
             setTimeout(function () {
                 document.title = title;
             }, 1200);
         } else {
+            if (prePreparedWin) {
+                try { prePreparedWin.close(); } catch (e) { /* ignore */ }
+            }
             toastr.error(LANG.unable_to_connect_to_qz);
         }
     }
@@ -3462,6 +3487,12 @@ function pos_print(receipt) {
     if (receipt.print_type == 'printer') {
         var content = receipt;
         content.type = 'print-receipt';
+
+        // Hardware printer path doesn't use the popup window.
+        if (prePreparedWin) {
+            try { prePreparedWin.close(); } catch (e) { /* ignore */ }
+            prePreparedWin = null;
+        }
 
         //Check if ready or not, then print.
         if (socket != null && socket.readyState == 1) {
@@ -3479,6 +3510,9 @@ function pos_print(receipt) {
 
     } else if (receipt.html_content != '') {
         fallback_browser_print();
+    } else if (prePreparedWin) {
+        // Nothing to print — close the orphaned tab.
+        try { prePreparedWin.close(); } catch (e) { /* ignore */ }
     }
 }
 
@@ -3606,6 +3640,12 @@ $(document).on('click', '#select_all_service_staff', function () {
 
 $(document).on('click', '.print-invoice-link', function (e) {
     e.preventDefault();
+    // Pre-open the print tab synchronously inside this click gesture so
+    // Android Chrome does not block the popup when we later print from
+    // the AJAX success callback. Returns null on desktop (no-op).
+    var __printWin = (typeof __preparePrintWindow === 'function')
+        ? __preparePrintWindow()
+        : null;
     $.ajax({
         url: $(this).attr('href') + "?check_location=true",
         dataType: 'json',
@@ -3613,12 +3653,22 @@ $(document).on('click', '.print-invoice-link', function (e) {
             if (result.success == 1) {
                 //Check if enabled or not
                 if (result.receipt.is_enabled) {
-                    pos_print(result.receipt);
+                    pos_print(result.receipt, __printWin);
+                } else if (__printWin) {
+                    try { __printWin.close(); } catch (e) { /* ignore */ }
                 }
             } else {
+                if (__printWin) {
+                    try { __printWin.close(); } catch (e) { /* ignore */ }
+                }
                 toastr.error(result.msg);
             }
 
+        },
+        error: function () {
+            if (__printWin) {
+                try { __printWin.close(); } catch (e) { /* ignore */ }
+            }
         },
     });
 });
