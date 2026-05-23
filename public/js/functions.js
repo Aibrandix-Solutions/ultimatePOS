@@ -541,6 +541,15 @@ function __print_receipt(section_id = null, prePreparedWin = null) {
      * If `prePreparedWin` was passed (opened synchronously in the user
      * gesture), reuse it — that is the only reliable way to avoid
      * Android Chrome's popup blocker when printing from an AJAX success.
+     *
+     * Implementation note: we build the full HTML as a Blob and navigate
+     * the popup to a blob: URL instead of using doc.open()/doc.write().
+     * Chrome Android's print preview reliably hangs ("Preparing preview…")
+     * when window.print() is called from a document that was rewritten on
+     * top of about:blank — the readyState lifecycle for that path is
+     * unreliable and the rasterizer can stall indefinitely. A blob: URL
+     * gives Chromium a normal navigation with normal readyState transitions
+     * and a normal load event, which makes the preview generation work.
      */
     function printReceiptInNewWindow() {
         if (jobStarted) {
@@ -578,17 +587,89 @@ function __print_receipt(section_id = null, prePreparedWin = null) {
 
         jobStarted = true;
 
-        var doc = newWin.document;
-        doc.open();
-        doc.write('<!DOCTYPE html><html><head><meta charset="utf-8">');
-        doc.write('<meta name="viewport" content="width=device-width, initial-scale=1">');
-        doc.write('<base href="' + escAttr(baseHref) + '">');
-        doc.write('<style>' + inlineBaseCss + '</style>');
-        doc.write('</head><body>');
-        doc.write(receiptHtml);
-        doc.write('<script>window.onload=function(){window.print();window.onafterprint=function(){window.close();};};<\/script>');
-        doc.write('</body></html>');
-        doc.close();
+        // Robust in-page print script. Waits for layout + fonts + a couple
+        // of animation frames before calling print() so Chrome Android can
+        // rasterize the receipt. Without this delay, Chrome shows
+        // "Preparing preview…" forever.
+        var inlinePrintScript =
+            '(function(){' +
+                'var printed=false;' +
+                'function doPrint(){' +
+                    'if(printed)return;printed=true;' +
+                    'try{window.focus();window.print();}catch(e){}' +
+                '}' +
+                'function schedule(){' +
+                    'requestAnimationFrame(function(){' +
+                        'requestAnimationFrame(function(){' +
+                            'setTimeout(doPrint,400);' +
+                        '});' +
+                    '});' +
+                '}' +
+                'function start(){' +
+                    'if(document.fonts&&document.fonts.ready&&typeof document.fonts.ready.then==="function"){' +
+                        'document.fonts.ready.then(schedule).catch(schedule);' +
+                    '}else{schedule();}' +
+                '}' +
+                'if(document.readyState==="complete"){start();}' +
+                'else{window.addEventListener("load",start);}' +
+                // Last-ditch fallback in case load never fires for some reason.
+                'setTimeout(function(){if(!printed)schedule();},3500);' +
+                'window.onafterprint=function(){' +
+                    'setTimeout(function(){try{window.close();}catch(e){}},250);' +
+                '};' +
+                // Auto-close if user dismisses dialog without afterprint event.
+                'setTimeout(function(){try{window.close();}catch(e){}},120000);' +
+            '})();';
+
+        var fullHtml =
+            '<!DOCTYPE html><html><head><meta charset="utf-8">' +
+            '<meta name="viewport" content="width=device-width, initial-scale=1">' +
+            '<base href="' + escAttr(baseHref) + '">' +
+            '<title>Receipt</title>' +
+            '<style>' + inlineBaseCss + '</style>' +
+            '</head><body>' +
+            receiptHtml +
+            '<script>' + inlinePrintScript + '<\/script>' +
+            '</body></html>';
+
+        var blobUrl = null;
+        var navigatedToBlob = false;
+        try {
+            if (typeof Blob !== 'undefined' && typeof URL !== 'undefined' && URL.createObjectURL) {
+                var blob = new Blob([fullHtml], { type: 'text/html' });
+                blobUrl = URL.createObjectURL(blob);
+                if (newWin.location && typeof newWin.location.replace === 'function') {
+                    newWin.location.replace(blobUrl);
+                } else {
+                    newWin.location.href = blobUrl;
+                }
+                navigatedToBlob = true;
+            }
+        } catch (e) {
+            navigatedToBlob = false;
+        }
+
+        // Legacy fallback for browsers without Blob/URL support.
+        if (!navigatedToBlob) {
+            try {
+                var doc = newWin.document;
+                doc.open();
+                doc.write(fullHtml);
+                doc.close();
+            } catch (e) {
+                // If we can't write into the popup at all, give up gracefully.
+                try { newWin.close(); } catch (ee) { /* ignore */ }
+                restoreDuplicateReceiptSections();
+                return;
+            }
+        }
+
+        // Revoke the blob URL after the popup has had time to load it.
+        if (blobUrl) {
+            setTimeout(function () {
+                try { URL.revokeObjectURL(blobUrl); } catch (e) { /* ignore */ }
+            }, 60000);
+        }
 
         // Clean up host receipt section + restore any muted duplicates
         // after a delay (gives the print dialog time to render).
