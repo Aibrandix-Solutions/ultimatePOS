@@ -114,7 +114,7 @@ jobs:
 
       # --- Create remote directories first ---
       - name: Create remote directory structure
-        uses: appleboy/ssh-action@v1.0.3
+        uses: appleboy/ssh-action@v1.2.2
         with:
           host: ${{ secrets.ULTIMPOS_SSH_HOST }}
           port: ${{ secrets.ULTIMPOS_SSH_PORT }}
@@ -157,7 +157,7 @@ jobs:
 
       # --- SSH: composer install & caches on the server ---
       - name: SSH - composer install & caches
-        uses: appleboy/ssh-action@v1.0.3
+        uses: appleboy/ssh-action@v1.2.2
         with:
           host: ${{ secrets.ULTIMPOS_SSH_HOST }}
           port: ${{ secrets.ULTIMPOS_SSH_PORT }}
