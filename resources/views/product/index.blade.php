@@ -231,6 +231,8 @@
                 processing: true,
                 serverSide: true,
                 fixedHeader:false,
+                stateSave: true,
+                stateDuration: 60 * 60 * 24,
                 aaSorting: [
                     [3, 'asc']
                 ],
