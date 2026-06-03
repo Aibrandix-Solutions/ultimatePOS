@@ -782,10 +782,6 @@ class ContactController extends Controller
             $business_id = request()->session()->get('user.business_id');
             $contact = Contact::where('business_id', $business_id)->find($id);
 
-            if (empty($contact)) {
-                abort(404);
-            }
-
             if (!$this->moduleUtil->isSubscribed($business_id)) {
                 return $this->moduleUtil->expiredResponse();
             }
@@ -821,11 +817,8 @@ class ContactController extends Controller
             //Added check because $users is of no use if enable_contact_assign if false
             $users = config('constants.enable_contact_assign') ? User::forDropdown($business_id, false, false, false, true) : [];
 
-            return response()
-                ->view('contact.edit', compact('contact', 'types', 'customer_groups', 'opening_balance', 'users'))
-                ->header('Cache-Control', 'no-store, no-cache, must-revalidate')
-                ->header('Pragma', 'no-cache')
-                ->header('Expires', '0');
+            return view('contact.edit')
+                ->with(compact('contact', 'types', 'customer_groups', 'opening_balance', 'users'));
         }
     }
 
