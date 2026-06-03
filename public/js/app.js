@@ -741,19 +741,32 @@ $(document).ready(function () {
         });
     }
 
-    function cleanupContactModalBackdrop() {
-        $('body').removeClass('modal-open').css('padding-right', '');
-        $('.modal-backdrop').remove();
-    }
+    // Fully teardown the contact modal synchronously — no Bootstrap animations involved.
+    // Calling modal('hide') is async (300ms fade) and causes race conditions; we bypass it.
+    function forceCloseContactModal($modal) {
+        var pendingXhr = $modal.data('contactEditXhr');
+        if (pendingXhr) {
+            pendingXhr.abort();
+            $modal.removeData('contactEditXhr');
+        }
 
-    function resetContactModalState($modal) {
         $modal.off('hidden.bs.modal.contact-edit');
-        $modal.modal('hide');
-        $modal.removeClass('in show');
+
+        // Destroy Bootstrap modal instance so it starts completely fresh on next open
+        $modal.removeData('bs.modal');
+
+        // Synchronously hide without triggering hide/hidden events
+        $modal.removeClass('in fade show');
         $modal.attr('aria-hidden', 'true');
         $modal.css('display', 'none');
-        $modal.removeData('bs.modal');
-        cleanupContactModalBackdrop();
+        $modal.empty();
+
+        // Clean up page-level state Bootstrap adds
+        $('body').removeClass('modal-open').css('padding-right', '');
+        $('.modal-backdrop').remove();
+
+        // Restore fade class so the modal opens with a smooth animation next time
+        $modal.addClass('fade');
     }
 
     function showContactEditError(msg) {
@@ -764,121 +777,84 @@ $(document).ready(function () {
         }
     }
 
-    function loadContactEditForm($modal, editUrl, requestToken, $btn) {
-        resetContactModalState($modal);
-        $modal.empty();
-
-        $modal.data(
-            'contactEditXhr',
-            $.ajax({
-                url: editUrl,
-                type: 'GET',
-                dataType: 'html',
-                cache: false,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                },
-                success: function (result) {
-                    if ($modal.data('editRequestToken') !== requestToken) {
-                        return;
-                    }
-
-                    if (!result || result.indexOf('modal-dialog') === -1) {
-                        showContactEditError(
-                            LANG && LANG.something_went_wrong
-                                ? LANG.something_went_wrong
-                                : 'Something went wrong.'
-                        );
-                        resetContactModalState($modal);
-                        return;
-                    }
-
-                    resetContactModalState($modal);
-                    $modal.html(result);
-
-                    // Allow DOM to settle before opening (prevents backdrop-without-modal on live)
-                    window.setTimeout(function () {
-                        if ($modal.data('editRequestToken') !== requestToken) {
-                            return;
-                        }
-
-                        if (!$modal.find('.modal-dialog').length) {
-                            resetContactModalState($modal);
-                            $modal.empty();
-                            return;
-                        }
-
-                        $modal.modal('show');
-                    }, 50);
-                },
-                error: function (xhr, status) {
-                    if (status === 'abort' || $modal.data('editRequestToken') !== requestToken) {
-                        return;
-                    }
-
-                    var msg =
-                        LANG && LANG.something_went_wrong
-                            ? LANG.something_went_wrong
-                            : 'Something went wrong.';
-                    if (xhr && xhr.status) {
-                        msg += ' (HTTP ' + xhr.status + ')';
-                    }
-
-                    showContactEditError(msg);
-                    resetContactModalState($modal);
-                    $modal.empty();
-                },
-                complete: function () {
-                    if ($modal.data('editRequestToken') === requestToken) {
-                        $btn.data('contact-edit-loading', false);
-                        $modal.removeData('contactEditXhr');
-                    }
-                },
-            })
-        );
-    }
-
     $(document).on('click', '.edit_contact_button', function (e) {
         e.preventDefault();
         e.stopPropagation();
 
         var $btn = $(this);
         var href = $btn.attr('href');
+        if (!href) return;
 
-        if (!href || $btn.data('contact-edit-loading')) {
-            return;
-        }
-
-        // Close Actions dropdown so it does not fight with the modal
+        // Close the Actions dropdown
         $btn.closest('.btn-group').removeClass('open');
         $btn.closest('.dropdown').removeClass('open');
 
-        var editUrl =
-            href + (href.indexOf('?') === -1 ? '?' : '&') + '_=' + new Date().getTime();
         var $modal = $('div.contact_modal').first();
-        var requestToken = Date.now();
 
-        $btn.data('contact-edit-loading', true);
+        // Abort any in-flight request and fully reset modal state synchronously
+        forceCloseContactModal($modal);
+
+        var requestToken = Date.now();
         $modal.data('editRequestToken', requestToken);
 
-        if ($modal.data('contactEditXhr')) {
-            $modal.data('contactEditXhr').abort();
-        }
+        var editUrl = href + (href.indexOf('?') === -1 ? '?' : '&') + '_=' + requestToken;
 
-        loadContactEditForm($modal, editUrl, requestToken, $btn);
+        $modal.data('contactEditXhr', $.ajax({
+            url: editUrl,
+            type: 'GET',
+            dataType: 'html',
+            cache: false,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            success: function (result) {
+                if ($modal.data('editRequestToken') !== requestToken) {
+                    return;
+                }
+
+                if (!result || result.indexOf('modal-dialog') === -1) {
+                    showContactEditError(
+                        LANG && LANG.something_went_wrong
+                            ? LANG.something_went_wrong
+                            : 'Something went wrong.'
+                    );
+                    return;
+                }
+
+                $modal.html(result);
+                $modal.modal('show');
+            },
+            error: function (xhr, status) {
+                if (status === 'abort' || $modal.data('editRequestToken') !== requestToken) {
+                    return;
+                }
+
+                var msg =
+                    LANG && LANG.something_went_wrong
+                        ? LANG.something_went_wrong
+                        : 'Something went wrong.';
+                if (xhr && xhr.status) {
+                    msg += ' (HTTP ' + xhr.status + ')';
+                }
+
+                showContactEditError(msg);
+                $modal.empty();
+            },
+            complete: function () {
+                $modal.removeData('contactEditXhr');
+            },
+        }));
     });
 
+    // After modal closes normally: clean up page state and clear content
     $(document).on('hidden.bs.modal', '.contact_modal', function () {
-        cleanupContactModalBackdrop();
+        $('body').removeClass('modal-open').css('padding-right', '');
+        $('.modal-backdrop').remove();
+        $(this).empty();
+        $(this).removeData('editRequestToken');
     });
 
-    // Recover from stuck backdrop when modal never opened (click dimmed area)
+    // Escape hatch: clicking the backdrop when modal is not actually open clears the stuck overlay
     $(document).on('click', '.modal-backdrop', function () {
-        var $modal = $('div.contact_modal').first();
-        if (!$modal.hasClass('in') && !$modal.is(':visible')) {
-            resetContactModalState($modal);
-            $modal.empty();
-        }
+        forceCloseContactModal($('div.contact_modal').first());
     });
 
     $(document).on('click', '.delete_contact_button', function (e) {
