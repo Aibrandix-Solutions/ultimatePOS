@@ -552,8 +552,8 @@ $(document).ready(function () {
         contact_table.ajax.reload();
     });
 
-    //On display of add contact modal (scoped to modal; namespaced handlers avoid stacking on repeat opens)
-    $('.contact_modal').on('shown.bs.modal', function (e) {
+    //On display of add/edit contact modal — delegated so it covers both static and dynamically-created modals
+    $(document).on('shown.bs.modal', '.contact_modal, .contact_edit_modal', function (e) {
         var $modal = $(this);
 
         $modal.find('input[type=radio][name="contact_type_radio"]').off('change.contactModal').on('change.contactModal', function () {
@@ -741,33 +741,13 @@ $(document).ready(function () {
         });
     }
 
-    // Fully teardown the contact modal synchronously — no Bootstrap animations involved.
-    // Calling modal('hide') is async (300ms fade) and causes race conditions; we bypass it.
-    function forceCloseContactModal($modal) {
-        var pendingXhr = $modal.data('contactEditXhr');
-        if (pendingXhr) {
-            pendingXhr.abort();
-            $modal.removeData('contactEditXhr');
-        }
+    // ── Contact Edit Modal ─────────────────────────────────────────────────────
+    // Each edit creates a BRAND-NEW modal element appended to <body> and
+    // removed from the DOM when closed.  This eliminates all stale-state and
+    // backdrop race-condition issues that plague modal reuse.
+    // ──────────────────────────────────────────────────────────────────────────
 
-        $modal.off('hidden.bs.modal.contact-edit');
-
-        // Destroy Bootstrap modal instance so it starts completely fresh on next open
-        $modal.removeData('bs.modal');
-
-        // Synchronously hide without triggering hide/hidden events
-        $modal.removeClass('in fade show');
-        $modal.attr('aria-hidden', 'true');
-        $modal.css('display', 'none');
-        $modal.empty();
-
-        // Clean up page-level state Bootstrap adds
-        $('body').removeClass('modal-open').css('padding-right', '');
-        $('.modal-backdrop').remove();
-
-        // Restore fade class so the modal opens with a smooth animation next time
-        $modal.addClass('fade');
-    }
+    var _contactEditXhr = null;   // track the in-flight XHR globally
 
     function showContactEditError(msg) {
         if (typeof toastr !== 'undefined') {
@@ -785,30 +765,31 @@ $(document).ready(function () {
         var href = $btn.attr('href');
         if (!href) return;
 
-        // Close the Actions dropdown
+        // Close the Actions dropdown immediately
         $btn.closest('.btn-group').removeClass('open');
         $btn.closest('.dropdown').removeClass('open');
 
-        var $modal = $('div.contact_modal').first();
+        // Abort any previous in-flight edit request
+        if (_contactEditXhr) {
+            _contactEditXhr.abort();
+            _contactEditXhr = null;
+        }
 
-        // Abort any in-flight request and fully reset modal state synchronously
-        forceCloseContactModal($modal);
+        // Destroy any leftover edit modal (handles rapid clicks)
+        $('.contact_edit_modal').remove();
+        $('body').removeClass('modal-open').css('padding-right', '');
+        $('.modal-backdrop').remove();
 
-        var requestToken = Date.now();
-        $modal.data('editRequestToken', requestToken);
+        var editUrl = href + (href.indexOf('?') === -1 ? '?' : '&') + '_=' + Date.now();
 
-        var editUrl = href + (href.indexOf('?') === -1 ? '?' : '&') + '_=' + requestToken;
-
-        $modal.data('contactEditXhr', $.ajax({
+        _contactEditXhr = $.ajax({
             url: editUrl,
             type: 'GET',
             dataType: 'html',
             cache: false,
             headers: { 'X-Requested-With': 'XMLHttpRequest' },
             success: function (result) {
-                if ($modal.data('editRequestToken') !== requestToken) {
-                    return;
-                }
+                _contactEditXhr = null;
 
                 if (!result || result.indexOf('modal-dialog') === -1) {
                     showContactEditError(
@@ -819,42 +800,39 @@ $(document).ready(function () {
                     return;
                 }
 
-                $modal.html(result);
-                $modal.modal('show');
+                // Build a completely fresh modal element — zero shared state
+                var $editModal = $('<div class="modal fade contact_edit_modal" tabindex="-1" role="dialog"></div>');
+                $editModal.html(result);
+                $('body').append($editModal);
+
+                // Destroy the element entirely when closed — no lingering DOM
+                $editModal.one('hidden.bs.modal', function () {
+                    $(this).remove();
+                });
+
+                $editModal.modal({ backdrop: true, keyboard: true });
+                $editModal.modal('show');
             },
             error: function (xhr, status) {
-                if (status === 'abort' || $modal.data('editRequestToken') !== requestToken) {
-                    return;
-                }
+                _contactEditXhr = null;
+                if (status === 'abort') return;
 
-                var msg =
-                    LANG && LANG.something_went_wrong
-                        ? LANG.something_went_wrong
-                        : 'Something went wrong.';
+                var msg = LANG && LANG.something_went_wrong
+                    ? LANG.something_went_wrong
+                    : 'Something went wrong.';
                 if (xhr && xhr.status) {
                     msg += ' (HTTP ' + xhr.status + ')';
                 }
-
                 showContactEditError(msg);
-                $modal.empty();
             },
-            complete: function () {
-                $modal.removeData('contactEditXhr');
-            },
-        }));
+        });
     });
 
-    // After modal closes normally: clean up page state and clear content
-    $(document).on('hidden.bs.modal', '.contact_modal', function () {
+    // Escape hatch: clicking the backdrop dismisses any stuck overlay
+    $(document).on('click', '.modal-backdrop', function () {
+        $('.contact_edit_modal').remove();
         $('body').removeClass('modal-open').css('padding-right', '');
         $('.modal-backdrop').remove();
-        $(this).empty();
-        $(this).removeData('editRequestToken');
-    });
-
-    // Escape hatch: clicking the backdrop when modal is not actually open clears the stuck overlay
-    $(document).on('click', '.modal-backdrop', function () {
-        forceCloseContactModal($('div.contact_modal').first());
     });
 
     $(document).on('click', '.delete_contact_button', function (e) {
@@ -2933,8 +2911,8 @@ $(document).on('click', 'a.update_contact_status', function (e) {
     });
 });
 
-$(document).on('shown.bs.modal', '.contact_modal', function (e) {
-    $('.dob-date-picker').datepicker({
+$(document).on('shown.bs.modal', '.contact_modal, .contact_edit_modal', function (e) {
+    $(this).find('.dob-date-picker').datepicker({
         autoclose: true,
         endDate: 'today',
     });
@@ -3054,7 +3032,7 @@ function submitContactForm(form) {
         data: data,
         success: function (result) {
             if (result.success == true) {
-                $('div.contact_modal').modal('hide');
+                $(form).closest('.modal').modal('hide');
                 toastr.success(result.msg);
 
                 if (typeof (contact_table) != 'undefined') {
