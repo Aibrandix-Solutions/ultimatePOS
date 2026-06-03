@@ -727,7 +727,8 @@ $(document).ready(function () {
 
     $(document).on('click', '.edit_contact_button', function (e) {
         e.preventDefault();
-        $('div.contact_modal').load($(this).attr('href'), function () {
+        var editUrl = $(this).attr('href') + ($(this).attr('href').indexOf('?') === -1 ? '?' : '&') + '_=' + new Date().getTime();
+        $('div.contact_modal').empty().load(editUrl, function () {
             $(this).modal('show');
         });
     });
