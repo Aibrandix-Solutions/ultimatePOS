@@ -768,8 +768,22 @@ $(document).ready(function () {
      * Extract the numeric contact ID from a /contacts/{id}/edit URL.
      */
     function extractContactIdFromUrl(url) {
-        var match = url.match(/contacts\/(\d+)/);
-        return match ? match[1] : null;
+        if (!url) return null;
+        var match = url.match(/contacts\/(\d+)/i);
+        if (match) {
+            return match[1];
+        }
+        // Fallback robust extraction
+        var parts = url.split('/');
+        for (var i = 0; i < parts.length; i++) {
+            if (parts[i].toLowerCase() === 'contacts' && i + 1 < parts.length) {
+                var nextPart = parts[i + 1].split('?')[0];
+                if (/^\d+$/.test(nextPart)) {
+                    return nextPart;
+                }
+            }
+        }
+        return null;
     }
 
     function loadContactEditForm($modal, editUrl, requestToken, $btn, expectedContactId, retryCount) {
@@ -822,7 +836,7 @@ $(document).ready(function () {
                             // Retry once with a fresh cache-buster
                             if (retryCount < 1) {
                                 var freshUrl = editUrl.replace(
-                                    /([?&])_=\d+/,
+                                    /([?&])_=[^&]+/,
                                     '$1_=' + Date.now() + '' + Math.random().toString(36).substr(2, 5)
                                 );
                                 loadContactEditForm(
