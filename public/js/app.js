@@ -725,12 +725,111 @@ $(document).ready(function () {
         });
     }
 
+    function cleanupContactModalBackdrop() {
+        $('body').removeClass('modal-open').css('padding-right', '');
+        $('.modal-backdrop').remove();
+    }
+
+    function loadContactEditForm($modal, editUrl, requestToken, $btn) {
+        cleanupContactModalBackdrop();
+        $modal.empty();
+
+        $modal.data(
+            'contactEditXhr',
+            $.ajax({
+                url: editUrl,
+                type: 'GET',
+                dataType: 'html',
+                cache: false,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                success: function (result) {
+                    if ($modal.data('editRequestToken') !== requestToken) {
+                        return;
+                    }
+
+                    if (!result || result.indexOf('modal-dialog') === -1) {
+                        var msg =
+                            LANG && LANG.something_went_wrong
+                                ? LANG.something_went_wrong
+                                : 'Something went wrong.';
+                        if (typeof toastr !== 'undefined') {
+                            toastr.error(msg);
+                        } else {
+                            alert(msg);
+                        }
+                        cleanupContactModalBackdrop();
+                        return;
+                    }
+
+                    $modal.html(result);
+                    $modal.modal('show');
+                },
+                error: function (xhr, status) {
+                    if (status === 'abort' || $modal.data('editRequestToken') !== requestToken) {
+                        return;
+                    }
+
+                    var msg =
+                        LANG && LANG.something_went_wrong
+                            ? LANG.something_went_wrong
+                            : 'Something went wrong.';
+                    if (xhr && xhr.status) {
+                        msg += ' (HTTP ' + xhr.status + ')';
+                    }
+
+                    if (typeof toastr !== 'undefined') {
+                        toastr.error(msg);
+                    } else {
+                        alert(msg);
+                    }
+
+                    cleanupContactModalBackdrop();
+                    $modal.empty();
+                },
+                complete: function () {
+                    $btn.data('contact-edit-loading', false);
+                    $modal.removeData('contactEditXhr');
+                },
+            })
+        );
+    }
+
     $(document).on('click', '.edit_contact_button', function (e) {
         e.preventDefault();
-        var editUrl = $(this).attr('href') + ($(this).attr('href').indexOf('?') === -1 ? '?' : '&') + '_=' + new Date().getTime();
-        $('div.contact_modal').empty().load(editUrl, function () {
-            $(this).modal('show');
-        });
+
+        var $btn = $(this);
+        var href = $btn.attr('href');
+
+        if (!href || $btn.data('contact-edit-loading')) {
+            return;
+        }
+
+        var editUrl =
+            href + (href.indexOf('?') === -1 ? '?' : '&') + '_=' + new Date().getTime();
+        var $modal = $('div.contact_modal').first();
+        var requestToken = Date.now();
+
+        $btn.data('contact-edit-loading', true);
+        $modal.data('editRequestToken', requestToken);
+
+        if ($modal.data('contactEditXhr')) {
+            $modal.data('contactEditXhr').abort();
+        }
+
+        if ($modal.hasClass('in') || $modal.is(':visible')) {
+            $modal.one('hidden.bs.modal.contact-edit', function () {
+                loadContactEditForm($modal, editUrl, requestToken, $btn);
+            });
+            $modal.modal('hide');
+        } else {
+            loadContactEditForm($modal, editUrl, requestToken, $btn);
+        }
+    });
+
+    $(document).on('hidden.bs.modal', '.contact_modal', function () {
+        cleanupContactModalBackdrop();
     });
 
     $(document).on('click', '.delete_contact_button', function (e) {

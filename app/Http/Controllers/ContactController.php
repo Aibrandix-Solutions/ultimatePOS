@@ -782,6 +782,10 @@ class ContactController extends Controller
             $business_id = request()->session()->get('user.business_id');
             $contact = Contact::where('business_id', $business_id)->find($id);
 
+            if (empty($contact)) {
+                abort(404);
+            }
+
             if (!$this->moduleUtil->isSubscribed($business_id)) {
                 return $this->moduleUtil->expiredResponse();
             }
