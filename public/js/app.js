@@ -552,75 +552,89 @@ $(document).ready(function () {
         contact_table.ajax.reload();
     });
 
-    //On display of add contact modal
+    //On display of add contact modal (scoped to modal; namespaced handlers avoid stacking on repeat opens)
     $('.contact_modal').on('shown.bs.modal', function (e) {
-        $('input[type=radio][name="contact_type_radio"]').on('change', function () {
+        var $modal = $(this);
+
+        $modal.find('input[type=radio][name="contact_type_radio"]').off('change.contactModal').on('change.contactModal', function () {
             if (this.value == 'individual') {
-                $('div.individual').show();
-                $('div.business').hide();
+                $modal.find('div.individual').show();
+                $modal.find('div.business').hide();
             } else if (this.value == 'business') {
-                $('div.individual').hide();
-                $('div.business').show();
-            }
-        });
-        if ($('#is_customer_export').is(':checked')) {
-            $('div.export_div').show();
-        }
-        $('#is_customer_export').on('change', function () {
-            if ($(this).is(':checked')) {
-                $('div.export_div').show();
-            } else {
-                $('div.export_div').hide();
+                $modal.find('div.individual').hide();
+                $modal.find('div.business').show();
             }
         });
 
-        $('.more_btn').click(function () {
+        if ($modal.find('#is_customer_export').is(':checked')) {
+            $modal.find('div.export_div').show();
+        }
+        $modal.find('#is_customer_export').off('change.contactModal').on('change.contactModal', function () {
+            if ($(this).is(':checked')) {
+                $modal.find('div.export_div').show();
+            } else {
+                $modal.find('div.export_div').hide();
+            }
+        });
+
+        $modal.find('.more_btn').off('click.contactModal').on('click.contactModal', function () {
             $($(this).data('target')).toggleClass('hide');
         });
-        $('div.lead_additional_div').hide();
+        $modal.find('div.lead_additional_div').hide();
 
-        if ($('select#contact_type').val() == 'customer') {
-            $('div.supplier_fields').hide();
-            $('div.customer_fields').show();
-        } else if ($('select#contact_type').val() == 'supplier') {
-            $('div.supplier_fields').show();
-            $('div.customer_fields').hide();
-        } else if ($('select#contact_type').val() == 'lead') {
-            $('div.supplier_fields').hide();
-            $('div.customer_fields').hide();
-            $('div.opening_balance').hide();
-            $('div.pay_term').hide();
-            $('div.lead_additional_div').show();
-            $('div.shipping_addr_div').hide();
+        var contactType = $modal.find('select#contact_type').val();
+        if (contactType == 'customer') {
+            $modal.find('div.supplier_fields').hide();
+            $modal.find('div.customer_fields').show();
+        } else if (contactType == 'supplier') {
+            $modal.find('div.supplier_fields').show();
+            $modal.find('div.customer_fields').hide();
+        } else if (contactType == 'lead') {
+            $modal.find('div.supplier_fields').hide();
+            $modal.find('div.customer_fields').hide();
+            $modal.find('div.opening_balance').hide();
+            $modal.find('div.pay_term').hide();
+            $modal.find('div.lead_additional_div').show();
+            $modal.find('div.shipping_addr_div').hide();
         }
 
-        $('select#contact_type').change(function () {
+        $modal.find('select#contact_type').off('change.contactModal').on('change.contactModal', function () {
             var t = $(this).val();
 
             if (t == 'supplier') {
-                $('div.supplier_fields').fadeIn();
-                $('div.customer_fields').fadeOut();
+                $modal.find('div.supplier_fields').fadeIn();
+                $modal.find('div.customer_fields').fadeOut();
             } else if (t == 'both') {
-                $('div.supplier_fields').fadeIn();
-                $('div.customer_fields').fadeIn();
+                $modal.find('div.supplier_fields').fadeIn();
+                $modal.find('div.customer_fields').fadeIn();
             } else if (t == 'customer') {
-                $('div.customer_fields').fadeIn();
-                $('div.supplier_fields').fadeOut();
+                $modal.find('div.customer_fields').fadeIn();
+                $modal.find('div.supplier_fields').fadeOut();
             } else if (t == 'lead') {
-                $('div.customer_fields').fadeOut();
-                $('div.supplier_fields').fadeOut();
-                $('div.opening_balance').fadeOut();
-                $('div.pay_term').fadeOut();
-                $('div.lead_additional_div').fadeIn();
-                $('div.shipping_addr_div').hide();
+                $modal.find('div.customer_fields').fadeOut();
+                $modal.find('div.supplier_fields').fadeOut();
+                $modal.find('div.opening_balance').fadeOut();
+                $modal.find('div.pay_term').fadeOut();
+                $modal.find('div.lead_additional_div').fadeIn();
+                $modal.find('div.shipping_addr_div').hide();
             }
         });
 
-        $(".contact_modal").find('.select2').each(function () {
-            $(this).select2();
+        $modal.find('.select2').each(function () {
+            var $el = $(this);
+            if ($el.hasClass('select2-hidden-accessible')) {
+                $el.select2('destroy');
+            }
+            $el.select2();
         });
 
-        $('form#contact_add_form, form#contact_edit_form')
+        var $form = $modal.find('form#contact_add_form, form#contact_edit_form');
+        $form.off('submit.contactValidate');
+        if ($form.data('validator')) {
+            $form.removeData('validator');
+        }
+
+        $form
             .submit(function (e) {
                 e.preventDefault();
             })
@@ -686,7 +700,9 @@ $(document).ready(function () {
                 },
             });
 
-        $('#contact_add_form').trigger('contactFormvalidationAdded');
+        $modal.find('#contact_add_form').trigger('contactFormvalidationAdded');
+
+        $modal.find('input[type=radio][name="contact_type_radio"]:checked').trigger('change.contactModal');
     });
 
     function checkMobileAndSubmit(form) {
@@ -730,8 +746,26 @@ $(document).ready(function () {
         $('.modal-backdrop').remove();
     }
 
-    function loadContactEditForm($modal, editUrl, requestToken, $btn) {
+    function resetContactModalState($modal) {
+        $modal.off('hidden.bs.modal.contact-edit');
+        $modal.modal('hide');
+        $modal.removeClass('in show');
+        $modal.attr('aria-hidden', 'true');
+        $modal.css('display', 'none');
+        $modal.removeData('bs.modal');
         cleanupContactModalBackdrop();
+    }
+
+    function showContactEditError(msg) {
+        if (typeof toastr !== 'undefined') {
+            toastr.error(msg);
+        } else {
+            alert(msg);
+        }
+    }
+
+    function loadContactEditForm($modal, editUrl, requestToken, $btn) {
+        resetContactModalState($modal);
         $modal.empty();
 
         $modal.data(
@@ -750,21 +784,32 @@ $(document).ready(function () {
                     }
 
                     if (!result || result.indexOf('modal-dialog') === -1) {
-                        var msg =
+                        showContactEditError(
                             LANG && LANG.something_went_wrong
                                 ? LANG.something_went_wrong
-                                : 'Something went wrong.';
-                        if (typeof toastr !== 'undefined') {
-                            toastr.error(msg);
-                        } else {
-                            alert(msg);
-                        }
-                        cleanupContactModalBackdrop();
+                                : 'Something went wrong.'
+                        );
+                        resetContactModalState($modal);
                         return;
                     }
 
+                    resetContactModalState($modal);
                     $modal.html(result);
-                    $modal.modal('show');
+
+                    // Allow DOM to settle before opening (prevents backdrop-without-modal on live)
+                    window.setTimeout(function () {
+                        if ($modal.data('editRequestToken') !== requestToken) {
+                            return;
+                        }
+
+                        if (!$modal.find('.modal-dialog').length) {
+                            resetContactModalState($modal);
+                            $modal.empty();
+                            return;
+                        }
+
+                        $modal.modal('show');
+                    }, 50);
                 },
                 error: function (xhr, status) {
                     if (status === 'abort' || $modal.data('editRequestToken') !== requestToken) {
@@ -779,18 +824,15 @@ $(document).ready(function () {
                         msg += ' (HTTP ' + xhr.status + ')';
                     }
 
-                    if (typeof toastr !== 'undefined') {
-                        toastr.error(msg);
-                    } else {
-                        alert(msg);
-                    }
-
-                    cleanupContactModalBackdrop();
+                    showContactEditError(msg);
+                    resetContactModalState($modal);
                     $modal.empty();
                 },
                 complete: function () {
-                    $btn.data('contact-edit-loading', false);
-                    $modal.removeData('contactEditXhr');
+                    if ($modal.data('editRequestToken') === requestToken) {
+                        $btn.data('contact-edit-loading', false);
+                        $modal.removeData('contactEditXhr');
+                    }
                 },
             })
         );
@@ -798,6 +840,7 @@ $(document).ready(function () {
 
     $(document).on('click', '.edit_contact_button', function (e) {
         e.preventDefault();
+        e.stopPropagation();
 
         var $btn = $(this);
         var href = $btn.attr('href');
@@ -805,6 +848,10 @@ $(document).ready(function () {
         if (!href || $btn.data('contact-edit-loading')) {
             return;
         }
+
+        // Close Actions dropdown so it does not fight with the modal
+        $btn.closest('.btn-group').removeClass('open');
+        $btn.closest('.dropdown').removeClass('open');
 
         var editUrl =
             href + (href.indexOf('?') === -1 ? '?' : '&') + '_=' + new Date().getTime();
@@ -818,18 +865,20 @@ $(document).ready(function () {
             $modal.data('contactEditXhr').abort();
         }
 
-        if ($modal.hasClass('in') || $modal.is(':visible')) {
-            $modal.one('hidden.bs.modal.contact-edit', function () {
-                loadContactEditForm($modal, editUrl, requestToken, $btn);
-            });
-            $modal.modal('hide');
-        } else {
-            loadContactEditForm($modal, editUrl, requestToken, $btn);
-        }
+        loadContactEditForm($modal, editUrl, requestToken, $btn);
     });
 
     $(document).on('hidden.bs.modal', '.contact_modal', function () {
         cleanupContactModalBackdrop();
+    });
+
+    // Recover from stuck backdrop when modal never opened (click dimmed area)
+    $(document).on('click', '.modal-backdrop', function () {
+        var $modal = $('div.contact_modal').first();
+        if (!$modal.hasClass('in') && !$modal.is(':visible')) {
+            resetContactModalState($modal);
+            $modal.empty();
+        }
     });
 
     $(document).on('click', '.delete_contact_button', function (e) {
