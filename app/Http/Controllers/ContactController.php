@@ -812,7 +812,14 @@ class ContactController extends Controller
                 if (!empty($ob_transaction) && !empty($ob_transaction->final_total)) {
                     $opening_balance = $ob_transaction->final_total;
 
-                    $opening_balance_paid = $this->transactionUtil->getTotalAmountPaid($ob_transaction->id);
+                    // Direct query avoids dependency on TransactionUtil method versions across environments
+                    $opening_balance_paid = TransactionPayment::where('transaction_id', $ob_transaction->id)
+                        ->where(function ($q) {
+                            $q->where('method', '!=', 'cheque')
+                              ->orWhere('cheque_status', 'cleared');
+                        })
+                        ->sum('amount');
+
                     if (!empty($opening_balance_paid)) {
                         $opening_balance = $opening_balance - $opening_balance_paid;
                     }
@@ -823,17 +830,20 @@ class ContactController extends Controller
                 //Added check because $users is of no use if enable_contact_assign if false
                 $users = config('constants.enable_contact_assign') ? User::forDropdown($business_id, false, false, false, true) : [];
 
-                return response()
-                    ->view('contact.edit', compact('contact', 'types', 'customer_groups', 'opening_balance', 'users'))
+                // Render the view eagerly so any Blade exception is caught by this try-catch
+                $html = view('contact.edit', compact('contact', 'types', 'customer_groups', 'opening_balance', 'users'))->render();
+
+                return response($html, 200)
+                    ->header('Content-Type', 'text/html')
                     ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
                     ->header('Pragma', 'no-cache')
                     ->header('Expires', '0');
             } catch (\Exception $e) {
                 \Log::error('ContactController@edit failed for contact ' . $id . ': ' . $e->getMessage(), [
                     'contact_id' => $id,
-                    'file' => $e->getFile(),
-                    'line' => $e->getLine(),
-                    'trace' => $e->getTraceAsString(),
+                    'file'       => $e->getFile(),
+                    'line'       => $e->getLine(),
+                    'trace'      => $e->getTraceAsString(),
                 ]);
 
                 return response()->json([
