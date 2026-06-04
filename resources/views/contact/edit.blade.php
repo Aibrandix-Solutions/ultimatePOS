@@ -7,13 +7,13 @@
         $url = $update_action;
         $customer_groups = [];
         $opening_balance = 0;
-        $lead_users = $contact->leadUsers->pluck('id');
+        $lead_users = optional($contact->leadUsers)->pluck('id') ?? collect();
     } else {
       $url = action([\App\Http\Controllers\ContactController::class, 'update'], [$contact->id]);
       $sources = [];
       $life_stages = [];
       $lead_users = [];
-      $assigned_to_users = $contact->userHavingAccess->pluck('id');
+      $assigned_to_users = optional($contact->userHavingAccess)->pluck('id') ?? collect();
     }
   @endphp
 

@@ -806,10 +806,11 @@ class ContactController extends Controller
             $ob_transaction = Transaction::where('contact_id', $id)
                 ->where('type', 'opening_balance')
                 ->first();
-            $opening_balance = !empty($ob_transaction->final_total) ? $ob_transaction->final_total : 0;
 
-            //Deduct paid amount from opening balance.
-            if (!empty($opening_balance)) {
+            $opening_balance = 0;
+            if (!empty($ob_transaction) && !empty($ob_transaction->final_total)) {
+                $opening_balance = $ob_transaction->final_total;
+
                 $opening_balance_paid = $this->transactionUtil->getTotalAmountPaid($ob_transaction->id);
                 if (!empty($opening_balance_paid)) {
                     $opening_balance = $opening_balance - $opening_balance_paid;
