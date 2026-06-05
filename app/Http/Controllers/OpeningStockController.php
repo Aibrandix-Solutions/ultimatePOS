@@ -8,6 +8,7 @@ use App\PurchaseLine;
 use App\Transaction;
 use App\Utils\ProductUtil;
 use App\Utils\TransactionUtil;
+use App\VariationLocationDetails;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -106,6 +107,19 @@ class OpeningStockController extends Controller
                 }
             }
 
+            // Build a map of total qty_available per [location_id][variation_id].
+            // This is shown in the form so users set the TOTAL stock, not just the
+            // opening-stock slice, avoiding "enter 20, see 25" confusion.
+            $qty_available_map = [];
+            foreach ($product->variations as $variation) {
+                $vlds = VariationLocationDetails::where('variation_id', $variation->id)
+                    ->where('product_id', $product->id)
+                    ->get(['location_id', 'qty_available']);
+                foreach ($vlds as $vld) {
+                    $qty_available_map[$vld->location_id][$variation->id] = (float) $vld->qty_available;
+                }
+            }
+
             $enable_expiry = request()->session()->get('business.enable_product_expiry');
             $enable_lot = request()->session()->get('business.enable_lot_number');
 
@@ -116,7 +130,8 @@ class OpeningStockController extends Controller
                         'locations',
                         'purchases',
                         'enable_expiry',
-                        'enable_lot'
+                        'enable_lot',
+                        'qty_available_map'
                     ));
             }
 
@@ -126,7 +141,8 @@ class OpeningStockController extends Controller
                         'locations',
                         'purchases',
                         'enable_expiry',
-                        'enable_lot'
+                        'enable_lot',
+                        'qty_available_map'
                     ));
         }
     }
@@ -206,14 +222,27 @@ class OpeningStockController extends Controller
 
                                 if (isset($pl['purchase_line_id'])) {
                                     $purchase_line = PurchaseLine::findOrFail($pl['purchase_line_id']);
-                                    //Quantity = remaining + used
-                                    $qty_remaining = $qty_remaining + $purchase_line->quantity_used;
 
-                                    if ($qty_remaining != 0) {
-                                        //Calculate transaction total
-                                        $old_qty = $purchase_line->quantity;
+                                    if (isset($pl['original_qty'])) {
+                                        // Absolute mode: the form showed total qty_available,
+                                        // so the user's input IS the desired new total stock.
+                                        // Delta = user_input - old_qty_available (not purchase-line delta).
+                                        $old_qty_available = $this->productUtil->num_uf($pl['original_qty']);
+                                        $new_qty_available  = $qty_remaining; // user's desired total
 
-                                        $this->productUtil->updateProductQuantity($location_id, $product->id, $vid, $qty_remaining, $old_qty, null, false);
+                                        $this->productUtil->updateProductQuantity($location_id, $product->id, $vid, $new_qty_available, $old_qty_available, null, false);
+
+                                        // purchase_line.quantity = desired remaining + already consumed
+                                        $qty_remaining = $new_qty_available + $purchase_line->quantity_used;
+                                    } else {
+                                        // Relative mode (additional rows): original behavior.
+                                        // Quantity = remaining + used
+                                        $qty_remaining = $qty_remaining + $purchase_line->quantity_used;
+
+                                        if ($qty_remaining != 0) {
+                                            $old_qty = $purchase_line->quantity;
+                                            $this->productUtil->updateProductQuantity($location_id, $product->id, $vid, $qty_remaining, $old_qty, null, false);
+                                        }
                                     }
 
                                     if ($purchase_line->batch_profit_margin !== null) {
