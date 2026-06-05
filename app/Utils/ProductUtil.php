@@ -2655,5 +2655,36 @@ class ProductUtil extends Util
         return $products;
     }
 
+    /**
+     * Keep batch / purchase-line sell prices aligned with the variation default
+     * (product list price) so POS and product edit stay in sync.
+     */
+    public function syncVariationSellPriceToStockRecords(Variation $variation): void
+    {
+        if (empty($variation->id)) {
+            return;
+        }
+
+        $sell_inc = $variation->sell_price_inc_tax;
+        $sell_exc = $variation->default_sell_price;
+        $profit = $variation->profit_percent;
+
+        PurchaseLine::where('variation_id', $variation->id)
+            ->update([
+                'batch_selling_price_inc_tax' => $sell_inc,
+                'batch_selling_price' => $sell_exc,
+                'batch_profit_margin' => $profit,
+            ]);
+
+        if (Schema::hasTable('product_batches')) {
+            ProductBatch::where('variation_id', $variation->id)
+                ->update([
+                    'sell_price_inc_tax' => $sell_inc,
+                    'sell_price_exc_tax' => $sell_exc,
+                    'profit_margin' => $profit,
+                ]);
+        }
+    }
+
 
 }
