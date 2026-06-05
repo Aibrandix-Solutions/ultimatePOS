@@ -10,6 +10,7 @@ use App\Utils\ProductUtil;
 use App\Utils\TransactionUtil;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class OpeningStockController extends Controller
 {
@@ -399,6 +400,10 @@ class OpeningStockController extends Controller
             $output = ['success' => 0,
                 'msg' => $e->getMessage(),
             ];
+
+            if (request()->ajax()) {
+                return $output;
+            }
 
             return back()->with('status', $output);
         }
