@@ -3154,15 +3154,18 @@ function get_expense_sub_categories() {
 }
 
 function submitContactForm(form) {
-    var data = $(form).serialize();
+    var $form = $(form);
+    var data = $form.serialize();
     $.ajax({
         method: 'POST',
-        url: $(form).attr('action'),
+        url: $form.attr('action'),
         dataType: 'json',
         data: data,
         success: function (result) {
             if (result.success == true) {
-                $('div.contact_modal').modal('hide');
+                var $modal = $('div.contact_modal').first();
+                $modal.modal('hide');
+                $modal.empty();
                 toastr.success(result.msg);
 
                 if (typeof (contact_table) != 'undefined') {
@@ -3178,7 +3181,12 @@ function submitContactForm(form) {
 
             } else {
                 toastr.error(result.msg);
+                $form.find('button[type="submit"]').prop('disabled', false).removeAttr('disable');
             }
+        },
+        error: function () {
+            toastr.error(LANG && LANG.something_went_wrong ? LANG.something_went_wrong : 'Something went wrong.');
+            $form.find('button[type="submit"]').prop('disabled', false).removeAttr('disable');
         },
     });
 }

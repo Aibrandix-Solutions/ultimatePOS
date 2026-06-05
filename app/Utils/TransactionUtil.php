@@ -5161,6 +5161,8 @@ class TransactionUtil extends Util
      * Retrieves and sum total amount paid for a transaction
      *
      * @param  int  $transaction_id
+     * @return float
+     */
     public function getTotalAmountPaid($transaction_id)
     {
         $paid = TransactionPayment::where('transaction_id', $transaction_id)
