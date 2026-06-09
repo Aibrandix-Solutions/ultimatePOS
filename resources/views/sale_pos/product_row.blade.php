@@ -150,8 +150,8 @@
 				$base_price = $unit_price_inc_tax / (1 + ($tax_rate / 100));
 			}
 			
-			// Apply discount to base price
-			if($discount_amount > 0) {
+			// Apply discount to base price (skip on edit — stored sell line prices already include discount)
+			if($discount_amount > 0 && $action !== 'edit') {
 				if($discount_type == 'fixed') {
 					$base_price = $base_price - $discount_amount;
 				} else {
@@ -528,6 +528,12 @@
 	<td class="{{$hide_tax}}">
 			<!-- Hidden fields for discount so auto-discounts apply in POS JS calculator -->
 			@if(empty($is_direct_sell))
+				@php
+					$edit_unit_price_before_discount = !empty($product->unit_price_before_discount) ? $product->unit_price_before_discount : $product->default_sell_price;
+				@endphp
+				@if(!empty($action) && $action == 'edit')
+					<input type="hidden" name="products[{{$row_count}}][unit_price]" class="pos_unit_price input_number" value="{{@num_format($edit_unit_price_before_discount)}}">
+				@endif
 				<input type="hidden" name="products[{{$row_count}}][line_discount_amount]" class="row_discount_amount" value="{{@num_format($discount_amount)}}">
 				<input type="hidden" name="products[{{$row_count}}][line_discount_type]" class="row_discount_type" value="{{$discount_type}}">
 			@endif
