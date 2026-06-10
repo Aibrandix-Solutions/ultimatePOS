@@ -4,6 +4,7 @@ namespace App\Utils;
 
 use App\InstallmentPlan;
 use App\Transaction;
+use App\Utils\TransactionUtil;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -151,15 +152,27 @@ class InstallmentUtil
         $all_paid = true;
         foreach ($lines as $line) {
             $line_amount = (float) $line->amount;
-            $new_paid_amount = 0.0;
+            $line_paid_amount = (float) $line->paid_amount;
+            $was_settled = $line->status === 'paid'
+                && ($line_amount < 0.0001 || $line_paid_amount >= ($line_amount - 0.0001));
 
-            if ($remaining_paid > 0) {
+            if ($was_settled) {
+                $remaining_paid -= $line_paid_amount;
+                if ($remaining_paid < 0) {
+                    $remaining_paid = 0;
+                }
+                continue;
+            }
+
+            $new_paid_amount = 0.0;
+            if ($remaining_paid > 0 && $line_amount > 0) {
                 $new_paid_amount = min($line_amount, $remaining_paid);
                 $remaining_paid -= $new_paid_amount;
             }
 
             $was_paid = $line->status === 'paid';
-            $is_paid = ($new_paid_amount >= ($line_amount - 0.0001));
+            $is_paid = $line_amount < 0.0001
+                || ($new_paid_amount >= ($line_amount - 0.0001));
 
             $line->paid_amount = round($new_paid_amount, 4);
             $line->status = $is_paid ? 'paid' : 'pending';
@@ -186,5 +199,194 @@ class InstallmentUtil
                 $plan->save();
             }
         }
+    }
+
+    public function getNextPendingInstallmentAmount(InstallmentPlan $plan): ?float
+    {
+        $line = $plan->lines()
+            ->where('status', '!=', 'paid')
+            ->orderBy('sequence')
+            ->first();
+
+        if (empty($line)) {
+            return null;
+        }
+
+        return max(0, round((float) $line->amount - (float) $line->paid_amount, 4));
+    }
+
+    public function getSellReturnTotal(int $transaction_id): float
+    {
+        return (float) Transaction::where('return_parent_id', $transaction_id)
+            ->where('type', 'sell_return')
+            ->where('status', 'final')
+            ->sum('final_total');
+    }
+
+    public function getEffectiveSaleTotal(Transaction $transaction): float
+    {
+        $returns = $this->getSellReturnTotal($transaction->id);
+
+        return max(0, (float) $transaction->final_total - $returns);
+    }
+
+    public function getRemainingInstallmentBalance(InstallmentPlan $plan, ?Transaction $transaction = null): float
+    {
+        $transaction = $transaction ?? Transaction::find($plan->transaction_id);
+        if (empty($transaction)) {
+            return 0;
+        }
+
+        $transaction_util = app(TransactionUtil::class);
+        $effective_total = $this->getEffectiveSaleTotal($transaction);
+        $paid_total = (float) $transaction_util->getTotalPaid($transaction->id);
+
+        return max(0, round($effective_total - $paid_total, 4));
+    }
+
+    /**
+     * @return array<int, float> line_id => suggested amount
+     */
+    public function getSuggestedPendingAmounts(InstallmentPlan $plan): array
+    {
+        $lines = $plan->lines()->orderBy('sequence')->get();
+        $pending_lines = $lines->where('status', '!=', 'paid')->values();
+        $pending_count = $pending_lines->count();
+
+        if ($pending_count === 0) {
+            return [];
+        }
+
+        $remaining = $this->getRemainingInstallmentBalance($plan);
+        $minimums = [];
+        $minimum_total = 0.0;
+
+        foreach ($pending_lines as $line) {
+            $minimum = max(0, (float) $line->paid_amount);
+            $minimums[(int) $line->id] = $minimum;
+            $minimum_total += $minimum;
+        }
+
+        $extra = round($remaining - $minimum_total, 4);
+        if ($extra < 0) {
+            $suggested = [];
+            foreach ($pending_lines as $line) {
+                $suggested[(int) $line->id] = 0;
+            }
+
+            return $suggested;
+        }
+
+        $per = $pending_count > 0 ? round($extra / $pending_count, 4) : 0;
+        $running_extra = 0.0;
+        $suggested = [];
+
+        foreach ($pending_lines as $index => $line) {
+            $is_last = ($index === $pending_count - 1);
+            $share = $is_last
+                ? round($extra - $running_extra, 4)
+                : $per;
+
+            $running_extra += $share;
+            $suggested[(int) $line->id] = round($minimums[(int) $line->id] + max(0, $share), 4);
+        }
+
+        return $suggested;
+    }
+
+    public function getPendingLinesTotal(InstallmentPlan $plan): float
+    {
+        return (float) $plan->lines()
+            ->where('status', '!=', 'paid')
+            ->sum('amount');
+    }
+
+    public function planNeedsAdjustment(InstallmentPlan $plan): bool
+    {
+        if ($plan->status !== 'active') {
+            return false;
+        }
+
+        $pending_count = $plan->lines()->where('status', '!=', 'paid')->count();
+        if ($pending_count === 0) {
+            return false;
+        }
+
+        $remaining = $this->getRemainingInstallmentBalance($plan);
+        $pending_total = $this->getPendingLinesTotal($plan);
+
+        return abs($pending_total - $remaining) > 0.01;
+    }
+
+    /**
+     * @param  array<int, mixed>  $line_amounts
+     */
+    public function updatePendingLineAmounts(InstallmentPlan $plan, array $line_amounts): void
+    {
+        $transaction_util = app(TransactionUtil::class);
+        $lines = $plan->lines()->orderBy('sequence')->get();
+        $pending_lines = $lines->where('status', '!=', 'paid');
+        $expected_remaining = $this->getRemainingInstallmentBalance($plan);
+        $new_pending_total = 0.0;
+        $is_fully_settled = $expected_remaining < 0.0001;
+
+        foreach ($pending_lines as $line) {
+            if (! array_key_exists($line->id, $line_amounts)) {
+                throw new \Exception(__('lang_v1.installment_line_amount_required', ['sequence' => $line->sequence]));
+            }
+
+            $amount = (float) $transaction_util->num_uf($line_amounts[$line->id]);
+            if ($amount < 0) {
+                throw new \Exception(__('lang_v1.installment_line_amount_invalid', ['sequence' => $line->sequence]));
+            }
+
+            if (! $is_fully_settled && $amount + 0.0001 < (float) $line->paid_amount) {
+                throw new \Exception(__('lang_v1.installment_line_amount_below_paid', ['sequence' => $line->sequence]));
+            }
+
+            $line->amount = round($amount, 4);
+
+            if ($is_fully_settled && $amount < 0.0001) {
+                $line->paid_amount = 0;
+                $line->status = 'paid';
+                $line->paid_on = $line->paid_on ?? Carbon::now();
+            }
+
+            $line->save();
+            $new_pending_total += $amount;
+        }
+
+        if (abs($new_pending_total - $expected_remaining) > 0.01) {
+            throw new \Exception(__('lang_v1.installment_pending_total_mismatch', [
+                'expected' => $transaction_util->num_f($expected_remaining),
+                'entered' => $transaction_util->num_f($new_pending_total),
+            ]));
+        }
+
+        $this->syncPlanPaymentStatus($plan->fresh());
+
+        if ($is_fully_settled) {
+            $plan = $plan->fresh();
+            if ($plan->status !== 'closed') {
+                $plan->status = 'closed';
+                $plan->closed_at = Carbon::now();
+                $plan->save();
+            }
+        }
+    }
+
+    public function getCustomerCreditAfterReturns(InstallmentPlan $plan, ?Transaction $transaction = null): float
+    {
+        $transaction = $transaction ?? Transaction::find($plan->transaction_id);
+        if (empty($transaction)) {
+            return 0;
+        }
+
+        $transaction_util = app(TransactionUtil::class);
+        $effective_total = $this->getEffectiveSaleTotal($transaction);
+        $paid_total = (float) $transaction_util->getTotalPaid($transaction->id);
+        $credit = round($paid_total - $effective_total, 4);
+
+        return $credit > 0.0001 ? $credit : 0;
     }
 }

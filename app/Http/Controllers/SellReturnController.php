@@ -8,7 +8,9 @@ use App\Events\TransactionPaymentDeleted;
 use App\Transaction;
 use App\TransactionSellLine;
 use App\User;
+use App\InstallmentPlan;
 use App\Utils\BusinessUtil;
+use App\Utils\InstallmentUtil;
 use App\Utils\ContactUtil;
 use App\Utils\ModuleUtil;
 use App\Utils\ProductUtil;
@@ -373,8 +375,12 @@ class SellReturnController extends Controller
             $sell->sell_lines[$key]->formatted_qty = $this->transactionUtil->num_f($value->quantity, false, null, true);
         }
 
+        $installment_plan = InstallmentPlan::where('transaction_id', $sell->id)
+            ->where('status', 'active')
+            ->first();
+
         return view('sell_return.add')
-            ->with(compact('sell'));
+            ->with(compact('sell', 'installment_plan'));
     }
 
     /**
@@ -433,6 +439,23 @@ class SellReturnController extends Controller
                     'msg' => __('lang_v1.success'),
                     'receipt' => $receipt,
                 ];
+
+                $parent_sell = Transaction::find($sell_return->return_parent_id);
+                $installment_plan = ! empty($parent_sell)
+                    ? InstallmentPlan::where('transaction_id', $parent_sell->id)->where('status', 'active')->first()
+                    : null;
+
+                if (! empty($installment_plan)) {
+                    $installment_util = app(InstallmentUtil::class);
+                    $output['installment_plan_url'] = action(
+                        [\App\Http\Controllers\InstallmentPlanController::class, 'show'],
+                        [$installment_plan->id]
+                    ) . '?adjust=1';
+                    $output['installment_plan_warning'] = __('lang_v1.installment_plan_return_warning', [
+                        'amount' => $this->transactionUtil->num_f($sell_return->final_total),
+                        'invoice' => $parent_sell->invoice_no ?? '',
+                    ]);
+                }
             }
         } catch (\Throwable $e) {
             if (DB::transactionLevel() > 0) {
