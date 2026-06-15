@@ -1087,6 +1087,19 @@ class SellPosController extends Controller
     }
 
     /**
+     * Suspended POS sales may be edited/deleted without sell.update / sell.delete.
+     */
+    private function isSuspendedPosSale($transaction_id, $business_id)
+    {
+        return Transaction::where('business_id', $business_id)
+            ->where('type', 'sell')
+            ->where('id', $transaction_id)
+            ->where('is_suspend', 1)
+            ->where('status', 'draft')
+            ->exists();
+    }
+
+    /**
      * Show the form for editing the specified resource.
      *
      * @param  int  $id
@@ -1095,9 +1108,11 @@ class SellPosController extends Controller
     public function edit($id)
     {
         $business_id = request()->session()->get('user.business_id');
+        $is_suspended_pos_sale = $this->isSuspendedPosSale($id, $business_id);
 
         if (
-            !(auth()->user()->can('superadmin') || auth()->user()->can('sell.update')
+            !$is_suspended_pos_sale
+            && !(auth()->user()->can('superadmin') || auth()->user()->can('sell.update')
                 || auth()->user()->can('edit_pos_payment')
                 || ($this->moduleUtil->hasThePermissionInSubscription($business_id, 'repair_module') &&
                     auth()->user()->can('repair.update')))
@@ -1465,8 +1480,12 @@ class SellPosController extends Controller
      */
     public function update(Request $request, $id)
     {
+        $business_id = $request->session()->get('user.business_id');
+        $is_suspended_pos_sale = $this->isSuspendedPosSale($id, $business_id);
+
         if (
-            !auth()->user()->can('sell.update') && !auth()->user()->can('direct_sell.access') &&
+            !$is_suspended_pos_sale
+            && !auth()->user()->can('sell.update') && !auth()->user()->can('direct_sell.access') &&
             !auth()->user()->can('so.update') && !auth()->user()->can('edit_pos_payment')
         ) {
             abort(403, 'Unauthorized action.');
@@ -1650,7 +1669,8 @@ class SellPosController extends Controller
                     $input['additional_expense_key_4'] = $request->input('additional_expense_key_4');
                     $input['additional_expense_value_4'] = $request->input('additional_expense_value_4');
                 }
-                $only_payment = !$is_direct_sale && !auth()->user()->can('sell.update') && auth()->user()->can('edit_pos_payment');
+                $is_suspended_sale = $transaction_before->is_suspend == 1 && $transaction_before->status == 'draft';
+                $only_payment = !$is_direct_sale && !$is_suspended_sale && !auth()->user()->can('sell.update') && auth()->user()->can('edit_pos_payment');
 
                 //if edit pos not allowed and only edit payment allowed
                 if ($only_payment) {
@@ -1986,7 +2006,13 @@ class SellPosController extends Controller
      */
     public function destroy($id)
     {
-        if (!auth()->user()->can('sell.delete') && !auth()->user()->can('direct_sell.delete') && !auth()->user()->can('so.delete')) {
+        $business_id = request()->session()->get('user.business_id');
+        $is_suspended_pos_sale = $this->isSuspendedPosSale($id, $business_id);
+
+        if (
+            !$is_suspended_pos_sale
+            && !auth()->user()->can('sell.delete') && !auth()->user()->can('direct_sell.delete') && !auth()->user()->can('so.delete')
+        ) {
             abort(403, 'Unauthorized action.');
         }
 
