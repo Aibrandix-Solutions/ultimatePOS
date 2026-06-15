@@ -986,7 +986,7 @@ $(document).ready(function () {
                     success: function (result) {
                         if (result.success == true) {
                             toastr.success(result.msg);
-                            contact_table.ajax.reload();
+                            contact_table.ajax.reload(null, false);
                         } else {
                             toastr.error(result.msg);
                         }
@@ -3033,7 +3033,7 @@ $(document).on('click', 'a.update_contact_status', function (e) {
         success: function (data) {
             if (data.success == true) {
                 toastr.success(data.msg);
-                contact_table.ajax.reload();
+                contact_table.ajax.reload(null, false);
             } else {
                 toastr.error(data.msg);
             }
@@ -3169,7 +3169,7 @@ function submitContactForm(form) {
                 toastr.success(result.msg);
 
                 if (typeof (contact_table) != 'undefined') {
-                    contact_table.ajax.reload();
+                    contact_table.ajax.reload(null, false);
                 }
 
                 var lead_view = urlSearchParam('lead_view');
@@ -3243,7 +3243,7 @@ $(document).on('submit', 'form#pay_contact_due_form', function (e) {
                 toastr.success(result.msg);
 
                 if (typeof (contact_table) != 'undefined') {
-                    contact_table.ajax.reload();
+                    contact_table.ajax.reload(null, false);
                 }
 
                 if (typeof (get_contact_ledger) == 'function') {
