@@ -824,6 +824,7 @@ class ProductController extends Controller
                 $min_sell_price_inc_tax = ! empty($single_data['single_min_sell_price_inc_tax']) ? $single_data['single_min_sell_price_inc_tax'] : $single_data['single_dsp_inc_tax'];
                 $variation->min_sell_price_inc_tax = $this->productUtil->num_uf($min_sell_price_inc_tax);
                 $variation->save();
+                $this->productUtil->syncVariationSellPriceToStockRecords($variation);
 
                 Media::uploadMedia($product->business_id, $variation, $request, 'variation_images');
             } elseif ($product->type == 'variable') {
@@ -837,6 +838,10 @@ class ProductController extends Controller
                 $input_variations = $request->input('product_variation');
                 if (! empty($input_variations)) {
                     $this->productUtil->createVariableProductVariations($product->id, $input_variations, $request->input('sku_type'));
+                }
+
+                foreach ($product->variations()->get() as $variation) {
+                    $this->productUtil->syncVariationSellPriceToStockRecords($variation);
                 }
             } elseif ($product->type == 'combo') {
 
@@ -865,6 +870,7 @@ class ProductController extends Controller
                 $variation->sell_price_inc_tax = $this->productUtil->num_uf($request->input('selling_price_inc_tax'));
                 $variation->combo_variations = $combo_variations;
                 $variation->save();
+                $this->productUtil->syncVariationSellPriceToStockRecords($variation);
             }
 
             //Add product racks details.
@@ -2190,6 +2196,7 @@ class ProductController extends Controller
                     $variation->default_sell_price = $this->productUtil->num_uf($value['default_sell_price']);
                     $variation->sell_price_inc_tax = $this->productUtil->num_uf($value['sell_price_inc_tax']);
                     $variations_data[] = $variation;
+                    $this->productUtil->syncVariationSellPriceToStockRecords($variation);
 
                     //Update price groups
                     if (! empty($value['group_prices'])) {

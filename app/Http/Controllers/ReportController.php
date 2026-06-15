@@ -2458,6 +2458,7 @@ class ReportController extends Controller
             })
                 ->leftjoin('contacts as c', 't.contact_id', '=', 'c.id')
                 ->leftjoin('customer_groups AS CG', 'c.customer_group_id', '=', 'CG.id')
+                ->leftjoin('users as u', 'transaction_payments.created_by', '=', 'u.id')
 
             
             //     DB::raw("IF(transaction_payments.transaction_id IS NULL, 
@@ -2516,7 +2517,8 @@ class ReportController extends Controller
                     'card_transaction_number',
                     'bank_account_number',
                     'transaction_payments.id as DT_RowId',
-                    'CG.name as customer_group'
+                    'CG.name as customer_group',
+                    DB::raw("TRIM(CONCAT(COALESCE(u.surname, ''), ' ', COALESCE(u.first_name, ''), ' ', COALESCE(u.last_name, ''))) as received_by")
                 )
                 ->groupBy('transaction_payments.id');
 
@@ -2544,6 +2546,10 @@ class ReportController extends Controller
 
             if (! empty($request->get('payment_types'))) {
                 $query->where('transaction_payments.method', $request->get('payment_types'));
+            }
+
+            if (! empty($request->get('payment_user_id'))) {
+                $query->where('transaction_payments.created_by', $request->get('payment_user_id'));
             }
 
             return Datatables::of($query)
@@ -2585,15 +2591,19 @@ class ReportController extends Controller
                 })
                 ->addColumn('action', '<button type="button" class="tw-dw-btn tw-dw-btn-xs tw-dw-btn-outline  tw-dw-btn-primary view_payment" data-href="{{ action([\App\Http\Controllers\TransactionPaymentController::class, \'viewPayment\'], [$DT_RowId]) }}">@lang("messages.view")
                     </button> @if(!empty($document))<a href="{{asset("/uploads/documents/" . $document)}}" class="tw-dw-btn tw-dw-btn-xs tw-dw-btn-outline  tw-dw-btn-accent" download=""><i class="fa fa-download"></i> @lang("purchase.download_document")</a>@endif')
+                ->filterColumn('received_by', function ($query, $keyword) {
+                    $query->whereRaw("TRIM(CONCAT(COALESCE(u.surname, ''), ' ', COALESCE(u.first_name, ''), ' ', COALESCE(u.last_name, ''))) like ?", ["%{$keyword}%"]);
+                })
                 ->rawColumns(['invoice_no', 'amount', 'method', 'action', 'customer'])
                 ->make(true);
         }
         $business_locations = BusinessLocation::forDropdown($business_id);
         $customers = Contact::customersDropdown($business_id, false);
         $customer_groups = CustomerGroup::forDropdown($business_id, false, true);
+        $users = User::forDropdown($business_id, false);
 
         return view('report.sell_payment_report')
-            ->with(compact('business_locations', 'customers', 'payment_types', 'customer_groups'));
+            ->with(compact('business_locations', 'customers', 'payment_types', 'customer_groups', 'users'));
     }
 
     /**

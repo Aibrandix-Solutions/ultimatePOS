@@ -34,6 +34,27 @@ $(document).ready(function() {
                             if (result.receipt.is_enabled) {
                                 pos_print(result.receipt);
                             }
+
+                            if (result.installment_plan_warning && result.installment_plan_url) {
+                                swal({
+                                    title: LANG.notice || 'Notice',
+                                    text: result.installment_plan_warning,
+                                    icon: 'warning',
+                                    buttons: {
+                                        cancel: LANG.go_back || 'Go back',
+                                        confirm: {
+                                            text: LANG.update_installment_plan || 'Update installment plan',
+                                            value: true,
+                                            visible: true,
+                                            className: 'bg-primary',
+                                        },
+                                    },
+                                }).then(function(will_update) {
+                                    if (will_update) {
+                                        window.location.href = result.installment_plan_url;
+                                    }
+                                });
+                            }
                         } else {
                             toastr.error(result.msg);
                         }

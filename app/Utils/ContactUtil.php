@@ -4,6 +4,7 @@ namespace App\Utils;
 
 use App\Contact;
 use App\Transaction;
+use App\TransactionPayment;
 use DB;
 
 class ContactUtil extends Util
@@ -193,7 +194,12 @@ class ContactUtil extends Util
             //Opening balance update
             $transactionUtil = new TransactionUtil();
             if (!empty($ob_transaction)) {
-                $opening_balance_paid = $transactionUtil->getTotalAmountPaid($ob_transaction->id);
+                $opening_balance_paid = TransactionPayment::where('transaction_id', $ob_transaction->id)
+                    ->where(function ($q) {
+                        $q->where('method', '!=', 'cheque')
+                            ->orWhere('cheque_status', 'cleared');
+                    })
+                    ->sum('amount');
                 if (!empty($opening_balance_paid)) {
                     $opening_balance += $opening_balance_paid;
                 }

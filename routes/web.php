@@ -250,6 +250,7 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
 
     Route::get('/installments', [InstallmentPlanController::class, 'index'])->name('installments.index');
     Route::get('/installments/{id}', [InstallmentPlanController::class, 'show'])->name('installments.show');
+    Route::put('/installments/{id}/lines', [InstallmentPlanController::class, 'updateLines'])->name('installments.update_lines');
 
     Route::get('/import-sales', [ImportSalesController::class, 'index']);
     Route::post('/import-sales/preview', [ImportSalesController::class, 'preview']);

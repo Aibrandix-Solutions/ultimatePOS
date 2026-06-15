@@ -1265,6 +1265,7 @@ $(document).ready(function() {
                 d.location_id = $('select#location_id').val();
                 d.payment_types = $('select#payment_types').val();
                 d.customer_group_id = $('select#customer_group_filter').val();
+                d.payment_user_id = $('select#payment_user_id').val();
                 var start = '';
                 var end = '';
                 if ($('input#spr_date_filter').val()) {
@@ -1288,6 +1289,7 @@ $(document).ready(function() {
             },
             { data: 'payment_ref_no', name: 'payment_ref_no' },
             { data: 'paid_on', name: 'paid_on' },
+            { data: 'received_by', name: 'received_by', orderable: false, searchable: true },
             { data: 'amount', name: 'transaction_payments.amount' },
             { data: 'customer', name: 'customer_subquery.customer_name', orderable: false, searchable: true},
             { data: 'contact_id', name:'c.contact_id', orderable: true, searchable: true },
@@ -1355,7 +1357,7 @@ $(document).ready(function() {
         });
     }
 
-    $('#sell_payment_report_form #location_id, #sell_payment_report_form #customer_id, #sell_payment_report_form #payment_types, #sell_payment_report_form #customer_group_filter').change(
+    $('#sell_payment_report_form #location_id, #sell_payment_report_form #customer_id, #sell_payment_report_form #payment_types, #sell_payment_report_form #customer_group_filter, #sell_payment_report_form #payment_user_id').change(
         function() {
             sell_payment_report.ajax.reload();
         }

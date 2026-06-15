@@ -42,7 +42,13 @@
         </div>
         <div class="col-md-4">
           <div class="well">
-            <strong>@lang('sale.total_amount'): </strong><span class="display_currency" data-currency_symbol="true">{{ $transaction->final_total }}</span><br>
+            @if(!empty($sell_return_total) && (float) $sell_return_total > 0)
+              <strong>@lang('lang_v1.balance_after_returns'): </strong><span class="display_currency" data-currency_symbol="true">{{ $effective_total ?? $transaction->final_total }}</span><br>
+              <strong>@lang('sale.total_amount'): </strong><span class="display_currency" data-currency_symbol="true">{{ $transaction->final_total }}</span><br>
+              <strong>@lang('lang_v1.total_returns'): </strong><span class="display_currency" data-currency_symbol="true">{{ $sell_return_total }}</span><br>
+            @else
+              <strong>@lang('sale.total_amount'): </strong><span class="display_currency" data-currency_symbol="true">{{ $transaction->final_total }}</span><br>
+            @endif
             <strong>@lang('purchase.payment_note'): </strong>
             @if(!empty($transaction->additional_notes))
             {{ $transaction->additional_notes }}
@@ -91,7 +97,7 @@
               <span class="input-group-addon">
                 <i class="fas fa-money-bill-alt"></i>
               </span>
-              {!! Form::text("amount", @num_format($payment_line->amount), ['class' => 'form-control input_number payment_amount', 'required', 'placeholder' => 'Amount', 'data-rule-max-value' => $payment_line->amount, 'data-msg-max-value' => __('lang_v1.max_amount_to_be_paid_is', ['amount' => $amount_formated])]) !!}
+              {!! Form::text("amount", @num_format($payment_line->amount), ['class' => 'form-control input_number payment_amount', 'required', 'placeholder' => 'Amount', 'data-rule-max-value' => $max_payable ?? $payment_line->amount, 'data-msg-max-value' => __('lang_v1.max_amount_to_be_paid_is', ['amount' => $amount_formated])]) !!}
             </div>
           </div>
         </div>

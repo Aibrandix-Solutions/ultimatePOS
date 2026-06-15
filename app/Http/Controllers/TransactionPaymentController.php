@@ -8,9 +8,11 @@ use App\Events\TransactionPaymentAdded;
 use App\Events\TransactionPaymentUpdated;
 use App\Exceptions\AdvanceBalanceNotAvailable;
 use App\Exceptions\ChequePaymentNotAllowedForWalkInCustomer;
+use App\InstallmentPlan;
 use App\Transaction;
 use App\TransactionPayment;
 use App\Utils\CashRegisterUtil;
+use App\Utils\InstallmentUtil;
 use App\Utils\ModuleUtil;
 use App\Utils\TransactionUtil;
 use App\Utils\Util;
@@ -580,15 +582,37 @@ class TransactionPaymentController extends Controller
                 $payment_types = $this->transactionUtil->payment_types($transaction->location, $show_advance);
 
                 $paid_amount = $this->transactionUtil->getTotalPaid($transaction_id);
-                $amount = $transaction->final_total - $paid_amount;
-                if ($amount < 0) {
-                    $amount = 0;
+                $installment_util = app(InstallmentUtil::class);
+                $transaction_total = (float) $transaction->final_total;
+                $sell_return_total = 0;
+
+                if ($transaction->type === 'sell') {
+                    $sell_return_total = $installment_util->getSellReturnTotal($transaction_id);
+                    $transaction_total = $installment_util->getEffectiveSaleTotal($transaction);
                 }
 
-                $amount_formated = $this->transactionUtil->num_f($amount);
+                $max_payable = $transaction_total - $paid_amount;
+                if ($max_payable < 0) {
+                    $max_payable = 0;
+                }
+
+                $default_amount = $max_payable;
+                $installment_plan = InstallmentPlan::where('transaction_id', $transaction_id)
+                    ->where('status', 'active')
+                    ->first();
+
+                if (! empty($installment_plan)) {
+                    $next_installment_amount = $installment_util->getNextPendingInstallmentAmount($installment_plan);
+                    if ($next_installment_amount !== null && $next_installment_amount > 0) {
+                        $default_amount = min($max_payable, $next_installment_amount);
+                    }
+                }
+
+                $amount_formated = $this->transactionUtil->num_f($max_payable);
+                $effective_total = $transaction_total;
 
                 $payment_line = new TransactionPayment();
-                $payment_line->amount = $amount;
+                $payment_line->amount = $default_amount;
                 $payment_line->method = 'cash';
                 $payment_line->paid_on = \Carbon::now()->toDateTimeString();
 
@@ -596,7 +620,7 @@ class TransactionPaymentController extends Controller
                 $accounts = $this->moduleUtil->accountsDropdown($business_id, true, false, true);
 
                 $view = view('transaction_payment.payment_row')
-                ->with(compact('transaction', 'payment_types', 'payment_line', 'amount_formated', 'accounts'))->render();
+                ->with(compact('transaction', 'payment_types', 'payment_line', 'amount_formated', 'accounts', 'max_payable', 'effective_total', 'sell_return_total'))->render();
 
                 $output = ['status' => 'due',
                     'view' => $view, ];
