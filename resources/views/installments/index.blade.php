@@ -77,16 +77,16 @@ $(document).ready(function() {
             searchable: false
         }],
         columns: [
-            { data: 'invoice_no', name: 'invoice_no' },
-            { data: 'transaction_date', name: 'transaction_date' },
-            { data: 'customer_name', name: 'customer_name' },
-            { data: 'final_total', name: 'final_total' },
-            { data: 'down_payment', name: 'down_payment' },
+            { data: 'invoice_no', name: 't.invoice_no' },
+            { data: 'transaction_date', name: 't.transaction_date' },
+            { data: 'customer_name', name: 'c.name' },
+            { data: 'final_total', name: 't.final_total', searchable: false },
+            { data: 'down_payment', name: 'installment_plans.down_payment', searchable: false },
             { data: 'balance_due', name: 'balance_due', searchable: false, orderable: false },
-            { data: 'installment_count', name: 'installment_count' },
+            { data: 'installment_count', name: 'installment_plans.installment_count' },
             { data: 'interval_label', name: 'interval_label', searchable: false, orderable: false },
-            { data: 'next_due_date', name: 'next_due_date' },
-            { data: 'status', name: 'status' },
+            { data: 'next_due_date', name: 'next_due_date', searchable: false },
+            { data: 'status', name: 'installment_plans.status' },
             { data: 'action', name: 'action' },
         ]
     });
