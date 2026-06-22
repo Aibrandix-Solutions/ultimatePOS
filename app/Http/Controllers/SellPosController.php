@@ -1413,6 +1413,8 @@ class SellPosController extends Controller
 
         $customer_due = $customer_due != 0 ? $this->transactionUtil->num_f($customer_due, true) : '';
 
+        $editing_transaction_due = max(0, (float) $transaction->final_total - (float) $this->transactionUtil->getTotalPaid($transaction->id));
+
         //Added check because $users is of no use if enable_contact_assign if false
         $users = config('constants.enable_contact_assign') ? User::forDropdown($business_id, false, false, false, true) : [];
         $only_payment = request()->segment(2) == 'payment';
@@ -1450,6 +1452,7 @@ class SellPosController extends Controller
                 'invoice_layouts',
                 'featured_products',
                 'customer_due',
+                'editing_transaction_due',
                 'users',
                 'only_payment'
             ));

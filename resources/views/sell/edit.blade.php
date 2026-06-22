@@ -104,6 +104,8 @@
 								<button type="button" class="btn btn-default bg-white btn-flat add_new_customer" data-name=""><i class="fa fa-plus-circle text-primary fa-lg"></i></button>
 							</span>
 						</div>
+						<input type="hidden" id="editing_transaction_due" value="{{ $editing_transaction_due ?? 0 }}">
+						<input type="hidden" id="editing_transaction_contact_id" value="{{ $transaction->contact_id }}">
 						<small class="text-danger @if(empty($customer_due)) hide @endif contact_due_text"><strong>@lang('account.customer_due'):</strong> <span>{{$customer_due ?? ''}}</span></small>
 					</div>
 					<small>
