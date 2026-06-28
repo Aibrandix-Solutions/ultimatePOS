@@ -7,13 +7,13 @@
         $url = $update_action;
         $customer_groups = [];
         $opening_balance = 0;
-        $lead_users = $contact->leadUsers->pluck('id');
+        $lead_users = optional($contact->leadUsers)->pluck('id') ?? collect();
     } else {
       $url = action([\App\Http\Controllers\ContactController::class, 'update'], [$contact->id]);
       $sources = [];
       $life_stages = [];
       $lead_users = [];
-      $assigned_to_users = $contact->userHavingAccess->pluck('id');
+      $assigned_to_users = optional($contact->userHavingAccess)->pluck('id') ?? collect();
     }
   @endphp
 
@@ -41,7 +41,7 @@
         </div>
         <div class="col-md-4 mt-15">
             <label class="radio-inline">
-                <input type="radio" name="contact_type_radio" @if($contact->contact_type == 'individual') checked @endif id="inlineRadio1" value="individual">
+                <input type="radio" name="contact_type_radio" @if($contact->contact_type == 'individual' || empty($contact->contact_type)) checked @endif id="inlineRadio1" value="individual">
                 @lang('lang_v1.individual')
             </label>
             <label class="radio-inline">
@@ -89,25 +89,25 @@
           </div>
         </div>
         <div class="clearfix"></div>
-        <div class="col-md-3 individual"  @if($contact->contact_type == 'business' || empty($contact->contact_type)) style="display: none;"  @endif>
+        <div class="col-md-3 individual"  @if($contact->contact_type == 'business') style="display: none;"  @endif>
                 <div class="form-group">
                     {!! Form::label('prefix', __( 'business.prefix' ) . ':') !!}
                     {!! Form::text('prefix', $contact->prefix, ['class' => 'form-control', 'placeholder' => __( 'business.prefix_placeholder' ) ]) !!}
                 </div>
             </div>
-            <div class="col-md-3 individual" @if($contact->contact_type == 'business' || empty($contact->contact_type)) style="display: none;"  @endif>
+            <div class="col-md-3 individual" @if($contact->contact_type == 'business') style="display: none;"  @endif>
                 <div class="form-group">
                     {!! Form::label('first_name', __( 'business.first_name' ) . ':*') !!}
                     {!! Form::text('first_name', $contact->first_name, ['class' => 'form-control', 'required', 'placeholder' => __( 'business.first_name' ) ]) !!}
                 </div>
             </div>
-            <div class="col-md-3 individual" @if($contact->contact_type == 'business' || empty($contact->contact_type)) style="display: none;"  @endif>
+            <div class="col-md-3 individual" @if($contact->contact_type == 'business') style="display: none;"  @endif>
                 <div class="form-group">
                     {!! Form::label('middle_name', __( 'lang_v1.middle_name' ) . ':') !!}
                     {!! Form::text('middle_name', $contact->middle_name, ['class' => 'form-control', 'placeholder' => __( 'lang_v1.middle_name' ) ]) !!}
                 </div>
             </div>
-            <div class="col-md-3 individual" @if($contact->contact_type == 'business' || empty($contact->contact_type)) style="display: none;"  @endif>
+            <div class="col-md-3 individual" @if($contact->contact_type == 'business') style="display: none;"  @endif>
                 <div class="form-group">
                     {!! Form::label('last_name', __( 'business.last_name' ) . ':') !!}
                     {!! Form::text('last_name', $contact->last_name, ['class' => 'form-control', 'placeholder' => __( 'business.last_name' ) ]) !!}

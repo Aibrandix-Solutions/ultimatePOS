@@ -1087,6 +1087,19 @@ class SellPosController extends Controller
     }
 
     /**
+     * Suspended POS sales may be edited/deleted without sell.update / sell.delete.
+     */
+    private function isSuspendedPosSale($transaction_id, $business_id)
+    {
+        return Transaction::where('business_id', $business_id)
+            ->where('type', 'sell')
+            ->where('id', $transaction_id)
+            ->where('is_suspend', 1)
+            ->where('status', 'draft')
+            ->exists();
+    }
+
+    /**
      * Show the form for editing the specified resource.
      *
      * @param  int  $id
@@ -1095,9 +1108,11 @@ class SellPosController extends Controller
     public function edit($id)
     {
         $business_id = request()->session()->get('user.business_id');
+        $is_suspended_pos_sale = $this->isSuspendedPosSale($id, $business_id);
 
         if (
-            !(auth()->user()->can('superadmin') || auth()->user()->can('sell.update')
+            !$is_suspended_pos_sale
+            && !(auth()->user()->can('superadmin') || auth()->user()->can('sell.update')
                 || auth()->user()->can('edit_pos_payment')
                 || ($this->moduleUtil->hasThePermissionInSubscription($business_id, 'repair_module') &&
                     auth()->user()->can('repair.update')))
@@ -1468,8 +1483,12 @@ class SellPosController extends Controller
      */
     public function update(Request $request, $id)
     {
+        $business_id = $request->session()->get('user.business_id');
+        $is_suspended_pos_sale = $this->isSuspendedPosSale($id, $business_id);
+
         if (
-            !auth()->user()->can('sell.update') && !auth()->user()->can('direct_sell.access') &&
+            !$is_suspended_pos_sale
+            && !auth()->user()->can('sell.update') && !auth()->user()->can('direct_sell.access') &&
             !auth()->user()->can('so.update') && !auth()->user()->can('edit_pos_payment')
         ) {
             abort(403, 'Unauthorized action.');
@@ -1653,7 +1672,8 @@ class SellPosController extends Controller
                     $input['additional_expense_key_4'] = $request->input('additional_expense_key_4');
                     $input['additional_expense_value_4'] = $request->input('additional_expense_value_4');
                 }
-                $only_payment = !$is_direct_sale && !auth()->user()->can('sell.update') && auth()->user()->can('edit_pos_payment');
+                $is_suspended_sale = $transaction_before->is_suspend == 1 && $transaction_before->status == 'draft';
+                $only_payment = !$is_direct_sale && !$is_suspended_sale && !auth()->user()->can('sell.update') && auth()->user()->can('edit_pos_payment');
 
                 //if edit pos not allowed and only edit payment allowed
                 if ($only_payment) {
@@ -1989,7 +2009,13 @@ class SellPosController extends Controller
      */
     public function destroy($id)
     {
-        if (!auth()->user()->can('sell.delete') && !auth()->user()->can('direct_sell.delete') && !auth()->user()->can('so.delete')) {
+        $business_id = request()->session()->get('user.business_id');
+        $is_suspended_pos_sale = $this->isSuspendedPosSale($id, $business_id);
+
+        if (
+            !$is_suspended_pos_sale
+            && !auth()->user()->can('sell.delete') && !auth()->user()->can('direct_sell.delete') && !auth()->user()->can('so.delete')
+        ) {
             abort(403, 'Unauthorized action.');
         }
 
@@ -2127,39 +2153,8 @@ class SellPosController extends Controller
 
         $product->batch_id = $batch_id;
 
-        // Batch-pricing: prefer stable product_batches row (POS batch picker), else a specific purchase line.
-        if (request()->session()->get('business.enable_batch_pricing')) {
-            if (!empty($batch_id) && Schema::hasTable('product_batches')) {
-                $pb = ProductBatch::find($batch_id);
-                if (!empty($pb) && (int) $pb->variation_id === (int) $variation_id) {
-                    if ($pb->sell_price_inc_tax !== null) {
-                        $product->sell_price_inc_tax = (float) $pb->sell_price_inc_tax;
-                    }
-                    if ($pb->sell_price_exc_tax !== null) {
-                        $product->default_sell_price = (float) $pb->sell_price_exc_tax;
-                    } elseif ($pb->sell_price_inc_tax !== null && !empty($product->item_tax)) {
-                        $product->default_sell_price = max(0, (float) $pb->sell_price_inc_tax - (float) $product->item_tax);
-                    }
-                }
-            } elseif (!empty($purchase_line_id)) {
-                $batch_line = PurchaseLine::select([
-                    'batch_selling_price',
-                    'batch_selling_price_inc_tax',
-                    'variation_id',
-                ])->find($purchase_line_id);
-
-                if (!empty($batch_line) && (int) $batch_line->variation_id === (int) $variation_id) {
-                    if ($batch_line->batch_selling_price_inc_tax !== null) {
-                        $product->sell_price_inc_tax = (float) $batch_line->batch_selling_price_inc_tax;
-                    }
-                    if ($batch_line->batch_selling_price !== null) {
-                        $product->default_sell_price = (float) $batch_line->batch_selling_price;
-                    } elseif ($batch_line->batch_selling_price_inc_tax !== null && !empty($product->item_tax)) {
-                        $product->default_sell_price = max(0, (float) $batch_line->batch_selling_price_inc_tax - (float) $product->item_tax);
-                    }
-                }
-            }
-        }
+        // POS sell price follows the product list (variation default). Batch / purchase
+        // line records are used for stock tracking only, not to override list price.
 
         $price_group = request()->input('price_group');
         if (!empty($price_group)) {
@@ -2396,16 +2391,13 @@ class SellPosController extends Controller
                 ->get()
                 ->map(function ($pb) use ($variation_sell_inc_tax) {
                     $remaining = ProductBatch::remainingStock((int) $pb->id);
-                    $display_inc = $pb->sell_price_inc_tax !== null
-                        ? (float) $pb->sell_price_inc_tax
-                        : $variation_sell_inc_tax;
 
                     return [
                         'id' => $pb->id,
                         'batch_number' => $pb->batch_label,
                         'batch_label' => $pb->batch_label,
-                        'batch_selling_price_inc_tax' => $pb->sell_price_inc_tax,
-                        'display_sell_price_inc_tax' => $display_inc,
+                        'batch_selling_price_inc_tax' => $variation_sell_inc_tax,
+                        'display_sell_price_inc_tax' => $variation_sell_inc_tax,
                         'remaining' => $remaining,
                         'lot_number' => null,
                         'transaction_date' => null,
@@ -2430,27 +2422,19 @@ class SellPosController extends Controller
                 ->value('remaining');
 
             if ($legacy_qty > 0) {
-                // Try to find the most recent selling price from these legacy lines
-                $legacy_price = (clone $legacy_stock_query)
-                    ->whereNotNull('purchase_lines.batch_selling_price_inc_tax')
-                    ->orderByDesc('purchase_lines.id')
-                    ->value('purchase_lines.batch_selling_price_inc_tax');
-
-                $final_legacy_price = $legacy_price ?? (($variation->min_sell_price_inc_tax > 0) ? $variation->min_sell_price_inc_tax : $variation_sell_inc_tax);
-
-                // Self-healing: ensure Batch 1 exists in product_batches with the recovered price
+                // Self-healing: ensure Batch 1 exists for legacy stock; price follows product list.
                 $b1 = ProductBatch::firstOrCreateBatchOne(
                     (int)$business_id,
                     (int)$variation->product_id,
                     (int)$variation_id,
                     (int)$location_id,
-                    $final_legacy_price,
+                    $variation_sell_inc_tax,
                     $variation->profit_percent
                 );
 
-                // Explicitly sync prices if they were found in legacy stock to override defaults
-                if (!empty($legacy_price)) {
-                    $b1->sell_price_inc_tax = $legacy_price;
+                if ($b1->sell_price_inc_tax != $variation_sell_inc_tax) {
+                    $b1->sell_price_inc_tax = $variation_sell_inc_tax;
+                    $b1->sell_price_exc_tax = $variation->default_sell_price ?? null;
                     $b1->save();
                 }
 
@@ -2458,8 +2442,8 @@ class SellPosController extends Controller
                     'id' => $b1->id,
                     'batch_number' => 'Batch 1',
                     'batch_label' => 'Batch 1',
-                    'batch_selling_price_inc_tax' => $legacy_price,
-                    'display_sell_price_inc_tax' => $final_legacy_price,
+                    'batch_selling_price_inc_tax' => $variation_sell_inc_tax,
+                    'display_sell_price_inc_tax' => $variation_sell_inc_tax,
                     'remaining' => (float) $legacy_qty,
                     'lot_number' => null,
                     'transaction_date' => null,
@@ -2477,8 +2461,8 @@ class SellPosController extends Controller
                         'id' => $b->id,
                         'batch_number' => $b->batch_number,
                         'batch_label' => $b->batch_number,
-                        'batch_selling_price_inc_tax' => $b->batch_selling_price_inc_tax,
-                        'display_sell_price_inc_tax' => $b->batch_selling_price_inc_tax !== null ? (float) $b->batch_selling_price_inc_tax : $variation_sell_inc_tax,
+                        'batch_selling_price_inc_tax' => $variation_sell_inc_tax,
+                        'display_sell_price_inc_tax' => $variation_sell_inc_tax,
                         'remaining' => $remaining,
                         'lot_number' => $b->lot_number,
                         'transaction_date' => $b->transaction_date,

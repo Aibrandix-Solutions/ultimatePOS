@@ -779,46 +779,80 @@ class ContactController extends Controller
         }
 
         if (request()->ajax()) {
-            $business_id = request()->session()->get('user.business_id');
-            $contact = Contact::where('business_id', $business_id)->find($id);
+            try {
+                $business_id = request()->session()->get('user.business_id');
+                $contact = Contact::where('business_id', $business_id)->find($id);
 
-            if (!$this->moduleUtil->isSubscribed($business_id)) {
-                return $this->moduleUtil->expiredResponse();
-            }
-
-            $types = [];
-            if (auth()->user()->can('supplier.create')) {
-                $types['supplier'] = __('report.supplier');
-            }
-            if (auth()->user()->can('customer.create')) {
-                $types['customer'] = __('report.customer');
-            }
-            if (auth()->user()->can('supplier.create') && auth()->user()->can('customer.create')) {
-                $types['both'] = __('lang_v1.both_supplier_customer');
-            }
-
-            $customer_groups = CustomerGroup::forDropdown($business_id);
-
-            $ob_transaction = Transaction::where('contact_id', $id)
-                ->where('type', 'opening_balance')
-                ->first();
-            $opening_balance = !empty($ob_transaction->final_total) ? $ob_transaction->final_total : 0;
-
-            //Deduct paid amount from opening balance.
-            if (!empty($opening_balance)) {
-                $opening_balance_paid = $this->transactionUtil->getTotalAmountPaid($ob_transaction->id);
-                if (!empty($opening_balance_paid)) {
-                    $opening_balance = $opening_balance - $opening_balance_paid;
+                if (empty($contact)) {
+                    abort(404);
                 }
 
-                $opening_balance = $this->commonUtil->num_f($opening_balance);
+                if (!$this->moduleUtil->isSubscribed($business_id)) {
+                    return $this->moduleUtil->expiredResponse();
+                }
+
+                $types = [];
+                if (auth()->user()->can('supplier.create')) {
+                    $types['supplier'] = __('report.supplier');
+                }
+                if (auth()->user()->can('customer.create')) {
+                    $types['customer'] = __('report.customer');
+                }
+                if (auth()->user()->can('supplier.create') && auth()->user()->can('customer.create')) {
+                    $types['both'] = __('lang_v1.both_supplier_customer');
+                }
+
+                $customer_groups = CustomerGroup::forDropdown($business_id);
+
+                $ob_transaction = Transaction::where('contact_id', $id)
+                    ->where('type', 'opening_balance')
+                    ->first();
+
+                $opening_balance = 0;
+                if (!empty($ob_transaction) && !empty($ob_transaction->final_total)) {
+                    $opening_balance = $ob_transaction->final_total;
+
+                    // Direct query avoids dependency on TransactionUtil method versions across environments
+                    $opening_balance_paid = TransactionPayment::where('transaction_id', $ob_transaction->id)
+                        ->where(function ($q) {
+                            $q->where('method', '!=', 'cheque')
+                              ->orWhere('cheque_status', 'cleared');
+                        })
+                        ->sum('amount');
+
+                    if (!empty($opening_balance_paid)) {
+                        $opening_balance = $opening_balance - $opening_balance_paid;
+                    }
+
+                    $opening_balance = $this->commonUtil->num_f($opening_balance);
+                }
+
+                //Added check because $users is of no use if enable_contact_assign if false
+                $users = config('constants.enable_contact_assign') ? User::forDropdown($business_id, false, false, false, true) : [];
+
+                // Render the view eagerly so any Blade exception is caught by this try-catch
+                $html = view('contact.edit', compact('contact', 'types', 'customer_groups', 'opening_balance', 'users'))->render();
+
+                return response($html, 200)
+                    ->header('Content-Type', 'text/html')
+                    ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+                    ->header('Pragma', 'no-cache')
+                    ->header('Expires', '0');
+            } catch (\Exception $e) {
+                \Log::error('ContactController@edit failed for contact ' . $id . ': ' . $e->getMessage(), [
+                    'contact_id' => $id,
+                    'file'       => $e->getFile(),
+                    'line'       => $e->getLine(),
+                    'trace'      => $e->getTraceAsString(),
+                ]);
+
+                return response()->json([
+                    'success' => false,
+                    'error'   => $e->getMessage(),
+                    'file'    => basename($e->getFile()),
+                    'line'    => $e->getLine(),
+                ], 500);
             }
-
-            //Added check because $users is of no use if enable_contact_assign if false
-            $users = config('constants.enable_contact_assign') ? User::forDropdown($business_id, false, false, false, true) : [];
-
-            return view('contact.edit')
-                ->with(compact('contact', 'types', 'customer_groups', 'opening_balance', 'users'));
         }
     }
 

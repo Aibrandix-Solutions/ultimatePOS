@@ -64,23 +64,34 @@ $(document).ready(function() {
 $(document).on('click', 'button#add_opening_stock_btn', function(e) {
     e.preventDefault();
     var btn = $(this);
-    var data = $('form#add_opening_stock_form').serialize();
+    var $form = $('form#add_opening_stock_form');
+    var $modal = $('#opening_stock_modal');
 
     $.ajax({
         method: 'POST',
-        url: $('form#add_opening_stock_form').attr('action'),
+        url: $form.attr('action'),
         dataType: 'json',
-        data: data,
+        data: $form.serialize(),
         beforeSend: function(xhr) {
             __disable_submit_button(btn);
         },
         success: function(result) {
-            if (result.success == true) {
-                $('#opening_stock_modal').modal('hide');
+            if (result.success == 1 || result.success === true) {
+                $modal.modal('hide');
+                $modal.empty();
                 toastr.success(result.msg);
+
+                if (typeof product_table !== 'undefined') {
+                    product_table.ajax.reload();
+                }
             } else {
-                toastr.error(result.msg);
+                toastr.error(result.msg || (LANG && LANG.something_went_wrong ? LANG.something_went_wrong : 'Something went wrong.'));
+                btn.prop('disabled', false).removeAttr('disable');
             }
+        },
+        error: function() {
+            toastr.error(LANG && LANG.something_went_wrong ? LANG.something_went_wrong : 'Something went wrong.');
+            btn.prop('disabled', false).removeAttr('disable');
         },
     });
     return false;

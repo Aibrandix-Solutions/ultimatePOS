@@ -49,7 +49,17 @@
 
 	$purchase_line_id = $var['purchase_line_id'];
 
-	$qty = $var['quantity'];
+	// For the first existing row per variation+location, display the TOTAL
+	// qty_available so the user sets the total stock (not just the opening-stock slice).
+	// A hidden original_qty field carries the old value so save() can compute the
+	// correct absolute delta: new_qty_available = user_input.
+	$original_qty = null;
+	if ($sub_key === 0 && !empty($purchase_line_id) && isset($qty_available_map[$key][$variation->id])) {
+		$qty = $qty_available_map[$key][$variation->id];
+		$original_qty = $qty;
+	} else {
+		$qty = $var['quantity'];
+	}
 
 	$purcahse_price = $var['purchase_price'];
 
@@ -67,6 +77,9 @@
 
 		@if(!empty($purchase_line_id))
 			{!! Form::hidden('stocks[' . $key . '][' . $variation->id . '][' . $sub_key . '][purchase_line_id]', $purchase_line_id) !!}
+		@endif
+		@if(!is_null($original_qty))
+			{!! Form::hidden('stocks[' . $key . '][' . $variation->id . '][' . $sub_key . '][original_qty]', $original_qty) !!}
 		@endif
 	</td>
 	<td>

@@ -11,6 +11,16 @@
 <!-- Main content -->
 <section class="content no-print">
 
+	@if(!empty($installment_plan))
+		<div class="alert alert-info">
+			<i class="fa fa-info-circle"></i>
+			@lang('lang_v1.installment_plan_adjust_after_return')
+			@if(auth()->user()->can('sell.payments'))
+				<a href="{{ action([\App\Http\Controllers\InstallmentPlanController::class, 'show'], [$installment_plan->id]) }}" class="alert-link">@lang('lang_v1.update_installment_plan')</a>
+			@endif
+		</div>
+	@endif
+
 	{!! Form::hidden('location_id', optional($sell->location)->id, ['id' => 'location_id', 'data-receipt_printer_type' => optional($sell->location)->receipt_printer_type ]) !!}
 
 	{!! Form::open(['url' => action([\App\Http\Controllers\SellReturnController::class, 'store']), 'method' => 'post', 'id' => 'sell_return_form' ]) !!}

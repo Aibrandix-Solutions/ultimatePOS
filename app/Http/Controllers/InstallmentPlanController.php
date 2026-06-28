@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\InstallmentPlan;
 use App\Transaction;
+use App\Utils\InstallmentUtil;
 use App\Utils\TransactionUtil;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
@@ -13,9 +14,12 @@ class InstallmentPlanController extends Controller
 {
     protected $transactionUtil;
 
-    public function __construct(TransactionUtil $transactionUtil)
+    protected $installmentUtil;
+
+    public function __construct(TransactionUtil $transactionUtil, InstallmentUtil $installmentUtil)
     {
         $this->transactionUtil = $transactionUtil;
+        $this->installmentUtil = $installmentUtil;
     }
 
     public function index(Request $request)
@@ -139,8 +143,87 @@ class InstallmentPlanController extends Controller
 
         $transaction = $plan->transaction;
         $paid_amount = ! empty($transaction) ? $this->transactionUtil->getTotalPaid($transaction->id) : 0;
-        $balance_due = ! empty($transaction) ? ((float) $transaction->final_total - (float) $paid_amount) : 0;
+        $sell_return_total = ! empty($transaction) ? $this->installmentUtil->getSellReturnTotal($transaction->id) : 0;
+        $effective_total = ! empty($transaction) ? $this->installmentUtil->getEffectiveSaleTotal($transaction) : 0;
+        $balance_due = ! empty($transaction) ? ((float) $effective_total - (float) $paid_amount) : 0;
+        $remaining_installment_balance = $this->installmentUtil->getRemainingInstallmentBalance($plan, $transaction);
+        $pending_lines_total = $this->installmentUtil->getPendingLinesTotal($plan);
+        $needs_adjustment = $this->installmentUtil->planNeedsAdjustment($plan);
+        $suggested_amounts = $this->installmentUtil->getSuggestedPendingAmounts($plan);
+        $can_edit = auth()->user()->can('sell.payments');
+        $show_adjust_alert = $needs_adjustment || (int) request()->input('adjust', 0) === 1;
+        $customer_credit = $this->installmentUtil->getCustomerCreditAfterReturns($plan, $transaction);
 
-        return view('installments.show', compact('plan', 'transaction', 'paid_amount', 'balance_due'));
+        return view('installments.show', compact(
+            'plan',
+            'transaction',
+            'paid_amount',
+            'balance_due',
+            'sell_return_total',
+            'effective_total',
+            'remaining_installment_balance',
+            'pending_lines_total',
+            'needs_adjustment',
+            'suggested_amounts',
+            'can_edit',
+            'show_adjust_alert',
+            'customer_credit'
+        ));
+    }
+
+    public function updateLines(Request $request, $id)
+    {
+        if (! auth()->user()->can('sell.payments')) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $business_id = $request->session()->get('user.business_id');
+        $plan = InstallmentPlan::where('business_id', $business_id)
+            ->with(['lines' => function ($q) {
+                $q->orderBy('sequence');
+            }])
+            ->findOrFail($id);
+
+        if ($plan->status !== 'active') {
+            return redirect()
+                ->action([\App\Http\Controllers\InstallmentPlanController::class, 'show'], [$plan->id])
+                ->with('status', ['success' => 0, 'msg' => __('lang_v1.installment_plan_not_active')]);
+        }
+
+        $pending_count = $plan->lines->where('status', '!=', 'paid')->count();
+        if ($pending_count === 0) {
+            return redirect()
+                ->action([\App\Http\Controllers\InstallmentPlanController::class, 'show'], [$plan->id])
+                ->with('status', ['success' => 0, 'msg' => __('lang_v1.installment_no_pending_lines')]);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            $this->installmentUtil->updatePendingLineAmounts(
+                $plan,
+                (array) $request->input('line_amounts', [])
+            );
+
+            $plan = $plan->fresh();
+            $remaining = $this->installmentUtil->getRemainingInstallmentBalance($plan);
+            if ($remaining < 0.0001 && $plan->status === 'active') {
+                $plan->status = 'closed';
+                $plan->closed_at = now();
+                $plan->save();
+            }
+
+            DB::commit();
+
+            return redirect()
+                ->action([\App\Http\Controllers\InstallmentPlanController::class, 'show'], [$plan->id])
+                ->with('status', ['success' => 1, 'msg' => __('lang_v1.installment_plan_updated_success')]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return redirect()
+                ->action([\App\Http\Controllers\InstallmentPlanController::class, 'show'], [$plan->id])
+                ->with('status', ['success' => 0, 'msg' => $e->getMessage()]);
+        }
     }
 }

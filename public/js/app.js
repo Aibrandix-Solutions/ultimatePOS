@@ -552,75 +552,89 @@ $(document).ready(function () {
         contact_table.ajax.reload();
     });
 
-    //On display of add contact modal
+    //On display of add contact modal (scoped to modal; namespaced handlers avoid stacking on repeat opens)
     $('.contact_modal').on('shown.bs.modal', function (e) {
-        $('input[type=radio][name="contact_type_radio"]').on('change', function () {
+        var $modal = $(this);
+
+        $modal.find('input[type=radio][name="contact_type_radio"]').off('change.contactModal').on('change.contactModal', function () {
             if (this.value == 'individual') {
-                $('div.individual').show();
-                $('div.business').hide();
+                $modal.find('div.individual').show();
+                $modal.find('div.business').hide();
             } else if (this.value == 'business') {
-                $('div.individual').hide();
-                $('div.business').show();
-            }
-        });
-        if ($('#is_customer_export').is(':checked')) {
-            $('div.export_div').show();
-        }
-        $('#is_customer_export').on('change', function () {
-            if ($(this).is(':checked')) {
-                $('div.export_div').show();
-            } else {
-                $('div.export_div').hide();
+                $modal.find('div.individual').hide();
+                $modal.find('div.business').show();
             }
         });
 
-        $('.more_btn').click(function () {
+        if ($modal.find('#is_customer_export').is(':checked')) {
+            $modal.find('div.export_div').show();
+        }
+        $modal.find('#is_customer_export').off('change.contactModal').on('change.contactModal', function () {
+            if ($(this).is(':checked')) {
+                $modal.find('div.export_div').show();
+            } else {
+                $modal.find('div.export_div').hide();
+            }
+        });
+
+        $modal.find('.more_btn').off('click.contactModal').on('click.contactModal', function () {
             $($(this).data('target')).toggleClass('hide');
         });
-        $('div.lead_additional_div').hide();
+        $modal.find('div.lead_additional_div').hide();
 
-        if ($('select#contact_type').val() == 'customer') {
-            $('div.supplier_fields').hide();
-            $('div.customer_fields').show();
-        } else if ($('select#contact_type').val() == 'supplier') {
-            $('div.supplier_fields').show();
-            $('div.customer_fields').hide();
-        } else if ($('select#contact_type').val() == 'lead') {
-            $('div.supplier_fields').hide();
-            $('div.customer_fields').hide();
-            $('div.opening_balance').hide();
-            $('div.pay_term').hide();
-            $('div.lead_additional_div').show();
-            $('div.shipping_addr_div').hide();
+        var contactType = $modal.find('select#contact_type').val();
+        if (contactType == 'customer') {
+            $modal.find('div.supplier_fields').hide();
+            $modal.find('div.customer_fields').show();
+        } else if (contactType == 'supplier') {
+            $modal.find('div.supplier_fields').show();
+            $modal.find('div.customer_fields').hide();
+        } else if (contactType == 'lead') {
+            $modal.find('div.supplier_fields').hide();
+            $modal.find('div.customer_fields').hide();
+            $modal.find('div.opening_balance').hide();
+            $modal.find('div.pay_term').hide();
+            $modal.find('div.lead_additional_div').show();
+            $modal.find('div.shipping_addr_div').hide();
         }
 
-        $('select#contact_type').change(function () {
+        $modal.find('select#contact_type').off('change.contactModal').on('change.contactModal', function () {
             var t = $(this).val();
 
             if (t == 'supplier') {
-                $('div.supplier_fields').fadeIn();
-                $('div.customer_fields').fadeOut();
+                $modal.find('div.supplier_fields').fadeIn();
+                $modal.find('div.customer_fields').fadeOut();
             } else if (t == 'both') {
-                $('div.supplier_fields').fadeIn();
-                $('div.customer_fields').fadeIn();
+                $modal.find('div.supplier_fields').fadeIn();
+                $modal.find('div.customer_fields').fadeIn();
             } else if (t == 'customer') {
-                $('div.customer_fields').fadeIn();
-                $('div.supplier_fields').fadeOut();
+                $modal.find('div.customer_fields').fadeIn();
+                $modal.find('div.supplier_fields').fadeOut();
             } else if (t == 'lead') {
-                $('div.customer_fields').fadeOut();
-                $('div.supplier_fields').fadeOut();
-                $('div.opening_balance').fadeOut();
-                $('div.pay_term').fadeOut();
-                $('div.lead_additional_div').fadeIn();
-                $('div.shipping_addr_div').hide();
+                $modal.find('div.customer_fields').fadeOut();
+                $modal.find('div.supplier_fields').fadeOut();
+                $modal.find('div.opening_balance').fadeOut();
+                $modal.find('div.pay_term').fadeOut();
+                $modal.find('div.lead_additional_div').fadeIn();
+                $modal.find('div.shipping_addr_div').hide();
             }
         });
 
-        $(".contact_modal").find('.select2').each(function () {
-            $(this).select2();
+        $modal.find('.select2').each(function () {
+            var $el = $(this);
+            if ($el.hasClass('select2-hidden-accessible')) {
+                $el.select2('destroy');
+            }
+            $el.select2();
         });
 
-        $('form#contact_add_form, form#contact_edit_form')
+        var $form = $modal.find('form#contact_add_form, form#contact_edit_form');
+        $form.off('submit.contactValidate');
+        if ($form.data('validator')) {
+            $form.removeData('validator');
+        }
+
+        $form
             .submit(function (e) {
                 e.preventDefault();
             })
@@ -686,7 +700,9 @@ $(document).ready(function () {
                 },
             });
 
-        $('#contact_add_form').trigger('contactFormvalidationAdded');
+        $modal.find('#contact_add_form').trigger('contactFormvalidationAdded');
+
+        $modal.find('input[type=radio][name="contact_type_radio"]:checked').trigger('change.contactModal');
     });
 
     function checkMobileAndSubmit(form) {
@@ -725,11 +741,228 @@ $(document).ready(function () {
         });
     }
 
+    function cleanupContactModalBackdrop() {
+        $('body').removeClass('modal-open').css('padding-right', '');
+        $('.modal-backdrop').remove();
+    }
+
+    function resetContactModalState($modal) {
+        $modal.off('hidden.bs.modal.contact-edit');
+        $modal.modal('hide');
+        $modal.removeClass('in show');
+        $modal.attr('aria-hidden', 'true');
+        $modal.css('display', 'none');
+        $modal.removeData('bs.modal');
+        cleanupContactModalBackdrop();
+    }
+
+    function showContactEditError(msg) {
+        if (typeof toastr !== 'undefined') {
+            toastr.error(msg);
+        } else {
+            alert(msg);
+        }
+    }
+
+    /**
+     * Extract the numeric contact ID from a /contacts/{id}/edit URL.
+     */
+    function extractContactIdFromUrl(url) {
+        if (!url) return null;
+        var match = url.match(/contacts\/(\d+)/i);
+        if (match) {
+            return match[1];
+        }
+        // Fallback robust extraction
+        var parts = url.split('/');
+        for (var i = 0; i < parts.length; i++) {
+            if (parts[i].toLowerCase() === 'contacts' && i + 1 < parts.length) {
+                var nextPart = parts[i + 1].split('?')[0];
+                if (/^\d+$/.test(nextPart)) {
+                    return nextPart;
+                }
+            }
+        }
+        return null;
+    }
+
+    function loadContactEditForm($modal, editUrl, requestToken, $btn, expectedContactId, retryCount) {
+        retryCount = retryCount || 0;
+        resetContactModalState($modal);
+        $modal.empty();
+
+        $modal.data(
+            'contactEditXhr',
+            $.ajax({
+                url: editUrl,
+                type: 'GET',
+                dataType: 'html',
+                cache: false,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    'Pragma': 'no-cache',
+                },
+                success: function (result) {
+                    if ($modal.data('editRequestToken') !== requestToken) {
+                        return;
+                    }
+
+                    if (!result || result.indexOf('modal-dialog') === -1) {
+                        showContactEditError(
+                            LANG && LANG.something_went_wrong
+                                ? LANG.something_went_wrong
+                                : 'Something went wrong.'
+                        );
+                        resetContactModalState($modal);
+                        return;
+                    }
+
+                    // ----- CONTACT ID VERIFICATION -----
+                    // Parse the returned HTML and verify the hidden_id matches the
+                    // contact we actually clicked. This catches any stale/cached
+                    // response that belongs to a different contact.
+                    if (expectedContactId) {
+                        var $tempHtml = $('<div>').html(result);
+                        var loadedId = $tempHtml.find('#hidden_id').val();
+
+                        if (loadedId && String(loadedId) !== String(expectedContactId)) {
+                            console.warn(
+                                '[ContactEdit] ID mismatch – expected ' +
+                                expectedContactId + ' but got ' + loadedId +
+                                '. Retry #' + (retryCount + 1)
+                            );
+
+                            // Retry once with a fresh cache-buster
+                            if (retryCount < 1) {
+                                var freshUrl = editUrl.replace(
+                                    /([?&])_=[^&]+/,
+                                    '$1_=' + Date.now() + '' + Math.random().toString(36).substr(2, 5)
+                                );
+                                loadContactEditForm(
+                                    $modal, freshUrl, requestToken, $btn,
+                                    expectedContactId, retryCount + 1
+                                );
+                                return;
+                            }
+
+                            // Even after retry the ID still doesn't match – show error
+                            showContactEditError(
+                                LANG && LANG.something_went_wrong
+                                    ? LANG.something_went_wrong
+                                    : 'Failed to load the correct contact details. Please try again.'
+                            );
+                            resetContactModalState($modal);
+                            $modal.empty();
+                            return;
+                        }
+                    }
+                    // ----- END VERIFICATION -----
+
+                    resetContactModalState($modal);
+                    $modal.html(result);
+
+                    // Allow DOM to settle before opening (prevents backdrop-without-modal on live)
+                    window.setTimeout(function () {
+                        if ($modal.data('editRequestToken') !== requestToken) {
+                            return;
+                        }
+
+                        if (!$modal.find('.modal-dialog').length) {
+                            resetContactModalState($modal);
+                            $modal.empty();
+                            return;
+                        }
+
+                        // Final verification right before showing the modal
+                        var finalId = $modal.find('#hidden_id').val();
+                        if (expectedContactId && finalId && String(finalId) !== String(expectedContactId)) {
+                            console.warn('[ContactEdit] Final ID check failed – aborting modal show.');
+                            resetContactModalState($modal);
+                            $modal.empty();
+                            return;
+                        }
+
+                        $modal.modal('show');
+                    }, 50);
+                },
+                error: function (xhr, status) {
+                    if (status === 'abort' || $modal.data('editRequestToken') !== requestToken) {
+                        return;
+                    }
+
+                    var msg =
+                        LANG && LANG.something_went_wrong
+                            ? LANG.something_went_wrong
+                            : 'Something went wrong.';
+                    if (xhr && xhr.status) {
+                        msg += ' (HTTP ' + xhr.status + ')';
+                    }
+
+                    showContactEditError(msg);
+                    resetContactModalState($modal);
+                    $modal.empty();
+                },
+                complete: function () {
+                    if ($modal.data('editRequestToken') === requestToken) {
+                        $btn.data('contact-edit-loading', false);
+                        $modal.removeData('contactEditXhr');
+                    }
+                },
+            })
+        );
+    }
+
     $(document).on('click', '.edit_contact_button', function (e) {
         e.preventDefault();
-        $('div.contact_modal').load($(this).attr('href'), function () {
-            $(this).modal('show');
-        });
+        e.stopPropagation();
+
+        var $btn = $(this);
+        var href = $btn.attr('href');
+
+        if (!href || $btn.data('contact-edit-loading')) {
+            return;
+        }
+
+        // Close Actions dropdown so it does not fight with the modal
+        $btn.closest('.btn-group').removeClass('open');
+        $btn.closest('.dropdown').removeClass('open');
+
+        // Extract the expected contact ID from the URL so we can verify it
+        // against the data returned by the server.
+        var expectedContactId = extractContactIdFromUrl(href);
+
+        var editUrl =
+            href + (href.indexOf('?') === -1 ? '?' : '&') + '_=' + Date.now() + Math.random().toString(36).substr(2, 5);
+        var $modal = $('div.contact_modal').first();
+        var requestToken = Date.now();
+
+        $btn.data('contact-edit-loading', true);
+        $modal.data('editRequestToken', requestToken);
+
+        // Abort any in-flight edit request to prevent stale data
+        if ($modal.data('contactEditXhr')) {
+            $modal.data('contactEditXhr').abort();
+        }
+
+        // Fully clear any previous modal content before starting
+        resetContactModalState($modal);
+        $modal.empty();
+
+        loadContactEditForm($modal, editUrl, requestToken, $btn, expectedContactId, 0);
+    });
+
+    $(document).on('hidden.bs.modal', '.contact_modal', function () {
+        cleanupContactModalBackdrop();
+    });
+
+    // Recover from stuck backdrop when modal never opened (click dimmed area)
+    $(document).on('click', '.modal-backdrop', function () {
+        var $modal = $('div.contact_modal').first();
+        if (!$modal.hasClass('in') && !$modal.is(':visible')) {
+            resetContactModalState($modal);
+            $modal.empty();
+        }
     });
 
     $(document).on('click', '.delete_contact_button', function (e) {
@@ -753,7 +986,7 @@ $(document).ready(function () {
                     success: function (result) {
                         if (result.success == true) {
                             toastr.success(result.msg);
-                            contact_table.ajax.reload();
+                            contact_table.ajax.reload(null, false);
                         } else {
                             toastr.error(result.msg);
                         }
@@ -2800,7 +3033,7 @@ $(document).on('click', 'a.update_contact_status', function (e) {
         success: function (data) {
             if (data.success == true) {
                 toastr.success(data.msg);
-                contact_table.ajax.reload();
+                contact_table.ajax.reload(null, false);
             } else {
                 toastr.error(data.msg);
             }
@@ -2921,19 +3154,22 @@ function get_expense_sub_categories() {
 }
 
 function submitContactForm(form) {
-    var data = $(form).serialize();
+    var $form = $(form);
+    var data = $form.serialize();
     $.ajax({
         method: 'POST',
-        url: $(form).attr('action'),
+        url: $form.attr('action'),
         dataType: 'json',
         data: data,
         success: function (result) {
             if (result.success == true) {
-                $('div.contact_modal').modal('hide');
+                var $modal = $('div.contact_modal').first();
+                $modal.modal('hide');
+                $modal.empty();
                 toastr.success(result.msg);
 
                 if (typeof (contact_table) != 'undefined') {
-                    contact_table.ajax.reload();
+                    contact_table.ajax.reload(null, false);
                 }
 
                 var lead_view = urlSearchParam('lead_view');
@@ -2945,7 +3181,12 @@ function submitContactForm(form) {
 
             } else {
                 toastr.error(result.msg);
+                $form.find('button[type="submit"]').prop('disabled', false).removeAttr('disable');
             }
+        },
+        error: function () {
+            toastr.error(LANG && LANG.something_went_wrong ? LANG.something_went_wrong : 'Something went wrong.');
+            $form.find('button[type="submit"]').prop('disabled', false).removeAttr('disable');
         },
     });
 }
@@ -3002,7 +3243,7 @@ $(document).on('submit', 'form#pay_contact_due_form', function (e) {
                 toastr.success(result.msg);
 
                 if (typeof (contact_table) != 'undefined') {
-                    contact_table.ajax.reload();
+                    contact_table.ajax.reload(null, false);
                 }
 
                 if (typeof (get_contact_ledger) == 'function') {
