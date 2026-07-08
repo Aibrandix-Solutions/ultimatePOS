@@ -1,8 +1,8 @@
-name: Deploy UltimatePOS (homeneeds.genxpos360.com via SSH/rsync)
+name: Deploy UltimatePOS (olive-chough-751635.hostingersite.com via SSH/rsync)
 
 on:
   push:
-    branches: [ batch ]
+    branches: [ rijal ]
   workflow_dispatch:
 
 jobs:
@@ -11,11 +11,11 @@ jobs:
     timeout-minutes: 35
 
     env:
-      SSH_HOST: ${{ secrets.ULTIMPOS_SSH_HOST }}
-      SSH_PORT: ${{ secrets.ULTIMPOS_SSH_PORT }}
-      SSH_USER: ${{ secrets.ULTIMPOS_SSH_USER }}
-      REMOTE_BASE: domains/genxpos360.com/public_html/homeneeds
-      REMOTE_BACKEND: domains/genxpos360.com/public_html/homeneeds/backend
+      SSH_HOST: ${{ secrets.SR_SSH_HOST }}
+      SSH_PORT: ${{ secrets.SR_SSH_PORT }}
+      SSH_USER: ${{ secrets.SR_SSH_USER }}
+      REMOTE_BASE: domains/olive-chough-751635.hostingersite.com/public_html
+      REMOTE_BACKEND: domains/olive-chough-751635.hostingersite.com/public_html/backend
 
     steps:
       - name: Checkout
@@ -27,7 +27,7 @@ jobs:
           set -e
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          printf '%s' "${{ secrets.ULTIMPOS_SSH_KEY }}" | tr -d '\r' > ~/.ssh/id_deploy
+          printf '%s' "${{ secrets.SR_SSH_KEY }}" | tr -d '\r' > ~/.ssh/id_deploy
           chmod 600 ~/.ssh/id_deploy
 
           echo "Fingerprint (expected ED25519):"
@@ -164,13 +164,13 @@ jobs:
         run: |
           ssh $SSH_OPTS "$SSH_USER@$SSH_HOST" bash <<EOF
           set -e
-          # Target homeneeds.genxpos360.com Laravel app dir
+          # Target olive-chough-751635.hostingersite.com Laravel app dir
           cd ~/$REMOTE_BACKEND
 
-          # Safety: do not run artisan/migrations until the subdomain has its own .env
+          # Safety: do not run artisan/migrations until the site has its own .env
           if [ ! -f .env ]; then
             echo "Missing .env at \$(pwd)/.env"
-            echo "Create it with separate DB credentials and correct APP_URL=https://homeneeds.genxpos360.com"
+            echo "Create it with separate DB credentials and correct APP_URL=https://olive-chough-751635.hostingersite.com"
             exit 1
           fi
 
@@ -218,7 +218,7 @@ jobs:
           # Storage link
           php artisan storage:link || true
 
-          # Symlink for user-uploads within homeneeds docroot
+          # Symlink for user-uploads within docroot
           cd ~/$REMOTE_BASE
           rm -rf user-uploads 2>/dev/null || true
           ln -sf ./backend/public/user-uploads user-uploads
