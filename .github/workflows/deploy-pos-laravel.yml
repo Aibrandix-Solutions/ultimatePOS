@@ -160,7 +160,7 @@ jobs:
             "$SSH_USER@$SSH_HOST:$REMOTE_BASE/"
 
       # --- SSH: composer install & caches on the server ---
-      - name: SSH - composer install & caches
+      - name: SSH - composer update & caches
         run: |
           ssh $SSH_OPTS "$SSH_USER@$SSH_HOST" bash <<EOF
           set -e
@@ -179,14 +179,15 @@ jobs:
           mkdir -p bootstrap/cache
           chmod -R 755 storage bootstrap/cache || true
 
-          # Check PHP extensions
-          REQUIRED="mbstring intl bcmath curl dom fileinfo gd json openssl pdo pdo_mysql tokenizer xml sodium"
+          # Check PHP extensions (sodium is optional — sodium_compat polyfills it)
+          REQUIRED="mbstring intl bcmath curl dom fileinfo gd json openssl pdo pdo_mysql tokenizer xml"
           MISSING=""
           for ext in \$REQUIRED; do php -m | grep -qi "^\$ext\$" || MISSING="\$MISSING \$ext"; done
           if [ -n "\$MISSING" ]; then
             echo "Missing PHP extensions:\$MISSING"
             exit 1
           fi
+          php -m | grep -qi "^sodium\$" || echo "Note: sodium not loaded; using sodium_compat"
 
           # Install composer if missing
           if ! command -v composer >/dev/null 2>&1; then
