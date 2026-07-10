@@ -605,7 +605,7 @@ $(document).ready(function () {
     //Change in row discount type or discount amount
     $('table#pos_table tbody').on(
         'change',
-        'select.row_discount_type, input.row_discount_amount',
+        '.row_discount_type, input.row_discount_amount',
         function () {
             var tr = $(this).parents('tr');
 
@@ -4057,7 +4057,7 @@ function syncProductRowsToInputs() {
 
         // Compute discounted base and inc-tax for submission
         // Use the same discount consumption logic as row calc
-        var dtype = ($row.find('select.row_discount_type').length ? $row.find('select.row_discount_type').val() : ($row.data('modal-discount-type') || 'fixed'));
+        var dtype = ($row.find('.row_discount_type').length ? $row.find('.row_discount_type').val() : ($row.data('modal-discount-type') || 'fixed'));
         var damount = ($row.find('input.row_discount_amount').length ? __read_number($row.find('input.row_discount_amount')) : ($row.data('modal-discount-amount') || 0));
         var discounted_base = base_price;
         if (damount) {
@@ -4083,8 +4083,8 @@ function syncProductRowsToInputs() {
         var dtypeData = $row.data('modal-discount-type');
         var damountData = $row.data('modal-discount-amount');
         var rowIndex3 = $row.data('row_index');
-        if ($row.find('select.row_discount_type').length) {
-            if (typeof dtypeData !== 'undefined') { $row.find('select.row_discount_type').val(dtypeData); }
+        if ($row.find('.row_discount_type').length) {
+            if (typeof dtypeData !== 'undefined') { $row.find('.row_discount_type').val(dtypeData); }
         } else if (typeof rowIndex3 !== 'undefined' && typeof dtypeData !== 'undefined') {
             var nameDt = 'products[' + rowIndex3 + '][line_discount_type]';
             $('<input type="hidden" class="row_discount_type"/>')
@@ -4877,7 +4877,7 @@ function addModernStyling() {
             priceField = 'pos_unit_price_inc_tax';
         }
         // Discount: prefer inline controls; fallback to row data attrs
-        var currentDiscountType = ($productRow.find('select.row_discount_type').length ? $productRow.find('select.row_discount_type').val() : null);
+        var currentDiscountType = ($productRow.find('.row_discount_type').length ? $productRow.find('.row_discount_type').val() : null);
         if (!currentDiscountType) {
             currentDiscountType = $productRow.data('modal-discount-type') || 'fixed';
         }
@@ -5058,7 +5058,7 @@ function addModernStyling() {
         } else {
             pos_each_row($productRow);
         }
-        $productRow.find('select.row_discount_type').trigger('change');
+        $productRow.find('.row_discount_type').trigger('change');
         $productRow.find('input.row_discount_amount').trigger('change');
 
         // Ensure deterministic recompute regardless of listeners
