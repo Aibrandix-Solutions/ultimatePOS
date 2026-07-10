@@ -331,12 +331,6 @@ class SellController extends Controller
 
             if (!empty(request()->suspended)) {
                 $transaction_sub_type = request()->get('transaction_sub_type');
-                if (!empty($transaction_sub_type)) {
-                    $sells->where('transactions.sub_type', $transaction_sub_type);
-                } else {
-                    $sells->where('transactions.sub_type', null);
-                }
-
                 $with = ['sell_lines'];
 
                 if ($is_tables_enabled) {
@@ -347,9 +341,46 @@ class SellController extends Controller
                     $with[] = 'service_staff';
                 }
 
-                $sales = $sells->where('transactions.is_suspend', 1)
+                $query = Transaction::where('transactions.business_id', $business_id)
+                    ->where('transactions.type', 'sell')
+                    ->where('transactions.is_suspend', 1)
+                    ->leftJoin('contacts', 'transactions.contact_id', '=', 'contacts.id');
+
+                $permitted_locations = auth()->user()->permitted_locations();
+                if ($permitted_locations != 'all') {
+                    $query->whereIn('transactions.location_id', $permitted_locations);
+                }
+
+                if (!empty($transaction_sub_type)) {
+                    $query->where('transactions.sub_type', $transaction_sub_type);
+                } else {
+                    $query->whereNull('transactions.sub_type');
+                }
+
+                if (!auth()->user()->can('direct_sell.view')) {
+                    $query->where(function ($q) {
+                        if (auth()->user()->hasAnyPermission(['view_own_sell_only', 'access_own_shipping'])) {
+                            $q->where('transactions.created_by', request()->session()->get('user.id'));
+                        }
+
+                        if (auth()->user()->hasAnyPermission(['view_commission_agent_sell', 'access_commission_agent_shipping'])) {
+                            $q->orWhere('transactions.commission_agent', request()->session()->get('user.id'));
+                        }
+                    });
+                }
+
+                $sales = $query->select(
+                        'transactions.id',
+                        'transactions.invoice_no',
+                        'transactions.transaction_date',
+                        'transactions.final_total',
+                        'transactions.additional_notes',
+                        'transactions.is_suspend',
+                        'transactions.res_table_id',
+                        'transactions.res_waiter_id',
+                        'contacts.name as name'
+                    )
                     ->with($with)
-                    ->addSelect('transactions.is_suspend', 'transactions.res_table_id', 'transactions.res_waiter_id', 'transactions.additional_notes')
                     ->get();
 
                 return view('sale_pos.partials.suspended_sales_modal')->with(compact('sales', 'is_tables_enabled', 'is_service_staff_enabled', 'transaction_sub_type'));
