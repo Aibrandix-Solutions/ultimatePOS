@@ -13,7 +13,98 @@
 	@endif
 @endforeach
 
-<tr class="product_row modern-table-row" data-row_index="{{$row_count}}" @if(!empty($so_line)) data-so_id="{{$so_line->transaction_id}}" @endif style="background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); border-radius: 12px; margin: 6px 0; box-shadow: 0 4px 12px rgba(22,17,96,0.08), 0 2px 4px rgba(22,17,96,0.04); transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); border: 1px solid rgba(22,17,96,0.06); position: relative; overflow: hidden;">
+@php
+	$hide_tax = 'hide';
+	if(session()->get('business.enable_inline_tax') == 1){
+		$hide_tax = '';
+	}
+	
+	$tax_id = $product->tax_id;
+	$item_tax = !empty($product->item_tax) ? $product->item_tax : 0;
+	$unit_price_inc_tax = $product->sell_price_inc_tax;
+
+	if($hide_tax == 'hide'){
+		$tax_id = null;
+		$unit_price_inc_tax = $product->default_sell_price;
+	}
+
+	if(!empty($so_line) && $action !== 'edit') {
+		$tax_id = $so_line->tax_id;
+		$item_tax = $so_line->item_tax;
+		$unit_price_inc_tax = $so_line->unit_price_inc_tax;
+	}
+
+	$discount_type = !empty($product->line_discount_type) ? $product->line_discount_type : 'fixed';
+	$discount_amount = !empty($product->line_discount_amount) ? $product->line_discount_amount : 0;
+	
+	if(!empty($discount)) {
+		$discount_type = $discount->discount_type;
+		$discount_amount = $discount->discount_amount;
+	}
+
+	if(!empty($so_line) && $action !== 'edit') {
+		$discount_type = $so_line->line_discount_type;
+		$discount_amount = $so_line->line_discount_amount;
+	}
+
+	$sell_line_note = '';
+	if(!empty($product->sell_line_note)){
+		$sell_line_note = $product->sell_line_note;
+	}
+	if(!empty($so_line)){
+		$sell_line_note = $so_line->sell_line_note;
+	}
+
+	if($discount_type == 'fixed') {
+		$discount_amount = $discount_amount * $multiplier;
+	}
+
+	// Calculate discounted unit price for initial subtotal display
+	$discounted_unit_price_inc_tax = $unit_price_inc_tax;
+	
+	// Get base price without tax
+	$tax_rate = 0;
+	$tax_type = 'percentage';
+	if(!empty($tax_id) && isset($tax_dropdown['tax_rates'][$tax_id])) {
+		$tax_attributes = $tax_dropdown['attributes'][$tax_id] ?? [];
+		$tax_rate = $tax_attributes['data-rate'] ?? 0;
+		$tax_type = $tax_attributes['data-type'] ?? 'percentage';
+	}
+	
+	// Calculate base price before discount
+	if(!empty($action) && $action === 'edit') {
+		$base_price = !empty($product->unit_price_before_discount) ? $product->unit_price_before_discount : $product->default_sell_price;
+	} else {
+		$base_price = $unit_price_inc_tax;
+		if($tax_type == 'fixed') {
+			$base_price = $unit_price_inc_tax - $tax_rate;
+		} elseif($tax_rate > 0) {
+			$base_price = $unit_price_inc_tax / (1 + ($tax_rate / 100));
+		}
+	}
+
+	// Apply discount to base price (skip on edit — stored sell line prices already include discount)
+	$discounted_base_price = $base_price;
+	if($discount_amount > 0 && $action !== 'edit') {
+		if($discount_type == 'fixed') {
+			$discounted_base_price = $base_price - $discount_amount;
+		} else {
+			// percentage discount
+			$discounted_base_price = $base_price - ($base_price * ($discount_amount / 100));
+		}
+	}
+	
+	// Add tax back to get discounted price inc tax
+	if($tax_type == 'fixed') {
+		$discounted_unit_price_inc_tax = $discounted_base_price + $tax_rate;
+	} elseif($tax_rate > 0) {
+		$discounted_unit_price_inc_tax = $discounted_base_price * (1 + ($tax_rate / 100));
+	} else {
+		$discounted_unit_price_inc_tax = $discounted_base_price;
+	}
+@endphp
+
+<tr class="product_row modern-table-row" data-row_index="{{$row_count}}" @if(!empty($so_line)) data-so_id="{{$so_line->transaction_id}}" @endif data-modal-base-unit-price="{{ number_format($base_price, 4, '.', '') }}" style="background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); border-radius: 12px; margin: 6px 0; box-shadow: 0 4px 12px rgba(22,17,96,0.08), 0 2px 4px rgba(22,17,96,0.04); transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); border: 1px solid rgba(22,17,96,0.06); position: relative; overflow: hidden;">
 	@if(!empty($is_serial_no))
 		<td class="serial_no" ></td>
 	@endif
@@ -78,97 +169,13 @@
 			name="products[{{$row_count}}][product_type]" 
 			value="{{$product->product_type}}">
 
-		@php
-			$hide_tax = 'hide';
-	        if(session()->get('business.enable_inline_tax') == 1){
-	            $hide_tax = '';
-	        }
-	        
-			$tax_id = $product->tax_id;
-			$item_tax = !empty($product->item_tax) ? $product->item_tax : 0;
-			$unit_price_inc_tax = $product->sell_price_inc_tax;
-
-			if($hide_tax == 'hide'){
-				$tax_id = null;
-				$unit_price_inc_tax = $product->default_sell_price;
-			}
-
-			if(!empty($so_line) && $action !== 'edit') {
-				$tax_id = $so_line->tax_id;
-				$item_tax = $so_line->item_tax;
-				$unit_price_inc_tax = $so_line->unit_price_inc_tax;
-			}
-
-			$discount_type = !empty($product->line_discount_type) ? $product->line_discount_type : 'fixed';
-			$discount_amount = !empty($product->line_discount_amount) ? $product->line_discount_amount : 0;
-			
-			if(!empty($discount)) {
-				$discount_type = $discount->discount_type;
-				$discount_amount = $discount->discount_amount;
-			}
-
-			if(!empty($so_line) && $action !== 'edit') {
-				$discount_type = $so_line->line_discount_type;
-				$discount_amount = $so_line->line_discount_amount;
-			}
-
-  			$sell_line_note = '';
-  			if(!empty($product->sell_line_note)){
-  				$sell_line_note = $product->sell_line_note;
-  			}
-			  if(!empty($so_line)){
-  				$sell_line_note = $so_line->sell_line_note;
-  			}
-  		@endphp
+		{{-- Variables calculated at the top --}}
 
 		@if(!empty($discount))
 			{!! Form::hidden("products[$row_count][discount_id]", $discount->id) !!}
 		@endif
 
-		@php
-			if($discount_type == 'fixed') {
-				$discount_amount = $discount_amount * $multiplier;
-			}
-
-			// Calculate discounted unit price for initial subtotal display
-			$discounted_unit_price_inc_tax = $unit_price_inc_tax;
-			
-			// Get base price without tax
-			$tax_rate = 0;
-			$tax_type = 'percentage';
-			if(!empty($tax_id) && isset($tax_dropdown['tax_rates'][$tax_id])) {
-				$tax_attributes = $tax_dropdown['attributes'][$tax_id] ?? [];
-				$tax_rate = $tax_attributes['data-rate'] ?? 0;
-				$tax_type = $tax_attributes['data-type'] ?? 'percentage';
-			}
-			
-			// Calculate base price before discount
-			$base_price = $unit_price_inc_tax;
-			if($tax_type == 'fixed') {
-				$base_price = $unit_price_inc_tax - $tax_rate;
-			} elseif($tax_rate > 0) {
-				$base_price = $unit_price_inc_tax / (1 + ($tax_rate / 100));
-			}
-			
-			// Apply discount to base price (skip on edit — stored sell line prices already include discount)
-			if($discount_amount > 0 && $action !== 'edit') {
-				if($discount_type == 'fixed') {
-					$base_price = $base_price - $discount_amount;
-				} else {
-					// percentage discount
-					$base_price = $base_price - ($base_price * ($discount_amount / 100));
-				}
-			}
-			
-			// Add tax back to get discounted price inc tax
-			if($tax_type == 'fixed') {
-				$discounted_unit_price_inc_tax = $base_price + $tax_rate;
-			} elseif($tax_rate > 0) {
-				$discounted_unit_price_inc_tax = $base_price * (1 + ($tax_rate / 100));
-			} else {
-				$discounted_unit_price_inc_tax = $base_price;
-			}
-		@endphp
+		{{-- Discount calculations handled at the top --}}
 		<small class="text-muted p-1" style="background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%); padding: 3px 6px !important; border-radius: 6px; font-size: 11px; font-weight: 500; color: #64748b; border: 1px solid rgba(22,17,96,0.08); display: inline-block; margin-top: 2px;">
 			@if($product->enable_stock)
 			<i class="fa fa-cube" style="margin-right: 4px; color: #161160;"></i>{{ @num_format($product->qty_available) }} {{$product->unit}} @lang('lang_v1.in_stock')
