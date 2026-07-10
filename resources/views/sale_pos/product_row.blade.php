@@ -544,17 +544,20 @@
 
 	<!-- Discount column (always visible) -->
 	<td class="text-center" style="vertical-align: middle;">
-		<span class="row_discount_text text-success" style="font-weight: 600; font-size: 14px;">
+		<div class="row_discount_text_container text-success" style="font-size: 14px; text-align: center;">
 			@if($discount_amount > 0)
 				@if($discount_type == 'percentage')
-					{{@num_format($discount_amount)}}%
+					<span class="row_discount_amount_text" style="display: block; font-weight: 600; color: #10b981;">@format_currency($base_price_inc_tax * ($discount_amount / 100))</span>
+					<small class="row_discount_percent_text text-muted" style="font-size: 11px; display: block; color: #10b981; opacity: 0.85;">{{@num_format($discount_amount)}}%</small>
 				@else
-					@format_currency($discount_amount)
+					<span class="row_discount_amount_text" style="display: block; font-weight: 600; color: #10b981;">@format_currency($discount_amount)</span>
+					<small class="row_discount_percent_text text-muted" style="font-size: 11px; display: block;"></small>
 				@endif
 			@else
-				@format_currency(0)
+				<span class="row_discount_amount_text" style="display: block; font-weight: 600; color: #10b981;">@format_currency(0)</span>
+				<small class="row_discount_percent_text text-muted" style="font-size: 11px; display: block;"></small>
 			@endif
-		</span>
+		</div>
 	</td>
 
 	<!-- Total (After Disc.) column -->

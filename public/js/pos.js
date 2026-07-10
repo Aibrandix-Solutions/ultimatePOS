@@ -5043,18 +5043,24 @@ function addModernStyling() {
         var originalIncTax = posAddTax(newUnitPrice, tax_details);
         $productRow.find('.unit_price_before_discount_text').text(__currency_trans_from_en(originalIncTax, true));
 
-        // Update Discount text label
-        var discount_text = '';
+        // Update Discount text labels
+        var discount_amount_text = '';
+        var discount_percent_text = '';
         if (newDiscountAmount > 0) {
             if (newDiscountType === 'percentage') {
-                discount_text = __number_f(newDiscountAmount) + '%';
+                var calculated_discount_amount = (originalIncTax * (newDiscountAmount / 100));
+                discount_amount_text = __currency_trans_from_en(calculated_discount_amount, true);
+                discount_percent_text = __number_f(newDiscountAmount) + '%';
             } else {
-                discount_text = __currency_trans_from_en(newDiscountAmount, true);
+                discount_amount_text = __currency_trans_from_en(newDiscountAmount, true);
+                discount_percent_text = '';
             }
         } else {
-            discount_text = __currency_trans_from_en(0, true);
+            discount_amount_text = __currency_trans_from_en(0, true);
+            discount_percent_text = '';
         }
-        $productRow.find('.row_discount_text').text(discount_text);
+        $productRow.find('.row_discount_amount_text').text(discount_amount_text);
+        $productRow.find('.row_discount_percent_text').text(discount_percent_text);
 
         // Persist warranty selection back to row (for form submission)
         if (newWarrantyId !== null) {
