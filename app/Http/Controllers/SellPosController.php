@@ -1209,6 +1209,7 @@ class SellPosController extends Controller
                 'p.barcode_type',
                 'p.enable_sr_no',
                 'variations.id as variation_id',
+                'variations.default_purchase_price',
                 'units.short_name as unit',
                 'units.allow_decimal as unit_allow_decimal',
                 'u.short_name as second_unit',
