@@ -319,24 +319,46 @@ class Transaction extends Model
         ];
     }
 
+    /**
+     * Resolve the due date used to determine overdue / partial-overdue status.
+     */
+    public static function resolveDueDateForOverdue($transaction)
+    {
+        $stored_due_date = method_exists($transaction, 'getOriginal')
+            ? $transaction->getOriginal('due_date')
+            : ($transaction->due_date ?? null);
+
+        if (! empty($stored_due_date)) {
+            return \Carbon::parse($stored_due_date);
+        }
+
+        $pay_term_number = $transaction->pay_term_number ?? null;
+        $pay_term_type = $transaction->pay_term_type ?? null;
+
+        if (empty($pay_term_number) || empty($pay_term_type)) {
+            $pay_term_number = $transaction->contact_pay_term_number ?? null;
+            $pay_term_type = $transaction->contact_pay_term_type ?? null;
+        }
+
+        if (! empty($pay_term_number) && ! empty($pay_term_type) && ! empty($transaction->transaction_date)) {
+            $transaction_date = \Carbon::parse($transaction->transaction_date);
+
+            return $pay_term_type == 'days'
+                ? $transaction_date->copy()->addDays($pay_term_number)
+                : $transaction_date->copy()->addMonths($pay_term_number);
+        }
+
+        return null;
+    }
+
     public static function getPaymentStatus($transaction)
     {
         $payment_status = $transaction->payment_status;
 
         if (in_array($payment_status, ['partial', 'due'])) {
-            $due_date = null;
-
-            // Prefer stored due_date if present
-            $stored_due_date = method_exists($transaction, 'getOriginal') ? $transaction->getOriginal('due_date') : null;
-            if (!empty($stored_due_date)) {
-                $due_date = \Carbon::parse($stored_due_date);
-            } elseif (!empty($transaction->pay_term_number) && !empty($transaction->pay_term_type)) {
-                $transaction_date = \Carbon::parse($transaction->transaction_date);
-                $due_date = $transaction->pay_term_type == 'days' ? $transaction_date->addDays($transaction->pay_term_number) : $transaction_date->addMonths($transaction->pay_term_number);
-            }
-
+            $due_date = self::resolveDueDateForOverdue($transaction);
             $now = \Carbon::now();
-            if (!empty($due_date) && $now->gt($due_date->copy()->endOfDay())) {
+            if (! empty($due_date) && $now->gt($due_date->copy()->endOfDay())) {
                 $payment_status = $payment_status == 'due' ? 'overdue' : 'partial-overdue';
             }
         }
@@ -392,18 +414,58 @@ class Transaction extends Model
         return $properties;
     }
 
+    /**
+     * Matches both overdue (unpaid) and partial-overdue (partially paid) transactions.
+     */
     public function scopeOverDue($query)
     {
+        $payTermOverdueSql = "IF(%s='days', DATE_ADD(%s, INTERVAL %s DAY) < CURDATE(), DATE_ADD(%s, INTERVAL %s MONTH) < CURDATE())";
+
         return $query->whereIn('transactions.payment_status', ['due', 'partial'])
-            ->where(function ($q) {
+            ->where(function ($q) use ($payTermOverdueSql) {
                 $q->where(function ($qr) {
                     $qr->whereNotNull('transactions.due_date')
+                        ->where('transactions.due_date', '!=', '')
                         ->whereRaw('transactions.due_date < CURDATE()');
-                })->orWhere(function ($qr) {
-                    $qr->whereNull('transactions.due_date')
+                })->orWhere(function ($qr) use ($payTermOverdueSql) {
+                    $qr->where(function ($q) {
+                        $q->whereNull('transactions.due_date')
+                            ->orWhere('transactions.due_date', '');
+                    })
                         ->whereNotNull('transactions.pay_term_number')
                         ->whereNotNull('transactions.pay_term_type')
-                        ->whereRaw("IF(transactions.pay_term_type='days', DATE_ADD(transactions.transaction_date, INTERVAL transactions.pay_term_number DAY) < CURDATE(), DATE_ADD(transactions.transaction_date, INTERVAL transactions.pay_term_number MONTH) < CURDATE())");
+                        ->whereRaw(sprintf(
+                            $payTermOverdueSql,
+                            'transactions.pay_term_type',
+                            'transactions.transaction_date',
+                            'transactions.pay_term_number',
+                            'transactions.transaction_date',
+                            'transactions.pay_term_number'
+                        ));
+                })->orWhere(function ($qr) use ($payTermOverdueSql) {
+                    $qr->where(function ($q) {
+                        $q->whereNull('transactions.due_date')
+                            ->orWhere('transactions.due_date', '');
+                    })
+                        ->where(function ($q) {
+                            $q->whereNull('transactions.pay_term_number')
+                                ->orWhereNull('transactions.pay_term_type');
+                        })
+                        ->whereExists(function ($sub) use ($payTermOverdueSql) {
+                            $sub->select(\DB::raw(1))
+                                ->from('contacts')
+                                ->whereColumn('contacts.id', 'transactions.contact_id')
+                                ->whereNotNull('contacts.pay_term_number')
+                                ->whereNotNull('contacts.pay_term_type')
+                                ->whereRaw(sprintf(
+                                    $payTermOverdueSql,
+                                    'contacts.pay_term_type',
+                                    'transactions.transaction_date',
+                                    'contacts.pay_term_number',
+                                    'transactions.transaction_date',
+                                    'contacts.pay_term_number'
+                                ));
+                        });
                 });
             });
     }
