@@ -395,9 +395,17 @@ class Transaction extends Model
     public function scopeOverDue($query)
     {
         return $query->whereIn('transactions.payment_status', ['due', 'partial'])
-            ->whereNotNull('transactions.pay_term_number')
-            ->whereNotNull('transactions.pay_term_type')
-            ->whereRaw("IF(transactions.pay_term_type='days', DATE_ADD(transactions.transaction_date, INTERVAL transactions.pay_term_number DAY) <= CURDATE(), DATE_ADD(transactions.transaction_date, INTERVAL transactions.pay_term_number MONTH) <= CURDATE())");
+            ->where(function ($q) {
+                $q->where(function ($qr) {
+                    $qr->whereNotNull('transactions.due_date')
+                        ->whereRaw('transactions.due_date < CURDATE()');
+                })->orWhere(function ($qr) {
+                    $qr->whereNull('transactions.due_date')
+                        ->whereNotNull('transactions.pay_term_number')
+                        ->whereNotNull('transactions.pay_term_type')
+                        ->whereRaw("IF(transactions.pay_term_type='days', DATE_ADD(transactions.transaction_date, INTERVAL transactions.pay_term_number DAY) < CURDATE(), DATE_ADD(transactions.transaction_date, INTERVAL transactions.pay_term_number MONTH) < CURDATE())");
+                });
+            });
     }
 
     public static function sell_statuses()

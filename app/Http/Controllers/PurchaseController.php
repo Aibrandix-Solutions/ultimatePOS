@@ -83,10 +83,7 @@ class PurchaseController extends Controller
             if (! empty(request()->input('payment_status')) && request()->input('payment_status') != 'overdue') {
                 $purchases->where('transactions.payment_status', request()->input('payment_status'));
             } elseif (request()->input('payment_status') == 'overdue') {
-                $purchases->whereIn('transactions.payment_status', ['due', 'partial'])
-                    ->whereNotNull('transactions.pay_term_number')
-                    ->whereNotNull('transactions.pay_term_type')
-                    ->whereRaw("IF(transactions.pay_term_type='days', DATE_ADD(transactions.transaction_date, INTERVAL transactions.pay_term_number DAY) < CURDATE(), DATE_ADD(transactions.transaction_date, INTERVAL transactions.pay_term_number MONTH) < CURDATE())");
+                $purchases->OverDue();
             }
 
             if (! empty(request()->status)) {
