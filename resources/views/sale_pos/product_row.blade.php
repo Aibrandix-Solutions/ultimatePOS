@@ -541,10 +541,8 @@
 				@if(!empty($action) && $action == 'edit')
 					<input type="hidden" name="products[{{$row_count}}][unit_price]" class="pos_unit_price input_number" value="{{@num_format($edit_unit_price_before_discount)}}">
 				@endif
-				@if(!$edit_discount)
-					<input type="hidden" name="products[{{$row_count}}][line_discount_amount]" class="row_discount_amount" value="{{@num_format($discount_amount)}}">
-					<input type="hidden" name="products[{{$row_count}}][line_discount_type]" class="row_discount_type" value="{{$discount_type}}">
-				@endif
+				<input type="hidden" name="products[{{$row_count}}][line_discount_amount]" class="row_discount_amount" value="{{@num_format($discount_amount)}}">
+				<input type="hidden" name="products[{{$row_count}}][line_discount_type]" class="row_discount_type" value="{{$discount_type}}">
 			@endif
 
 			@php
