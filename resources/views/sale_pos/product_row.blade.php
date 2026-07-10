@@ -83,9 +83,9 @@
 		}
 	}
 
-	// Apply discount to base price (skip on edit — stored sell line prices already include discount)
+	// Apply discount to base price
 	$discounted_base_price = $base_price;
-	if($discount_amount > 0 && $action !== 'edit') {
+	if($discount_amount > 0) {
 		if($discount_type == 'fixed') {
 			$discounted_base_price = $base_price - $discount_amount;
 		} else {

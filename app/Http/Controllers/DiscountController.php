@@ -199,8 +199,8 @@ class DiscountController extends Controller
                             ->with(['variations', 'variations.product', 'variations.product_variation'])
                             ->find($id);
 
-            $starts_at = $this->commonUtil->format_date($discount->starts_at->toDateTimeString(), true);
-            $ends_at = $this->commonUtil->format_date($discount->ends_at->toDateTimeString(), true);
+            $starts_at = !empty($discount->starts_at) ? $this->commonUtil->format_date($discount->starts_at->toDateTimeString(), true) : '';
+            $ends_at = !empty($discount->ends_at) ? $this->commonUtil->format_date($discount->ends_at->toDateTimeString(), true) : '';
 
             $categories = Category::where('business_id', $business_id)
                             ->where('parent_id', 0)

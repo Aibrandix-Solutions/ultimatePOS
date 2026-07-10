@@ -1821,8 +1821,8 @@ class ProductUtil extends Util
         $discount = $query->first();
 
         if (!empty($discount)) {
-            $discount->formated_starts_at = $this->format_date($discount->starts_at->toDateTimeString(), true);
-            $discount->formated_ends_at = $this->format_date($discount->ends_at->toDateTimeString(), true);
+            $discount->formated_starts_at = !empty($discount->starts_at) ? $this->format_date($discount->starts_at->toDateTimeString(), true) : '';
+            $discount->formated_ends_at = !empty($discount->ends_at) ? $this->format_date($discount->ends_at->toDateTimeString(), true) : '';
         }
 
         return $discount;
