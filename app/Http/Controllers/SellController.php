@@ -165,7 +165,9 @@ class SellController extends Controller
                 }
             }
 
-            if (!$is_admin && !$only_shipments && $sale_type != 'sales_order') {
+            $is_overdue_filter = request()->input('payment_status') == 'overdue';
+
+            if (!$is_admin && !$only_shipments && $sale_type != 'sales_order' && !$is_overdue_filter) {
                 $payment_status_arr = [];
                 if (auth()->user()->can('view_paid_sells_only')) {
                     $payment_status_arr[] = 'paid';

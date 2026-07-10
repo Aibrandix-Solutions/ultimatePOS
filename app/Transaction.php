@@ -328,27 +328,40 @@ class Transaction extends Model
             ? $transaction->getOriginal('due_date')
             : ($transaction->due_date ?? null);
 
-        if (! empty($stored_due_date)) {
+        if (self::hasStoredDueDate($stored_due_date)) {
             return \Carbon::parse($stored_due_date);
         }
 
         $pay_term_number = $transaction->pay_term_number ?? null;
         $pay_term_type = $transaction->pay_term_type ?? null;
 
-        if (empty($pay_term_number) || empty($pay_term_type)) {
+        if (! self::hasPayTerm($pay_term_number, $pay_term_type)) {
             $pay_term_number = $transaction->contact_pay_term_number ?? null;
             $pay_term_type = $transaction->contact_pay_term_type ?? null;
         }
 
-        if (! empty($pay_term_number) && ! empty($pay_term_type) && ! empty($transaction->transaction_date)) {
+        if (self::hasPayTerm($pay_term_number, $pay_term_type) && ! empty($transaction->transaction_date)) {
             $transaction_date = \Carbon::parse($transaction->transaction_date);
 
             return $pay_term_type == 'days'
-                ? $transaction_date->copy()->addDays($pay_term_number)
-                : $transaction_date->copy()->addMonths($pay_term_number);
+                ? $transaction_date->copy()->addDays((int) $pay_term_number)
+                : $transaction_date->copy()->addMonths((int) $pay_term_number);
         }
 
         return null;
+    }
+
+    private static function hasStoredDueDate($due_date): bool
+    {
+        return ! empty($due_date) && $due_date != '0000-00-00';
+    }
+
+    private static function hasPayTerm($pay_term_number, $pay_term_type): bool
+    {
+        return $pay_term_number !== null
+            && $pay_term_number !== ''
+            && $pay_term_type !== null
+            && $pay_term_type !== '';
     }
 
     public static function getPaymentStatus($transaction)
@@ -419,54 +432,42 @@ class Transaction extends Model
      */
     public function scopeOverDue($query)
     {
-        $payTermOverdueSql = "IF(%s='days', DATE_ADD(%s, INTERVAL %s DAY) < CURDATE(), DATE_ADD(%s, INTERVAL %s MONTH) < CURDATE())";
+        $transactionPayTermDueDate = "IF(transactions.pay_term_type='days', DATE_ADD(DATE(transactions.transaction_date), INTERVAL transactions.pay_term_number DAY), DATE_ADD(DATE(transactions.transaction_date), INTERVAL transactions.pay_term_number MONTH))";
+        $contactPayTermDueDate = "IF(contacts.pay_term_type='days', DATE_ADD(DATE(transactions.transaction_date), INTERVAL contacts.pay_term_number DAY), DATE_ADD(DATE(transactions.transaction_date), INTERVAL contacts.pay_term_number MONTH))";
 
         return $query->whereIn('transactions.payment_status', ['due', 'partial'])
-            ->where(function ($q) use ($payTermOverdueSql) {
-                $q->where(function ($qr) {
-                    $qr->whereNotNull('transactions.due_date')
-                        ->where('transactions.due_date', '!=', '')
-                        ->whereRaw('transactions.due_date < CURDATE()');
-                })->orWhere(function ($qr) use ($payTermOverdueSql) {
-                    $qr->where(function ($q) {
-                        $q->whereNull('transactions.due_date')
-                            ->orWhere('transactions.due_date', '');
-                    })
-                        ->whereNotNull('transactions.pay_term_number')
-                        ->whereNotNull('transactions.pay_term_type')
-                        ->whereRaw(sprintf(
-                            $payTermOverdueSql,
-                            'transactions.pay_term_type',
-                            'transactions.transaction_date',
-                            'transactions.pay_term_number',
-                            'transactions.transaction_date',
-                            'transactions.pay_term_number'
-                        ));
-                })->orWhere(function ($qr) use ($payTermOverdueSql) {
-                    $qr->where(function ($q) {
-                        $q->whereNull('transactions.due_date')
-                            ->orWhere('transactions.due_date', '');
-                    })
-                        ->where(function ($q) {
-                            $q->whereNull('transactions.pay_term_number')
-                                ->orWhereNull('transactions.pay_term_type');
+            ->where(function ($q) use ($transactionPayTermDueDate, $contactPayTermDueDate) {
+                $q->whereRaw("(
+                    CASE
+                        WHEN transactions.due_date IS NOT NULL
+                            AND transactions.due_date != ''
+                            AND transactions.due_date != '0000-00-00'
+                            THEN DATE(transactions.due_date)
+                        WHEN transactions.pay_term_type IS NOT NULL
+                            AND transactions.pay_term_number IS NOT NULL
+                            THEN {$transactionPayTermDueDate}
+                        ELSE NULL
+                    END
+                ) < CURDATE()")
+                    ->orWhere(function ($qr) use ($contactPayTermDueDate) {
+                        $qr->where(function ($q) {
+                            $q->whereNull('transactions.due_date')
+                                ->orWhere('transactions.due_date', '')
+                                ->orWhere('transactions.due_date', '0000-00-00');
                         })
-                        ->whereExists(function ($sub) use ($payTermOverdueSql) {
-                            $sub->select(\DB::raw(1))
-                                ->from('contacts')
-                                ->whereColumn('contacts.id', 'transactions.contact_id')
-                                ->whereNotNull('contacts.pay_term_number')
-                                ->whereNotNull('contacts.pay_term_type')
-                                ->whereRaw(sprintf(
-                                    $payTermOverdueSql,
-                                    'contacts.pay_term_type',
-                                    'transactions.transaction_date',
-                                    'contacts.pay_term_number',
-                                    'transactions.transaction_date',
-                                    'contacts.pay_term_number'
-                                ));
-                        });
-                });
+                            ->where(function ($q) {
+                                $q->whereNull('transactions.pay_term_type')
+                                    ->orWhereNull('transactions.pay_term_number');
+                            })
+                            ->whereExists(function ($sub) use ($contactPayTermDueDate) {
+                                $sub->select(\DB::raw(1))
+                                    ->from('contacts')
+                                    ->whereColumn('contacts.id', 'transactions.contact_id')
+                                    ->whereNotNull('contacts.pay_term_type')
+                                    ->whereNotNull('contacts.pay_term_number')
+                                    ->whereRaw("({$contactPayTermDueDate}) < CURDATE()");
+                            });
+                    });
             });
     }
 
