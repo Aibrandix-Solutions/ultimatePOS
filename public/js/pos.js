@@ -5038,6 +5038,24 @@ function addModernStyling() {
         }
         $productRow.find('textarea[name*="sell_line_note"]').val(newNote);
 
+        // Update Unit Price (before discount, tax-inclusive) text label
+        var tax_details = getPosTaxDetails($productRow.find('select.tax_id'));
+        var originalIncTax = posAddTax(newUnitPrice, tax_details);
+        $productRow.find('.unit_price_before_discount_text').text(__currency_trans_from_en(originalIncTax, true));
+
+        // Update Discount text label
+        var discount_text = '';
+        if (newDiscountAmount > 0) {
+            if (newDiscountType === 'percentage') {
+                discount_text = __number_f(newDiscountAmount) + '%';
+            } else {
+                discount_text = __currency_trans_from_en(newDiscountAmount, true);
+            }
+        } else {
+            discount_text = __currency_trans_from_en(0, true);
+        }
+        $productRow.find('.row_discount_text').text(discount_text);
+
         // Persist warranty selection back to row (for form submission)
         if (newWarrantyId !== null) {
             var $rowWarrantySelect = $productRow.find('select.row_warranty_id');

@@ -199,7 +199,7 @@
 					<th class="tex-center @if(!empty($pos_settings['inline_service_staff'])) col-md-3 @else col-md-4 @endif" style="color: white; font-weight: 600; padding: 15px 12px;">	
 						@lang('sale.product') @show_tooltip(__('lang_v1.tooltip_sell_product_column'))
 					</th>
-					<th class="text-center col-md-3" style="color: white; font-weight: 600; padding: 15px 12px;">
+					<th class="text-center col-md-2" style="color: white; font-weight: 600; padding: 15px 12px;">
 						@lang('sale.qty')
 					</th>
 					@if(!empty($pos_settings['inline_service_staff']))
@@ -207,11 +207,14 @@
 							@lang('restaurant.service_staff')
 						</th>
 					@endif
-					<th class="text-center col-md-2 {{$hide_tax}}" style="color: white; font-weight: 600; padding: 15px 12px;">
-						@lang('sale.price_inc_tax')
+					<th class="text-center col-md-2" style="color: white; font-weight: 600; padding: 15px 12px;">
+						@lang('sale.unit_price')
 					</th>
 					<th class="text-center col-md-2" style="color: white; font-weight: 600; padding: 15px 12px;">
-						@lang('sale.subtotal')
+						@lang('sale.discount')
+					</th>
+					<th class="text-center col-md-2" style="color: white; font-weight: 600; padding: 15px 12px;">
+						Total (After Disc.)
 					</th>
 					<th class="text-center" style="color: white; font-weight: 600; padding: 15px 12px;"><i class="fas fa-times" aria-hidden="true"></i></th>
 				</tr>

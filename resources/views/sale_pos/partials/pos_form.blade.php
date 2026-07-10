@@ -230,7 +230,7 @@
 					<th class="tex-center tw-text-sm md:!tw-text-base tw-font-bold @if(!empty($pos_settings['inline_service_staff'])) col-md-3 @else col-md-4 @endif" style="border: none; padding: 15px 12px; font-weight: 600;">	
 						@lang('sale.product') @show_tooltip(__('lang_v1.tooltip_sell_product_column'))
 					</th>
-					<th class="text-center tw-text-sm md:!tw-text-base tw-font-bold col-md-3" style="border: none; padding: 15px 12px; font-weight: 600;">
+					<th class="text-center tw-text-sm md:!tw-text-base tw-font-bold col-md-2" style="border: none; padding: 15px 12px; font-weight: 600;">
 						@lang('sale.qty')
 					</th>
 					@if(!empty($pos_settings['inline_service_staff']))
@@ -238,11 +238,14 @@
 							@lang('restaurant.service_staff')
 						</th>
 					@endif
-					<th class="text-center tw-text-sm md:!tw-text-base tw-font-bold col-md-2 {{$hide_tax}}" style="border: none; padding: 15px 12px; font-weight: 600;">
-						@lang('sale.price_inc_tax')
+					<th class="text-center tw-text-sm md:!tw-text-base tw-font-bold col-md-2" style="border: none; padding: 15px 12px; font-weight: 600;">
+						@lang('sale.unit_price')
 					</th>
 					<th class="text-center tw-text-sm md:!tw-text-base tw-font-bold col-md-2" style="border: none; padding: 15px 12px; font-weight: 600;">
-						@lang('sale.subtotal')
+						@lang('sale.discount')
+					</th>
+					<th class="text-center tw-text-sm md:!tw-text-base tw-font-bold col-md-2" style="border: none; padding: 15px 12px; font-weight: 600;">
+						Total (After Disc.)
 					</th>
 					<th class="text-center" style="border: none; padding: 15px 12px; font-weight: 600;"><i class="fas fa-times tw-text-base" aria-hidden="true"></i></th>
 				</tr>
@@ -250,7 +253,7 @@
 			<tbody id="pos_table_body" style="background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%); position: relative; min-height: 200px;">
 				<!-- Empty state styling -->
 				<tr id="empty_cart_row" style="display: table-row;">
-					<td colspan="@if(!empty($pos_settings['inline_service_staff'])) {{ 6 }} @else {{ 5 }} @endif" class="text-center" style="height: 230px; vertical-align: middle; padding: 0 20px; color: #6c757d; font-style: italic; background: transparent;">
+					<td colspan="@if(!empty($pos_settings['inline_service_staff'])) {{ 7 }} @else {{ 6 }} @endif" class="text-center" style="height: 230px; vertical-align: middle; padding: 0 20px; color: #6c757d; font-style: italic; background: transparent;">
 						<div style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
 							<i class="fas fa-shopping-cart" style="font-size: 48px; color: rgba(22,17,96,0.3);"></i>
 							<div style="font-size: 18px; font-weight: 500; color: #495057;">No products added yet</div>
