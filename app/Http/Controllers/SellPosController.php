@@ -1806,6 +1806,36 @@ class SellPosController extends Controller
                     $payment_status = $this->transactionUtil->updatePaymentStatus($transaction->id, $transaction->final_total);
                     $transaction->payment_status = $payment_status;
 
+                    // Save custom due date for partial/due payments (POS)
+                    if ($input['status'] == 'final') {
+                        if ($payment_status != 'paid') {
+                            $due_date_input = $request->input('due_date');
+                            $due_date_mysql = null;
+                            $invoice_date = \Carbon::parse($transaction->transaction_date)->startOfDay();
+
+                            if (!empty($due_date_input)) {
+                                $due_date_mysql = $this->productUtil->uf_date($due_date_input);
+                            }
+
+                            if (empty($due_date_mysql)) {
+                                $due_date_mysql = $invoice_date->copy()->addDays(30)->format('Y-m-d');
+                            }
+
+                            // Validate due date is not before invoice date
+                            $due_date_obj = \Carbon::parse($due_date_mysql)->startOfDay();
+                            if ($due_date_obj->lt($invoice_date)) {
+                                throw new \Exception('Due date cannot be before invoice date.');
+                            }
+
+                            $transaction->due_date = $due_date_mysql;
+                            $transaction->save();
+                        } else {
+                            // Clear due date when fully paid
+                            $transaction->due_date = null;
+                            $transaction->save();
+                        }
+                    }
+
                     $stock_status_before = $status_before;
                     $original_status = $transaction->status;
 
