@@ -2180,8 +2180,44 @@ class SellPosController extends Controller
 
         $product->batch_id = $batch_id;
 
-        // POS sell price follows the product list (variation default). Batch / purchase
-        // line records are used for stock tracking only, not to override list price.
+        if (request()->session()->get('business.enable_batch_pricing')
+            && empty($so_line)
+            && (!empty($batch_id) || !empty($purchase_line_id))) {
+            $batch_exc = null;
+            $batch_inc = null;
+
+            if (!empty($batch_id) && Schema::hasTable('product_batches')) {
+                $pb = ProductBatch::where('business_id', $business_id)
+                    ->where('id', $batch_id)
+                    ->where('variation_id', $variation_id)
+                    ->where('location_id', $location_id)
+                    ->first(['sell_price_inc_tax', 'sell_price_exc_tax']);
+
+                if (!empty($pb) && $pb->sell_price_inc_tax !== null && (float) $pb->sell_price_inc_tax != 0) {
+                    $batch_inc = (float) $pb->sell_price_inc_tax;
+                    $batch_exc = ($pb->sell_price_exc_tax !== null && (float) $pb->sell_price_exc_tax != 0)
+                        ? (float) $pb->sell_price_exc_tax
+                        : $batch_inc;
+                }
+            } elseif (!empty($purchase_line_id)) {
+                $pl = PurchaseLine::select(['batch_selling_price', 'batch_selling_price_inc_tax', 'variation_id'])
+                    ->find($purchase_line_id);
+
+                if (!empty($pl) && (int) $pl->variation_id === (int) $variation_id
+                    && $pl->batch_selling_price_inc_tax !== null
+                    && (float) $pl->batch_selling_price_inc_tax != 0) {
+                    $batch_inc = (float) $pl->batch_selling_price_inc_tax;
+                    $batch_exc = ($pl->batch_selling_price !== null && (float) $pl->batch_selling_price != 0)
+                        ? (float) $pl->batch_selling_price
+                        : $batch_inc;
+                }
+            }
+
+            if ($batch_inc !== null) {
+                $product->default_sell_price = $batch_exc + ($percent * $batch_exc / 100);
+                $product->sell_price_inc_tax = $batch_inc + ($percent * $batch_inc / 100);
+            }
+        }
 
         $price_group = request()->input('price_group');
         if (!empty($price_group)) {
@@ -2418,13 +2454,16 @@ class SellPosController extends Controller
                 ->get()
                 ->map(function ($pb) use ($variation_sell_inc_tax) {
                     $remaining = ProductBatch::remainingStock((int) $pb->id);
+                    $batch_sell_inc_tax = ($pb->sell_price_inc_tax !== null && (float) $pb->sell_price_inc_tax != 0)
+                        ? (float) $pb->sell_price_inc_tax
+                        : $variation_sell_inc_tax;
 
                     return [
                         'id' => $pb->id,
                         'batch_number' => $pb->batch_label,
                         'batch_label' => $pb->batch_label,
-                        'batch_selling_price_inc_tax' => $variation_sell_inc_tax,
-                        'display_sell_price_inc_tax' => $variation_sell_inc_tax,
+                        'batch_selling_price_inc_tax' => $batch_sell_inc_tax,
+                        'display_sell_price_inc_tax' => $batch_sell_inc_tax,
                         'remaining' => $remaining,
                         'lot_number' => null,
                         'transaction_date' => null,
@@ -2465,12 +2504,16 @@ class SellPosController extends Controller
                     $b1->save();
                 }
 
+                $b1_sell_inc_tax = ($b1->sell_price_inc_tax !== null && (float) $b1->sell_price_inc_tax != 0)
+                    ? (float) $b1->sell_price_inc_tax
+                    : $variation_sell_inc_tax;
+
                 $batches->prepend([
                     'id' => $b1->id,
                     'batch_number' => 'Batch 1',
                     'batch_label' => 'Batch 1',
-                    'batch_selling_price_inc_tax' => $variation_sell_inc_tax,
-                    'display_sell_price_inc_tax' => $variation_sell_inc_tax,
+                    'batch_selling_price_inc_tax' => $b1_sell_inc_tax,
+                    'display_sell_price_inc_tax' => $b1_sell_inc_tax,
                     'remaining' => (float) $legacy_qty,
                     'lot_number' => null,
                     'transaction_date' => null,
@@ -2483,13 +2526,16 @@ class SellPosController extends Controller
                 ->map(function ($b) use ($variation_sell_inc_tax) {
                     $qty_used = (float) ($b->quantity_sold + $b->quantity_adjusted + $b->quantity_returned + $b->mfg_quantity_used);
                     $remaining = (float) $b->quantity - $qty_used;
-                    
+                    $batch_sell_inc_tax = ($b->batch_selling_price_inc_tax !== null && (float) $b->batch_selling_price_inc_tax != 0)
+                        ? (float) $b->batch_selling_price_inc_tax
+                        : $variation_sell_inc_tax;
+
                     return [
                         'id' => $b->id,
                         'batch_number' => $b->batch_number,
                         'batch_label' => $b->batch_number,
-                        'batch_selling_price_inc_tax' => $variation_sell_inc_tax,
-                        'display_sell_price_inc_tax' => $variation_sell_inc_tax,
+                        'batch_selling_price_inc_tax' => $batch_sell_inc_tax,
+                        'display_sell_price_inc_tax' => $batch_sell_inc_tax,
                         'remaining' => $remaining,
                         'lot_number' => $b->lot_number,
                         'transaction_date' => $b->transaction_date,
