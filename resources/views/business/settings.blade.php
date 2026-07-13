@@ -150,16 +150,18 @@
             });
         });
 
-        $('#test_sms_btn').click( function() {
-            var test_number = $('#test_number').val();
+        $(document).on('click', '.test_sms_btn', function() {
+            var sms_service = $('#sms_service').val();
+            var test_number = $(this).closest('.input-group').find('.test_number_field').val();
             if (test_number.trim() == '') {
                 toastr.error('{{__("lang_v1.test_number_is_required")}}');
-                $('#test_number').focus();
+                $(this).closest('.input-group').find('.test_number_field').focus();
 
                 return false;
             }
 
             var data = {
+                sms_service: sms_service,
                 url: $('#sms_settings_url').val(),
                 send_to_param_name: $('#send_to_param_name').val(),
                 msg_param_name: $('#msg_param_name').val(),
@@ -194,6 +196,10 @@
                 header_3: $('#sms_settings_header_key3').val(),
                 header_val_3: $('#sms_settings_header_val3').val(),
                 data_parameter_type: $('#data_parameter_type').val(),
+                smslenz_url: $('#smslenz_url').val(),
+                smslenz_user_id: $('#smslenz_user_id').val(),
+                smslenz_api_key: $('#smslenz_api_key').val(),
+                smslenz_sender_id: $('#smslenz_sender_id').val(),
             };
 
             $.ajax({
