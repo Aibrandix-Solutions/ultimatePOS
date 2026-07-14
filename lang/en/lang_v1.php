@@ -411,7 +411,7 @@ return [
     'cheque_bank_name' => 'Bank Name',
     'cheque_status' => 'Cheque Status',
     'cheque_payment_requires_registered_customer' => 'Cheque payment is allowed only for registered customers. Please add/register customer first.',
-    'due_payable' => 'Due Payable (Due - Pending Cheque)',
+    'due_payable' => 'Due Payable',
     'mark_as_cleared' => 'Mark Passed',
     'mark_as_pending' => 'Mark Pending',
     'mark_as_bounced' => 'Mark Bounced',

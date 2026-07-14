@@ -143,7 +143,8 @@ class ContactController extends Controller
             )
             ->addColumn(
                 'due_payable',
-                '<span class="contact_due_payable" data-orig-value="{{max(($total_purchase - $purchase_paid - $total_ledger_discount) - $purchase_pending_cheques, 0)}}" data-highlight=false>@format_currency(max(($total_purchase - $purchase_paid - $total_ledger_discount) - $purchase_pending_cheques, 0))</span>'
+                // purchase_paid already includes pending cheques (same as customer invoice_received).
+                '<span class="contact_due_payable" data-orig-value="{{max($total_purchase - $purchase_paid - $total_ledger_discount, 0)}}" data-highlight=false>@format_currency(max($total_purchase - $purchase_paid - $total_ledger_discount, 0))</span>'
             )
             ->addColumn(
                 'return_due',
