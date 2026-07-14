@@ -3522,10 +3522,13 @@ class ReportController extends Controller
             if (! empty(request()->location_id)) {
                 $purchases->where('transactions.location_id', request()->location_id);
             }
-            if (! empty(request()->input('payment_status')) && request()->input('payment_status') != 'overdue') {
-                $purchases->where('transactions.payment_status', request()->input('payment_status'));
-            } elseif (request()->input('payment_status') == 'overdue') {
+            $payment_status_filter = request()->input('payment_status');
+            if (! empty($payment_status_filter) && ! in_array($payment_status_filter, ['overdue', 'partial-overdue'])) {
+                $purchases->where('transactions.payment_status', $payment_status_filter);
+            } elseif ($payment_status_filter == 'overdue') {
                 $purchases->OverDue();
+            } elseif ($payment_status_filter == 'partial-overdue') {
+                $purchases->PartialOverDue();
             }
 
             if (! empty(request()->status)) {

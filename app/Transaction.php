@@ -467,6 +467,18 @@ class Transaction extends Model
             ->whereRaw("({$effectiveDueDate}) < CURDATE()");
     }
 
+    /**
+     * Matches only partial-overdue (partially paid and past due date) transactions.
+     */
+    public function scopePartialOverDue($query)
+    {
+        $effectiveDueDate = self::effectiveDueDateSql();
+
+        return $query->where('transactions.payment_status', 'partial')
+            ->whereRaw("({$effectiveDueDate}) IS NOT NULL")
+            ->whereRaw("({$effectiveDueDate}) < CURDATE()");
+    }
+
     public static function sell_statuses()
     {
         return [
