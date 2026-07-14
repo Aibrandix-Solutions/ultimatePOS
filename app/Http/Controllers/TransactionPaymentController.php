@@ -600,11 +600,12 @@ class TransactionPaymentController extends Controller
                 $installment_plan = InstallmentPlan::where('transaction_id', $transaction_id)
                     ->where('status', 'active')
                     ->first();
+                $next_pending_installment = null;
 
                 if (! empty($installment_plan)) {
-                    $next_installment_amount = $installment_util->getNextPendingInstallmentAmount($installment_plan);
-                    if ($next_installment_amount !== null && $next_installment_amount > 0) {
-                        $default_amount = min($max_payable, $next_installment_amount);
+                    $next_pending_installment = $installment_util->getNextPendingInstallmentInfo($installment_plan);
+                    if (! empty($next_pending_installment) && $next_pending_installment['remaining'] > 0) {
+                        $default_amount = min($max_payable, $next_pending_installment['remaining']);
                     }
                 }
 
@@ -620,7 +621,7 @@ class TransactionPaymentController extends Controller
                 $accounts = $this->moduleUtil->accountsDropdown($business_id, true, false, true);
 
                 $view = view('transaction_payment.payment_row')
-                ->with(compact('transaction', 'payment_types', 'payment_line', 'amount_formated', 'accounts', 'max_payable', 'effective_total', 'sell_return_total'))->render();
+                ->with(compact('transaction', 'payment_types', 'payment_line', 'amount_formated', 'accounts', 'max_payable', 'effective_total', 'sell_return_total', 'next_pending_installment'))->render();
 
                 $output = ['status' => 'due',
                     'view' => $view, ];

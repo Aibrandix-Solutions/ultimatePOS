@@ -97,12 +97,21 @@
                         <th>@lang('lang_v1.suggested_amount')</th>
                     @endif
                     <th>@lang('lang_v1.paid')</th>
+                    <th>@lang('lang_v1.installment_remaining')</th>
                     <th>@lang('lang_v1.status')</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach($plan->lines as $line)
-                    <tr>
+                    @php
+                        $line_remaining = max(0, round((float) $line->amount - (float) $line->paid_amount, 4));
+                        $is_partial = $line->status !== 'paid'
+                            && (float) $line->paid_amount > 0.0001
+                            && $line_remaining > 0.0001;
+                        $is_next_due = ! empty($next_pending_installment)
+                            && (int) $line->sequence === (int) $next_pending_installment['sequence'];
+                    @endphp
+                    <tr @if($is_next_due) class="info" @endif>
                         <td>{{ $line->sequence }}</td>
                         <td>{{ \Carbon\Carbon::parse($line->due_date)->format(session('business.date_format')) }}</td>
                         <td>
@@ -126,7 +135,22 @@
                             </td>
                         @endif
                         <td><span class="display_currency" data-currency_symbol="true">{{ $line->paid_amount }}</span></td>
-                        <td>{{ $line->status }}</td>
+                        <td>
+                            @if($line->status === 'paid')
+                                <span class="text-muted">—</span>
+                            @else
+                                <span class="display_currency" data-currency_symbol="true">{{ $line_remaining }}</span>
+                            @endif
+                        </td>
+                        <td>
+                            @if($is_partial)
+                                <span class="label label-warning">@lang('lang_v1.installment_status_partial')</span>
+                            @elseif($line->status === 'paid')
+                                <span class="label label-success">@lang('lang_v1.paid')</span>
+                            @else
+                                <span class="label label-default">{{ $line->status }}</span>
+                            @endif
+                        </td>
                     </tr>
                 @endforeach
             </tbody>

@@ -60,6 +60,15 @@
       </div>
       <div class="row">
         <div class="col-md-12">
+          @if(!empty($next_pending_installment) && (float) $next_pending_installment['remaining'] > 0)
+            <div class="alert alert-info">
+              <i class="fa fa-info-circle"></i>
+              {!! __('lang_v1.installment_next_payment_hint', [
+                  'amount' => '<span class="display_currency" data-currency_symbol="true">' . $next_pending_installment['remaining'] . '</span>',
+                  'sequence' => $next_pending_installment['sequence'],
+              ]) !!}
+            </div>
+          @endif
           @if(!empty($transaction->contact))
             <strong>@lang('lang_v1.advance_balance'):</strong> <span class="display_currency" data-currency_symbol="true">{{$transaction->contact->balance}}</span>
 
