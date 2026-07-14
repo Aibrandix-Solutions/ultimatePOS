@@ -3504,7 +3504,9 @@ class TransactionUtil extends Util
         //Get all unpaid transaction for the contact
         $types = ['opening_balance', $type];
 
-        if ($type == 'purchase_return') {
+        // Returns must not allocate to opening_balance — otherwise deduct-from-due
+        // pass 2 (sell_return) can pay leftover OB instead of clearing the return.
+        if (in_array($type, ['purchase_return', 'sell_return'])) {
             $types = [$type];
         }
 
