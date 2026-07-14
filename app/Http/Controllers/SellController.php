@@ -200,12 +200,8 @@ class SellController extends Controller
                 }
             }
 
-            if (!empty($payment_status_filter) && !in_array($payment_status_filter, ['overdue', 'partial-overdue'])) {
-                $sells->where('transactions.payment_status', $payment_status_filter);
-            } elseif ($payment_status_filter == 'overdue') {
-                $sells->OverDue();
-            } elseif ($payment_status_filter == 'partial-overdue') {
-                $sells->PartialOverDue();
+            if (!empty($payment_status_filter)) {
+                $sells->withPaymentStatusFilter($payment_status_filter);
             }
 
             //Add condition for location,used in sales representative expense report

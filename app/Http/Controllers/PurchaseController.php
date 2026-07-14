@@ -81,12 +81,8 @@ class PurchaseController extends Controller
                 $purchases->where('transactions.location_id', request()->location_id);
             }
             $payment_status_filter = request()->input('payment_status');
-            if (! empty($payment_status_filter) && ! in_array($payment_status_filter, ['overdue', 'partial-overdue'])) {
-                $purchases->where('transactions.payment_status', $payment_status_filter);
-            } elseif ($payment_status_filter == 'overdue') {
-                $purchases->OverDue();
-            } elseif ($payment_status_filter == 'partial-overdue') {
-                $purchases->PartialOverDue();
+            if (! empty($payment_status_filter)) {
+                $purchases->withPaymentStatusFilter($payment_status_filter);
             }
 
             if (! empty(request()->status)) {

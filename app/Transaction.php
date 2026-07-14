@@ -321,12 +321,12 @@ class Transaction extends Model
 
     /**
      * Resolve the due date used to determine overdue / partial-overdue status.
+     * Must stay in sync with getDueDateAttribute() and effectiveDueDateSql().
      */
     public static function resolveDueDateForOverdue($transaction)
     {
-        $stored_due_date = method_exists($transaction, 'getOriginal')
-            ? $transaction->getOriginal('due_date')
-            : ($transaction->due_date ?? null);
+        // Prefer the raw DB value — getOriginal() still runs the due_date accessor.
+        $stored_due_date = self::rawStoredDueDate($transaction);
 
         if (self::hasStoredDueDate($stored_due_date)) {
             return \Carbon::parse($stored_due_date);
@@ -348,7 +348,27 @@ class Transaction extends Model
                 : $transaction_date->copy()->addMonths((int) $pay_term_number);
         }
 
+        // Match getDueDateAttribute(): when no stored due date / pay term, use sale date.
+        if (! empty($transaction->transaction_date)) {
+            return \Carbon::parse($transaction->transaction_date);
+        }
+
         return null;
+    }
+
+    private static function rawStoredDueDate($transaction)
+    {
+        if (is_object($transaction) && method_exists($transaction, 'getRawOriginal')) {
+            return $transaction->getRawOriginal('due_date');
+        }
+
+        if (is_object($transaction) && method_exists($transaction, 'getAttributes')) {
+            $attributes = $transaction->getAttributes();
+
+            return $attributes['due_date'] ?? null;
+        }
+
+        return is_object($transaction) ? ($transaction->due_date ?? null) : null;
     }
 
     private static function hasStoredDueDate($due_date): bool
@@ -451,12 +471,14 @@ class Transaction extends Model
                 {$transactionPayTermDueDate},
                 NULL
             ),
-            {$contactPayTermDueDate}
+            {$contactPayTermDueDate},
+            DATE(transactions.transaction_date)
         )";
     }
 
     /**
      * Matches both overdue (unpaid) and partial-overdue (partially paid) transactions.
+     * Used by reminders / view_overdue_sells_only — not the list dropdown filters.
      */
     public function scopeOverDue($query)
     {
@@ -472,11 +494,46 @@ class Transaction extends Model
      */
     public function scopePartialOverDue($query)
     {
-        $effectiveDueDate = self::effectiveDueDateSql();
+        return $query->withPaymentStatusFilter('partial-overdue');
+    }
 
-        return $query->where('transactions.payment_status', 'partial')
-            ->whereRaw("({$effectiveDueDate}) IS NOT NULL")
-            ->whereRaw("({$effectiveDueDate}) < CURDATE()");
+    /**
+     * Filter by the displayed payment status badge (paid / due / partial / overdue / partial-overdue).
+     * Due and Partial exclude past-due rows; Overdue and Partial Overdue include only past-due rows.
+     */
+    public function scopeWithPaymentStatusFilter($query, $payment_status)
+    {
+        if (empty($payment_status)) {
+            return $query;
+        }
+
+        $effectiveDueDate = self::effectiveDueDateSql();
+        $isPastDue = "({$effectiveDueDate}) < CURDATE()";
+        $isNotPastDue = "({$effectiveDueDate}) >= CURDATE()";
+
+        switch ($payment_status) {
+            case 'paid':
+                return $query->where('transactions.payment_status', 'paid');
+
+            case 'due':
+                return $query->where('transactions.payment_status', 'due')
+                    ->whereRaw($isNotPastDue);
+
+            case 'partial':
+                return $query->where('transactions.payment_status', 'partial')
+                    ->whereRaw($isNotPastDue);
+
+            case 'overdue':
+                return $query->where('transactions.payment_status', 'due')
+                    ->whereRaw($isPastDue);
+
+            case 'partial-overdue':
+                return $query->where('transactions.payment_status', 'partial')
+                    ->whereRaw($isPastDue);
+
+            default:
+                return $query->where('transactions.payment_status', $payment_status);
+        }
     }
 
     public static function sell_statuses()
