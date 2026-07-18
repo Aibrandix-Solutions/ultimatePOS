@@ -180,6 +180,25 @@ class OpeningStockController extends Controller
                         $next_batch_labels[$location_id][$variation_id] = 'Batch '.($max_used + 1);
                     }
                 }
+
+                // Display batches in numeric order (Batch 1, 2, 3…)
+                foreach ($purchases as $location_id => $by_variation) {
+                    foreach ($by_variation as $variation_id => $rows) {
+                        usort($rows, function ($a, $b) {
+                            $na = 0;
+                            $nb = 0;
+                            if (preg_match('/^Batch\s+(\d+)$/i', trim((string) ($a['batch_number'] ?? '')), $m)) {
+                                $na = (int) $m[1];
+                            }
+                            if (preg_match('/^Batch\s+(\d+)$/i', trim((string) ($b['batch_number'] ?? '')), $m)) {
+                                $nb = (int) $m[1];
+                            }
+
+                            return $na <=> $nb;
+                        });
+                        $purchases[$location_id][$variation_id] = array_values($rows);
+                    }
+                }
             }
 
             $view_data = compact(
