@@ -2982,6 +2982,17 @@ function calculate_balance_due() {
         }
     }
 
+    // When editing an invoice, customer due includes this invoice's balance.
+    // Exclude it so amount payable is not double-counted against total_payable.
+    if ($('#editing_transaction_due').length) {
+        var editing_contact_id = $('#editing_transaction_contact_id').val();
+        var current_contact_id = $('#customer_id').val();
+        if (!editing_contact_id || editing_contact_id == current_contact_id) {
+            var editing_due = parseFloat($('#editing_transaction_due').val()) || 0;
+            past_due = Math.max(0, past_due - editing_due);
+        }
+    }
+
     // Hide/show the "Keep payment on current invoice" wrapper based on whether they have past due
     // Walk-ins inherently shouldn't have past due applying logic exposed to them anyway
     if (past_due > 0 && !is_walk_in) {
