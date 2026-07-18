@@ -57,6 +57,7 @@
                             'due' => __('lang_v1.due'),
                             'partial' => __('lang_v1.partial'),
                             'overdue' => __('lang_v1.overdue'),
+                            'partial-overdue' => __('lang_v1.partial-overdue'),
                         ],
                         null,
                         ['class' => 'form-control select2', 'style' => 'width:100%', 'placeholder' => __('lang_v1.all')],

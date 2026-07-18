@@ -319,24 +319,79 @@ class Transaction extends Model
         ];
     }
 
+    /**
+     * Resolve the due date used to determine overdue / partial-overdue status.
+     * Must stay in sync with getDueDateAttribute() and effectiveDueDateSql().
+     */
+    public static function resolveDueDateForOverdue($transaction)
+    {
+        // Prefer the raw DB value — getOriginal() still runs the due_date accessor.
+        $stored_due_date = self::rawStoredDueDate($transaction);
+
+        if (self::hasStoredDueDate($stored_due_date)) {
+            return \Carbon::parse($stored_due_date);
+        }
+
+        $pay_term_number = $transaction->pay_term_number ?? null;
+        $pay_term_type = $transaction->pay_term_type ?? null;
+
+        if (! self::hasPayTerm($pay_term_number, $pay_term_type)) {
+            $pay_term_number = $transaction->contact_pay_term_number ?? null;
+            $pay_term_type = $transaction->contact_pay_term_type ?? null;
+        }
+
+        if (self::hasPayTerm($pay_term_number, $pay_term_type) && ! empty($transaction->transaction_date)) {
+            $transaction_date = \Carbon::parse($transaction->transaction_date);
+
+            return $pay_term_type == 'days'
+                ? $transaction_date->copy()->addDays((int) $pay_term_number)
+                : $transaction_date->copy()->addMonths((int) $pay_term_number);
+        }
+
+        // Match getDueDateAttribute(): when no stored due date / pay term, use sale date.
+        if (! empty($transaction->transaction_date)) {
+            return \Carbon::parse($transaction->transaction_date);
+        }
+
+        return null;
+    }
+
+    private static function rawStoredDueDate($transaction)
+    {
+        if (is_object($transaction) && method_exists($transaction, 'getRawOriginal')) {
+            return $transaction->getRawOriginal('due_date');
+        }
+
+        if (is_object($transaction) && method_exists($transaction, 'getAttributes')) {
+            $attributes = $transaction->getAttributes();
+
+            return $attributes['due_date'] ?? null;
+        }
+
+        return is_object($transaction) ? ($transaction->due_date ?? null) : null;
+    }
+
+    private static function hasStoredDueDate($due_date): bool
+    {
+        return ! empty($due_date) && $due_date != '0000-00-00';
+    }
+
+    private static function hasPayTerm($pay_term_number, $pay_term_type): bool
+    {
+        return $pay_term_number !== null
+            && $pay_term_number !== ''
+            && $pay_term_type !== null
+            && $pay_term_type !== '';
+    }
+
     public static function getPaymentStatus($transaction)
     {
         $payment_status = $transaction->payment_status;
 
         if (in_array($payment_status, ['partial', 'due'])) {
-            $due_date = null;
-
-            // Prefer stored due_date if present
-            $stored_due_date = method_exists($transaction, 'getOriginal') ? $transaction->getOriginal('due_date') : null;
-            if (!empty($stored_due_date)) {
-                $due_date = \Carbon::parse($stored_due_date);
-            } elseif (!empty($transaction->pay_term_number) && !empty($transaction->pay_term_type)) {
-                $transaction_date = \Carbon::parse($transaction->transaction_date);
-                $due_date = $transaction->pay_term_type == 'days' ? $transaction_date->addDays($transaction->pay_term_number) : $transaction_date->addMonths($transaction->pay_term_number);
-            }
-
+            $due_date = self::resolveDueDateForOverdue($transaction);
             $now = \Carbon::now();
-            if (!empty($due_date) && $now->gt($due_date->copy()->endOfDay())) {
+            if (! empty($due_date) && $now->gt($due_date->copy()->endOfDay())) {
                 $payment_status = $payment_status == 'due' ? 'overdue' : 'partial-overdue';
             }
         }
@@ -392,12 +447,93 @@ class Transaction extends Model
         return $properties;
     }
 
+    /**
+     * SQL expression for the effective due date (must mirror resolveDueDateForOverdue()).
+     */
+    private static function effectiveDueDateSql(): string
+    {
+        $transactionPayTermDueDate = "IF(transactions.pay_term_type='days', DATE_ADD(DATE(transactions.transaction_date), INTERVAL transactions.pay_term_number DAY), DATE_ADD(DATE(transactions.transaction_date), INTERVAL transactions.pay_term_number MONTH))";
+        $contactPayTermDueDate = "(SELECT IF(c.pay_term_type='days', DATE_ADD(DATE(transactions.transaction_date), INTERVAL c.pay_term_number DAY), DATE_ADD(DATE(transactions.transaction_date), INTERVAL c.pay_term_number MONTH)) FROM contacts AS c WHERE c.id = transactions.contact_id AND c.pay_term_type IS NOT NULL AND c.pay_term_type != '' AND c.pay_term_number IS NOT NULL AND c.pay_term_number != '' LIMIT 1)";
+
+        return "COALESCE(
+            IF(
+                transactions.due_date IS NOT NULL
+                AND transactions.due_date != ''
+                AND transactions.due_date != '0000-00-00',
+                DATE(transactions.due_date),
+                NULL
+            ),
+            IF(
+                transactions.pay_term_type IS NOT NULL
+                AND transactions.pay_term_type != ''
+                AND transactions.pay_term_number IS NOT NULL
+                AND transactions.pay_term_number != '',
+                {$transactionPayTermDueDate},
+                NULL
+            ),
+            {$contactPayTermDueDate},
+            DATE(transactions.transaction_date)
+        )";
+    }
+
+    /**
+     * Matches both overdue (unpaid) and partial-overdue (partially paid) transactions.
+     * Used by reminders / view_overdue_sells_only — not the list dropdown filters.
+     */
     public function scopeOverDue($query)
     {
+        $effectiveDueDate = self::effectiveDueDateSql();
+
         return $query->whereIn('transactions.payment_status', ['due', 'partial'])
-            ->whereNotNull('transactions.pay_term_number')
-            ->whereNotNull('transactions.pay_term_type')
-            ->whereRaw("IF(transactions.pay_term_type='days', DATE_ADD(transactions.transaction_date, INTERVAL transactions.pay_term_number DAY) <= CURDATE(), DATE_ADD(transactions.transaction_date, INTERVAL transactions.pay_term_number MONTH) <= CURDATE())");
+            ->whereRaw("({$effectiveDueDate}) IS NOT NULL")
+            ->whereRaw("({$effectiveDueDate}) < CURDATE()");
+    }
+
+    /**
+     * Matches only partial-overdue (partially paid and past due date) transactions.
+     */
+    public function scopePartialOverDue($query)
+    {
+        return $query->withPaymentStatusFilter('partial-overdue');
+    }
+
+    /**
+     * Filter by the displayed payment status badge (paid / due / partial / overdue / partial-overdue).
+     * Due and Partial exclude past-due rows; Overdue and Partial Overdue include only past-due rows.
+     */
+    public function scopeWithPaymentStatusFilter($query, $payment_status)
+    {
+        if (empty($payment_status)) {
+            return $query;
+        }
+
+        $effectiveDueDate = self::effectiveDueDateSql();
+        $isPastDue = "({$effectiveDueDate}) < CURDATE()";
+        $isNotPastDue = "({$effectiveDueDate}) >= CURDATE()";
+
+        switch ($payment_status) {
+            case 'paid':
+                return $query->where('transactions.payment_status', 'paid');
+
+            case 'due':
+                return $query->where('transactions.payment_status', 'due')
+                    ->whereRaw($isNotPastDue);
+
+            case 'partial':
+                return $query->where('transactions.payment_status', 'partial')
+                    ->whereRaw($isNotPastDue);
+
+            case 'overdue':
+                return $query->where('transactions.payment_status', 'due')
+                    ->whereRaw($isPastDue);
+
+            case 'partial-overdue':
+                return $query->where('transactions.payment_status', 'partial')
+                    ->whereRaw($isPastDue);
+
+            default:
+                return $query->where('transactions.payment_status', $payment_status);
+        }
     }
 
     public static function sell_statuses()

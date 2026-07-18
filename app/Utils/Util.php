@@ -478,6 +478,24 @@ class Util
             return $this->sendSmsViaTwilio($data);
         }
 
+        if ($sms_service == 'smslenz') {
+            $sms_settings['send_to_param_name'] = 'contact';
+            $sms_settings['msg_param_name'] = 'message';
+            $sms_settings['request_method'] = 'get';
+            $sms_settings['url'] = $sms_settings['smslenz_url'] ?? 'https://smslenz.lk/api/send-sms';
+            $sms_settings['param_1'] = 'user_id';
+            $sms_settings['param_val_1'] = $sms_settings['smslenz_user_id'] ?? '';
+            $sms_settings['param_2'] = 'api_key';
+            $sms_settings['param_val_2'] = $sms_settings['smslenz_api_key'] ?? '';
+            $sms_settings['param_3'] = 'sender_id';
+            $sms_settings['param_val_3'] = $sms_settings['smslenz_sender_id'] ?? '';
+
+            for ($i = 4; $i <= 10; $i++) {
+                $sms_settings['param_' . $i] = '';
+                $sms_settings['param_val_' . $i] = '';
+            }
+        }
+
         $request_data = [
             $sms_settings['send_to_param_name'] => $data['mobile_number'],
             $sms_settings['msg_param_name'] => $data['sms_body'],

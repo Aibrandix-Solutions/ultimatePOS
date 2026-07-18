@@ -201,7 +201,10 @@ class InstallmentUtil
         }
     }
 
-    public function getNextPendingInstallmentAmount(InstallmentPlan $plan): ?float
+    /**
+     * @return array{sequence: int, amount: float, paid_amount: float, remaining: float}|null
+     */
+    public function getNextPendingInstallmentInfo(InstallmentPlan $plan): ?array
     {
         $line = $plan->lines()
             ->where('status', '!=', 'paid')
@@ -212,7 +215,23 @@ class InstallmentUtil
             return null;
         }
 
-        return max(0, round((float) $line->amount - (float) $line->paid_amount, 4));
+        $amount = (float) $line->amount;
+        $paid_amount = (float) $line->paid_amount;
+        $remaining = max(0, round($amount - $paid_amount, 4));
+
+        return [
+            'sequence' => (int) $line->sequence,
+            'amount' => $amount,
+            'paid_amount' => $paid_amount,
+            'remaining' => $remaining,
+        ];
+    }
+
+    public function getNextPendingInstallmentAmount(InstallmentPlan $plan): ?float
+    {
+        $info = $this->getNextPendingInstallmentInfo($plan);
+
+        return $info === null ? null : $info['remaining'];
     }
 
     public function getSellReturnTotal(int $transaction_id): float

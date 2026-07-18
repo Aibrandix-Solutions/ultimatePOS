@@ -165,7 +165,10 @@ class SellController extends Controller
                 }
             }
 
-            if (!$is_admin && !$only_shipments && $sale_type != 'sales_order') {
+            $payment_status_filter = request()->input('payment_status');
+            $is_overdue_filter = in_array($payment_status_filter, ['overdue', 'partial-overdue']);
+
+            if (!$is_admin && !$only_shipments && $sale_type != 'sales_order' && !$is_overdue_filter) {
                 $payment_status_arr = [];
                 if (auth()->user()->can('view_paid_sells_only')) {
                     $payment_status_arr[] = 'paid';
@@ -197,13 +200,8 @@ class SellController extends Controller
                 }
             }
 
-            if (!empty(request()->input('payment_status')) && request()->input('payment_status') != 'overdue') {
-                $sells->where('transactions.payment_status', request()->input('payment_status'));
-            } elseif (request()->input('payment_status') == 'overdue') {
-                $sells->whereIn('transactions.payment_status', ['due', 'partial'])
-                    ->whereNotNull('transactions.pay_term_number')
-                    ->whereNotNull('transactions.pay_term_type')
-                    ->whereRaw("IF(transactions.pay_term_type='days', DATE_ADD(transactions.transaction_date, INTERVAL transactions.pay_term_number DAY) < CURDATE(), DATE_ADD(transactions.transaction_date, INTERVAL transactions.pay_term_number MONTH) < CURDATE())");
+            if (!empty($payment_status_filter)) {
+                $sells->withPaymentStatusFilter($payment_status_filter);
             }
 
             //Add condition for location,used in sales representative expense report

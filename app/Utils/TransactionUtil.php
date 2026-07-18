@@ -2781,8 +2781,8 @@ class TransactionUtil extends Util
             ->where('type', 'purchase')
             ->select(
                 DB::raw('SUM(final_total) as final_total_sum'),
-                //DB::raw("SUM(final_total - tax_amount) as total_exc_tax"),
-                DB::raw("SUM((SELECT COALESCE(SUM(tp.amount), 0) FROM transaction_payments as tp WHERE tp.transaction_id=transactions.id AND (tp.method != 'cheque' OR tp.cheque_status IS NULL OR tp.cheque_status = 'cleared'))) as total_paid"),
+                // Match contact due rule: pending + cleared count; bounced does not.
+                DB::raw("SUM((SELECT COALESCE(SUM(tp.amount), 0) FROM transaction_payments as tp WHERE tp.transaction_id=transactions.id AND ".Util::sqlPaymentCountsTowardContactDue('tp').")) as total_paid"),
                 DB::raw("SUM((SELECT COALESCE(SUM(tp.amount), 0) FROM transaction_payments as tp WHERE tp.transaction_id=transactions.id AND tp.method = 'cheque' AND tp.cheque_status = 'pending')) as pending_cheques"),
                 DB::raw('SUM(total_before_tax) as total_before_tax_sum'),
                 DB::raw('SUM(shipping_charges) as total_shipping_charges'),
@@ -2822,7 +2822,8 @@ class TransactionUtil extends Util
         $output['total_purchase_exc_tax'] = $purchase_details->total_before_tax_sum;
         $output['purchase_due'] = $purchase_details->final_total_sum - $purchase_details->total_paid;
         $output['purchase_pending_cheques'] = $purchase_details->pending_cheques;
-        $output['purchase_due_payable'] = $output['purchase_due'] - $output['purchase_pending_cheques'];
+        // purchase_paid already includes pending cheques, same as customer invoice due display.
+        $output['purchase_due_payable'] = $output['purchase_due'];
         $output['total_shipping_charges'] = $purchase_details->total_shipping_charges;
         $output['total_additional_expense'] = $purchase_details->total_expense;
 
@@ -3504,7 +3505,9 @@ class TransactionUtil extends Util
         //Get all unpaid transaction for the contact
         $types = ['opening_balance', $type];
 
-        if ($type == 'purchase_return') {
+        // Returns must not allocate to opening_balance — otherwise deduct-from-due
+        // pass 2 (sell_return) can pay leftover OB instead of clearing the return.
+        if (in_array($type, ['purchase_return', 'sell_return'])) {
             $types = [$type];
         }
 
@@ -5737,12 +5740,15 @@ class TransactionUtil extends Util
                 'transactions.type',
                 'contacts.name',
                 'contacts.supplier_business_name',
+                'contacts.pay_term_number as contact_pay_term_number',
+                'contacts.pay_term_type as contact_pay_term_type',
                 'transactions.status',
                 'transactions.payment_status',
                 'transactions.final_total',
                 'BS.name as location_name',
                 'transactions.pay_term_number',
                 'transactions.pay_term_type',
+                'transactions.due_date',
                 'PR.id as return_transaction_id',
                 'transactions.custom_field_1',
                 'transactions.custom_field_2',
@@ -5872,6 +5878,8 @@ class TransactionUtil extends Util
                 'contacts.name',
                 'contacts.mobile',
                 'contacts.contact_id',
+                'contacts.pay_term_number as contact_pay_term_number',
+                'contacts.pay_term_type as contact_pay_term_type',
                 'contacts.supplier_business_name',
                 'transactions.status',
                 'transactions.payment_status',
@@ -5957,14 +5965,14 @@ class TransactionUtil extends Util
             ->select('transaction_payments.*', 'bl.name as location_name', 't.type as transaction_type', 'is_advance')
             ->get();
 
-        $prev_total_invoice_paid = $prev_payments->where('transaction_type', 'sell')->where('is_return', 0)->sum('amount');
-        $prev_total_ob_paid = $prev_payments->where('transaction_type', 'opening_balance')->where('is_return', 0)->sum('amount');
-        $prev_total_sell_change_return = $prev_payments->where('transaction_type', 'sell')->where('is_return', 1)->sum('amount');
+        $prev_total_invoice_paid = $this->__sumLedgerPaymentAmount($prev_payments, 'sell', 0);
+        $prev_total_ob_paid = $this->__sumLedgerPaymentAmount($prev_payments, 'opening_balance', 0);
+        $prev_total_sell_change_return = $this->__sumLedgerPaymentAmount($prev_payments, 'sell', 1);
         $prev_total_sell_change_return = !empty($prev_total_sell_change_return) ? $prev_total_sell_change_return : 0;
         $prev_total_invoice_paid -= $prev_total_sell_change_return;
-        $prev_total_purchase_paid = $prev_payments->where('transaction_type', 'purchase')->where('is_return', 0)->sum('amount');
-        $prev_total_sell_return_paid = $prev_payments->where('transaction_type', 'sell_return')->sum('amount');
-        $prev_total_purchase_return_paid = $prev_payments->where('transaction_type', 'purchase_return')->sum('amount');
+        $prev_total_purchase_paid = $this->__sumLedgerPaymentAmount($prev_payments, 'purchase', 0);
+        $prev_total_sell_return_paid = $this->__sumLedgerPaymentAmount($prev_payments, 'sell_return');
+        $prev_total_purchase_return_paid = $this->__sumLedgerPaymentAmount($prev_payments, 'purchase_return');
         //$prev_total_advance_payment = $prev_payments->where('is_advance', 1)->sum('amount');
         $prev_total_advance_payment = $this->__paymentQuery($contact_id, $start, null, $location_id)
             ->select(
@@ -5972,10 +5980,15 @@ class TransactionUtil extends Util
                 't.type as transaction_type',
                 'is_advance',
                 'transaction_payments.id',
+                'transaction_payments.method',
+                'transaction_payments.cheque_status',
                 DB::raw('(transaction_payments.amount - COALESCE((SELECT SUM(amount) from transaction_payments as TP where TP.parent_id = transaction_payments.id), 0)) as amount')
             )
             ->where('is_advance', 1)
             ->get()
+            ->filter(function ($payment) {
+                return Util::chequePaymentCountsTowardContactDue($payment);
+            })
             ->sum('amount');
 
         $total_prev_paid = $prev_total_invoice_paid + $prev_total_purchase_paid - $prev_total_sell_return_paid - $prev_total_purchase_return_paid + $prev_total_ob_paid + $prev_total_advance_payment;
@@ -6012,8 +6025,9 @@ class TransactionUtil extends Util
             ->select('transactions.*');
 
         if ($format == 'format_2' || $format == 'format_4') {
+            $paid_sql = Util::sqlPaymentCountsTowardContactDue('tp');
             $transaction_query->leftjoin('transaction_payments as tp', 'tp.transaction_id', '=', 'transactions.id')
-                ->addSelect(DB::raw('COALESCE(SUM(tp.amount), 0) as total_paid'))
+                ->addSelect(DB::raw("COALESCE(SUM(CASE WHEN {$paid_sql} THEN tp.amount ELSE 0 END), 0) as total_paid"))
                 ->groupBy('transactions.id');
         }
 
@@ -6101,14 +6115,16 @@ class TransactionUtil extends Util
         $total_reverse_payment = 0;
 
         foreach ($payments as $payment) {
-            if ($payment->transaction_type == 'opening_balance') {
+            $counts_toward_due = Util::chequePaymentCountsTowardContactDue($payment);
+
+            if ($payment->transaction_type == 'opening_balance' && $counts_toward_due) {
                 $opening_balance_paid += $payment->amount;
             }
 
-            if ($contact->type == 'customer' && $payment->is_advance == 0 && empty($payment->transaction_id) && $payment->payment_type == 'debit') {
+            if ($counts_toward_due && $contact->type == 'customer' && $payment->is_advance == 0 && empty($payment->transaction_id) && $payment->payment_type == 'debit') {
                 $total_reverse_payment += $payment->amount;
             }
-            if ($contact->type == 'supplier' && $payment->is_advance == 0 && empty($payment->transaction_id) && $payment->payment_type == 'credit') {
+            if ($counts_toward_due && $contact->type == 'supplier' && $payment->is_advance == 0 && empty($payment->transaction_id) && $payment->payment_type == 'credit') {
                 $total_reverse_payment += $payment->amount;
             }
 
@@ -6131,6 +6147,10 @@ class TransactionUtil extends Util
                 $note .= '<small>(' . __('lang_v1.change_return') . ')</small>';
             }
 
+            if ($payment->method === 'cheque' && !empty($payment->cheque_status)) {
+                $note .= '<br><small>(' . __('lang_v1.cheque_status') . ': ' . __('lang_v1.' . $payment->cheque_status) . ')</small>';
+            }
+
             // If payment_type exists, it should determine the ledger side.
             // Fallback to legacy rules for old records where payment_type may be empty.
             $debit = $payment->payment_type == 'debit' ||
@@ -6147,6 +6167,7 @@ class TransactionUtil extends Util
                     $payment->is_return == 0
                 ));
 
+            // Bounced cheques stay visible but do not affect ledger balance / due.
             $ledger[] = [
                 'date' => $payment->paid_on,
                 'ref_no' => $payment->payment_ref_no,
@@ -6156,34 +6177,44 @@ class TransactionUtil extends Util
                 'total' => '',
                 'payment_method' => !empty($paymentTypes[$payment->method]) ? $paymentTypes[$payment->method] : '',
                 'payment_method_key' => $payment->method,
-                'debit' => $debit ? $payment->amount : '',
-                'credit' => $credit ? $payment->amount : '',
+                'debit' => ($counts_toward_due && $debit) ? $payment->amount : '',
+                'credit' => ($counts_toward_due && $credit) ? $payment->amount : '',
                 'others' => $note,
             ];
         }
 
         $total_excess_advance_payment = $this->__paymentQuery($contact_id, $start, $end, $location_id)
             ->select(
+                'transaction_payments.method',
+                'transaction_payments.cheque_status',
                 DB::raw('(transaction_payments.amount - COALESCE((SELECT SUM(amount) from transaction_payments as TP where TP.parent_id = transaction_payments.id), 0)) as amount')
             )
             ->where('is_advance', 1)
             ->get()
+            ->filter(function ($payment) {
+                return Util::chequePaymentCountsTowardContactDue($payment);
+            })
             ->sum('amount');
         $total_advance_payment = $this->__paymentQuery($contact_id, $start, $end, $location_id)
             ->select(
-                DB::raw('SUM(transaction_payments.amount) as amount')
+                'transaction_payments.method',
+                'transaction_payments.cheque_status',
+                'transaction_payments.amount'
             )
             ->where('method', 'advance')
             ->get()
+            ->filter(function ($payment) {
+                return Util::chequePaymentCountsTowardContactDue($payment);
+            })
             ->sum('amount');
 
-        $total_invoice_paid = !empty($payments) ? $payments->where('transaction_type', 'sell')->where('is_return', 0)->sum('amount') : 0;
-        $total_sell_change_return = !empty($payments) ? $payments->where('transaction_type', 'sell')->where('is_return', 1)->sum('amount') : 0;
+        $total_invoice_paid = !empty($payments) ? $this->__sumLedgerPaymentAmount($payments, 'sell', 0) : 0;
+        $total_sell_change_return = !empty($payments) ? $this->__sumLedgerPaymentAmount($payments, 'sell', 1) : 0;
         $total_sell_change_return = !empty($total_sell_change_return) ? $total_sell_change_return : 0;
         $total_invoice_paid -= $total_sell_change_return;
-        $total_purchase_paid = !empty($payments) ? $payments->where('transaction_type', 'purchase')->where('is_return', 0)->sum('amount') : 0;
-        $total_sell_return_paid = !empty($payments) ? $payments->where('transaction_type', 'sell_return')->sum('amount') : 0;
-        $total_purchase_return_paid = !empty($payments) ? $payments->where('transaction_type', 'purchase_return')->sum('amount') : 0;
+        $total_purchase_paid = !empty($payments) ? $this->__sumLedgerPaymentAmount($payments, 'purchase', 0) : 0;
+        $total_sell_return_paid = !empty($payments) ? $this->__sumLedgerPaymentAmount($payments, 'sell_return') : 0;
+        $total_purchase_return_paid = !empty($payments) ? $this->__sumLedgerPaymentAmount($payments, 'purchase_return') : 0;
 
         $total_invoice_paid += $opening_balance_paid;
 
@@ -6273,14 +6304,14 @@ class TransactionUtil extends Util
         $overall_payments = $this->__paymentQuery($contact_id, null, null, $location_id)
             ->select('transaction_payments.*', 'bl.name as location_name', 't.type as transaction_type', 'is_advance')
             ->get();
-        $overall_total_invoice_paid = $overall_payments->where('transaction_type', 'sell')->where('is_return', 0)->sum('amount');
-        $overall_total_ob_paid = $overall_payments->where('transaction_type', 'opening_balance')->where('is_return', 0)->sum('amount');
-        $overall_total_sell_change_return = $overall_payments->where('transaction_type', 'sell')->where('is_return', 1)->sum('amount');
+        $overall_total_invoice_paid = $this->__sumLedgerPaymentAmount($overall_payments, 'sell', 0);
+        $overall_total_ob_paid = $this->__sumLedgerPaymentAmount($overall_payments, 'opening_balance', 0);
+        $overall_total_sell_change_return = $this->__sumLedgerPaymentAmount($overall_payments, 'sell', 1);
         $overall_total_sell_change_return = !empty($overall_total_sell_change_return) ? $overall_total_sell_change_return : 0;
         $overall_total_invoice_paid -= $overall_total_sell_change_return;
-        $overall_total_purchase_paid = $overall_payments->where('transaction_type', 'purchase')->where('is_return', 0)->sum('amount');
-        $overall_total_sell_return_paid = $overall_payments->where('transaction_type', 'sell_return')->sum('amount');
-        $overall_total_purchase_return_paid = $overall_payments->where('transaction_type', 'purchase_return')->sum('amount');
+        $overall_total_purchase_paid = $this->__sumLedgerPaymentAmount($overall_payments, 'purchase', 0);
+        $overall_total_sell_return_paid = $this->__sumLedgerPaymentAmount($overall_payments, 'sell_return');
+        $overall_total_purchase_return_paid = $this->__sumLedgerPaymentAmount($overall_payments, 'purchase_return');
 
         $overall_total_advance_payment = $this->__paymentQuery($contact_id, null, null, $location_id)
             ->select(
@@ -6288,10 +6319,15 @@ class TransactionUtil extends Util
                 't.type as transaction_type',
                 'is_advance',
                 'transaction_payments.id',
+                'transaction_payments.method',
+                'transaction_payments.cheque_status',
                 DB::raw('(transaction_payments.amount - COALESCE((SELECT SUM(amount) from transaction_payments as TP where TP.parent_id = transaction_payments.id), 0)) as amount')
             )
             ->where('is_advance', 1)
             ->get()
+            ->filter(function ($payment) {
+                return Util::chequePaymentCountsTowardContactDue($payment);
+            })
             ->sum('amount');
 
         $total_overall_paid_customer = $overall_total_invoice_paid - $overall_total_sell_return_paid + $overall_total_ob_paid; //Add '+ $overall_total_advance_payment'
@@ -6359,6 +6395,31 @@ class TransactionUtil extends Util
     /**
      * Query to get payment details for a customer
      */
+    /**
+     * Sum ledger payment amounts that reduce contact due
+     * (pending + cleared cheques count; bounced do not).
+     */
+    private function __sumLedgerPaymentAmount($payments, $transaction_type = null, $is_return = null)
+    {
+        return $payments
+            ->filter(function ($payment) use ($transaction_type, $is_return) {
+                if (!Util::chequePaymentCountsTowardContactDue($payment)) {
+                    return false;
+                }
+
+                if ($transaction_type !== null && ($payment->transaction_type ?? null) !== $transaction_type) {
+                    return false;
+                }
+
+                if ($is_return !== null && (int) ($payment->is_return ?? 0) !== (int) $is_return) {
+                    return false;
+                }
+
+                return true;
+            })
+            ->sum('amount');
+    }
+
     private function __paymentQuery($contact_id, $start, $end = null, $location_id = null)
     {
         $business_id = request()->session()->get('user.business_id');

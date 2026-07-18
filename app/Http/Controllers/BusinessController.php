@@ -638,11 +638,24 @@ class BusinessController extends Controller
                 $response = $this->businessUtil->sendSms($data);
                 $parameter_type = isset($sms_settings['data_parameter_type']) ? $sms_settings['data_parameter_type'] : 'form-data';
 
-                if($parameter_type == 'json'){
+                if (is_object($response) && method_exists($response, 'getBody')) {
+                    $response_body = (string) $response->getBody();
+                    $response_status = method_exists($response, 'getStatusCode') ? (int) $response->getStatusCode() : 200;
+                    $decoded = json_decode($response_body, true);
 
-                    $body = json_decode($response->getBody(), true);
-                    // Optional: Check if 'status' or 'success' is true inside JSON (based on API format)
-                    return ['success' => true, 'msg' => 'SMS sent successfully', 'data' => $body];
+                    if ($parameter_type == 'json') {
+                        return [
+                            'success' => $response_status >= 200 && $response_status < 300,
+                            'msg' => $response_status >= 200 && $response_status < 300 ? 'SMS sent successfully' : ($decoded['message'] ?? ('SMS gateway returned HTTP ' . $response_status)),
+                            'data' => $decoded,
+                        ];
+                    }
+
+                    $output = [
+                        'success' => $response_status >= 200 && $response_status < 300,
+                        'msg' => is_array($decoded) ? ($decoded['message'] ?? $response_body) : $response_body,
+                    ];
+                    return $output;
                 }
             } else {
                 $response = __('lang_v1.test_number_is_required');

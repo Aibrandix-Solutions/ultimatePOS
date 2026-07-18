@@ -153,6 +153,7 @@ class InstallmentPlanController extends Controller
         $can_edit = auth()->user()->can('sell.payments');
         $show_adjust_alert = $needs_adjustment || (int) request()->input('adjust', 0) === 1;
         $customer_credit = $this->installmentUtil->getCustomerCreditAfterReturns($plan, $transaction);
+        $next_pending_installment = $this->installmentUtil->getNextPendingInstallmentInfo($plan);
 
         return view('installments.show', compact(
             'plan',
@@ -167,7 +168,8 @@ class InstallmentPlanController extends Controller
             'suggested_amounts',
             'can_edit',
             'show_adjust_alert',
-            'customer_credit'
+            'customer_credit',
+            'next_pending_installment'
         ));
     }
 
