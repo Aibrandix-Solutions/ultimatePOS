@@ -1,3 +1,10 @@
+@php
+	$enable_batch_pricing = !empty($enable_batch_pricing ?? false);
+	$next_batch_labels = $next_batch_labels ?? [];
+	$tax_percent = !empty($product->product_tax->amount) ? $product->product_tax->amount : 0;
+	$tax_calc_type = !empty($product->product_tax->calculation_type) ? $product->product_tax->calculation_type : 'percentage';
+	$selling_price_tax_type = !empty($product->tax_type) ? $product->tax_type : 'exclusive';
+@endphp
 <div class="row">
 	<div class="col-sm-12">
 		@forelse($locations as $key => $value)
@@ -8,12 +15,21 @@
 			<div class="box-body">
 				<div class="row tw-overflow-scroll">
 					<div class="col-sm-12">
-						<table class="table table-condensed table-bordered text-center table-responsive table-striped add_opening_stock_table">
+						<table class="table table-condensed table-bordered text-center table-responsive table-striped add_opening_stock_table"
+							data-tax-percent="{{ $tax_percent }}"
+							data-tax-calc-type="{{ $tax_calc_type }}"
+							data-selling-price-tax-type="{{ $selling_price_tax_type }}"
+							data-enable-batch-pricing="{{ $enable_batch_pricing ? 1 : 0 }}">
 								<thead>
 								<tr class="bg-green">
 									<th>@lang( 'product.product_name' )</th>
 									<th>@lang( 'lang_v1.quantity_left' )</th>
 									<th>@lang( 'purchase.unit_cost_before_tax' )</th>
+									@if($enable_batch_pricing)
+										<th>@lang( 'lang_v1.batch_number' )</th>
+										<th>@lang( 'product.profit_percent' )</th>
+										<th>@lang( 'lang_v1.selling_price' )</th>
+									@endif
 									@if($enable_expiry == 1 && $product->enable_stock == 1)
 										<th>Exp. Date</th>
 									@endif
@@ -31,16 +47,38 @@
 	$subtotal = 0;
 @endphp
 @foreach($product->variations as $variation)
+	@php
+		$next_batch_label = $next_batch_labels[$key][$variation->id] ?? 'Batch 1';
+		$default_profit = !empty($variation->profit_percent) ? $variation->profit_percent : 0;
+		$default_purchase = $variation->default_purchase_price;
+		$default_item_tax = $tax_calc_type == 'fixed' ? $tax_percent : ($default_purchase * $tax_percent / 100);
+		$default_purchase_inc = $default_purchase + $default_item_tax;
+		$default_sell_inc = $default_purchase_inc + ($default_purchase_inc * $default_profit / 100);
+		$default_sell_exc = $tax_calc_type == 'fixed'
+			? max(0, $default_sell_inc - $tax_percent)
+			: ($tax_percent != 0 ? ($default_sell_inc * 100) / (100 + $tax_percent) : $default_sell_inc);
+		$default_sell_show = ($selling_price_tax_type == 'inclusive') ? $default_sell_inc : $default_sell_exc;
+	@endphp
 	@if(empty($purchases[$key][$variation->id]))
 		@php
-			$purchases[$key][$variation->id][] = ['quantity' => 0, 
-			'purchase_price' => $variation->default_purchase_price,
-			'purchase_line_id' => null,
-			'lot_number' => null,
-			'transaction_date' => null,
-			'purchase_line_note' => null,
-			'secondary_unit_quantity' => 0
-			]
+			$purchases[$key][$variation->id][] = [
+				'quantity' => 0,
+				'purchase_price' => $variation->default_purchase_price,
+				'purchase_line_id' => null,
+				'lot_number' => null,
+				'transaction_date' => null,
+				'purchase_line_note' => null,
+				'secondary_unit_quantity' => 0,
+				'batch_id' => null,
+				'batch_number' => $enable_batch_pricing ? $next_batch_label : null,
+				'batch_profit_margin' => $default_profit,
+				'batch_selling_price' => $default_sell_exc,
+				'batch_selling_price_inc_tax' => $default_sell_inc,
+			];
+			// Blank row consumed this label; "+" must start at the next one.
+			if ($enable_batch_pricing && preg_match('/^Batch\s+(\d+)$/i', trim((string) $next_batch_label), $m)) {
+				$next_batch_label = 'Batch '.((int) $m[1] + 1);
+			}
 		@endphp
 	@endif
 
@@ -69,9 +107,28 @@
 	$lot_number = $var['lot_number'];
 	$transaction_date = $var['transaction_date'];
 	$purchase_line_note = $var['purchase_line_note'];
+
+	$row_profit = array_key_exists('batch_profit_margin', $var) && $var['batch_profit_margin'] !== null
+		? $var['batch_profit_margin']
+		: $default_profit;
+
+	$row_purchase_inc = $purcahse_price + ($tax_calc_type == 'fixed' ? $tax_percent : ($purcahse_price * $tax_percent / 100));
+	$row_sell_inc = array_key_exists('batch_selling_price_inc_tax', $var) && $var['batch_selling_price_inc_tax'] !== null
+		? $var['batch_selling_price_inc_tax']
+		: ($row_purchase_inc + ($row_purchase_inc * $row_profit / 100));
+	$row_sell_exc = array_key_exists('batch_selling_price', $var) && $var['batch_selling_price'] !== null
+		? $var['batch_selling_price']
+		: ($tax_calc_type == 'fixed'
+			? max(0, $row_sell_inc - $tax_percent)
+			: ($tax_percent != 0 ? ($row_sell_inc * 100) / (100 + $tax_percent) : $row_sell_inc));
+	$row_sell_show = ($selling_price_tax_type == 'inclusive') ? $row_sell_inc : $row_sell_exc;
+
+	$row_batch_number = !empty($var['batch_number'])
+		? $var['batch_number']
+		: ($enable_batch_pricing ? $next_batch_label : null);
 	@endphp
 
-<tr>
+<tr data-variation-id="{{ $variation->id }}" data-location-id="{{ $key }}">
 	<td>
 		{{ $product->name }} @if( $product->type == 'variable' ) (<b>{{ $variation->product_variation->name }}</b> : {{ $variation->name }}) @endif
 
@@ -80,6 +137,9 @@
 		@endif
 		@if(!is_null($original_qty))
 			{!! Form::hidden('stocks[' . $key . '][' . $variation->id . '][' . $sub_key . '][original_qty]', $original_qty) !!}
+		@endif
+		@if($enable_batch_pricing)
+			{!! Form::hidden('stocks[' . $key . '][' . $variation->id . '][' . $sub_key . '][selling_price_tax_type]', $selling_price_tax_type) !!}
 		@endif
 	</td>
 	<td>
@@ -99,6 +159,25 @@
 <td>
 	{!! Form::text('stocks[' . $key . '][' . $variation->id . '][' . $sub_key . '][purchase_price]', @num_format($purcahse_price) , ['class' => 'form-control input-sm input_number unit_price', 'required']) !!}
 </td>
+
+@if($enable_batch_pricing)
+	<td>
+		{!! Form::text('stocks[' . $key . '][' . $variation->id . '][' . $sub_key . '][batch_number]', $row_batch_number, [
+			'class' => 'form-control input-sm batch_number_input',
+			'readonly' => true,
+			'title' => __('lang_v1.batch_number'),
+		]) !!}
+		@if(empty($purchase_line_id) || empty($var['batch_id']))
+			<small class="text-muted">@lang('lang_v1.new_batch')</small>
+		@endif
+	</td>
+	<td>
+		{!! Form::text('stocks[' . $key . '][' . $variation->id . '][' . $sub_key . '][profit_percent]', @num_format($row_profit), ['class' => 'form-control input-sm input_number profit_percent', 'required']) !!}
+	</td>
+	<td>
+		{!! Form::text('stocks[' . $key . '][' . $variation->id . '][' . $sub_key . '][default_sell_price]', @num_format($row_sell_show), ['class' => 'form-control input-sm input_number default_sell_price', 'required']) !!}
+	</td>
+@endif
 
 @if($enable_expiry == 1 && $product->enable_stock == 1)
 	<td>
@@ -124,8 +203,10 @@
 	</td>
 	<td>
 		@if($loop->index == 0)
-			<button type="button" class="tw-dw-btn tw-dw-btn-xs tw-dw-btn-outline  tw-dw-btn-primary add_stock_row" data-sub-key="{{ count($purchases[$key][$variation->id])}}" 
-				data-row-html='<tr>
+			<button type="button" class="tw-dw-btn tw-dw-btn-xs tw-dw-btn-outline  tw-dw-btn-primary add_stock_row"
+				data-sub-key="{{ count($purchases[$key][$variation->id])}}"
+				data-next-batch="{{ $next_batch_label }}"
+				data-row-html='<tr data-variation-id="{{ $variation->id }}" data-location-id="{{ $key }}">
 					<td>
 						{{ $product->name }} @if( $product->type == "variable" ) (<b>{{ $variation->product_variation->name }}</b> : {{ $variation->name }}) @endif
 					</td>
@@ -140,7 +221,19 @@
 	<td>
 		<input class="form-control input-sm input_number unit_price" required="" name="stocks[{{$key}}][{{$variation->id}}][__subkey__][purchase_price]" type="text" value="{{@num_format($purcahse_price)}}">
 	</td>
-
+	@if($enable_batch_pricing)
+	<td>
+		<input class="form-control input-sm batch_number_input" readonly name="stocks[{{$key}}][{{$variation->id}}][__subkey__][batch_number]" type="text" value="__batch_number__">
+		<small class="text-muted">@lang("lang_v1.new_batch")</small>
+		<input type="hidden" name="stocks[{{$key}}][{{$variation->id}}][__subkey__][selling_price_tax_type]" value="{{ $selling_price_tax_type }}">
+	</td>
+	<td>
+		<input class="form-control input-sm input_number profit_percent" required name="stocks[{{$key}}][{{$variation->id}}][__subkey__][profit_percent]" type="text" value="{{@num_format($default_profit)}}">
+	</td>
+	<td>
+		<input class="form-control input-sm input_number default_sell_price" required name="stocks[{{$key}}][{{$variation->id}}][__subkey__][default_sell_price]" type="text" value="{{@num_format($default_sell_show)}}">
+	</td>
+	@endif
 	@if($enable_expiry == 1 && $product->enable_stock == 1)
 	<td>
 		<input class="form-control input-sm os_exp_date" required="" name="stocks[{{$key}}][{{$variation->id}}][__subkey__][exp_date]" type="text" readonly>
@@ -176,8 +269,20 @@
 	@endforeach
 								</tbody>
 								<tfoot>
+								@php
+									$colspan_before_total = 3; // name, qty, cost
+									if ($enable_batch_pricing) {
+										$colspan_before_total += 3; // batch, margin, sell
+									}
+									if ($enable_expiry == 1 && $product->enable_stock == 1) {
+										$colspan_before_total += 1;
+									}
+									if ($enable_lot == 1) {
+										$colspan_before_total += 1;
+									}
+								@endphp
 								<tr>
-									<td colspan="@if($enable_expiry == 1 && $product->enable_stock == 1 && $enable_lot == 1) 5 @elseif(($enable_expiry == 1 && $product->enable_stock == 1) || $enable_lot == 1) @else 3 @endif"></td>
+									<td colspan="{{ $colspan_before_total }}"></td>
 									<td><strong>@lang( 'lang_v1.total_amount_exc_tax' ): </strong> <span id="total_subtotal">{{@num_format($subtotal)}}</span>
 									<input type="hidden" id="total_subtotal_hidden" value=0>
 									</td>

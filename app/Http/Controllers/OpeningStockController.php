@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\BusinessLocation;
 use App\Product;
+use App\ProductBatch;
 use App\PurchaseLine;
 use App\Transaction;
 use App\Utils\ProductUtil;
@@ -56,6 +57,7 @@ class OpeningStockController extends Controller
                                 'unit',
                                 'product_locations',
                                 'second_unit',
+                                'product_tax',
                             ])
                             ->first();
         if (! empty($product) && $product->enable_stock == 1) {
@@ -88,6 +90,11 @@ class OpeningStockController extends Controller
                     $purchase_lines[$purchase_line->variation_id][$k]['purchase_line_note'] = $transaction->additional_notes;
                     $purchase_lines[$purchase_line->variation_id][$k]['location_id'] = $transaction->location_id;
                     $purchase_lines[$purchase_line->variation_id][$k]['secondary_unit_quantity'] = $purchase_line->secondary_unit_quantity;
+                    $purchase_lines[$purchase_line->variation_id][$k]['batch_id'] = $purchase_line->batch_id;
+                    $purchase_lines[$purchase_line->variation_id][$k]['batch_number'] = $purchase_line->batch_number;
+                    $purchase_lines[$purchase_line->variation_id][$k]['batch_profit_margin'] = $purchase_line->batch_profit_margin;
+                    $purchase_lines[$purchase_line->variation_id][$k]['batch_selling_price'] = $purchase_line->batch_selling_price;
+                    $purchase_lines[$purchase_line->variation_id][$k]['batch_selling_price_inc_tax'] = $purchase_line->batch_selling_price_inc_tax;
                 }
             }
 
@@ -122,28 +129,75 @@ class OpeningStockController extends Controller
 
             $enable_expiry = request()->session()->get('business.enable_product_expiry');
             $enable_lot = request()->session()->get('business.enable_lot_number');
+            $enable_batch_pricing = request()->session()->get('business.enable_batch_pricing');
 
-            if (request()->ajax()) {
-                return view('opening_stock.ajax_add')
-                    ->with(compact(
-                        'product',
-                        'locations',
-                        'purchases',
-                        'enable_expiry',
-                        'enable_lot',
-                        'qty_available_map'
-                    ));
+            // Next Batch N label per location + variation (for blank rows and "+" template).
+            $next_batch_labels = [];
+            if ($enable_batch_pricing && Schema::hasTable('product_batches')) {
+                foreach ($locations as $location_id => $location_name) {
+                    foreach ($product->variations as $variation) {
+                        $next_batch_labels[$location_id][$variation->id] = ProductBatch::nextBatchLabel(
+                            (int) $business_id,
+                            (int) $product->id,
+                            (int) $variation->id,
+                            (int) $location_id
+                        );
+                    }
+                }
+
+                // Assign display labels for legacy rows (null batch_id) without colliding.
+                foreach ($purchases as $location_id => $by_variation) {
+                    foreach ($by_variation as $variation_id => $rows) {
+                        $used_nums = [];
+                        $existing = ProductBatch::where('business_id', $business_id)
+                            ->where('product_id', $product->id)
+                            ->where('variation_id', $variation_id)
+                            ->where('location_id', $location_id)
+                            ->pluck('batch_label');
+                        foreach ($existing as $label) {
+                            if (preg_match('/^Batch\s+(\d+)$/i', trim((string) $label), $m)) {
+                                $used_nums[(int) $m[1]] = true;
+                            }
+                        }
+                        foreach ($rows as $idx => $row) {
+                            if (! empty($row['batch_number'])) {
+                                if (preg_match('/^Batch\s+(\d+)$/i', trim((string) $row['batch_number']), $m)) {
+                                    $used_nums[(int) $m[1]] = true;
+                                }
+                                continue;
+                            }
+                            if (! empty($row['batch_id'])) {
+                                continue;
+                            }
+                            $n = 1;
+                            while (isset($used_nums[$n])) {
+                                $n++;
+                            }
+                            $used_nums[$n] = true;
+                            $purchases[$location_id][$variation_id][$idx]['batch_number'] = 'Batch '.$n;
+                        }
+                        $max_used = empty($used_nums) ? 0 : max(array_keys($used_nums));
+                        $next_batch_labels[$location_id][$variation_id] = 'Batch '.($max_used + 1);
+                    }
+                }
             }
 
-            return view('opening_stock.add')
-                    ->with(compact(
-                        'product',
-                        'locations',
-                        'purchases',
-                        'enable_expiry',
-                        'enable_lot',
-                        'qty_available_map'
-                    ));
+            $view_data = compact(
+                'product',
+                'locations',
+                'purchases',
+                'enable_expiry',
+                'enable_lot',
+                'enable_batch_pricing',
+                'qty_available_map',
+                'next_batch_labels'
+            );
+
+            if (request()->ajax()) {
+                return view('opening_stock.ajax_add')->with($view_data);
+            }
+
+            return view('opening_stock.add')->with($view_data);
         }
     }
 
@@ -174,11 +228,15 @@ class OpeningStockController extends Controller
 
             $locations = BusinessLocation::forDropdown($business_id)->toArray();
 
+            $enable_batch_pricing = (bool) $request->session()->get('business.enable_batch_pricing');
+            $has_product_batches = Schema::hasTable('product_batches');
+
             if (! empty($product) && $product->enable_stock == 1) {
                 //Get product tax
                 $tax_percent = ! empty($product->product_tax->amount) ? $product->product_tax->amount : 0;
                 $tax_id = ! empty($product->product_tax->id) ? $product->product_tax->id : null;
                 $tax_type = !empty($product->product_tax->calculation_type) ? $product->product_tax->calculation_type : 'percentage';
+                $selling_price_tax_type = ! empty($product->tax_type) ? $product->tax_type : 'exclusive';
 
                 //Get start date for financial year.
                 $transaction_date = request()->session()->get('financial_year.start');
@@ -270,14 +328,52 @@ class OpeningStockController extends Controller
                                     $purchase_line->lot_number = $lot_number;
                                     $purchase_line->secondary_unit_quantity = $secondary_unit_quantity;
 
-                                    //Set batch selling price (Consistent with purchase screen: margin is on inclusive price)
+                                    // Prefer form margin / sell price when batch pricing is enabled
+                                    if ($enable_batch_pricing && array_key_exists('profit_percent', $pl) && $pl['profit_percent'] !== null && $pl['profit_percent'] !== '') {
+                                        $profit_percent = $this->productUtil->num_uf($pl['profit_percent']);
+                                    }
+
                                     $purchase_line->batch_profit_margin = $profit_percent;
-                                    $purchase_line->batch_selling_price_inc_tax = $this->productUtil->calc_percentage($purchase_price_inc_tax, $profit_percent, $purchase_price_inc_tax);
-                                    
-                                    if ($tax_type == 'fixed') {
-                                        $purchase_line->batch_selling_price = max(0, $purchase_line->batch_selling_price_inc_tax - $tax_percent);
+
+                                    $sell_price_raw = $pl['default_sell_price'] ?? ($pl['batch_selling_price_inc_tax'] ?? null);
+                                    if ($enable_batch_pricing && $sell_price_raw !== null && $sell_price_raw !== '') {
+                                        $price_uf = $this->productUtil->num_uf($sell_price_raw);
+                                        if ($selling_price_tax_type == 'inclusive') {
+                                            $purchase_line->batch_selling_price_inc_tax = $price_uf;
+                                            if ($tax_type == 'fixed') {
+                                                $purchase_line->batch_selling_price = max(0, $price_uf - $tax_percent);
+                                            } else {
+                                                $purchase_line->batch_selling_price = $this->productUtil->calc_percentage_base($price_uf, $tax_percent);
+                                            }
+                                        } else {
+                                            $purchase_line->batch_selling_price = $price_uf;
+                                            if ($tax_type == 'fixed') {
+                                                $purchase_line->batch_selling_price_inc_tax = $price_uf + $tax_percent;
+                                            } else {
+                                                $purchase_line->batch_selling_price_inc_tax = $this->productUtil->calc_percentage($price_uf, $tax_percent, $price_uf);
+                                            }
+                                        }
                                     } else {
-                                        $purchase_line->batch_selling_price = $this->productUtil->calc_percentage_base($purchase_line->batch_selling_price_inc_tax, $tax_percent);
+                                        // Fallback: margin on inclusive purchase price (same as before)
+                                        $purchase_line->batch_selling_price_inc_tax = $this->productUtil->calc_percentage($purchase_price_inc_tax, $profit_percent, $purchase_price_inc_tax);
+
+                                        if ($tax_type == 'fixed') {
+                                            $purchase_line->batch_selling_price = max(0, $purchase_line->batch_selling_price_inc_tax - $tax_percent);
+                                        } else {
+                                            $purchase_line->batch_selling_price = $this->productUtil->calc_percentage_base($purchase_line->batch_selling_price_inc_tax, $tax_percent);
+                                        }
+                                    }
+
+                                    // Create or attach product_batches (new batch only — no refill/skip)
+                                    if ($enable_batch_pricing && $has_product_batches) {
+                                        $this->assignOpeningStockBatch(
+                                            $purchase_line,
+                                            $pl,
+                                            (int) $business_id,
+                                            (int) $product->id,
+                                            (int) $vid,
+                                            (int) $location_id
+                                        );
                                     }
                                 }
 
@@ -291,8 +387,8 @@ class OpeningStockController extends Controller
                                         'additional_notes' => $purchase_line_note,
                                     ];
 
-                                    if (Schema::hasTable('product_batches')) {
-                                        \App\ProductBatch::syncSellPricesFromPurchaseLine($purchase_line);
+                                    if ($has_product_batches) {
+                                        ProductBatch::syncSellPricesFromPurchaseLine($purchase_line);
                                     }
                                 } else {
                                     $new_purchase_lines[] = $purchase_line;
@@ -409,6 +505,10 @@ class OpeningStockController extends Controller
 
                                 $transaction->purchase_lines()->saveMany([$new_purchase_line]);
 
+                                if ($has_product_batches) {
+                                    ProductBatch::syncSellPricesFromPurchaseLine($new_purchase_line);
+                                }
+
                                 //Adjust stock over selling if found
                                 $this->productUtil->adjustStockOverSelling($transaction);
                             }
@@ -442,5 +542,46 @@ class OpeningStockController extends Controller
         }
 
         return redirect('products')->with('status', $output);
+    }
+
+    /**
+     * Create or attach a product_batches row for an opening-stock line (new batch only).
+     */
+    protected function assignOpeningStockBatch(
+        PurchaseLine $purchase_line,
+        array $pl,
+        int $business_id,
+        int $product_id,
+        int $variation_id,
+        int $location_id
+    ): void {
+        if (! empty($purchase_line->batch_id)) {
+            if (empty($purchase_line->batch_number)) {
+                $existing = ProductBatch::find($purchase_line->batch_id);
+                if (! empty($existing)) {
+                    $purchase_line->batch_number = $existing->batch_label;
+                }
+            }
+
+            return;
+        }
+
+        $label = ! empty($pl['batch_number'])
+            ? $pl['batch_number']
+            : ProductBatch::nextBatchLabel($business_id, $product_id, $variation_id, $location_id);
+
+        $batch = ProductBatch::firstOrCreate(
+            [
+                'business_id' => $business_id,
+                'product_id' => $product_id,
+                'variation_id' => $variation_id,
+                'location_id' => $location_id,
+                'batch_label' => $label,
+            ],
+            []
+        );
+
+        $purchase_line->batch_id = $batch->id;
+        $purchase_line->batch_number = $batch->batch_label;
     }
 }
