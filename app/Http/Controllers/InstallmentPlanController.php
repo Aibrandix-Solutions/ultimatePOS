@@ -71,6 +71,21 @@ class InstallmentPlanController extends Controller
             }
 
             return DataTables::of($query)
+                ->filterColumn('t.invoice_no', function ($query, $keyword) {
+                    $query->where('t.invoice_no', 'like', "%{$keyword}%");
+                })
+                ->filterColumn('c.name', function ($query, $keyword) {
+                    $query->where('c.name', 'like', "%{$keyword}%");
+                })
+                ->filterColumn('t.transaction_date', function ($query, $keyword) {
+                    $query->where('t.transaction_date', 'like', "%{$keyword}%");
+                })
+                ->filterColumn('installment_plans.status', function ($query, $keyword) {
+                    $query->where('installment_plans.status', 'like', "%{$keyword}%");
+                })
+                ->filterColumn('installment_plans.installment_count', function ($query, $keyword) {
+                    $query->where('installment_plans.installment_count', 'like', "%{$keyword}%");
+                })
                 ->editColumn('transaction_date', function ($row) {
                     return ! empty($row->transaction_date) ? $this->transactionUtil->format_date($row->transaction_date, true) : '';
                 })
