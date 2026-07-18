@@ -58,6 +58,7 @@
 			? max(0, $default_sell_inc - $tax_percent)
 			: ($tax_percent != 0 ? ($default_sell_inc * 100) / (100 + $tax_percent) : $default_sell_inc);
 		$default_sell_show = ($selling_price_tax_type == 'inclusive') ? $default_sell_inc : $default_sell_exc;
+		$row_count_for_variation = !empty($purchases[$key][$variation->id]) ? count($purchases[$key][$variation->id]) : 1;
 	@endphp
 	@if(empty($purchases[$key][$variation->id]))
 		@php
@@ -79,6 +80,7 @@
 			if ($enable_batch_pricing && preg_match('/^Batch\s+(\d+)$/i', trim((string) $next_batch_label), $m)) {
 				$next_batch_label = 'Batch '.((int) $m[1] + 1);
 			}
+			$row_count_for_variation = 1;
 		@endphp
 	@endif
 
@@ -128,7 +130,7 @@
 		: ($enable_batch_pricing ? $next_batch_label : null);
 	@endphp
 
-<tr data-variation-id="{{ $variation->id }}" data-location-id="{{ $key }}">
+<tr class="os_stock_row" data-variation-id="{{ $variation->id }}" data-location-id="{{ $key }}">
 	<td>
 		{{ $product->name }} @if( $product->type == 'variable' ) (<b>{{ $variation->product_variation->name }}</b> : {{ $variation->name }}) @endif
 
@@ -201,68 +203,78 @@
 	<td>
 		{!! Form::textarea('stocks[' . $key . '][' . $variation->id . '][' . $sub_key . '][purchase_line_note]', $purchase_line_note , ['class' => 'form-control input-sm', 'rows' => 3 ]) !!}
 	</td>
-	<td>
+	<td class="os_row_actions" style="white-space: nowrap;">
 		@if($loop->index == 0)
-			<button type="button" class="tw-dw-btn tw-dw-btn-xs tw-dw-btn-outline  tw-dw-btn-primary add_stock_row"
+			<button type="button" class="tw-dw-btn tw-dw-btn-xs tw-dw-btn-outline tw-dw-btn-primary add_stock_row"
 				data-sub-key="{{ count($purchases[$key][$variation->id])}}"
 				data-next-batch="{{ $next_batch_label }}"
-				data-row-html='<tr data-variation-id="{{ $variation->id }}" data-location-id="{{ $key }}">
+				title="@lang('messages.add')">
+				<i class="fa fa-plus"></i>
+			</button>
+			<template class="os_stock_row_template">
+				<tr class="os_stock_row" data-variation-id="{{ $variation->id }}" data-location-id="{{ $key }}">
 					<td>
 						{{ $product->name }} @if( $product->type == "variable" ) (<b>{{ $variation->product_variation->name }}</b> : {{ $variation->name }}) @endif
 					</td>
 					<td>
-					<div class="input-group">
-	              		<input class="form-control input-sm input_number purchase_quantity" required="" name="stocks[{{$key}}][{{$variation->id}}][__subkey__][quantity]" type="text" value="0">
-			              <span class="input-group-addon">
-			                {{ $product->unit->short_name }}
-			              </span>
-	        			</div>
+						<div class="input-group">
+							<input class="form-control input-sm input_number purchase_quantity" required name="stocks[{{$key}}][{{$variation->id}}][__subkey__][quantity]" type="text" value="0">
+							<span class="input-group-addon">
+								{{ $product->unit->short_name }}
+							</span>
+						</div>
 					</td>
-	<td>
-		<input class="form-control input-sm input_number unit_price" required="" name="stocks[{{$key}}][{{$variation->id}}][__subkey__][purchase_price]" type="text" value="{{@num_format($purcahse_price)}}">
-	</td>
-	@if($enable_batch_pricing)
-	<td>
-		<input class="form-control input-sm batch_number_input" readonly name="stocks[{{$key}}][{{$variation->id}}][__subkey__][batch_number]" type="text" value="__batch_number__">
-		<small class="text-muted">@lang("lang_v1.new_batch")</small>
-		<input type="hidden" name="stocks[{{$key}}][{{$variation->id}}][__subkey__][selling_price_tax_type]" value="{{ $selling_price_tax_type }}">
-	</td>
-	<td>
-		<input class="form-control input-sm input_number profit_percent" required name="stocks[{{$key}}][{{$variation->id}}][__subkey__][profit_percent]" type="text" value="{{@num_format($default_profit)}}">
-	</td>
-	<td>
-		<input class="form-control input-sm input_number default_sell_price" required name="stocks[{{$key}}][{{$variation->id}}][__subkey__][default_sell_price]" type="text" value="{{@num_format($default_sell_show)}}">
-	</td>
-	@endif
-	@if($enable_expiry == 1 && $product->enable_stock == 1)
-	<td>
-		<input class="form-control input-sm os_exp_date" required="" name="stocks[{{$key}}][{{$variation->id}}][__subkey__][exp_date]" type="text" readonly>
-	</td>
-	@endif
-
-	@if($enable_lot == 1)
-	<td>
-		<input class="form-control input-sm" name="stocks[{{$key}}][{{$variation->id}}][__subkey__][lot_number]" type="text">
-	</td>
-	@endif
-	<td>
-		<span class="row_subtotal_before_tax">
-			0.00
-		</span>
-	</td>
-	<td>
-		<div class="input-group date">
-			<input class="form-control input-sm os_date" name="stocks[{{$key}}][{{$variation->id}}][__subkey__][transaction_date]" type="text" readonly>
-		</div>
-	</td>
-	<td>
-		<textarea rows="3" class="form-control input-sm" name="stocks[{{$key}}][{{$variation->id}}][__subkey__][purchase_line_note]"></textarea>
-	</td>
-	<td>&nbsp;</td></tr>'
-	><i class="fa fa-plus"></i></button>
-	@else
-		&nbsp;
-	@endif
+					<td>
+						<input class="form-control input-sm input_number unit_price" required name="stocks[{{$key}}][{{$variation->id}}][__subkey__][purchase_price]" type="text" value="{{@num_format($purcahse_price)}}">
+					</td>
+					@if($enable_batch_pricing)
+					<td>
+						<input class="form-control input-sm batch_number_input" readonly name="stocks[{{$key}}][{{$variation->id}}][__subkey__][batch_number]" type="text" value="">
+						<small class="text-muted">@lang('lang_v1.new_batch')</small>
+						<input type="hidden" name="stocks[{{$key}}][{{$variation->id}}][__subkey__][selling_price_tax_type]" value="{{ $selling_price_tax_type }}">
+					</td>
+					<td>
+						<input class="form-control input-sm input_number profit_percent" required name="stocks[{{$key}}][{{$variation->id}}][__subkey__][profit_percent]" type="text" value="{{@num_format($default_profit)}}">
+					</td>
+					<td>
+						<input class="form-control input-sm input_number default_sell_price" required name="stocks[{{$key}}][{{$variation->id}}][__subkey__][default_sell_price]" type="text" value="{{@num_format($default_sell_show)}}">
+					</td>
+					@endif
+					@if($enable_expiry == 1 && $product->enable_stock == 1)
+					<td>
+						<input class="form-control input-sm os_exp_date" required name="stocks[{{$key}}][{{$variation->id}}][__subkey__][exp_date]" type="text" readonly>
+					</td>
+					@endif
+					@if($enable_lot == 1)
+					<td>
+						<input class="form-control input-sm" name="stocks[{{$key}}][{{$variation->id}}][__subkey__][lot_number]" type="text">
+					</td>
+					@endif
+					<td>
+						<span class="row_subtotal_before_tax">0.00</span>
+					</td>
+					<td>
+						<div class="input-group date">
+							<input class="form-control input-sm os_date" name="stocks[{{$key}}][{{$variation->id}}][__subkey__][transaction_date]" type="text" readonly>
+						</div>
+					</td>
+					<td>
+						<textarea rows="3" class="form-control input-sm" name="stocks[{{$key}}][{{$variation->id}}][__subkey__][purchase_line_note]"></textarea>
+					</td>
+					<td class="os_row_actions" style="white-space: nowrap;">
+						<button type="button" class="tw-dw-btn tw-dw-btn-xs tw-dw-btn-outline tw-dw-btn-error remove_stock_row" title="@lang('messages.delete')">
+							<i class="fa fa-trash"></i>
+						</button>
+					</td>
+				</tr>
+			</template>
+		@endif
+		<button type="button"
+			class="tw-dw-btn tw-dw-btn-xs tw-dw-btn-outline tw-dw-btn-error remove_stock_row"
+			title="@lang('messages.delete')"
+			@if($row_count_for_variation <= 1) style="display:none;" @endif>
+			<i class="fa fa-trash"></i>
+		</button>
 			</td>
 			</tr>
 		@endforeach
