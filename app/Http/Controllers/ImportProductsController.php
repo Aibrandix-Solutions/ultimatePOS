@@ -816,6 +816,8 @@ class ImportProductsController extends Controller
 
         //Add product location
         $this->__addProductLocation($product, $opening_stock['location_id']);
+
+        $this->productUtil->syncVariationSellPriceToStockRecords($variation);
     }
 
     private function __addProductLocation($product, $location_id)
@@ -891,6 +893,8 @@ class ImportProductsController extends Controller
                     ]);
                     //Update variation location details
                     $this->productUtil->updateProductQuantity($location_id, $product->id, $variation->id, $opening_stock['quantity']);
+
+                    $this->productUtil->syncVariationSellPriceToStockRecords($variation);
                 }
             }
 

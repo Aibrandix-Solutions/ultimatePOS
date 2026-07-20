@@ -968,6 +968,8 @@ class ProductUtil extends Util
             $variation_details->profit_percent = $this->get_percent($variation_details->default_purchase_price, $variation_details->default_sell_price);
 
             $variation_details->save();
+
+            $this->syncVariationSellPriceToStockRecords($variation_details);
         }
     }
 
