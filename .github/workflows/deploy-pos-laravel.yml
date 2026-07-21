@@ -2,7 +2,7 @@ name: Deploy UltimatePOS (demo.genxpos360.com via SSH/rsync)
 
 on:
   push:
-    branches: [ demo ]
+    branches: [ batch ]
   workflow_dispatch:
 
 jobs:
