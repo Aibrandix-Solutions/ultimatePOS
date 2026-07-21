@@ -20,6 +20,8 @@
 					<button type="button" class="btn btn-default bg-white btn-flat add_new_customer" data-name="" style="background: linear-gradient(135deg, #161160 0%, #3d3580 100%); border: none; color: white; padding: 8px 12px;" @if(!auth()->user()->can('customer.create')) disabled @endif><i class="fa fa-plus-circle fa-lg"></i></button>
 				</span>
 			</div>
+			<input type="hidden" id="editing_transaction_due" value="{{ $editing_transaction_due ?? 0 }}">
+			<input type="hidden" id="editing_transaction_contact_id" value="{{ $transaction->contact_id }}">
 			<small class="text-danger @if(empty($customer_due)) hide @endif contact_due_text"><strong>@lang('account.customer_due'):</strong> <span>{{$customer_due ?? ''}}</span></small>
 		</div>
 	</div>
