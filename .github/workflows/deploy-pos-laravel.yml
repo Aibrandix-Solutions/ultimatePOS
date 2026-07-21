@@ -15,7 +15,7 @@ jobs:
       SSH_PORT: ${{ secrets.ULTIMPOS_SSH_PORT }}
       SSH_USER: ${{ secrets.ULTIMPOS_SSH_USER }}
       REMOTE_BASE: domains/genxpos360.com/public_html/homeneeds
-      REMOTE_BACKEND: domains/genxpos360.com/public_html/homeneeds/laravel
+      REMOTE_BACKEND: domains/genxpos360.com/public_html/homeneeds/backend
 
     steps:
       - name: Checkout
@@ -101,7 +101,7 @@ jobs:
           # Ensure .htaccess is included explicitly
           if [ -f public/.htaccess ]; then cp public/.htaccess deploy_public/.htaccess; fi
 
-          # Write split-docroot index.php that points to /laravel
+          # Write split-docroot index.php that points to /backend
           cat > deploy_public/index.php <<'PHP'
           <?php
 
@@ -111,12 +111,12 @@ jobs:
           define('LARAVEL_START', microtime(true));
 
           // maintenance file relative to public docroot
-            if (file_exists($maintenance = __DIR__ . '/laravel/storage/framework/maintenance.php')) {
+            if (file_exists($maintenance = __DIR__ . '/backend/storage/framework/maintenance.php')) {
               require $maintenance;
           }
 
-            // Point to the 'laravel' directory (relative to public_html/)
-            define('LARAVEL_BASE', __DIR__ . '/laravel');
+            // Point to the 'backend' directory (relative to public_html/)
+            define('LARAVEL_BASE', __DIR__ . '/backend');
 
           require LARAVEL_BASE . '/vendor/autoload.php';
           $app = require LARAVEL_BASE . '/bootstrap/app.php';
@@ -145,7 +145,7 @@ jobs:
           EOF
 
       # --- rsync uploads (replaces SFTP-Deploy-Action) ---
-      - name: Upload app via rsync (to /laravel)
+      - name: Upload app via rsync (to /backend)
         run: |
           rsync -az --human-readable --info=stats1 \
             -e "ssh $SSH_OPTS" \
@@ -221,7 +221,7 @@ jobs:
           # Symlink for user-uploads within homeneeds docroot
           cd ~/$REMOTE_BASE
           rm -rf user-uploads 2>/dev/null || true
-          ln -sf ./laravel/public/user-uploads user-uploads
+          ln -sf ./backend/public/user-uploads user-uploads
           ls -la user-uploads
           EOF
 
