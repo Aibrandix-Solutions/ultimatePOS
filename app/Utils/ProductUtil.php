@@ -2667,6 +2667,15 @@ class ProductUtil extends Util
             return;
         }
 
+        // When batch pricing is enabled, every batch keeps its own independent
+        // selling price. Blindly pushing the variation master price onto all
+        // purchase lines / product_batches would clobber per-batch prices — e.g.
+        // buying "Batch 2" would reset "Batch 1" so both share one price. Skip the
+        // sync for batch-priced businesses; per-batch prices are the source of truth.
+        if ($this->isBatchPricingEnabledForVariation($variation)) {
+            return;
+        }
+
         $sell_inc = $variation->sell_price_inc_tax;
         $sell_exc = $variation->default_sell_price;
         $profit = $variation->profit_percent;
@@ -2686,6 +2695,23 @@ class ProductUtil extends Util
                     'profit_margin' => $profit,
                 ]);
         }
+    }
+
+    /**
+     * Whether the business owning this variation has batch pricing enabled.
+     * Resolved from the DB (not the session) so it also works from console/import.
+     */
+    protected function isBatchPricingEnabledForVariation(Variation $variation): bool
+    {
+        $business_id = !empty($variation->product) && !empty($variation->product->business_id)
+            ? $variation->product->business_id
+            : Product::where('id', $variation->product_id)->value('business_id');
+
+        if (empty($business_id)) {
+            return false;
+        }
+
+        return (bool) Business::where('id', $business_id)->value('enable_batch_pricing');
     }
 
 
