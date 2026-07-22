@@ -1,8 +1,8 @@
-name: Deploy UltimatePOS (demo.genxpos360.com via SSH/rsync)
+name: Deploy UltimatePOS (homeneeds.genxpos360.com via SSH/rsync)
 
 on:
   push:
-    branches: [ demo ]
+    branches: [ batch ]
   workflow_dispatch:
 
 jobs:
@@ -14,8 +14,8 @@ jobs:
       SSH_HOST: ${{ secrets.ULTIMPOS_SSH_HOST }}
       SSH_PORT: ${{ secrets.ULTIMPOS_SSH_PORT }}
       SSH_USER: ${{ secrets.ULTIMPOS_SSH_USER }}
-      REMOTE_BASE: domains/genxpos360.com/public_html/demo
-      REMOTE_BACKEND: domains/genxpos360.com/public_html/demo/backend
+      REMOTE_BASE: domains/genxpos360.com/public_html/homeneeds
+      REMOTE_BACKEND: domains/genxpos360.com/public_html/homeneeds/backend
 
     steps:
       - name: Checkout
@@ -164,13 +164,13 @@ jobs:
         run: |
           ssh $SSH_OPTS "$SSH_USER@$SSH_HOST" bash <<EOF
           set -e
-          # Target demo.genxpos360.com Laravel app dir
+          # Target homeneeds.genxpos360.com Laravel app dir
           cd ~/$REMOTE_BACKEND
 
           # Safety: do not run artisan/migrations until the subdomain has its own .env
           if [ ! -f .env ]; then
             echo "Missing .env at \$(pwd)/.env"
-            echo "Create it with separate DB credentials and correct APP_URL=https://demo.genxpos360.com"
+            echo "Create it with separate DB credentials and correct APP_URL=https://homeneeds.genxpos360.com"
             exit 1
           fi
 

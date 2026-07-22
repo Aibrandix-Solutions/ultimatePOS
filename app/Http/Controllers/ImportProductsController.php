@@ -6,6 +6,7 @@ use App\Brands;
 use App\BusinessLocation;
 use App\Category;
 use App\Product;
+use App\ProductBatch;
 use App\TaxRate;
 use App\Transaction;
 use App\Unit;
@@ -16,6 +17,7 @@ use App\VariationValueTemplate;
 use DB;
 use Excel;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 
 class ImportProductsController extends Controller
 {
@@ -122,7 +124,7 @@ class ImportProductsController extends Controller
                 foreach ($imported_data as $key => $value) {
 
                     //Check if any column is missing
-                    if (count($value) < 37) {
+                    if (count($value) < 38) {
                         $is_valid = false;
                         $error_msg = 'Some of the columns are missing. Please, use latest CSV file template.';
                         break;
@@ -420,6 +422,8 @@ class ImportProductsController extends Controller
                             } else {
                                 $product_array['opening_stock_details']['exp_date'] = null;
                             }
+                            
+                            $product_array['opening_stock_details']['lot_number'] = isset($value[37]) ? trim($value[37]) : null;
                         }
                     } elseif ($product_array['type'] == 'variable') {
                         $variation_name = trim($value[14]);
@@ -563,6 +567,7 @@ class ImportProductsController extends Controller
                         //Opening stock
                         if (! empty($value[21]) && $enable_stock == 1) {
                             $variation_os = array_map('trim', explode('|', $value[21]));
+                            $variation_lots = isset($value[37]) ? array_map('trim', explode('|', $value[37])) : [];
 
                             //$product_array['opening_stock_details']['quantity'] = $variation_os;
 
@@ -597,6 +602,8 @@ class ImportProductsController extends Controller
                                 } else {
                                     $product_array['variation']['variations'][$k]['opening_stock_exp_date'] = null;
                                 }
+                                
+                                $product_array['variation']['variations'][$k]['lot_number'] = $variation_lots[$k] ?? null;
                             }
                         }
                     }
@@ -800,7 +807,7 @@ class ImportProductsController extends Controller
         $item_tax = $this->productUtil->calc_percentage($variation->default_purchase_price, $tax_percent);
 
         //Create purchase line
-        $transaction->purchase_lines()->create([
+        $purchase_line = $transaction->purchase_lines()->make([
             'product_id' => $product->id,
             'variation_id' => $variation->id,
             'quantity' => $opening_stock['quantity'],
@@ -810,7 +817,32 @@ class ImportProductsController extends Controller
             'purchase_price' => $variation->default_purchase_price,
             'purchase_price_inc_tax' => $variation->dpp_inc_tax,
             'exp_date' => ! empty($opening_stock['exp_date']) ? $opening_stock['exp_date'] : null,
+            'lot_number' => ! empty($opening_stock['lot_number']) ? $opening_stock['lot_number'] : null,
         ]);
+
+        $enable_batch_pricing = (bool) request()->session()->get('business.enable_batch_pricing');
+        if ($enable_batch_pricing && Schema::hasTable('product_batches')) {
+            $batch_number = !empty($opening_stock['lot_number']) ? $opening_stock['lot_number'] : ProductBatch::nextBatchLabel($business_id, $product->id, $variation->id, $opening_stock['location_id']);
+            $batch = ProductBatch::firstOrCreate(
+                [
+                    'business_id' => $business_id,
+                    'product_id' => $product->id,
+                    'variation_id' => $variation->id,
+                    'location_id' => $opening_stock['location_id'],
+                    'batch_label' => $batch_number,
+                ],
+                []
+            );
+            $purchase_line->batch_id = $batch->id;
+            $purchase_line->batch_number = $batch->batch_label;
+        }
+
+        $purchase_line->save();
+
+        if ($enable_batch_pricing && Schema::hasTable('product_batches')) {
+            ProductBatch::syncSellPricesFromPurchaseLine($purchase_line);
+        }
+
         //Update variation location details
         $this->productUtil->updateProductQuantity($opening_stock['location_id'], $product->id, $variation->id, $opening_stock['quantity']);
 
@@ -881,7 +913,7 @@ class ImportProductsController extends Controller
                     $item_tax = $this->productUtil->calc_percentage($variation->default_purchase_price, $tax_percent);
 
                     //Create purchase line
-                    $transaction->purchase_lines()->create([
+                    $purchase_line = $transaction->purchase_lines()->make([
                         'product_id' => $product->id,
                         'variation_id' => $variation->id,
                         'quantity' => $opening_stock['quantity'],
@@ -890,7 +922,32 @@ class ImportProductsController extends Controller
                         'purchase_price' => $variation->default_purchase_price,
                         'purchase_price_inc_tax' => $variation->dpp_inc_tax,
                         'exp_date' => ! empty($opening_stock['exp_date']) ? $opening_stock['exp_date'] : null,
+                        'lot_number' => ! empty($variation_os['lot_number']) ? $variation_os['lot_number'] : null,
                     ]);
+
+                    $enable_batch_pricing = (bool) request()->session()->get('business.enable_batch_pricing');
+                    if ($enable_batch_pricing && Schema::hasTable('product_batches')) {
+                        $batch_number = !empty($variation_os['lot_number']) ? $variation_os['lot_number'] : ProductBatch::nextBatchLabel($business_id, $product->id, $variation->id, $location_id);
+                        $batch = ProductBatch::firstOrCreate(
+                            [
+                                'business_id' => $business_id,
+                                'product_id' => $product->id,
+                                'variation_id' => $variation->id,
+                                'location_id' => $location_id,
+                                'batch_label' => $batch_number,
+                            ],
+                            []
+                        );
+                        $purchase_line->batch_id = $batch->id;
+                        $purchase_line->batch_number = $batch->batch_label;
+                    }
+
+                    $purchase_line->save();
+
+                    if ($enable_batch_pricing && Schema::hasTable('product_batches')) {
+                        ProductBatch::syncSellPricesFromPurchaseLine($purchase_line);
+                    }
+
                     //Update variation location details
                     $this->productUtil->updateProductQuantity($location_id, $product->id, $variation->id, $opening_stock['quantity']);
 

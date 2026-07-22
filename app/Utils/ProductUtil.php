@@ -2672,8 +2672,26 @@ class ProductUtil extends Util
         // purchase lines / product_batches would clobber per-batch prices — e.g.
         // buying "Batch 2" would reset "Batch 1" so both share one price. Skip the
         // sync for batch-priced businesses; per-batch prices are the source of truth.
+        // FIX: If a product only has 1 batch (which is hidden from Batch Details UI),
+        // we MUST sync it, otherwise it becomes impossible to edit the price.
         if ($this->isBatchPricingEnabledForVariation($variation)) {
-            return;
+            $batch_count = 0;
+            if (Schema::hasTable('product_batches')) {
+                $batch_count = ProductBatch::where('variation_id', $variation->id)->count();
+            } else {
+                $batch_count = PurchaseLine::where('variation_id', $variation->id)
+                    ->whereNotNull('batch_number')
+                    ->where('batch_number', '!=', '')
+                    ->distinct('batch_number')
+                    ->count('batch_number');
+                if ($batch_count === 0) {
+                    $batch_count = PurchaseLine::where('variation_id', $variation->id)->count() > 0 ? 1 : 0;
+                }
+            }
+
+            if ($batch_count > 1) {
+                return;
+            }
         }
 
         $sell_inc = $variation->sell_price_inc_tax;

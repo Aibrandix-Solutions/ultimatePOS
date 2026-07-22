@@ -276,6 +276,15 @@
                         <td>@lang('lang_v1.product_locations_ins')
                         </td>
                     </tr>
+                    <tr>
+                        <td>38</td>
+                        <td>@lang('lang_v1.lot_number') / @lang('lang_v1.batch_number') <small class="text-muted">(@lang('lang_v1.optional'))</small></td>
+                        <td>
+                            Enter the Lot Number or Batch Number. <br>
+                            If Batch Pricing is enabled, this will create a Product Batch.<br>
+                            <small class="text-muted">For variable products with multiple values, separate them with the pipe (|) character (e.g., BATCH-1|BATCH-2).</small>
+                        </td>
+                    </tr>
 
                 </table>
             @endcomponent
