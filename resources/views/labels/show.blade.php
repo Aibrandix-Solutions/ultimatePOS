@@ -249,6 +249,18 @@
 				</div>
 			</div>
 
+			<div class="col-sm-4">
+				<div class="form-group">
+					{!! Form::label('font_family', 'Font Family (Optional):') !!}
+					<div class="input-group">
+						<span class="input-group-addon">
+							<i class="fa fa-font"></i>
+						</span>
+						{!! Form::select('print[font_family]', ['' => 'Default (Browser Font)', 'Arial' => 'Arial', 'Courier New' => 'Courier New', 'Georgia' => 'Georgia', 'Impact' => 'Impact', 'Times New Roman' => 'Times New Roman', 'Verdana' => 'Verdana', 'Tahoma' => 'Tahoma', 'Trebuchet MS' => 'Trebuchet MS'], '', ['class' => 'form-control']) !!}
+					</div>
+				</div>
+			</div>
+
 			<div class="clearfix"></div>
 			
 			<div class="col-sm-12 text-center">

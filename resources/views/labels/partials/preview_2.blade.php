@@ -7,10 +7,10 @@
 		<!-- <columns column-count="{{$barcode_details->stickers_in_one_row}}" column-gap="{{$barcode_details->col_distance*1}}"> -->
 	@endif
 		<td align="center" valign="center">
-			<div style="overflow: hidden !important;display: flex; flex-wrap: wrap;align-content: center;width: {{$barcode_details->width * 1}}in; height: {{$barcode_details->height * 1}}in; justify-content: center;">
+			<div style="overflow: hidden !important; display: flex; flex-direction: column; align-items: center; justify-content: center; width: {{$barcode_details->width * 1}}in; height: {{$barcode_details->height * 1}}in; box-sizing: border-box; padding: 1px 2px;">
 				
 
-				<div>
+				<div style="text-align: center; line-height: 1.2; width: 100%;{{ !empty($print['font_family']) ? ' font-family: ' . $print['font_family'] . ', sans-serif;' : '' }}">
 
 					{{-- Business Name --}}
 					@if(!empty($print['business_name']))
@@ -53,11 +53,10 @@
 							</span>
 						@endif
 					@endforeach
-					<br>
 
 					{{-- Price --}}
 					@if(!empty($print['price']))
-					<span style="font-size: {{$print['price_size']}}px;">
+					<span style="display: block; font-size: {{$print['price_size']}}px; line-height: 1.2;">
 						@lang('lang_v1.price'):
 						<b>{{session('currency')['symbol'] ?? ''}}
 
@@ -70,8 +69,7 @@
 					</span>
 					@endif
 					@if(!empty($print['exp_date']) && !empty($page_product->exp_date))
-						<br>
-						<span style="font-size: {{$print['exp_date_size']}}px">
+						<span style="display: block; font-size: {{$print['exp_date_size']}}px; line-height: 1.2;">
 							<b>@lang('product.exp_date'):</b>
 							{{$page_product->exp_date}}
 						</span>
@@ -81,15 +79,15 @@
 					@endif
 
 					@if(!empty($print['packing_date']) && !empty($page_product->packing_date))
-						<span style="font-size: {{$print['packing_date_size']}}px">
+						<span style="display: block; font-size: {{$print['packing_date_size']}}px; line-height: 1.2;">
 							<b>@lang('lang_v1.packing_date'):</b>
 							{{$page_product->packing_date}}
 						</span>
 					@endif
 					{{-- Barcode --}}
-					<img style="max-width:90% !important;height: {{$barcode_details->height*0.24}}in !important; display: block;" src="data:image/png;base64,{{DNS1D::getBarcodePNG($page_product->sub_sku, $page_product->barcode_type, 3,90, array(0, 0, 0), false)}}">
+					<img style="max-width:90% !important;height: {{$barcode_details->height*0.24}}in !important; display: block; margin: 0 auto;" src="data:image/png;base64,{{DNS1D::getBarcodePNG($page_product->sub_sku, $page_product->barcode_type, 3,90, array(0, 0, 0), false)}}">
 					
-					<span style="font-size: 10px !important">
+					<span style="font-size: 10px !important; display: block; line-height: 1.2;">
 						{{$page_product->sub_sku}}
 					</span>
 				</div>
