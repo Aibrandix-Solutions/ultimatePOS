@@ -1,0 +1,187 @@
+name: Deploy GenXCherri VPS
+
+on:
+  push:
+    branches: [cherri]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-genxcherri-vps
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    env:
+      REMOTE_PATH: /home/admin/domains/genxcherri.digierp.cloud/public_html
+      REMOTE_BACKEND_PATH: /home/admin/domains/genxcherri.digierp.cloud/public_html/laravel
+
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+
+      - name: Validate SSH key
+        run: |
+          set -e
+          echo "${{ secrets.GENXCHERRI_SSH_KEY }}" > /tmp/vps_key
+          chmod 600 /tmp/vps_key
+          ssh-keygen -lf /tmp/vps_key
+
+      - name: Test SSH connection
+        run: |
+          ssh -i /tmp/vps_key \
+            -p "${{ secrets.GENXCHERRI_SSH_PORT }}" \
+            -o StrictHostKeyChecking=no \
+            -o IdentitiesOnly=yes \
+            -o BatchMode=yes \
+            -o ConnectTimeout=30 \
+            "${{ secrets.GENXCHERRI_SSH_USER }}@${{ secrets.GENXCHERRI_SSH_HOST }}" \
+            "echo 'SSH connected successfully'"
+
+      - name: Prepare deployment files
+        run: |
+          set -e
+
+          rm -rf deploy_app deploy_public
+          mkdir -p deploy_app deploy_public
+
+          rsync -a --delete \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='.env' \
+            --exclude='node_modules' \
+            --exclude='vendor' \
+            --exclude='storage' \
+            --exclude='bootstrap/cache' \
+            --exclude='deploy_app' \
+            --exclude='deploy_public' \
+            --exclude='tests' \
+            ./ deploy_app/
+
+          mkdir -p deploy_app/storage/app/public
+          mkdir -p deploy_app/storage/framework/cache
+          mkdir -p deploy_app/storage/framework/sessions
+          mkdir -p deploy_app/storage/framework/views
+          mkdir -p deploy_app/storage/logs
+          mkdir -p deploy_app/bootstrap/cache
+          touch deploy_app/storage/logs/.gitkeep
+
+          rsync -a --delete \
+            --exclude='uploads/' \
+            --exclude='index.php' \
+            public/ deploy_public/
+
+          cat > deploy_public/index.php <<'EOF'
+          <?php
+
+          use Illuminate\Contracts\Http\Kernel;
+          use Illuminate\Http\Request;
+
+          define('LARAVEL_START', microtime(true));
+
+          if (file_exists($maintenance = __DIR__.'/laravel/storage/framework/maintenance.php')) {
+              require $maintenance;
+          }
+
+          define('LARAVEL_BASE', __DIR__.'/laravel');
+
+          require LARAVEL_BASE.'/vendor/autoload.php';
+
+          $app = require_once LARAVEL_BASE.'/bootstrap/app.php';
+
+          /** @var Kernel $kernel */
+          $kernel = $app->make(Kernel::class);
+
+          $response = $kernel->handle(
+              $request = Request::capture()
+          )->send();
+
+          $kernel->terminate($request, $response);
+          EOF
+
+          if [ -f public/.htaccess ]; then
+            cp public/.htaccess deploy_public/.htaccess
+          fi
+
+      - name: Create remote directories
+        run: |
+          ssh -i /tmp/vps_key \
+            -p "${{ secrets.GENXCHERRI_SSH_PORT }}" \
+            -o StrictHostKeyChecking=no \
+            -o IdentitiesOnly=yes \
+            -o BatchMode=yes \
+            -o ConnectTimeout=30 \
+            "${{ secrets.GENXCHERRI_SSH_USER }}@${{ secrets.GENXCHERRI_SSH_HOST }}" \
+            "mkdir -p '${{ env.REMOTE_PATH }}' '${{ env.REMOTE_BACKEND_PATH }}' '${{ env.REMOTE_PATH }}/uploads' && echo 'Remote directories ready'"
+
+      - name: Upload Laravel app to VPS
+        run: |
+          rsync -avz --delete \
+            --exclude='.env' \
+            --filter='protect .env' \
+            --exclude='storage' \
+            --filter='protect storage/' \
+            --exclude='vendor' \
+            --filter='protect vendor/' \
+            -e "ssh -i /tmp/vps_key -p ${{ secrets.GENXCHERRI_SSH_PORT }} -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -o ConnectTimeout=30" \
+            ./deploy_app/ \
+            ${{ secrets.GENXCHERRI_SSH_USER }}@${{ secrets.GENXCHERRI_SSH_HOST }}:${{ env.REMOTE_BACKEND_PATH }}/
+
+      - name: Upload public web files to VPS
+        run: |
+          rsync -avz --delete \
+            --filter='protect laravel/' \
+            --filter='protect .env' \
+            --filter='protect uploads/' \
+            --filter='protect user-uploads/' \
+            -e "ssh -i /tmp/vps_key -p ${{ secrets.GENXCHERRI_SSH_PORT }} -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -o ConnectTimeout=30" \
+            ./deploy_public/ \
+            ${{ secrets.GENXCHERRI_SSH_USER }}@${{ secrets.GENXCHERRI_SSH_HOST }}:${{ env.REMOTE_PATH }}/
+
+      - name: Laravel production commands
+        run: |
+          ssh -i /tmp/vps_key \
+            -p "${{ secrets.GENXCHERRI_SSH_PORT }}" \
+            -o StrictHostKeyChecking=no \
+            -o IdentitiesOnly=yes \
+            -o BatchMode=yes \
+            -o ConnectTimeout=30 \
+            "${{ secrets.GENXCHERRI_SSH_USER }}@${{ secrets.GENXCHERRI_SSH_HOST }}" << 'EOF'
+              set -e
+
+              cd /home/admin/domains/genxcherri.digierp.cloud/public_html/laravel
+
+              if [ ! -f .env ]; then
+                echo "Missing .env file on server. Create it manually before first deploy."
+                echo "Required: APP_URL=https://genxcherri.digierp.cloud and APP_SPLIT_DOCROOT=true"
+                exit 1
+              fi
+
+              mkdir -p storage/app/public storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache
+              mkdir -p /home/admin/domains/genxcherri.digierp.cloud/public_html/uploads
+
+              chmod -R 775 storage bootstrap/cache
+              chmod -R 775 /home/admin/domains/genxcherri.digierp.cloud/public_html/uploads || true
+
+              export COMPOSER_ALLOW_SUPERUSER=1
+
+              composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction --no-progress
+
+              php artisan migrate --force
+              php artisan optimize:clear
+              php artisan module:publish || true
+              php artisan storage:link || true
+              php artisan config:cache
+              php artisan route:cache || true
+              php artisan view:cache
+
+              php -r "if(function_exists('opcache_reset')) opcache_reset();"
+
+              chmod -R 775 storage bootstrap/cache
+              chown -R admin:admin . || true
+              chown -R admin:admin /home/admin/domains/genxcherri.digierp.cloud/public_html/uploads || true
+
+              echo "GenXCherri deployment completed successfully"
+          EOF
