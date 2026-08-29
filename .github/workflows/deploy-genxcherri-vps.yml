@@ -167,7 +167,7 @@ jobs:
 
               export COMPOSER_ALLOW_SUPERUSER=1
 
-              composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction --no-progress
+              composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction --no-progress --ignore-platform-req=php
 
               php artisan migrate --force
               php artisan optimize:clear
