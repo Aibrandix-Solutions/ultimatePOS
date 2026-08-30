@@ -125,6 +125,8 @@ jobs:
             --filter='protect storage/' \
             --exclude='vendor' \
             --filter='protect vendor/' \
+            --exclude='custom_views' \
+            --filter='protect custom_views/' \
             -e "ssh -i /tmp/vps_key -p ${{ secrets.GENXCHERRI_SSH_PORT }} -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -o ConnectTimeout=30" \
             ./deploy_app/ \
             ${{ secrets.GENXCHERRI_SSH_USER }}@${{ secrets.GENXCHERRI_SSH_HOST }}:${{ env.REMOTE_BACKEND_PATH }}/
@@ -159,7 +161,7 @@ jobs:
                 exit 1
               fi
 
-              mkdir -p storage/app/public storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache
+              mkdir -p storage/app/public storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache custom_views
               mkdir -p /home/admin/domains/genxcherri.digierp.cloud/public_html/uploads
 
               chmod -R 775 storage bootstrap/cache
